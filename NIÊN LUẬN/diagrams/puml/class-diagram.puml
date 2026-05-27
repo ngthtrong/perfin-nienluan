@@ -1,213 +1,452 @@
-@startuml
+@startuml PerFin_ClassDiagram
+!theme plain
 skinparam classAttributeIconSize 0
+skinparam classFontSize 12
+skinparam classAttributeFontSize 11
+skinparam linetype ortho
+skinparam groupInheritance 2
 
-class User {
-  +String id
-  +String email
-  +String name
-  +String passwordHash
-  +DateTime createdAt
-  +login()
-  +logout()
-  +resetPassword()
+title Sơ đồ Lớp (Class Diagram) - PerFin (Rolly)\nỨng dụng Quản lý Tài chính Cá nhân
+
+' ===================================================================
+' ENUMERATIONS
+' ===================================================================
+
+package "Enumerations" #FAFAFA {
+
+    enum TransactionType {
+        Expense
+        Income
+        Special
+    }
+
+    enum TransactionSource {
+        text
+        voice
+        image
+    }
+
+    enum TransactionStatus {
+        active
+        softDeleted
+        hardDeleted
+    }
+
+    enum CategoryType {
+        Expense
+        Income
+    }
+
+    enum WalletType {
+        cash
+        bank
+        ewallet
+        investment
+    }
+
+    enum BudgetPeriod {
+        weekly
+        monthly
+    }
+
+    enum ReminderFrequency {
+        daily
+        weekly
+        monthly
+        yearly
+    }
+
+    enum DebtType {
+        lend
+        borrow
+    }
+
+    enum DebtStatus {
+        active
+        paid
+    }
+
+    enum SharedWalletRole {
+        admin
+        member
+    }
+
+    enum ExportFormat {
+        csv
+        pdf
+    }
+
+    enum AILogType {
+        input
+        categorization
+    }
 }
 
-class Transaction {
-  +String id
-  +String userId
-  +String name
-  +Decimal amount
-  +String type
-  +String categoryId
-  +String subCategoryId
-  +String walletId
-  +DateTime date
-  +String source
-  +String status
-  +Float aiConfidence
-  +String attachmentUrl
-  +DateTime createdAt
-  +DateTime deletedAt
-  +softDelete()
-  +restore()
+' ===================================================================
+' CORE ENTITIES
+' ===================================================================
+
+package "Người dùng & Xác thực" #E3F2FD {
+
+    class User {
+        + id : String <<PK>>
+        + email : String <<unique>>
+        + name : String
+        + passwordHash : String
+        + createdAt : DateTime
+        --
+        + register() : void
+        + login() : void
+        + updateProfile() : void
+    }
 }
 
-class Category {
-  +String id
-  +String userId
-  +String name
-  +String type
-  +Boolean isSystem
-  +DateTime createdAt
+package "Giao dịch" #E8F5E9 {
+
+    class Transaction {
+        + id : String <<PK>>
+        + userId : String <<FK>>
+        + name : String
+        + amount : Decimal
+        + type : TransactionType
+        + categoryId : String <<FK>>
+        + subCategoryId : String <<FK, nullable>>
+        + walletId : String <<FK>>
+        + date : DateTime
+        + source : TransactionSource
+        + status : TransactionStatus
+        + aiConfidence : Float
+        + attachmentUrl : String
+        + createdAt : DateTime
+        + deletedAt : DateTime
+        --
+        + create() : void
+        + update() : void
+        + softDelete() : void
+        + hardDelete() : void
+        + restore() : void
+    }
+
+    class Transfer {
+        + id : String <<PK>>
+        + fromWalletId : String <<FK>>
+        + toWalletId : String <<FK>>
+        + amount : Decimal
+        + date : DateTime
+        --
+        + execute() : void
+        + reverse() : void
+    }
 }
 
-class SubCategory {
-  +String id
-  +String categoryId
-  +String name
-  +DateTime createdAt
+package "Danh mục" #FFF9C4 {
+
+    class Category {
+        + id : String <<PK>>
+        + userId : String <<FK, nullable>>
+        + name : String
+        + type : CategoryType
+        + isSystem : Boolean
+        + createdAt : DateTime
+        --
+        + create() : void
+        + update() : void
+        + delete() : void
+    }
+
+    class SubCategory {
+        + id : String <<PK>>
+        + categoryId : String <<FK>>
+        + name : String
+        + createdAt : DateTime
+        --
+        + create() : void
+        + update() : void
+        + delete() : void
+    }
+
+    note right of Category
+        Danh mục "Khác" là 
+        danh mục hệ thống 
+        bắt buộc (isSystem = true).
+        Chỉ hỗ trợ 1 cấp danh mục con.
+    end note
 }
 
-class Wallet {
-  +String id
-  +String userId
-  +String name
-  +String type
-  +Decimal balance
-  +Boolean isDefault
-  +DateTime createdAt
-  +updateBalance()
+package "Ví / Tài khoản" #E0F7FA {
+
+    class Wallet {
+        + id : String <<PK>>
+        + userId : String <<FK>>
+        + name : String
+        + type : WalletType
+        + balance : Decimal
+        + isDefault : Boolean
+        + createdAt : DateTime
+        --
+        + create() : void
+        + updateBalance() : void
+        + setDefault() : void
+    }
 }
 
-class Transfer {
-  +String id
-  +String fromWalletId
-  +String toWalletId
-  +Decimal amount
-  +DateTime date
+package "Ngân sách" #FFF3E0 {
+
+    class Budget {
+        + id : String <<PK>>
+        + userId : String <<FK>>
+        + categoryId : String <<FK, nullable>>
+        + amount : Decimal
+        + period : BudgetPeriod
+        + startDate : DateTime
+        + endDate : DateTime
+        + rollover : Boolean
+        + createdAt : DateTime
+        --
+        + create() : void
+        + update() : void
+        + checkProgress() : Float
+        + applyRollover() : void
+    }
+
+    class BudgetAlert {
+        + id : String <<PK>>
+        + budgetId : String <<FK>>
+        + threshold : Integer
+        + isTriggered : Boolean
+        + triggeredAt : DateTime
+        --
+        + trigger() : void
+        + reset() : void
+    }
+
+    note right of BudgetAlert
+        Ngưỡng cảnh báo mặc định:
+        70%, 90%, 100%
+    end note
 }
 
-class Budget {
-  +String id
-  +String userId
-  +String categoryId
-  +Decimal amount
-  +String period
-  +DateTime startDate
-  +DateTime endDate
-  +Boolean rollover
-  +DateTime createdAt
+package "Nhắc nhở" #F3E5F5 {
+
+    class Reminder {
+        + id : String <<PK>>
+        + userId : String <<FK>>
+        + transactionTemplate : JSON
+        + frequency : ReminderFrequency
+        + nextDueDate : DateTime
+        + isActive : Boolean
+        --
+        + create() : void
+        + update() : void
+        + deactivate() : void
+        + getNextDueDate() : DateTime
+    }
 }
 
-class BudgetAlert {
-  +String id
-  +String budgetId
-  +Integer threshold
-  +Boolean isTriggered
-  +DateTime triggeredAt
+package "Giao dịch đặc biệt" #FBE9E7 {
+
+    class Debt {
+        + id : String <<PK>>
+        + userId : String <<FK>>
+        + personName : String
+        + amount : Decimal
+        + type : DebtType
+        + dueDate : DateTime
+        + status : DebtStatus
+        + relatedTransactionId : String <<FK, nullable>>
+        --
+        + create() : void
+        + markAsPaid() : void
+        + update() : void
+    }
+
+    class Savings {
+        + id : String <<PK>>
+        + userId : String <<FK>>
+        + walletId : String <<FK>>
+        + goalAmount : Decimal
+        + currentAmount : Decimal
+        + goalDate : DateTime
+        --
+        + create() : void
+        + addContribution() : void
+        + checkProgress() : Float
+    }
+
+    class Investment {
+        + id : String <<PK>>
+        + userId : String <<FK>>
+        + walletId : String <<FK>>
+        + type : String
+        + initialAmount : Decimal
+        + currentValue : Decimal
+        + profitLoss : Decimal
+        --
+        + create() : void
+        + updateValue() : void
+        + calculateProfitLoss() : Decimal
+    }
 }
 
-class Reminder {
-  +String id
-  +String userId
-  +String transactionTemplate
-  +String frequency
-  +DateTime nextDueDate
-  +Boolean isActive
+package "AI & Nhân cách" #EDE7F6 {
+
+    class AILog {
+        + id : String <<PK>>
+        + userId : String <<FK>>
+        + transactionId : String <<FK, nullable>>
+        + originalResult : JSON
+        + correctedResult : JSON
+        + logType : AILogType
+        + isAnonymized : Boolean
+        + createdAt : DateTime
+        --
+        + create() : void
+        + anonymize() : void
+    }
+
+    class AIPersonality {
+        + id : String <<PK>>
+        + name : String
+        + description : String
+        + tone : String
+        + isDefault : Boolean
+        --
+        + create() : void
+        + update() : void
+        + activate() : void
+    }
+
+    class UserHabit {
+        + id : String <<PK>>
+        + userId : String <<FK>>
+        + habitType : String
+        + habitData : JSON
+        + isApproved : Boolean
+        + createdAt : DateTime
+        --
+        + create() : void
+        + approve() : void
+        + reject() : void
+    }
 }
 
-class Debt {
-  +String id
-  +String userId
-  +String personName
-  +Decimal amount
-  +String type
-  +DateTime dueDate
-  +String status
-  +String relatedTransactionId
+package "Cộng tác" #E0F2F1 {
+
+    class SharedWallet {
+        + id : String <<PK>>
+        + name : String
+        + createdBy : String <<FK>>
+        + createdAt : DateTime
+        --
+        + create() : void
+        + addMember() : void
+        + removeMember() : void
+    }
+
+    class SharedWalletMember {
+        + id : String <<PK>>
+        + sharedWalletId : String <<FK>>
+        + userId : String <<FK>>
+        + role : SharedWalletRole
+        + joinedAt : DateTime
+        --
+        + join() : void
+        + changeRole() : void
+        + leave() : void
+    }
 }
 
-class Savings {
-  +String id
-  +String userId
-  +String walletId
-  +Decimal goalAmount
-  +Decimal currentAmount
-  +DateTime goalDate
+package "Xuất & Sao lưu" #F1F8E9 {
+
+    class ExportJob {
+        + id : String <<PK>>
+        + userId : String <<FK>>
+        + format : ExportFormat
+        + filters : JSON
+        + status : String
+        + fileUrl : String
+        + createdAt : DateTime
+        --
+        + start() : void
+        + complete() : void
+        + getFile() : String
+    }
+
+    class BackupJob {
+        + id : String <<PK>>
+        + userId : String <<FK>>
+        + status : String
+        + fileUrl : String
+        + isAutomatic : Boolean
+        + createdAt : DateTime
+        --
+        + start() : void
+        + complete() : void
+        + restore() : void
+    }
 }
 
-class Investment {
-  +String id
-  +String userId
-  +String walletId
-  +String type
-  +Decimal initialAmount
-  +Decimal currentValue
-  +Decimal profitLoss
-}
+' ===================================================================
+' RELATIONSHIPS
+' ===================================================================
 
-class AILog {
-  +String id
-  +String userId
-  +String transactionId
-  +String originalResult
-  +String correctedResult
-  +String logType
-  +Boolean isAnonymized
-  +DateTime createdAt
-}
+' --- User owns many entities ---
+User "1" --o "0..*" Transaction : "sở hữu >"
+User "1" --o "0..*" Category : "tạo >"
+User "1" --o "0..*" Wallet : "sở hữu >"
+User "1" --o "0..*" Budget : "thiết lập >"
+User "1" --o "0..*" Reminder : "tạo >"
+User "1" --o "0..*" Debt : "quản lý >"
+User "1" --o "0..*" Savings : "quản lý >"
+User "1" --o "0..*" Investment : "quản lý >"
+User "1" --o "0..*" AILog : "ghi nhận >"
+User "1" --o "0..*" UserHabit : "có >"
+User "1" --o "0..*" ExportJob : "yêu cầu >"
+User "1" --o "0..*" BackupJob : "yêu cầu >"
+User "1" -- "0..1" AIPersonality : "chọn nhân cách >"
 
-class AIPersonality {
-  +String id
-  +String name
-  +String description
-  +String tone
-  +Boolean isDefault
-}
+' --- Transaction relationships ---
+Transaction "0..*" --> "1" Category : "thuộc danh mục >"
+Transaction "0..*" --> "0..1" SubCategory : "thuộc danh mục con >"
+Transaction "0..*" --> "1" Wallet : "từ ví >"
 
-class SharedWallet {
-  +String id
-  +String name
-  +String createdBy
-  +DateTime createdAt
-}
+' --- Category - SubCategory ---
+Category "1" --o "0..*" SubCategory : "chứa >"
 
-class SharedWalletMember {
-  +String id
-  +String sharedWalletId
-  +String userId
-  +String role
-  +DateTime joinedAt
-}
+' --- Budget relationships ---
+Budget "0..*" --> "0..1" Category : "theo danh mục >"
+Budget "1" --o "1..*" BudgetAlert : "có cảnh báo >"
 
-class ExportJob {
-  +String id
-  +String userId
-  +String format
-  +String filters
-  +String status
-  +String fileUrl
-  +DateTime createdAt
-}
+' --- Transfer relationships ---
+Transfer "0..*" --> "1" Wallet : "từ ví nguồn >"
+Transfer "0..*" --> "1" Wallet : "đến ví đích >"
 
-class BackupJob {
-  +String id
-  +String userId
-  +String status
-  +String fileUrl
-  +Boolean isAutomatic
-  +DateTime createdAt
-}
+' --- Special transactions ---
+Debt "0..*" --> "0..1" Transaction : "liên kết giao dịch >"
+Savings "0..*" --> "1" Wallet : "liên kết ví >"
+Investment "0..*" --> "1" Wallet : "liên kết ví >"
 
-class UserHabit {
-  +String id
-  +String userId
-  +String habitType
-  +String habitData
-  +Boolean isApproved
-  +DateTime createdAt
-}
+' --- AI relationships ---
+AILog "0..*" --> "0..1" Transaction : "ghi nhận cho >"
 
-User "1" -- "0..*" Transaction
-User "1" -- "0..*" Category
-User "1" -- "1..*" Wallet
-User "1" -- "0..*" Budget
-User "1" -- "0..*" Reminder
-User "1" -- "0..*" Debt
-User "1" -- "0..*" Savings
-User "1" -- "0..*" Investment
-User "1" -- "0..*" AILog
-User "1" -- "0..*" ExportJob
-User "1" -- "0..*" BackupJob
-User "1" -- "0..*" UserHabit
-User "0..*" -- "0..*" SharedWallet : via SharedWalletMember
+' --- SharedWallet relationships ---
+SharedWallet "1" --o "1..*" SharedWalletMember : "có thành viên >"
+SharedWallet "0..*" --> "1" User : "tạo bởi >"
+SharedWalletMember "0..*" --> "1" User : "là >"
 
-Category "1" -- "0..*" SubCategory
-Category "1" -- "0..*" Transaction
-Wallet "1" -- "0..*" Transaction
-Budget "1" -- "0..*" BudgetAlert
-Budget "0..1" -- "1" Category
-Transaction "1" -- "0..1" AILog
-AIPersonality "1" -- "0..*" User : chosen by
+' ===================================================================
+' LEGEND
+' ===================================================================
+
+legend bottom right
+    |= Ký hiệu |= Ý nghĩa |
+    | --o | Composition (sở hữu) |
+    | --> | Association (liên kết) |
+    | <<PK>> | Primary Key |
+    | <<FK>> | Foreign Key |
+    | 1..* | Một hoặc nhiều |
+    | 0..* | Không hoặc nhiều |
+    | 0..1 | Không hoặc một |
+endlegend
 
 @enduml

@@ -1,65 +1,371 @@
-@startuml
-skinparam maxMessageSize 150
+@startuml PerFin_Sequence_01_TextInput
+' ===========================================================
+' 1. Nhập liệu bằng văn bản → AI Engine → Tự động phân loại → Lưu giao dịch
+' ===========================================================
+title **Luồng 1: Nhập giao dịch bằng văn bản**
 
-== 1. Flow Nhập liệu Văn bản & Phân loại tự động ==
-actor User
-participant "Mobile App" as App
-participant "API Gateway" as API
+skinparam style strictuml
+skinparam sequenceMessageAlign center
+skinparam backgroundColor #FEFEFE
+skinparam handwritten false
+
+actor "Người dùng" as User
+participant "Ứng dụng\nPerFin" as App
 participant "AI Engine" as AI
-participant "Database" as DB
+database "Cơ sở dữ liệu" as DB
 
-User -> App: Nhập text "Uống cafe 50k"
-App -> API: POST /transactions/text
-API -> AI: Phân tích NLP (text)
-AI --> API: JSON {Amount: 50000, Category: "Ăn uống", Type: Expense}
-API -> DB: Lưu Transaction
-DB --> API: Success
-API --> App: Trả về UI giao dịch đã lưu
-App --> User: Hiển thị giao dịch & số dư mới
+autonumber
 
-== 2. Flow Nhập liệu Giọng nói ==
-participant "Speech-to-Text API" as STT
+User -> App : Nhập văn bản giao dịch\n("Ăn phở 50k sáng nay")
+App -> AI : Gửi văn bản để phân tích NLP
+AI -> AI : Phân tích ngữ nghĩa\n(trích xuất: số tiền, danh mục, thời gian)
+AI --> App : Trả về kết quả phân tích\n{amount: 50000, category: "Ăn uống",\ndate: "2026-05-27", note: "Ăn phở"}
 
-User -> App: Bấm mic & nói "Đổ xăng 100 ngàn"
-App -> STT: Gửi file audio
-STT --> App: Trả về text "Đổ xăng 100 ngàn"
-App -> API: POST /transactions/text
-API -> AI: Phân tích NLP (text)
-AI --> API: JSON {Amount: 100000, Category: "Di chuyển", Type: Expense}
-API -> DB: Lưu Transaction
-DB --> API: Success
-API --> App: Trả về UI giao dịch đã lưu
+App -> App : Hiển thị kết quả để xác nhận
+User -> App : Xác nhận thông tin giao dịch
 
-== 3. Flow Cảnh báo Ngân sách ==
-participant "Budget Service" as Budget
-participant "Push Notification" as Notification
+App -> DB : Lưu Transaction mới
+DB --> App : Xác nhận lưu thành công
+App -> DB : Lưu AILog (input, output, confidence)
+DB --> App : OK
 
-API -> DB: Lưu giao dịch chi phí mới
-DB --> API: Success
-API -> Budget: Trigger check_budget()
-Budget -> DB: Lấy ngân sách hiện tại & tổng chi
-DB --> Budget: Data
-Budget -> Budget: Tính toán tỷ lệ %
-alt Tỷ lệ >= 90%
-    Budget -> DB: Lưu BudgetAlert
-    Budget -> Notification: Send Warning Alert
-else Tỷ lệ >= 100%
-    Budget -> DB: Lưu BudgetAlert
-    Budget -> Notification: Send Exceeded Alert
+App --> User : Hiển thị thông báo\n"Đã lưu giao dịch thành công ✅"
+@enduml
+
+
+@startuml PerFin_Sequence_02_VoiceInput
+' ===========================================================
+' 2. Nhập liệu bằng giọng nói → Speech-to-Text → AI Engine → Lưu
+' ===========================================================
+title **Luồng 2: Nhập giao dịch bằng giọng nói**
+
+skinparam style strictuml
+skinparam backgroundColor #FEFEFE
+
+actor "Người dùng" as User
+participant "Ứng dụng\nPerFin" as App
+participant "Speech-to-Text\nService" as STT
+participant "AI Engine" as AI
+database "Cơ sở dữ liệu" as DB
+
+autonumber
+
+User -> App : Nhấn nút ghi âm 🎙️
+App -> App : Bắt đầu ghi âm
+User -> App : Nói: "Chi hai trăm ngàn\nđổ xăng xe máy"
+User -> App : Nhấn dừng ghi âm
+
+App -> STT : Gửi file âm thanh
+STT -> STT : Chuyển đổi giọng nói → văn bản
+STT --> App : Trả về văn bản:\n"Chi hai trăm ngàn đổ xăng xe máy"
+
+App -> AI : Gửi văn bản để phân tích NLP
+AI -> AI : Phân tích ngữ nghĩa\n(trích xuất thông tin giao dịch)
+AI --> App : Kết quả phân tích\n{amount: 200000, category: "Di chuyển",\nsubcategory: "Xăng dầu", type: "expense"}
+
+App -> App : Hiển thị kết quả để xác nhận
+User -> App : Xác nhận / chỉnh sửa
+
+App -> DB : Lưu Transaction
+DB --> App : OK
+App -> DB : Lưu AILog (voice input)
+DB --> App : OK
+
+App --> User : "Đã lưu giao dịch thành công ✅"
+@enduml
+
+
+@startuml PerFin_Sequence_03_OCRInput
+' ===========================================================
+' 3. Nhập liệu bằng hình ảnh/OCR → Hóa đơn chi tiết → Lưu nhiều giao dịch
+' ===========================================================
+title **Luồng 3: Nhập giao dịch bằng ảnh hóa đơn (OCR)**
+
+skinparam style strictuml
+skinparam backgroundColor #FEFEFE
+
+actor "Người dùng" as User
+participant "Ứng dụng\nPerFin" as App
+participant "OCR Service" as OCR
+participant "AI Engine" as AI
+database "Cơ sở dữ liệu" as DB
+
+autonumber
+
+User -> App : Chụp ảnh / chọn ảnh hóa đơn 📸
+App -> OCR : Gửi hình ảnh hóa đơn
+
+OCR -> OCR : Xử lý ảnh\n(tiền xử lý, nhận dạng ký tự)
+OCR --> App : Trả về văn bản trích xuất\n(raw text từ hóa đơn)
+
+App -> AI : Gửi raw text để phân tích
+AI -> AI : Phân tích hóa đơn chi tiết\n(nhận dạng từng mục hàng, số tiền, tổng cộng)
+AI --> App : Trả về danh sách giao dịch:\n[{item: "Gạo", amount: 120000, cat: "Thực phẩm"},\n {item: "Nước mắm", amount: 35000, cat: "Thực phẩm"},\n {item: "Bột giặt", amount: 89000, cat: "Sinh hoạt"}]
+
+App -> App : Hiển thị danh sách các mục\nđể người dùng xem & chỉnh sửa
+User -> App : Chỉnh sửa danh mục nếu cần
+User -> App : Xác nhận lưu tất cả
+
+loop Với mỗi mục hàng trong danh sách
+    App -> DB : Lưu Transaction
+    DB --> App : OK
 end
 
-== 4. Flow Ví dùng chung (Chia tiền) ==
-actor "User A (Payer)" as UserA
-participant "Shared Wallet Service" as Shared
-actor "User B" as UserB
+App -> DB : Lưu AILog (OCR input, kết quả)
+App -> DB : Lưu Attachment (ảnh hóa đơn gốc)
+DB --> App : OK
 
-UserA -> App: Chat vào ví chung "Ăn lẩu 600k chia đôi"
-App -> API: POST /shared-wallets/transactions
-API -> AI: Phân tích ngữ cảnh
-AI --> API: {Amount: 600k, Payer: A, Split: [A:300k, B:300k]}
-API -> Shared: Ghi nhận nợ (B nợ A 300k)
-Shared --> API: Success
-API --> App: Update UI
-API -> UserB: Push Notification "A đã thêm giao dịch..."
+App --> User : "Đã lưu 3 giao dịch thành công ✅"
+@enduml
 
+
+@startuml PerFin_Sequence_04_AIClarification
+' ===========================================================
+' 4. Luồng AI làm rõ thông tin (thiếu dữ liệu → hỏi → trả lời → lưu)
+' ===========================================================
+title **Luồng 4: AI làm rõ thông tin thiếu**
+
+skinparam style strictuml
+skinparam backgroundColor #FEFEFE
+
+actor "Người dùng" as User
+participant "Ứng dụng\nPerFin" as App
+participant "AI Engine" as AI
+participant "AI Personality" as Personality
+database "Cơ sở dữ liệu" as DB
+
+autonumber
+
+User -> App : Nhập: "Chi tiền sáng nay"
+App -> AI : Gửi văn bản để phân tích
+
+AI -> AI : Phân tích → phát hiện\nthiếu thông tin (số tiền?)
+AI --> App : Trả về: cần làm rõ\n{status: "need_clarification",\nmissing: ["amount"],\npartial: {date: "today", type: "expense"}}
+
+App -> DB : Lấy UserPersonalitySetting
+DB --> App : personality = "angry_mom"
+
+App -> Personality : Format câu hỏi theo tính cách "Angry Mom"
+Personality --> App : "Trời ơi con ơi! Chi bao nhiêu\nmà không nhớ? Nói mẹ nghe\nsố tiền đi con! 😤"
+
+App --> User : Hiển thị câu hỏi AI
+User -> App : Trả lời: "50 ngàn"
+
+App -> AI : Gửi thông tin bổ sung
+AI -> AI : Ghép thông tin:\n{amount: 50000, date: "today",\ntype: "expense", category: "Khác"}
+AI --> App : Kết quả hoàn chỉnh
+
+App -> App : Hiển thị để xác nhận
+User -> App : Chọn danh mục "Ăn uống"
+User -> App : Xác nhận lưu
+
+App -> DB : Lưu Transaction
+DB --> App : OK
+App -> DB : Lưu AILog (multi-turn conversation)
+DB --> App : OK
+
+App --> User : "Đã lưu! Lần sau nhớ nói\nrõ ràng nghen con! 😤✅"
+@enduml
+
+
+@startuml PerFin_Sequence_05_BudgetAlert
+' ===========================================================
+' 5. Luồng cảnh báo ngân sách (giao dịch mới → kiểm tra → cảnh báo)
+' ===========================================================
+title **Luồng 5: Cảnh báo ngân sách**
+
+skinparam style strictuml
+skinparam backgroundColor #FEFEFE
+
+actor "Người dùng" as User
+participant "Ứng dụng\nPerFin" as App
+database "Cơ sở dữ liệu" as DB
+participant "Budget Service" as BudgetSvc
+participant "Notification\nService" as Notif
+
+autonumber
+
+User -> App : Lưu giao dịch mới\n(Ăn uống - 150,000đ)
+App -> DB : INSERT Transaction
+DB --> App : OK
+
+App -> BudgetSvc : Kiểm tra ngân sách liên quan
+
+BudgetSvc -> DB : Lấy Budget theo category "Ăn uống"\n& Budget tổng (nếu có)
+DB --> BudgetSvc : Budget "Ăn uống": limit = 3,000,000đ
+
+BudgetSvc -> DB : Tính tổng chi tiêu tháng này\ncho category "Ăn uống"
+DB --> BudgetSvc : totalSpent = 2,700,000đ\n(đã bao gồm giao dịch mới)
+
+BudgetSvc -> BudgetSvc : Tính tỷ lệ: 2,700,000 / 3,000,000 = 90%\n→ Vượt ngưỡng cảnh báo (80%)
+
+BudgetSvc -> DB : Tạo BudgetAlert\n{type: "WARNING_90%", budgetId, percentage: 90}
+DB --> BudgetSvc : OK
+
+BudgetSvc --> App : Alert: Đã chi 90% ngân sách
+
+App -> Notif : Gửi push notification
+Notif --> User : 🔔 "Cảnh báo: Bạn đã chi 90%\nngân sách Ăn uống\n(2,700,000 / 3,000,000đ).\nCòn lại 300,000đ cho tháng này."
+
+alt Ngân sách vượt 100%
+    BudgetSvc -> DB : Tạo BudgetAlert {type: "EXCEEDED"}
+    BudgetSvc -> Notif : Gửi cảnh báo khẩn
+    Notif --> User : 🚨 "VƯỢT NGÂN SÁCH!\nBạn đã chi vượt mức cho phép."
+end
+@enduml
+
+
+@startuml PerFin_Sequence_06_RecurringReminder
+' ===========================================================
+' 6. Luồng nhắc nhở giao dịch định kỳ
+' ===========================================================
+title **Luồng 6: Nhắc nhở giao dịch định kỳ**
+
+skinparam style strictuml
+skinparam backgroundColor #FEFEFE
+
+participant "Hệ thống\nCron Job" as Cron
+participant "System Service" as System
+database "Cơ sở dữ liệu" as DB
+participant "Notification\nService" as Notif
+actor "Người dùng" as User
+participant "Ứng dụng\nPerFin" as App
+
+autonumber
+
+Cron -> System : Trigger kiểm tra hàng ngày (00:00)
+
+System -> DB : Lấy danh sách Reminder & RecurringTransaction\ncó nextDueDate = today
+DB --> System : Danh sách nhắc nhở:\n1. Tiền nhà (5,000,000đ) - RecurringTransaction\n2. Trả nợ (1,000,000đ) - Reminder (Debt)
+
+loop Với mỗi Reminder/RecurringTransaction
+    System -> Notif : Gửi push notification
+    Notif --> User : 🔔 "Nhắc nhở: Hôm nay cần trả\nTiền nhà 5,000,000đ"
+end
+
+User -> App : Mở thông báo nhắc nhở
+App --> User : Hiển thị chi tiết nhắc nhở
+
+alt Người dùng xác nhận đã chi
+    User -> App : Nhấn "Đã thanh toán"
+    App -> DB : Tạo Transaction từ RecurringTransaction
+    DB --> App : OK
+    App -> DB : Cập nhật nextDueDate\n(tính ngày tiếp theo theo recurrence rule)
+    DB --> App : OK
+    App --> User : "Đã ghi nhận thanh toán ✅"
+else Người dùng bỏ qua
+    User -> App : Nhấn "Nhắc lại sau"
+    App -> DB : Cập nhật Reminder\n(snooze / đánh dấu chưa xử lý)
+    DB --> App : OK
+else Tự động (không phản hồi)
+    System -> DB : Đánh dấu Reminder là "missed"
+    DB --> System : OK
+end
+@enduml
+
+
+@startuml PerFin_Sequence_07_ExportData
+' ===========================================================
+' 7. Luồng xuất dữ liệu (Export)
+' ===========================================================
+title **Luồng 7: Xuất dữ liệu**
+
+skinparam style strictuml
+skinparam backgroundColor #FEFEFE
+
+actor "Người dùng" as User
+participant "Ứng dụng\nPerFin" as App
+database "Cơ sở dữ liệu" as DB
+participant "Export Service" as ExportSvc
+participant "File Storage" as Storage
+
+autonumber
+
+User -> App : Chọn "Xuất dữ liệu"
+App --> User : Hiển thị tùy chọn xuất:\n- Định dạng: CSV / PDF\n- Khoảng thời gian\n- Danh mục / Ví
+
+User -> App : Chọn: PDF, Tháng 5/2026,\nTất cả danh mục, Ví "Tiền mặt"
+App -> DB : Tạo ExportJob\n{format: "PDF", status: "PENDING",\ndateRange, filters}
+DB --> App : exportJobId
+
+App -> ExportSvc : Bắt đầu xuất (exportJobId)
+
+ExportSvc -> DB : Lấy dữ liệu Transaction theo bộ lọc
+DB --> ExportSvc : Danh sách giao dịch
+
+ExportSvc -> DB : Lấy thông tin Category, Wallet
+DB --> ExportSvc : Metadata
+
+ExportSvc -> ExportSvc : Tạo file PDF\n(bảng biểu, tổng hợp, biểu đồ)
+
+ExportSvc -> Storage : Lưu file PDF
+Storage --> ExportSvc : fileUrl
+
+ExportSvc -> DB : Cập nhật ExportJob\n{status: "COMPLETED", fileUrl}
+DB --> ExportSvc : OK
+
+ExportSvc --> App : Xuất hoàn tất
+
+App --> User : 📄 "File PDF đã sẵn sàng!\nNhấn để tải xuống hoặc chia sẻ"
+
+User -> App : Nhấn "Tải xuống"
+App -> Storage : Tải file PDF
+Storage --> App : File PDF
+App --> User : Lưu file vào thiết bị ✅
+@enduml
+
+
+@startuml PerFin_Sequence_08_SharedWallet
+' ===========================================================
+' 8. Luồng chi tiêu ví chung (thêm chi phí → chia → tính nợ)
+' ===========================================================
+title **Luồng 8: Chi tiêu ví chung**
+
+skinparam style strictuml
+skinparam backgroundColor #FEFEFE
+
+actor "Chủ ví chung" as Owner
+participant "Ứng dụng\nPerFin" as App
+database "Cơ sở dữ liệu" as DB
+participant "Split Service" as SplitSvc
+participant "Notification\nService" as Notif
+actor "Thành viên A" as Member1
+actor "Thành viên B" as Member2
+
+autonumber
+
+Owner -> App : Mở Shared Wallet "Nhóm bạn"
+Owner -> App : Thêm chi phí mới:\n"Ăn lẩu" - 900,000đ
+
+App -> App : Hiển thị tùy chọn chia:\n- Chia đều\n- Chia theo tỷ lệ\n- Chia theo số tiền cụ thể
+
+Owner -> App : Chọn "Chia đều" cho 3 người\n(Owner, Member A, Member B)
+
+App -> SplitSvc : Tính toán chia tiền
+
+SplitSvc -> SplitSvc : Tính: 900,000 / 3 = 300,000đ mỗi người\nOwner đã trả → A nợ 300k, B nợ 300k
+
+SplitSvc -> DB : Lưu SharedTransaction\n{sharedWalletId, paidBy: Owner,\namount: 900000, splitMethod: "EQUAL"}
+DB --> SplitSvc : OK
+
+SplitSvc -> DB : Cập nhật số dư nợ từng thành viên\n- Member A: owes Owner 300,000đ\n- Member B: owes Owner 300,000đ
+DB --> SplitSvc : OK
+
+SplitSvc --> App : Kết quả chia tiền
+
+App -> Notif : Gửi thông báo cho các thành viên
+Notif --> Member1 : 🔔 "Owner đã thêm chi phí 'Ăn lẩu'\n900,000đ. Phần của bạn: 300,000đ"
+Notif --> Member2 : 🔔 "Owner đã thêm chi phí 'Ăn lẩu'\n900,000đ. Phần của bạn: 300,000đ"
+
+Member1 -> App : Xem chi tiết & nhấn "Đã trả"
+App -> DB : Cập nhật trạng thái thanh toán\nMember A → Owner: SETTLED
+DB --> App : OK
+
+App -> Notif : Thông báo cho Owner
+Notif --> Owner : "✅ Member A đã thanh toán 300,000đ"
+
+Owner -> App : Xem tổng hợp nợ ví chung
+App -> DB : Lấy tất cả outstanding debts
+DB --> App : Danh sách: Member B còn nợ 300,000đ
+App --> Owner : Hiển thị bảng tổng hợp nợ
 @enduml

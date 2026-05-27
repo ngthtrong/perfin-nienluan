@@ -1,56 +1,375 @@
-@startuml
-title 1. Flow Tạo Giao dịch mới (AI Processing)
+@startuml activity-diagrams
+title Sơ đồ Hoạt động — PerFin (Rolly)
+@enduml
 
+' ============================================================
+' SƠ ĐỒ 1: TẠO GIAO DỊCH MỚI (REQ-01)
+' ============================================================
+@startuml activity-01-create-transaction
+title 1. Tạo giao dịch mới\n(REQ-01: AI-Powered Multimodal Input)
+
+skinparam activityShape octagon
+skinparam shadowing false
+
+|Người dùng|
 start
-:User gửi Text/Voice/Image;
-if (Loại Input?) then (Voice)
-  :Gửi audio cho STT API;
-  :Nhận Text;
-else if (Image)
-  :Gửi ảnh cho OCR Service;
-  :Nhận Raw Text / Itemized Data;
-else (Text)
+:Mở màn hình tạo giao dịch;
+
+switch (Chọn phương thức nhập?)
+case (Văn bản)
+    :Nhập tin nhắn văn bản;
+case (Giọng nói)
+    :Ghi âm giọng nói;
+    |AI Engine|
+    :🎤 Voice-to-Text
+    Chuyển giọng nói → văn bản;
+case (Ảnh hóa đơn)
+    |Người dùng|
+    :Chụp hoặc chọn ảnh hóa đơn;
+    |AI Engine|
+    :📷 OCR Engine
+    Nhận diện nội dung hóa đơn;
+endswitch
+
+|AI Engine|
+:🧠 NLP Engine xử lý
+Trích xuất: số tiền, mô tả,
+ngày, loại giao dịch;
+
+if (Độ tin cậy AI >= 80%?) then (Có)
+    :🏷️ Phân loại tự động
+    Gán category & subcategory;
+else (Không)
+    |Người dùng|
+    :AI hỏi lại để làm rõ thông tin;
+    :Bổ sung thông tin;
+    |AI Engine|
+    :🧠 NLP Engine xử lý lại;
+    :🏷️ Phân loại tự động;
 endif
 
-:AI Engine Bóc tách dữ liệu;
-:Trích xuất Amount, Category, Wallet, Date;
+|Người dùng|
+:📋 Xem trước giao dịch
+(Số tiền, danh mục, ví, ngày);
 
-if (Thiếu thông tin quan trọng?) then (Yes)
-  :Hỏi lại User (Clarification);
-  :Chờ User phản hồi;
-  :Bổ sung thông tin;
-else (No)
+switch (Xác nhận?)
+case (Xác nhận)
+    :💰 Chọn ví thanh toán;
+case (Chỉnh sửa)
+    :Chỉnh sửa thông tin;
+    :📋 Xem trước lại;
+    :💰 Chọn ví thanh toán;
+case (Hủy)
+    stop
+endswitch
+
+|System|
+:💾 Lưu giao dịch vào DB
+(Trạng thái: Active);
+:🔄 Cập nhật số dư ví;
+:📋 Kiểm tra ngân sách;
+
+if (Vượt ngân sách?) then (Có)
+    :🔔 Gửi cảnh báo ngân sách;
+else (Không)
 endif
 
-:Phân loại Tự động (Auto-Categorization);
-:Lưu Giao dịch vào Database;
-:Kích hoạt kiểm tra Ngân sách (Trigger Budget Check);
+:📝 Ghi log AI
+(input, output, confidence);
+
 stop
 
 @enduml
 
-@startuml
-title 2. Flow Phân loại Tự động
+' ============================================================
+' SƠ ĐỒ 2: PHÂN LOẠI TỰ ĐỘNG (REQ-02)
+' ============================================================
+@startuml activity-02-auto-categorization
+title 2. Phân loại tự động\n(REQ-02: Auto-Categorization)
+
+skinparam shadowing false
+
+|AI Engine|
 start
-:Bắt đầu Phân loại;
-:Kiểm tra Lịch sử thói quen User;
-if (Tìm thấy Pattern?) then (Yes)
-  :Gán Category cũ;
-else (No)
-  :Gửi query cho LLM;
-  :Trích xuất Keywords;
-  :So khớp với danh sách Category của User;
-  if (Khớp chính xác?) then (Yes)
-    :Gán Category User;
-  else (No)
-    :So khớp với Category System mặc định;
-    if (Khớp System?) then (Yes)
-      :Gán Category System;
-    else (No)
-      :Gán vào danh mục "Khác" (Others);
-      :Gợi ý User tạo Category mới;
+:Nhận dữ liệu giao dịch;
+
+switch (Nhận diện loại giao dịch?)
+case (Chi tiêu)
+    :💸 Expense;
+case (Thu nhập)
+    :💰 Income;
+case (Nợ)
+    :📌 Debt;
+case (Cho vay)
+    :📌 Loan;
+case (Tiết kiệm)
+    :📌 Savings;
+case (Đầu tư)
+    :📌 Investment;
+endswitch
+
+:🔍 Tìm kiếm Category phù hợp
+(Keywords, lịch sử, ML model);
+
+if (Tìm thấy — Confidence >= 80%?) then (Có)
+    :✅ Gán Category & SubCategory;
+elseif (Confidence 50-79%?) then (Trung bình)
+    :💡 Gợi ý top 3 category;
+    |Người dùng|
+    if (Chọn gợi ý?) then (Có)
+        |AI Engine|
+        :✅ Gán Category đã chọn;
+    else (Không phù hợp)
+        |AI Engine|
+        :📁 Gán vào "Khác";
     endif
-  endif
+else (Không tìm thấy)
+    :📁 Gán vào "Khác"
+    (Danh mục hệ thống mặc định);
 endif
+
+if (Danh mục = "Khác"?) then (Có)
+    :💡 Gợi ý tạo danh mục mới;
+    |Người dùng|
+    if (Muốn tạo mới?) then (Có)
+        :Nhập tên danh mục mới;
+        |System|
+        if (Trùng danh mục đã tồn tại?) then (Có)
+            :⚠️ Hiển thị danh mục đã tồn tại;
+            |Người dùng|
+            :Chọn danh mục có sẵn;
+        else (Không)
+            :💾 Lưu danh mục mới;
+        endif
+        |AI Engine|
+        :✅ Gán Category mới;
+    else (Không)
+        :📁 Giữ nguyên "Khác";
+    endif
+else (Không)
+endif
+
+:🧠 Cập nhật ML model
+(Học từ phản hồi người dùng);
+
 stop
+
+@enduml
+
+' ============================================================
+' SƠ ĐỒ 3: QUẢN LÝ NGÂN SÁCH (REQ-03)
+' ============================================================
+@startuml activity-03-budget-management
+title 3. Quản lý ngân sách\n(REQ-03: Budget Management)
+
+skinparam shadowing false
+
+|Người dùng|
+start
+switch (Chọn loại ngân sách?)
+case (Theo danh mục)
+    :Chọn danh mục & nhập hạn mức;
+case (Tổng chi tiêu)
+    :Nhập tổng hạn mức chi tiêu;
+endswitch
+
+:Chọn chu kỳ
+(Tuần / Tháng / Năm);
+
+:Cài đặt mức cảnh báo
+(Mặc định: 70%, 90%, 100%);
+
+if (Bật rollover?) then (Có)
+    :✅ Bật Rollover
+    (Chuyển số dư sang kỳ tiếp);
+else (Không)
+    :❌ Tắt Rollover;
+endif
+
+|System|
+:💾 Lưu ngân sách
+(Trạng thái: Active);
+
+repeat
+    :🔄 Theo dõi chi tiêu
+    (Mỗi khi có giao dịch mới);
+
+    if (Tỷ lệ < 70%?) then (Có)
+        :✅ An toàn;
+    elseif (70% - 89%?) then (Gần hạn mức)
+        :🔔 Thông báo:
+        "Đã chi 70% ngân sách";
+    elseif (90% - 99%?) then (Cảnh báo)
+        :🔔 Thông báo mạnh:
+        "Đã chi 90% ngân sách!";
+    else (>= 100%)
+        :🔔 Cảnh báo khẩn:
+        "ĐÃ VƯỢT NGÂN SÁCH!";
+    endif
+
+repeat while (Hết chu kỳ?) is (Chưa)
+->Rồi;
+
+if (Rollover được bật?) then (Có)
+    :🔄 Tính rollover
+    (Số dư còn lại → kỳ tiếp);
+    :🔁 Gia hạn ngân sách mới
+    (Hạn mức + rollover);
+else (Không)
+    :🔁 Gia hạn ngân sách mới
+    (Reset về 0);
+endif
+
+stop
+
+@enduml
+
+' ============================================================
+' SƠ ĐỒ 4: XÓA DANH MỤC
+' ============================================================
+@startuml activity-04-delete-category
+title 4. Xóa danh mục\n(REQ-02 liên quan: Cascade Delete)
+
+skinparam shadowing false
+
+|Người dùng|
+start
+:Chọn danh mục cần xóa;
+
+|System|
+if (Là danh mục hệ thống?\n(vd: "Khác")) then (Có)
+    :⛔ Không thể xóa
+    danh mục hệ thống;
+    stop
+else (Không)
+endif
+
+:🔍 Kiểm tra mức độ sử dụng;
+
+:⚠️ Hiển thị cảnh báo:
+• Số giao dịch bị ảnh hưởng
+• Số subcategory sẽ bị xóa
+• Số ngân sách liên quan
+• Số AI log liên quan;
+
+if (Có subcategory?) then (Có)
+    :📋 Hiển thị danh sách
+    subcategory sẽ bị xóa;
+else (Không)
+endif
+
+|Người dùng|
+if (Xác nhận xóa?) then (Có)
+    :Nhập tên danh mục để xác nhận;
+    |System|
+    if (Tên nhập đúng?) then (Có)
+        :📦 Chuyển giao dịch về "Khác";
+        :🗑️ Xóa tất cả subcategory;
+        :🗑️ Xóa ngân sách liên quan;
+        :🔒 Ẩn danh hóa AI logs
+        (Thay tên bằng "[Đã xóa]");
+        :🗑️ Xóa danh mục;
+        :🔔 Thông báo thành công
+        • X giao dịch → "Khác"
+        • Y subcategory đã xóa;
+    else (Không)
+        :⛔ Hủy xóa (tên sai);
+    endif
+else (Không)
+    :Hủy thao tác xóa;
+endif
+
+stop
+
+@enduml
+
+' ============================================================
+' SƠ ĐỒ 5: SHARED WALLET EXPENSE FLOW (REQ-10)
+' ============================================================
+@startuml activity-05-shared-wallet
+title 5. Shared Wallet Expense Flow\n(REQ-10: Collaboration & Shared Wallets)
+
+skinparam shadowing false
+
+|Thành viên A (Người chi)|
+start
+:Thêm chi tiêu vào ví chung;
+:Nhập thông tin:
+• Số tiền
+• Mô tả
+• Danh mục
+• Ảnh hóa đơn (tùy chọn);
+
+switch (Chọn phương thức chia?)
+case (Chia đều)
+    :➗ Chia đều cho tất cả;
+case (Theo %)
+    :Nhập % cho từng thành viên;
+case (Theo số tiền)
+    :Nhập số tiền cho từng thành viên;
+case (Một người trả)
+    :💰 Một người chịu toàn bộ;
+endswitch
+
+|System|
+if (Tổng phần chia = 100%?) then (Có)
+    :💾 Lưu chi tiêu chung;
+else (Không)
+    |Thành viên A (Người chi)|
+    :Điều chỉnh lại phần chia;
+    |System|
+    :💾 Lưu chi tiêu chung;
+endif
+
+:🧮 Tính toán công nợ
+(Ai nợ ai bao nhiêu);
+
+:🔔 Gửi thông báo
+cho tất cả thành viên;
+
+|Thành viên B (Người nợ)|
+switch (Phản hồi?)
+case (Xác nhận)
+    :✅ Chấp nhận khoản nợ;
+case (Phản đối)
+    :Gửi lý do phản đối;
+    |Thành viên A (Người chi)|
+    if (Chấp nhận điều chỉnh?) then (Có)
+        |System|
+        :🔄 Điều chỉnh phần chia;
+        :🧮 Tính lại công nợ;
+    else (Không)
+        :📌 Giữ nguyên phần chia;
+    endif
+    |Thành viên B (Người nợ)|
+    :✅ Chấp nhận khoản nợ;
+case (Bỏ qua)
+    :⏳ Pending
+    (Nhắc lại sau 24h);
+    |System|
+    :⏰ Đặt nhắc nhở thanh toán;
+    |Thành viên B (Người nợ)|
+    :✅ Chấp nhận khoản nợ;
+endswitch
+
+if (Thanh toán ngay?) then (Có)
+    :💳 Ghi nhận thanh toán;
+    |System|
+    :🔄 Cập nhật số dư công nợ;
+    :🔔 Thông báo "Đã thanh toán";
+else (Không)
+    :📝 Ghi vào công nợ
+    (Balance tracking);
+    |System|
+    :⏰ Đặt nhắc nhở thanh toán;
+endif
+
+if (Tất cả đã thanh toán?) then (Có)
+    :✅ Ví chung: Đã tất toán;
+else (Chưa)
+    :⏳ Chờ thanh toán còn lại;
+endif
+
+stop
+
 @enduml

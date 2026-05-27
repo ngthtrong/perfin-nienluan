@@ -1,47 +1,231 @@
-@startuml
-left to right direction
+@startuml PerFin_UseCaseDiagram
+!theme plain
 skinparam packageStyle rectangle
-
-actor "Người dùng (User)" as User
-actor "AI Engine" as AI
-actor "Quản trị viên (Admin)" as Admin
-actor "Hệ thống (System)" as System
-
-rectangle "Rolly - Quản lý Tài chính Thông minh" {
-  usecase "Ghi chép giao dịch\n(Text/Voice/Image)" as UC1
-  usecase "Phân loại tự động\n(Auto-Categorization)" as UC2
-  usecase "Quản lý ngân sách\n(Budget)" as UC3
-  usecase "Xem báo cáo & Phân tích" as UC4
-  usecase "Quản lý đa ví\n(Multi-Account)" as UC5
-  usecase "Nhắc nhở & Lập lịch" as UC6
-  usecase "Xuất dữ liệu & Sao lưu" as UC7
-  usecase "Xác thực & Bảo mật" as UC8
-  usecase "Đổi nhân cách AI" as UC9
-  usecase "Quản lý ví dùng chung" as UC10
-  
-  usecase "Sinh AI Insight" as UC11
-  usecase "Cảnh báo vượt ngân sách" as UC12
+skinparam actorStyle awesome
+skinparam usecase {
+    BackgroundColor<<AI>> #E3F2FD
+    BackgroundColor<<System>> #FFF3E0
+    BackgroundColor<<Admin>> #FCE4EC
+    BorderColor #333333
+    ArrowColor #555555
+}
+skinparam rectangle {
+    RoundCorner 15
 }
 
-User --> UC1
-User --> UC3
-User --> UC4
-User --> UC5
-User --> UC6
-User --> UC7
-User --> UC8
-User --> UC9
-User --> UC10
+title Sơ đồ Use Case - PerFin (Rolly)\nỨng dụng Quản lý Tài chính Cá nhân
 
-AI --> UC2
-AI --> UC11
+' ===== ACTORS =====
+actor "Người dùng\n(User)" as User #LightBlue
+actor "AI Engine" as AIEngine #LightGreen
+actor "Hệ thống\n(System)" as System #LightYellow
+actor "Admin/\nReviewer" as Admin #LightCoral
 
-System --> UC12
-System --> UC7
-System --> UC6
+' ===== REQ-01: AI-Powered Multimodal Input =====
+rectangle "REQ-01: Nhập liệu đa phương thức AI" as REQ01 #E3F2FD {
+    usecase "UC01.1: Nhập giao dịch\nbằng văn bản" as UC01_1
+    usecase "UC01.2: Nhập giao dịch\nbằng giọng nói" as UC01_2
+    usecase "UC01.3: Nhập giao dịch\nbằng hình ảnh/OCR" as UC01_3
+    usecase "UC01.4: Xử lý NLP\ntrích xuất thông tin" as UC01_4 <<AI>>
+    usecase "UC01.5: Xử lý OCR\ntrích xuất hóa đơn" as UC01_5 <<AI>>
+    usecase "UC01.6: Chuyển đổi\ngiọng nói thành văn bản" as UC01_6 <<AI>>
+}
 
-UC1 .> UC2 : <<include>>
-UC4 .> UC11 : <<extend>>
-UC3 .> UC12 : <<extend>>
+' ===== REQ-02: Auto-Categorization =====
+rectangle "REQ-02: Tự động phân loại" as REQ02 #E8F5E9 {
+    usecase "UC02.1: Tự động phân loại\ngiao dịch" as UC02_1 <<AI>>
+    usecase "UC02.2: Quản lý danh mục\nmặc định" as UC02_2
+    usecase "UC02.3: Tạo danh mục\ntùy chỉnh" as UC02_3
+    usecase "UC02.4: Tạo danh mục con" as UC02_4
+    usecase "UC02.5: Sửa kết quả\nphân loại AI" as UC02_5
+    usecase "UC02.6: Học từ phản hồi\nngười dùng" as UC02_6 <<AI>>
+    usecase "UC02.7: Xem nhật ký AI\n(AI Log)" as UC02_7 <<Admin>>
+    usecase "UC02.8: Quản lý thói quen\nngười dùng (UserHabit)" as UC02_8
+}
+
+' ===== REQ-03: Budget Management =====
+rectangle "REQ-03: Quản lý ngân sách" as REQ03 #FFF3E0 {
+    usecase "UC03.1: Tạo ngân sách\ntheo danh mục" as UC03_1
+    usecase "UC03.2: Tạo ngân sách tổng" as UC03_2
+    usecase "UC03.3: Theo dõi\ntiến độ ngân sách" as UC03_3
+    usecase "UC03.4: Thiết lập\ncảnh báo ngân sách" as UC03_4
+    usecase "UC03.5: Gửi thông báo\nvượt ngân sách" as UC03_5 <<System>>
+    usecase "UC03.6: Chuyển dư\nngân sách (Rollover)" as UC03_6 <<System>>
+}
+
+' ===== REQ-04: Spending Analytics =====
+rectangle "REQ-04: Phân tích chi tiêu" as REQ04 #F3E5F5 {
+    usecase "UC04.1: Xem biểu đồ chi tiêu" as UC04_1
+    usecase "UC04.2: Xem xu hướng chi tiêu" as UC04_2
+    usecase "UC04.3: Nhận phân tích\nAI Insights" as UC04_3 <<AI>>
+    usecase "UC04.4: Tạo báo cáo tùy chỉnh" as UC04_4
+    usecase "UC04.5: So sánh chi tiêu\ntheo kỳ" as UC04_5
+}
+
+' ===== REQ-05: Multi-Account Management =====
+rectangle "REQ-05: Quản lý đa tài khoản" as REQ05 #E0F7FA {
+    usecase "UC05.1: Tạo ví\n(tiền mặt/ngân hàng/ví điện tử)" as UC05_1
+    usecase "UC05.2: Chuyển tiền\ngiữa các ví" as UC05_2
+    usecase "UC05.3: Xem tổng\ntài sản ròng" as UC05_3
+    usecase "UC05.4: Quản lý ví mặc định" as UC05_4
+    usecase "UC05.5: Cập nhật số dư ví" as UC05_5
+}
+
+' ===== REQ-06: Reminders & Special Transactions =====
+rectangle "REQ-06: Nhắc nhở & Giao dịch đặc biệt" as REQ06 #FBE9E7 {
+    usecase "UC06.1: Tạo nhắc nhở\ngiao dịch" as UC06_1
+    usecase "UC06.2: Tạo giao dịch\nđịnh kỳ" as UC06_2
+    usecase "UC06.3: Gửi thông báo\nnhắc nhở" as UC06_3 <<System>>
+    usecase "UC06.4: Quản lý\ncông nợ (Debt)" as UC06_4
+    usecase "UC06.5: Quản lý\nkhoản vay (Loan)" as UC06_5
+    usecase "UC06.6: Quản lý\ntiết kiệm (Savings)" as UC06_6
+    usecase "UC06.7: Quản lý\nđầu tư (Investment)" as UC06_7
+    usecase "UC06.8: Tự động tạo\ngiao dịch định kỳ" as UC06_8 <<System>>
+}
+
+' ===== REQ-07: Export & Backup =====
+rectangle "REQ-07: Xuất dữ liệu & Sao lưu" as REQ07 #F1F8E9 {
+    usecase "UC07.1: Xuất báo cáo CSV" as UC07_1
+    usecase "UC07.2: Xuất báo cáo PDF" as UC07_2
+    usecase "UC07.3: Sao lưu dữ liệu" as UC07_3
+    usecase "UC07.4: Khôi phục dữ liệu" as UC07_4
+    usecase "UC07.5: Tự động\nsao lưu định kỳ" as UC07_5 <<System>>
+}
+
+' ===== REQ-08: Security & Authentication =====
+rectangle "REQ-08: Bảo mật & Xác thực" as REQ08 #FCE4EC {
+    usecase "UC08.1: Đăng ký tài khoản" as UC08_1
+    usecase "UC08.2: Đăng nhập\nemail/mật khẩu" as UC08_2
+    usecase "UC08.3: Đăng nhập\nGoogle OAuth" as UC08_3
+    usecase "UC08.4: Đăng nhập\nFacebook OAuth" as UC08_4
+    usecase "UC08.5: Xác thực\nhai yếu tố (2FA)" as UC08_5
+    usecase "UC08.6: Mã hóa dữ liệu" as UC08_6 <<System>>
+    usecase "UC08.7: Quản lý\nphiên đăng nhập" as UC08_7 <<System>>
+}
+
+' ===== REQ-09: AI Personalities =====
+rectangle "REQ-09: Nhân cách AI" as REQ09 #EDE7F6 {
+    usecase "UC09.1: Chọn nhân cách\nAI chatbot" as UC09_1
+    usecase "UC09.2: Trò chuyện với AI" as UC09_2
+    usecase "UC09.3: Nhận lời khuyên\ntài chính từ AI" as UC09_3 <<AI>>
+    usecase "UC09.4: Quản lý\nnhân cách AI" as UC09_4 <<Admin>>
+}
+
+' ===== REQ-10: Collaboration & Shared Wallets =====
+rectangle "REQ-10: Cộng tác & Ví chung" as REQ10 #E0F2F1 {
+    usecase "UC10.1: Tạo ví chung\n(Shared Wallet)" as UC10_1
+    usecase "UC10.2: Mời thành viên\nvào ví chung" as UC10_2
+    usecase "UC10.3: Theo dõi\nchi tiêu nhóm" as UC10_3
+    usecase "UC10.4: Chia bill\n(Split Bills)" as UC10_4
+    usecase "UC10.5: Quản lý\nvai trò thành viên" as UC10_5
+}
+
+' ===== RELATIONSHIPS: User =====
+User --> UC01_1
+User --> UC01_2
+User --> UC01_3
+
+User --> UC02_3
+User --> UC02_4
+User --> UC02_5
+
+User --> UC03_1
+User --> UC03_2
+User --> UC03_3
+User --> UC03_4
+
+User --> UC04_1
+User --> UC04_2
+User --> UC04_3
+User --> UC04_4
+User --> UC04_5
+
+User --> UC05_1
+User --> UC05_2
+User --> UC05_3
+User --> UC05_4
+User --> UC05_5
+
+User --> UC06_1
+User --> UC06_2
+User --> UC06_4
+User --> UC06_5
+User --> UC06_6
+User --> UC06_7
+
+User --> UC07_1
+User --> UC07_2
+User --> UC07_3
+User --> UC07_4
+
+User --> UC08_1
+User --> UC08_2
+User --> UC08_3
+User --> UC08_4
+User --> UC08_5
+
+User --> UC09_1
+User --> UC09_2
+User --> UC09_3
+
+User --> UC10_1
+User --> UC10_2
+User --> UC10_3
+User --> UC10_4
+User --> UC10_5
+
+' ===== RELATIONSHIPS: AI Engine =====
+AIEngine --> UC01_4
+AIEngine --> UC01_5
+AIEngine --> UC01_6
+AIEngine --> UC02_1
+AIEngine --> UC02_6
+AIEngine --> UC02_8
+AIEngine --> UC04_3
+AIEngine --> UC09_2
+AIEngine --> UC09_3
+
+' ===== RELATIONSHIPS: System =====
+System --> UC02_2
+System --> UC03_5
+System --> UC03_6
+System --> UC06_3
+System --> UC06_8
+System --> UC07_5
+System --> UC08_6
+System --> UC08_7
+
+' ===== RELATIONSHIPS: Admin/Reviewer =====
+Admin --> UC02_2
+Admin --> UC02_7
+Admin --> UC02_8
+Admin --> UC09_4
+
+' ===== INCLUDE / EXTEND =====
+UC01_1 ..> UC01_4 : <<include>>
+UC01_2 ..> UC01_6 : <<include>>
+UC01_2 ..> UC01_4 : <<include>>
+UC01_3 ..> UC01_5 : <<include>>
+UC01_3 ..> UC01_4 : <<include>>
+
+UC01_1 ..> UC02_1 : <<include>>
+UC01_2 ..> UC02_1 : <<include>>
+UC01_3 ..> UC02_1 : <<include>>
+
+UC02_5 ..> UC02_6 : <<extend>>
+
+UC03_1 ..> UC03_4 : <<extend>>
+UC03_3 ..> UC03_5 : <<extend>>
+
+UC05_2 ..> UC05_5 : <<include>>
+
+UC06_2 ..> UC06_8 : <<include>>
+
+UC07_1 ..> UC07_3 : <<extend>>
+UC07_2 ..> UC07_3 : <<extend>>
+
+UC08_2 ..> UC08_5 : <<extend>>
+UC08_3 ..> UC08_5 : <<extend>>
+UC08_4 ..> UC08_5 : <<extend>>
 
 @enduml

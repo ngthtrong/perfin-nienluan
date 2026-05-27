@@ -1,70 +1,123 @@
-@startuml
-skinparam componentStyle rectangle
+@startuml component-diagram
+!theme plain
+title Sơ đồ Thành phần — PerFin (Rolly)\nKiến trúc hệ thống quản lý tài chính cá nhân
 
-package "Client Tier" {
-  [Mobile App (iOS/Android)] as App
+skinparam componentStyle uml2
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam defaultFontSize 12
+skinparam ArrowColor #555555
+
+' ===== TẦNG CLIENT =====
+package "📱 Tầng Client — Mobile App\n(Flutter / React Native)" as ClientTier #E3F2FD {
+    component [💬 Chat UI\n(Nhập liệu AI)] as ChatUI
+    component [💰 Transaction UI\n(Quản lý giao dịch)] as TransactionUI
+    component [📊 Report UI\n(Báo cáo & Phân tích)] as ReportUI
+    component [⚙️ Settings UI\n(Cài đặt)] as SettingsUI
+    component [👥 Shared Wallet UI\n(Ví chung)] as SharedWalletUI
 }
 
-package "API Gateway" {
-  [API Gateway] as Gateway
-  [Auth Service] as Auth
+' ===== API GATEWAY =====
+package "🌐 API Gateway" as GatewayTier #FFF3E0 {
+    component [API Gateway\n(Rate Limiting, Routing,\nAuth Check)] as APIGateway
 }
 
-package "Core Microservices" {
-  [Transaction Service] as TxSvc
-  [Category Service] as CatSvc
-  [Wallet Service] as WalletSvc
-  [Budget Service] as BudgetSvc
-  [Report Service] as ReportSvc
-  [Reminder Service] as ReminderSvc
-  [Shared Wallet Service] as SharedSvc
-  [Export & Backup Service] as ExportSvc
+' ===== TẦNG DỊCH VỤ LÕI =====
+package "🔧 Tầng Dịch vụ Lõi" as CoreTier #E8F5E9 {
+    component [🔐 Auth Service\n(JWT, OAuth 2.0, 2FA)] as AuthService
+    component [💳 Transaction Service\n(CRUD giao dịch)] as TransactionService
+    component [🏷️ Category Service\n(Danh mục mặc định\n& tùy chỉnh)] as CategoryService
+    component [📋 Budget Service\n(Ngân sách & cảnh báo)] as BudgetService
+    component [⏰ Reminder Service\n(Nhắc nhở & định kỳ)] as ReminderService
+    component [👥 Shared Wallet Service\n(Ví chung & chia tiền)] as SharedWalletService
+    component [📤 Export Service\n(CSV, PDF)] as ExportService
+    component [💾 Backup Service\n(Sao lưu & khôi phục)] as BackupService
+    component [📈 Report & Analytics\nService\n(Biểu đồ & xu hướng)] as ReportService
+    component [🔔 Notification Service\n(Push Notifications)] as NotificationService
 }
 
-package "AI Services" {
-  [AI Orchestrator] as AIGateway
-  [NLP Engine] as NLP
-  [Personality Engine] as Persona
+' ===== TẦNG AI =====
+package "🤖 Tầng Dịch vụ AI" as AITier #F3E5F5 {
+    component [AI Service\n(Điều phối)] as AIService
+    component [🧠 NLP Engine\n(Xử lý ngôn ngữ\ntự nhiên)] as NLPEngine
+    component [📷 OCR Engine\n(Nhận diện hóa đơn)] as OCREngine
+    component [🎤 Voice-to-Text\n(Giọng nói → Văn bản)] as VoiceToText
+    component [🏷️ Categorization Engine\n(Phân loại tự động)] as CategorizationEngine
+    component [🎭 Personality Engine\n(Nhân cách AI chatbot)] as PersonalityEngine
 }
 
-cloud "External APIs" {
-  [LLM API] as LLM
-  [Speech-to-Text API] as STT
-  [OCR Service] as OCR
+' ===== TẦNG DỮ LIỆU =====
+package "🗄️ Tầng Dữ liệu" as DataTier #FFF9C4 {
+    database "🐘 PostgreSQL / MongoDB\n(Cơ sở dữ liệu chính)" as Database
+    storage "☁️ Object Storage — S3\n(Ảnh, exports, backups)" as ObjectStorage
 }
 
-database "Data Tier" {
-  [PostgreSQL] as DB
-  [Redis Cache] as Cache
-  [S3 Object Storage] as S3
+' ===== API BÊN NGOÀI =====
+package "🌍 API Bên ngoài" as ExternalTier #FFEBEE {
+    component [Google OAuth API] as GoogleOAuth
+    component [Facebook OAuth API] as FacebookOAuth
+    component [LLM API\n(GPT / Gemini)] as LLMAPI
+    component [Speech-to-Text API\n(Google / Whisper)] as SpeechAPI
 }
 
-App --> Gateway
-Gateway --> Auth
-Gateway --> TxSvc
-Gateway --> CatSvc
-Gateway --> WalletSvc
-Gateway --> BudgetSvc
-Gateway --> ReportSvc
-Gateway --> ReminderSvc
-Gateway --> SharedSvc
-Gateway --> ExportSvc
-Gateway --> AIGateway
+' ===== KẾT NỐI CLIENT → GATEWAY =====
+ChatUI --> APIGateway
+TransactionUI --> APIGateway
+ReportUI --> APIGateway
+SettingsUI --> APIGateway
+SharedWalletUI --> APIGateway
 
-AIGateway --> NLP
-AIGateway --> Persona
-NLP --> LLM
-AIGateway --> STT
-AIGateway --> OCR
+' ===== GATEWAY → CORE SERVICES =====
+APIGateway --> AuthService
+APIGateway --> TransactionService
+APIGateway --> CategoryService
+APIGateway --> BudgetService
+APIGateway --> ReminderService
+APIGateway --> SharedWalletService
+APIGateway --> ExportService
+APIGateway --> BackupService
+APIGateway --> ReportService
+APIGateway --> AIService
 
-TxSvc --> DB
-CatSvc --> DB
-WalletSvc --> DB
-BudgetSvc --> DB
-SharedSvc --> DB
-ReportSvc --> Cache
-ReportSvc --> DB
-ExportSvc --> S3
-ExportSvc --> DB
+' ===== AI SERVICE → SUB-ENGINES =====
+AIService --> NLPEngine
+AIService --> OCREngine
+AIService --> VoiceToText
+AIService --> CategorizationEngine
+AIService --> PersonalityEngine
+
+' ===== LIÊN KẾT GIỮA CÁC DỊCH VỤ =====
+TransactionService --> CategoryService : Tra cứu danh mục
+TransactionService --> BudgetService : Cập nhật chi tiêu
+TransactionService --> NotificationService : Thông báo
+BudgetService --> NotificationService : Cảnh báo ngân sách
+ReminderService --> TransactionService : Tạo giao dịch tự động
+ReminderService --> NotificationService : Nhắc nhở
+SharedWalletService --> TransactionService : Ghi nhận chi tiêu
+SharedWalletService --> NotificationService : Thông báo thành viên
+ReportService --> TransactionService : Truy vấn dữ liệu
+ExportService --> TransactionService : Xuất dữ liệu
+CategorizationEngine --> CategoryService : Tra cứu & gán danh mục
+
+' ===== SERVICES → DATA TIER =====
+TransactionService --> Database
+CategoryService --> Database
+BudgetService --> Database
+ReminderService --> Database
+SharedWalletService --> Database
+AuthService --> Database
+ReportService --> Database
+AIService --> Database
+ExportService --> ObjectStorage : Lưu file xuất
+BackupService --> ObjectStorage : Lưu bản sao lưu
+BackupService --> Database : Sao lưu / Khôi phục
+OCREngine --> ObjectStorage : Đọc ảnh hóa đơn
+
+' ===== EXTERNAL API CONNECTIONS =====
+AuthService --> GoogleOAuth : Đăng nhập Google
+AuthService --> FacebookOAuth : Đăng nhập Facebook
+NLPEngine --> LLMAPI : Xử lý NLP
+PersonalityEngine --> LLMAPI : Tạo phản hồi chatbot
+VoiceToText --> SpeechAPI : Chuyển giọng nói
 
 @enduml
