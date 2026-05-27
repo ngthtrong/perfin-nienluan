@@ -1,0 +1,72 @@
+@startuml
+skinparam node {
+    BackgroundColor white
+    BorderColor black
+}
+
+node "Client Tier" {
+    [iOS App (Flutter)] as iOS
+    [Android App (Flutter)] as Android
+}
+
+cloud "CDN / Load Balancer" {
+    [Cloudflare] as CDN
+}
+
+node "Application Tier (Kubernetes)" {
+    [API Gateway (Kong / Nginx)] as Gateway
+    
+    node "Microservices (Docker)" {
+        [Auth Service] as AuthSvc
+        [Transaction Service] as TxSvc
+        [Category Service] as CatSvc
+        [Budget Service] as BudgetSvc
+        [Report Service] as ReportSvc
+        [Reminder Service] as ReminderSvc
+        [Shared Wallet Service] as SharedSvc
+        [AI Orchestrator] as AIGwSvc
+    }
+}
+
+cloud "AI / External APIs" {
+    [Google Gemini / OpenAI GPT] as LLM
+    [Google Speech-to-Text] as STT
+    [Google Cloud Vision / AWS Textract] as OCR
+}
+
+database "Data Tier" {
+    [Primary DB (PostgreSQL)] as PrimaryDB
+    [Cache (Redis)] as RedisCache
+    [Object Storage (AWS S3)] as S3Storage
+}
+
+iOS --> CDN
+Android --> CDN
+
+CDN --> Gateway
+
+Gateway --> AuthSvc
+Gateway --> TxSvc
+Gateway --> CatSvc
+Gateway --> BudgetSvc
+Gateway --> ReportSvc
+Gateway --> ReminderSvc
+Gateway --> SharedSvc
+Gateway --> AIGwSvc
+
+AIGwSvc --> LLM
+AIGwSvc --> STT
+AIGwSvc --> OCR
+
+TxSvc --> PrimaryDB
+CatSvc --> PrimaryDB
+BudgetSvc --> PrimaryDB
+SharedSvc --> PrimaryDB
+AuthSvc --> PrimaryDB
+
+ReportSvc --> RedisCache
+ReportSvc --> PrimaryDB
+
+TxSvc --> S3Storage
+
+@enduml

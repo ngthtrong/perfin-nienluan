@@ -1,0 +1,70 @@
+@startuml
+skinparam componentStyle rectangle
+
+package "Client Tier" {
+  [Mobile App (iOS/Android)] as App
+}
+
+package "API Gateway" {
+  [API Gateway] as Gateway
+  [Auth Service] as Auth
+}
+
+package "Core Microservices" {
+  [Transaction Service] as TxSvc
+  [Category Service] as CatSvc
+  [Wallet Service] as WalletSvc
+  [Budget Service] as BudgetSvc
+  [Report Service] as ReportSvc
+  [Reminder Service] as ReminderSvc
+  [Shared Wallet Service] as SharedSvc
+  [Export & Backup Service] as ExportSvc
+}
+
+package "AI Services" {
+  [AI Orchestrator] as AIGateway
+  [NLP Engine] as NLP
+  [Personality Engine] as Persona
+}
+
+cloud "External APIs" {
+  [LLM API] as LLM
+  [Speech-to-Text API] as STT
+  [OCR Service] as OCR
+}
+
+database "Data Tier" {
+  [PostgreSQL] as DB
+  [Redis Cache] as Cache
+  [S3 Object Storage] as S3
+}
+
+App --> Gateway
+Gateway --> Auth
+Gateway --> TxSvc
+Gateway --> CatSvc
+Gateway --> WalletSvc
+Gateway --> BudgetSvc
+Gateway --> ReportSvc
+Gateway --> ReminderSvc
+Gateway --> SharedSvc
+Gateway --> ExportSvc
+Gateway --> AIGateway
+
+AIGateway --> NLP
+AIGateway --> Persona
+NLP --> LLM
+AIGateway --> STT
+AIGateway --> OCR
+
+TxSvc --> DB
+CatSvc --> DB
+WalletSvc --> DB
+BudgetSvc --> DB
+SharedSvc --> DB
+ReportSvc --> Cache
+ReportSvc --> DB
+ExportSvc --> S3
+ExportSvc --> DB
+
+@enduml

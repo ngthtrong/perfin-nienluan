@@ -1,0 +1,56 @@
+@startuml
+title 1. Flow Tạo Giao dịch mới (AI Processing)
+
+start
+:User gửi Text/Voice/Image;
+if (Loại Input?) then (Voice)
+  :Gửi audio cho STT API;
+  :Nhận Text;
+else if (Image)
+  :Gửi ảnh cho OCR Service;
+  :Nhận Raw Text / Itemized Data;
+else (Text)
+endif
+
+:AI Engine Bóc tách dữ liệu;
+:Trích xuất Amount, Category, Wallet, Date;
+
+if (Thiếu thông tin quan trọng?) then (Yes)
+  :Hỏi lại User (Clarification);
+  :Chờ User phản hồi;
+  :Bổ sung thông tin;
+else (No)
+endif
+
+:Phân loại Tự động (Auto-Categorization);
+:Lưu Giao dịch vào Database;
+:Kích hoạt kiểm tra Ngân sách (Trigger Budget Check);
+stop
+
+@enduml
+
+@startuml
+title 2. Flow Phân loại Tự động
+start
+:Bắt đầu Phân loại;
+:Kiểm tra Lịch sử thói quen User;
+if (Tìm thấy Pattern?) then (Yes)
+  :Gán Category cũ;
+else (No)
+  :Gửi query cho LLM;
+  :Trích xuất Keywords;
+  :So khớp với danh sách Category của User;
+  if (Khớp chính xác?) then (Yes)
+    :Gán Category User;
+  else (No)
+    :So khớp với Category System mặc định;
+    if (Khớp System?) then (Yes)
+      :Gán Category System;
+    else (No)
+      :Gán vào danh mục "Khác" (Others);
+      :Gợi ý User tạo Category mới;
+    endif
+  endif
+endif
+stop
+@enduml

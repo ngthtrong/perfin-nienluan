@@ -1,0 +1,65 @@
+@startuml
+skinparam maxMessageSize 150
+
+== 1. Flow Nhập liệu Văn bản & Phân loại tự động ==
+actor User
+participant "Mobile App" as App
+participant "API Gateway" as API
+participant "AI Engine" as AI
+participant "Database" as DB
+
+User -> App: Nhập text "Uống cafe 50k"
+App -> API: POST /transactions/text
+API -> AI: Phân tích NLP (text)
+AI --> API: JSON {Amount: 50000, Category: "Ăn uống", Type: Expense}
+API -> DB: Lưu Transaction
+DB --> API: Success
+API --> App: Trả về UI giao dịch đã lưu
+App --> User: Hiển thị giao dịch & số dư mới
+
+== 2. Flow Nhập liệu Giọng nói ==
+participant "Speech-to-Text API" as STT
+
+User -> App: Bấm mic & nói "Đổ xăng 100 ngàn"
+App -> STT: Gửi file audio
+STT --> App: Trả về text "Đổ xăng 100 ngàn"
+App -> API: POST /transactions/text
+API -> AI: Phân tích NLP (text)
+AI --> API: JSON {Amount: 100000, Category: "Di chuyển", Type: Expense}
+API -> DB: Lưu Transaction
+DB --> API: Success
+API --> App: Trả về UI giao dịch đã lưu
+
+== 3. Flow Cảnh báo Ngân sách ==
+participant "Budget Service" as Budget
+participant "Push Notification" as Notification
+
+API -> DB: Lưu giao dịch chi phí mới
+DB --> API: Success
+API -> Budget: Trigger check_budget()
+Budget -> DB: Lấy ngân sách hiện tại & tổng chi
+DB --> Budget: Data
+Budget -> Budget: Tính toán tỷ lệ %
+alt Tỷ lệ >= 90%
+    Budget -> DB: Lưu BudgetAlert
+    Budget -> Notification: Send Warning Alert
+else Tỷ lệ >= 100%
+    Budget -> DB: Lưu BudgetAlert
+    Budget -> Notification: Send Exceeded Alert
+end
+
+== 4. Flow Ví dùng chung (Chia tiền) ==
+actor "User A (Payer)" as UserA
+participant "Shared Wallet Service" as Shared
+actor "User B" as UserB
+
+UserA -> App: Chat vào ví chung "Ăn lẩu 600k chia đôi"
+App -> API: POST /shared-wallets/transactions
+API -> AI: Phân tích ngữ cảnh
+AI --> API: {Amount: 600k, Payer: A, Split: [A:300k, B:300k]}
+API -> Shared: Ghi nhận nợ (B nợ A 300k)
+Shared --> API: Success
+API --> App: Update UI
+API -> UserB: Push Notification "A đã thêm giao dịch..."
+
+@enduml
