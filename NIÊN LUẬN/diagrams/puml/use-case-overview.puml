@@ -1,0 +1,32 @@
+@startuml PerFin_UseCase_Overview
+!theme plain
+skinparam packageStyle rectangle
+skinparam actorStyle awesome
+
+title Sơ đồ Use Case Tổng quan - PerFin
+
+actor "Người dùng (User)" as User #LightBlue
+actor "AI Engine" as AIEngine #LightGreen
+actor "Hệ thống (System)" as System #LightYellow
+actor "Admin/Reviewer" as Admin #LightCoral
+
+rectangle "Hệ thống PerFin" {
+    usecase "Quản lý Tài chính & Ví chung\n(REQ-03, REQ-05, REQ-06, REQ-10)" as GroupCore
+    usecase "Xử lý & Phân loại bằng AI\n(REQ-01, REQ-02, REQ-09)" as GroupAI
+    usecase "Phân tích, Sao lưu & Bảo mật\n(REQ-04, REQ-07, REQ-08)" as GroupSystem
+}
+
+User --> GroupCore
+User --> GroupAI
+User --> GroupSystem
+
+AIEngine --> GroupAI
+AIEngine --> GroupCore
+AIEngine --> GroupSystem
+
+System --> GroupCore
+System --> GroupSystem
+
+Admin --> GroupAI
+Admin --> GroupSystem
+@enduml

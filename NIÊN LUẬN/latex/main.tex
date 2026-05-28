@@ -1,0 +1,131 @@
+\documentclass[12pt,a4paper]{report}
+
+% Tự động nhận diện trình biên dịch (pdfLaTeX hoặc XeLaTeX/LuaLaTeX)
+\usepackage{iftex}
+
+\ifPDFTeX
+  % Cấu hình cho pdfLaTeX (Sử dụng VNTeX mặc định hỗ trợ 100% Tiếng Việt)
+  \usepackage[utf8]{vietnam}
+  \usepackage{amssymb}
+\else
+  % Cấu hình cho XeLaTeX / LuaLaTeX (Sử dụng trực tiếp font hệ thống Times New Roman và Arial)
+  \usepackage{fontspec}
+  \setmainfont{Times New Roman}
+  \setsansfont{Arial}
+  \usepackage{amssymb}
+\fi
+
+% Cấu hình canh lề (Margins) theo tiêu chuẩn
+\usepackage[a4paper, left=3.5cm, right=2.0cm, top=2.0cm, bottom=2.0cm]{geometry}
+
+% Các gói hỗ trợ định dạng bảng, ảnh và màu sắc
+\usepackage{tabularx}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{titlesec}
+\usepackage{indentfirst} % Thụt đầu dòng ở đầu chương/mục
+\usepackage{hyperref}
+
+% Cấu hình liên kết clickable trong PDF
+\hypersetup{
+    colorlinks=true,
+    linkcolor=black,
+    filecolor=magenta,      
+    urlcolor=blue,
+    pdftitle={Nien Luan PerFin Report},
+    pdfpagemode=FullScreen,
+}
+
+% Định nghĩa các icon cảnh báo và tích xanh thay thế emoji
+\newcommand{\warningicon}{\textcolor{red}{\textbf{[!]}}}
+\newcommand{\checkicon}{\textcolor{green}{\textbf{[\checkmark]}}}
+
+% Cấu hình định dạng tiêu đề (Headings) theo Guideline
+% Chapter (Heading 1): Font Arial (helvet), Size 14, Bold, Uppercase, Canh giữa
+\titleformat{\chapter}[block]
+  {\normalfont\sffamily\large\bfseries\centering}
+  {\MakeUppercase{\chaptertitlename}\ \thechapter: }
+  {0.5em}
+  {\large\MakeUppercase}
+
+% Section (Heading 2): Font Arial, Size 13, Bold, Uppercase
+\titleformat{\section}
+  {\normalfont\sffamily\large\bfseries}
+  {\thesection.\ }
+  {0.5em}
+  {\MakeUppercase}
+
+% Subsection (Heading 3): Font Arial, Size 13, Bold, Italic, Lowercase
+\titleformat{\subsection}
+  {\normalfont\sffamily\normalsize\bfseries\itshape}
+  {\thesubsection.\ }
+  {0.5em}
+  {}
+
+% Subsubsection (Heading 4): Font Arial, Size 13, Italic, Lowercase
+\titleformat{\subsubsection}
+  {\normalfont\sffamily\normalsize\itshape}
+  {\thesubsubsection.\ }
+  {0.5em}
+  {}
+
+% Điều chỉnh khoảng cách thụt đầu dòng và khoảng cách đoạn văn
+\setlength{\parindent}{1cm}
+\setlength{\parskip}{6pt}
+
+% Nạp file cấu hình Metadata
+\input{metadata.tex}
+
+\begin{document}
+
+% 1. TRANG BÌA
+\input{chapters/cover.tex}
+
+\pagenumbering{roman}
+\setcounter{page}{1}
+
+% 2. TÓM TẮT (ABSTRACT)
+\input{chapters/abstract.tex}
+\newpage
+
+% 3. MỤC LỤC & DANH MỤC
+\tableofcontents
+\newpage
+
+\listoftables
+\addcontentsline{toc}{chapter}{Danh mục bảng}
+\newpage
+
+\listoffigures
+\addcontentsline{toc}{chapter}{Danh mục hình}
+\newpage
+
+% 4. DANH MỤC CÁC TỪ VIẾT TẮT
+\input{chapters/abbreviations.tex}
+\newpage
+
+% Đổi sang đánh số trang Ả Rập cho phần nội dung chính
+\pagenumbering{arabic}
+\setcounter{page}{1}
+
+% 5. CÁC CHƯƠNG NỘI DUNG CHÍNH
+\input{chapters/introduction.tex}
+\newpage
+
+\input{chapters/theory.tex}
+\newpage
+
+\input{chapters/results.tex}
+\newpage
+
+\input{chapters/conclusion.tex}
+\newpage
+
+% 6. TÀI LIỆU THAM KHẢO
+\input{chapters/references.tex}
+\newpage
+
+% 7. PHỤ LỤC (APPENDICES) - Chứa SRS chi tiết REQ-01 đến REQ-09
+\input{chapters/appendices.tex}
+
+\end{document}

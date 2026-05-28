@@ -1,0 +1,32 @@
+\chapter{GIỚI THIỆU}
+\label{ch:introduction}
+
+\section{Đặt vấn đề}
+\label{sec:problem_statement}
+
+Trong bối cảnh kinh tế hiện đại, việc quản lý tài chính cá nhân ngày càng trở nên quan trọng, đặc biệt đối với giới trẻ --- những người thường gặp khó khăn trong việc kiểm soát chi tiêu và xây dựng thói quen tài chính lành mạnh. Các ứng dụng quản lý tài chính hiện có trên thị trường (Money Lover, Misa, Spendy...) tuy cung cấp đầy đủ tính năng ghi chép thu chi, nhưng đa phần mang tính thủ công cao: người dùng phải mở ứng dụng, chọn danh mục, nhập số tiền, chọn ngày tháng --- quá trình này tạo rào cản thao tác khiến nhiều người bỏ cuộc sau vài ngày sử dụng.
+
+Sự phát triển vượt bậc của Trí tuệ nhân tạo (AI), đặc biệt các Mô hình Ngôn ngữ Lớn (LLM) như GPT, Gemini, đã mở ra hướng tiếp cận mới: cho phép người dùng tương tác bằng ngôn ngữ tự nhiên thay vì các biểu mẫu cứng nhắc. Người dùng chỉ cần gõ ``trà sữa 50k'' hoặc chụp tờ hóa đơn, hệ thống AI sẽ tự động bóc tách dữ liệu, phân loại danh mục, và ghi nhận giao dịch.
+
+Xuất phát từ nhu cầu thực tiễn đó, đề tài \textbf{``Ứng dụng mobile quản lý tài chính cá nhân bằng trí tuệ nhân tạo --- PerFin''} được thực hiện nhằm xây dựng một giải pháp quản lý tài chính cá nhân thông minh, lấy trải nghiệm hội thoại (conversational interface) làm trung tâm, kết hợp các kỹ thuật AI tiên tiến để tự động hóa tối đa quy trình ghi chép và phân tích tài chính.
+
+\section{Mục tiêu}
+\label{sec:objectives}
+
+Đề tài hướng đến các mục tiêu cụ thể sau:
+
+\begin{enumerate}
+    \item \textbf{Xây dựng hệ thống nhập liệu đa phương thức bằng AI}: Cho phép người dùng ghi chép giao dịch thông qua chat văn bản tự nhiên, tin nhắn giọng nói (Voice-to-Text), và chụp ảnh/tải hóa đơn (OCR). Hệ thống sử dụng NLP và LLM để tự động bóc tách thông tin giao dịch (tên, số tiền, danh mục).
+    
+    \item \textbf{Phân loại giao dịch thông minh}: Xây dựng hệ thống tự động phân loại giao dịch vào danh mục phù hợp dựa trên ngữ cảnh, có khả năng học từ phản hồi người dùng (feedback loop).
+    
+    \item \textbf{Quản lý ngân sách và cảnh báo chủ động}: Cho phép thiết lập hạn mức chi tiêu theo danh mục hoặc tổng thể, theo dõi tiến độ chi tiêu real-time, và gửi cảnh báo chủ động khi đạt ngưỡng 70\%, 90\%, 100\%.
+    
+    \item \textbf{Phân tích và báo cáo cá nhân hóa}: Cung cấp biểu đồ trực quan và nhận xét AI dựa trên thói quen chi tiêu, phát hiện xu hướng bất thường, đưa ra tư vấn tài chính cá nhân hóa.
+    
+    \item \textbf{Quản lý đa tài khoản và dòng tiền}: Hỗ trợ nhiều ví/tài khoản (tiền mặt, ngân hàng, ví điện tử, đầu tư), theo dõi dòng tiền, tính tài sản ròng (Net Worth), phân biệt Transfer/Investment/Expense.
+    
+    \item \textbf{Tăng cường trải nghiệm người dùng với nhân cách AI}: Áp dụng yếu tố gamification và tâm lý hành vi (Behavioral Psychology) thông qua các nhân cách AI đa dạng (Chuyên gia tài chính, Bà mẹ nghiêm khắc, Bạn thân...).
+    
+    \item \textbf{Đảm bảo bảo mật và xuất dữ liệu}: Hỗ trợ xuất dữ liệu CSV/PDF, sao lưu/khôi phục, mã hóa dữ liệu, và xác thực an toàn.
+\end{enumerate}

@@ -1,0 +1,87 @@
+@startuml PerFin_UseCase_Core
+!theme plain
+skinparam packageStyle rectangle
+skinparam actorStyle awesome
+skinparam usecase {
+    BackgroundColor<<System>> #FFF3E0
+    BorderColor #333333
+}
+
+title Sơ đồ Use Case: Quản lý Tài chính & Ví chung (Core Features)
+
+actor "Người dùng\n(User)" as User #LightBlue
+actor "Hệ thống\n(System)" as System #LightYellow
+
+rectangle "Quản lý Tài chính & Ví chung" {
+    ' REQ-03: Budget Management
+    rectangle "REQ-03: Quản lý ngân sách" as REQ03 #FFF3E0 {
+        usecase "UC03.1: Tạo ngân sách\ntheo danh mục" as UC03_1
+        usecase "UC03.2: Tạo ngân sách tổng" as UC03_2
+        usecase "UC03.3: Theo dõi\ntiến độ ngân sách" as UC03_3
+        usecase "UC03.4: Thiết lập\ncảnh báo ngân sách" as UC03_4
+        usecase "UC03.5: Gửi thông báo\nvượt ngân sách" as UC03_5 <<System>>
+        usecase "UC03.6: Chuyển dư\nngân sách (Rollover)" as UC03_6 <<System>>
+    }
+
+    ' REQ-05: Multi-Account Management
+    rectangle "REQ-05: Quản lý đa tài khoản" as REQ05 #E0F7FA {
+        usecase "UC05.1: Tạo ví\n(tiền mặt/ngân hàng/ví điện tử)" as UC05_1
+        usecase "UC05.2: Chuyển tiền\ngiữa các ví" as UC05_2
+        usecase "UC05.3: Xem tổng\ntài sản ròng" as UC05_3
+        usecase "UC05.4: Quản lý ví mặc định" as UC05_4
+        usecase "UC05.5: Cập nhật số dư ví" as UC05_5
+    }
+
+    ' REQ-06: Reminders & Special Transactions
+    rectangle "REQ-06: Nhắc nhở & Giao dịch đặc biệt" as REQ06 #FBE9E7 {
+        usecase "UC06.1: Tạo nhắc nhở\ngiao dịch" as UC06_1
+        usecase "UC06.2: Tạo giao dịch\nđịnh kỳ" as UC06_2
+        usecase "UC06.3: Gửi thông báo\nnhắc nhở" as UC06_3 <<System>>
+        usecase "UC06.4: Quản lý\ncông nợ (Debt)" as UC06_4
+        usecase "UC06.5: Quản lý\nkhoản vay (Loan)" as UC06_5
+        usecase "UC06.6: Quản lý\ntiết kiệm (Savings)" as UC06_6
+        usecase "UC06.7: Quản lý\nđầu tư (Investment)" as UC06_7
+        usecase "UC06.8: Tự động tạo\ngiao dịch định kỳ" as UC06_8 <<System>>
+    }
+
+    ' REQ-10: Collaboration & Shared Wallets
+    rectangle "REQ-10: Cộng tác & Ví chung" as REQ10 #E0F2F1 {
+        usecase "UC10.1: Tạo ví chung\n(Shared Wallet)" as UC10_1
+        usecase "UC10.2: Mời thành viên\nvào ví chung" as UC10_2
+        usecase "UC10.3: Theo dõi\nchi tiêu nhóm" as UC10_3
+        usecase "UC10.4: Chia bill\n(Split Bills)" as UC10_4
+        usecase "UC10.5: Quản lý\nvai trò thành viên" as UC10_5
+    }
+}
+
+User --> UC03_1
+User --> UC03_2
+User --> UC03_3
+User --> UC03_4
+User --> UC05_1
+User --> UC05_2
+User --> UC05_3
+User --> UC05_4
+User --> UC05_5
+User --> UC06_1
+User --> UC06_2
+User --> UC06_4
+User --> UC06_5
+User --> UC06_6
+User --> UC06_7
+User --> UC10_1
+User --> UC10_2
+User --> UC10_3
+User --> UC10_4
+User --> UC10_5
+
+System --> UC03_5
+System --> UC03_6
+System --> UC06_3
+System --> UC06_8
+
+UC03_1 ..> UC03_4 : <<extend>>
+UC03_3 ..> UC03_5 : <<extend>>
+UC05_2 ..> UC05_5 : <<include>>
+UC06_2 ..> UC06_8 : <<include>>
+@enduml

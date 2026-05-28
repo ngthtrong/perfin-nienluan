@@ -1,0 +1,242 @@
+\section{REQ-01: Nhập liệu đa phương thức bằng AI (AI-Powered Input)}
+
+
+
+\subsection{Metadata}
+
+\begin{itemize}
+\item \textbf{Brief nguồn}: BRIEF-01.md
+\item \textbf{Ngày tạo}: 25/05/2026
+\item \textbf{Lần cập nhật cuối}: 25/05/2026 — cập nhật theo phản hồi PO lần 2
+\item \textbf{Trạng thái}: DRAFT — chờ PO phê duyệt
+\end{itemize}
+\subsection{Tóm tắt}
+
+Cho phép người dùng tạo giao dịch thu/chi mới thông qua giao diện hội thoại bằng văn bản tự nhiên, tin nhắn thoại hoặc hình ảnh. Trong phạm vi MVP, hình ảnh được hỗ trợ gồm: hóa đơn, bill chuyển khoản và ảnh bối cảnh. Hệ thống sử dụng AI để đọc hiểu đầu vào tiếng Việt, tiếng Anh hoặc câu pha trộn Việt - Anh; bóc tách tên giao dịch và giá tiền; suy đoán danh mục tương ứng nếu tên giao dịch đủ rõ; hỏi lại khi thiếu hoặc không chắc thông tin; lưu giao dịch hợp lệ; đồng thời cho phép chỉnh sửa, xóa mềm và khôi phục giao dịch trong thời gian cho phép.
+
+
+
+\subsection{Actors}
+
+\begin{itemize}
+\item \textbf{User}: Người dùng cuối ghi nhận, chỉnh sửa, xóa hoặc khôi phục giao dịch.
+\item \textbf{AI Engine}: Thành phần xử lý văn bản, giọng nói, hình ảnh và trích xuất thông tin giao dịch.
+\item \textbf{System}: Ứng dụng lưu trữ giao dịch, phản hồi kết quả, ghi nhận lịch sử xử lý, quản lý trạng thái giao dịch và quản lý ngữ cảnh chat.
+\item \textbf{Admin/Reviewer}: Người đánh giá thủ công log phản hồi AI để cải thiện chất lượng hệ thống.
+\end{itemize}
+\subsection{Yêu cầu Chức năng}
+
+
+
+\subsubsection{FR-01-01: Nhập liệu bằng văn bản tự nhiên}
+
+\textbf{Mô tả}: Người dùng có thể gửi tin nhắn văn bản tự nhiên để tạo giao dịch thu/chi. Nội dung có thể bao gồm tên giao dịch, số tiền, thời gian, ví/tài khoản và phép tính đơn giản.
+
+
+
+\textbf{Acceptance Criteria}:
+
+\begin{itemize}
+\item \textbf{Given} người dùng đang ở màn hình chat  \\ \hspace*{1.5em}  \textbf{When} người dùng nhập tin nhắn \texttt{Trà sữa 50k x 2 ly} và gửi  \\ \hspace*{1.5em}  \textbf{Then} hệ thống chuyển nội dung cho AI Engine để bóc tách giao dịch và tính tổng số tiền là \texttt{100.000đ}.
+\item \textbf{Given} người dùng đang ở màn hình chat  \\ \hspace*{1.5em}  \textbf{When} người dùng nhập tin nhắn bằng tiếng Việt, tiếng Anh hoặc câu pha trộn Việt - Anh có đủ thông tin giao dịch hợp lệ  \\ \hspace*{1.5em}  \textbf{Then} hệ thống tạo giao dịch mới từ nội dung người dùng cung cấp.
+\item \textbf{Given} người dùng nhập tên giao dịch và giá tiền, ví dụ \texttt{ăn sáng 30k}  \\ \hspace*{1.5em}  \textbf{When} AI Engine xác định tên giao dịch đủ rõ để suy đoán danh mục  \\ \hspace*{1.5em}  \textbf{Then} hệ thống tạo giao dịch với tên giao dịch, số tiền và danh mục tương ứng do AI Engine suy đoán.
+\end{itemize}
+\warningicon\  AMBIGUOUS: Chưa rõ phạm vi phép tính cần hỗ trợ gồm những dạng nào ngoài nhân đơn giản, ví dụ cộng nhiều món, giảm giá, phần trăm, phí ship.
+
+
+
+\warningicon\  AMBIGUOUS: “Tên giao dịch đủ rõ để LLM suy đoán danh mục” cần được kiểm chứng thêm ở REQ-02: Phân loại thông minh.
+
+
+
+\subsubsection{FR-01-02: Nhập liệu bằng giọng nói}
+
+\textbf{Mô tả}: Người dùng có thể ghi âm giọng nói để tạo giao dịch. Hệ thống chuyển giọng nói thành văn bản trước khi AI Engine bóc tách giao dịch. Nội dung giọng nói cần hỗ trợ tiếng Việt, tiếng Anh hoặc câu nói pha trộn Việt - Anh.
+
+
+
+\textbf{Acceptance Criteria}:
+
+\begin{itemize}
+\item \textbf{Given} người dùng đang ở màn hình chat  \\ \hspace*{1.5em}  \textbf{When} người dùng ghi âm một đoạn thoại có thời lượng không quá \texttt{60 giây} và gửi  \\ \hspace*{1.5em}  \textbf{Then} hệ thống chuyển giọng nói thành văn bản và gửi văn bản đó cho AI Engine xử lý.
+\item \textbf{Given} người dùng ghi âm đoạn thoại bằng tiếng Việt, tiếng Anh hoặc câu pha trộn Việt - Anh  \\ \hspace*{1.5em}  \textbf{When} hệ thống chuyển giọng nói thành văn bản thành công  \\ \hspace*{1.5em}  \textbf{Then} AI Engine sử dụng transcript để bóc tách thông tin giao dịch.
+\item \textbf{Given} người dùng ghi âm đoạn thoại vượt quá \texttt{60 giây}  \\ \hspace*{1.5em}  \textbf{When} người dùng gửi đoạn ghi âm  \\ \hspace*{1.5em}  \textbf{Then} hệ thống từ chối xử lý và hiển thị thông báo rằng thời lượng ghi âm vượt quá giới hạn cho phép.
+\end{itemize}
+\warningicon\  AMBIGUOUS: Chưa rõ có cần hỗ trợ tiếng địa phương, giọng nói nhiễu, nói nhanh hoặc nhiều người nói trong cùng một đoạn ghi âm hay không.
+
+
+
+\subsubsection{FR-01-03: Nhập liệu bằng hình ảnh trong MVP}
+
+\textbf{Mô tả}: Người dùng có thể tải lên hoặc chụp ảnh để tạo giao dịch. Trong MVP, hệ thống hỗ trợ 3 loại ảnh: hóa đơn, bill chuyển khoản và ảnh bối cảnh thực tế kèm mô tả ngắn.
+
+
+
+\textbf{Acceptance Criteria}:
+
+\begin{itemize}
+\item \textbf{Given} người dùng tải lên ảnh hóa đơn có thông tin mặt hàng và giá tiền rõ ràng  \\ \hspace*{1.5em}  \textbf{When} hệ thống xử lý ảnh  \\ \hspace*{1.5em}  \textbf{Then} AI Engine trích xuất được tên giao dịch, giá tiền và thời gian nếu có trên hóa đơn.
+\item \textbf{Given} người dùng tải lên ảnh bill chuyển khoản có số tiền rõ ràng nhưng không có nội dung giao dịch  \\ \hspace*{1.5em}  \textbf{When} AI Engine không xác định được mục đích giao dịch  \\ \hspace*{1.5em}  \textbf{Then} hệ thống không tự lưu giao dịch và hỏi lại người dùng về nội dung/mục đích giao dịch.
+\item \textbf{Given} người dùng tải lên ảnh bối cảnh, ví dụ ảnh rửa xe, kèm tin nhắn \texttt{30k}  \\ \hspace*{1.5em}  \textbf{When} hệ thống xử lý đồng thời ảnh và tin nhắn  \\ \hspace*{1.5em}  \textbf{Then} AI Engine tạo giao dịch với mô tả phù hợp với bối cảnh ảnh, số tiền \texttt{30.000đ}, và lưu ảnh làm tệp đính kèm của giao dịch.
+\item \textbf{Given} người dùng tải lên ảnh không thuộc 3 loại ảnh MVP gồm hóa đơn, bill chuyển khoản hoặc ảnh bối cảnh  \\ \hspace*{1.5em}  \textbf{When} hệ thống không thể xác định loại ảnh phù hợp để tạo giao dịch  \\ \hspace*{1.5em}  \textbf{Then} hệ thống không lưu giao dịch và phản hồi rằng loại ảnh này chưa được hỗ trợ trong MVP.
+\end{itemize}
+\subsubsection{FR-01-04: Bóc tách hóa đơn nhiều mặt hàng theo ngữ cảnh}
+
+\textbf{Mô tả}: Với hóa đơn có nhiều mặt hàng, mặc định hệ thống bóc tách thành nhiều giao dịch chi tiết. Tuy nhiên, hệ thống phải phân tích thêm ngữ cảnh người dùng cung cấp để quyết định chỉ lưu một hoặc một số mặt hàng cụ thể nếu người dùng nói rõ mục tiêu cần ghi nhận.
+
+
+
+\textbf{Acceptance Criteria}:
+
+\begin{itemize}
+\item \textbf{Given} người dùng tải lên hóa đơn có nhiều mặt hàng thuộc nhiều nhóm khác nhau, ví dụ rau củ và dầu gội  \\ \hspace*{1.5em}  \textbf{When} người dùng không cung cấp thêm ngữ cảnh giới hạn mặt hàng cần ghi nhận  \\ \hspace*{1.5em}  \textbf{Then} hệ thống mặc định bóc tách các mặt hàng thành nhiều giao dịch chi tiết tương ứng.
+\item \textbf{Given} người dùng tải lên bill một buổi uống nước có nhiều món  \\ \hspace*{1.5em}  \textbf{When} người dùng gửi kèm tin nhắn chỉ nhắc đến một món cụ thể, ví dụ \texttt{matcha latte}  \\ \hspace*{1.5em}  \textbf{Then} hệ thống chỉ tạo giao dịch cho món \texttt{matcha latte} với số tiền tương ứng trên bill, thay vì lưu toàn bộ bill.
+\item \textbf{Given} người dùng tải lên bill có nhiều món và tin nhắn kèm theo không khớp rõ với mặt hàng nào trên bill  \\ \hspace*{1.5em}  \textbf{When} AI Engine không xác định chắc chắn mặt hàng cần ghi nhận  \\ \hspace*{1.5em}  \textbf{Then} hệ thống hỏi lại người dùng để chọn đúng mặt hàng trước khi lưu.
+\item \textbf{Given} hóa đơn có phí dịch vụ, giảm giá, VAT hoặc phí ship  \\ \hspace*{1.5em}  \textbf{When} hệ thống bóc tách các mặt hàng từ hóa đơn  \\ \hspace*{1.5em}  \textbf{Then} hệ thống lưu từng giao dịch chi tiết theo đúng giá hiển thị trên bill, không tự phân bổ lại phí dịch vụ, giảm giá, VAT hoặc phí ship vào từng giao dịch nếu bill không thể hiện rõ.
+\item \textbf{Given} AI Engine không đủ tin cậy để tách chính xác các mặt hàng trong hóa đơn  \\ \hspace*{1.5em}  \textbf{When} hệ thống xử lý xong hóa đơn  \\ \hspace*{1.5em}  \textbf{Then} hệ thống hỏi người dùng xác nhận hoặc cung cấp thêm thông tin trước khi lưu.
+\end{itemize}
+\warningicon\  AMBIGUOUS: “Khớp rõ” hoặc “không xác định chắc chắn” cần được định nghĩa bằng tiêu chí kiểm thử cụ thể hơn khi thiết kế AI rule/prompt ở bước kỹ thuật.
+
+
+
+\subsubsection{FR-01-05: Lưu tự động giao dịch hợp lệ}
+
+\textbf{Mô tả}: Khi AI Engine bóc tách được thông tin giao dịch hợp lệ và không còn dữ liệu quan trọng bị thiếu, hệ thống tự động lưu giao dịch để giảm thao tác cho người dùng.
+
+
+
+\textbf{Acceptance Criteria}:
+
+\begin{itemize}
+\item \textbf{Given} AI Engine đã bóc tách được tên giao dịch và giá tiền  \\ \hspace*{1.5em}  \textbf{When} tên giao dịch đủ rõ để AI Engine suy đoán được danh mục tương ứng  \\ \hspace*{1.5em}  \textbf{Then} hệ thống xem giao dịch là hợp lệ và tự động lưu vào cơ sở dữ liệu.
+\item \textbf{Given} AI Engine bóc tách được giá tiền nhưng thiếu tên giao dịch  \\ \hspace*{1.5em}  \textbf{When} hệ thống nhận kết quả xử lý từ AI Engine  \\ \hspace*{1.5em}  \textbf{Then} hệ thống không lưu giao dịch và hỏi lại người dùng tên/nội dung giao dịch.
+\item \textbf{Given} AI Engine bóc tách được tên giao dịch nhưng thiếu giá tiền  \\ \hspace*{1.5em}  \textbf{When} hệ thống nhận kết quả xử lý từ AI Engine  \\ \hspace*{1.5em}  \textbf{Then} hệ thống không lưu giao dịch và hỏi lại người dùng số tiền giao dịch.
+\item \textbf{Given} tên giao dịch quá mơ hồ khiến AI Engine không suy đoán được danh mục tương ứng  \\ \hspace*{1.5em}  \textbf{When} hệ thống nhận kết quả xử lý từ AI Engine  \\ \hspace*{1.5em}  \textbf{Then} hệ thống không tự lưu giao dịch và hỏi lại người dùng để cung cấp thêm ngữ cảnh.
+\end{itemize}
+\subsubsection{FR-01-06: Chỉnh sửa và xóa giao dịch bằng ngôn ngữ tự nhiên}
+
+\textbf{Mô tả}: Người dùng có thể yêu cầu chỉnh sửa hoặc xóa giao dịch đã lưu bằng câu lệnh hội thoại tự nhiên trong chat.
+
+
+
+\textbf{Acceptance Criteria}:
+
+\begin{itemize}
+\item \textbf{Given} người dùng đã có giao dịch \texttt{Rửa xe 30.000đ} được lưu ngày hôm qua  \\ \hspace*{1.5em}  \textbf{When} người dùng nhập \texttt{Hãy xóa rửa xe ngày hôm qua}  \\ \hspace*{1.5em}  \textbf{Then} hệ thống xác định giao dịch phù hợp, chuyển giao dịch đó sang trạng thái đã xóa mềm và phản hồi xác nhận cho người dùng.
+\item \textbf{Given} người dùng đã có giao dịch \texttt{Ăn lẩu} được lưu ngày hôm qua  \\ \hspace*{1.5em}  \textbf{When} người dùng nhập \texttt{Chỉnh sửa ăn lẩu hôm qua thành 300k}  \\ \hspace*{1.5em}  \textbf{Then} hệ thống cập nhật số tiền giao dịch thành \texttt{300.000đ} và phản hồi xác nhận cho người dùng.
+\item \textbf{Given} câu lệnh chỉnh sửa hoặc xóa có thể khớp với nhiều giao dịch  \\ \hspace*{1.5em}  \textbf{When} hệ thống không xác định được duy nhất một giao dịch cần thao tác  \\ \hspace*{1.5em}  \textbf{Then} hệ thống hỏi lại người dùng để chọn đúng giao dịch trước khi cập nhật hoặc xóa.
+\end{itemize}
+\subsubsection{FR-01-07: Khôi phục giao dịch sau khi xóa}
+
+\textbf{Mô tả}: Người dùng có thể khôi phục giao dịch vừa xóa trong vòng \texttt{30 giây} để tránh mất dữ liệu do thao tác nhầm.
+
+
+
+\textbf{Acceptance Criteria}:
+
+\begin{itemize}
+\item \textbf{Given} người dùng vừa xóa một giao dịch bằng chat  \\ \hspace*{1.5em}  \textbf{When} hệ thống phản hồi xác nhận đã xóa  \\ \hspace*{1.5em}  \textbf{Then} hệ thống phải hiển thị hoặc cung cấp khả năng khôi phục giao dịch đã xóa đó trong vòng \texttt{30 giây}.
+\item \textbf{Given} người dùng đã xóa một giao dịch và giao dịch đó vẫn đang trong vòng \texttt{30 giây} kể từ thời điểm xóa  \\ \hspace*{1.5em}  \textbf{When} người dùng nhập yêu cầu khôi phục bằng ngôn ngữ tự nhiên, ví dụ \texttt{khôi phục giao dịch vừa xóa}  \\ \hspace*{1.5em}  \textbf{Then} hệ thống khôi phục giao dịch đó và phản hồi xác nhận cho người dùng.
+\item \textbf{Given} giao dịch đã bị xóa quá \texttt{30 giây}  \\ \hspace*{1.5em}  \textbf{When} người dùng yêu cầu khôi phục giao dịch đó  \\ \hspace*{1.5em}  \textbf{Then} hệ thống không khôi phục giao dịch và phản hồi rằng thời gian khôi phục đã hết.
+\item \textbf{Given} yêu cầu khôi phục có thể khớp với nhiều giao dịch đã xóa trong vòng \texttt{30 giây}  \\ \hspace*{1.5em}  \textbf{When} hệ thống không xác định được duy nhất giao dịch cần khôi phục  \\ \hspace*{1.5em}  \textbf{Then} hệ thống hỏi lại người dùng để chọn đúng giao dịch trước khi khôi phục, nếu vẫn còn trong thời gian cho phép.
+\end{itemize}
+\subsubsection{FR-01-08: Xóa mềm và xóa cứng giao dịch}
+
+\textbf{Mô tả}: Khi người dùng xóa giao dịch, hệ thống không xóa khỏi cơ sở dữ liệu ngay lập tức. Giao dịch được chuyển sang trạng thái xóa mềm, sau đó bị xóa cứng sau \texttt{48 giờ}.
+
+
+
+\textbf{Acceptance Criteria}:
+
+\begin{itemize}
+\item \textbf{Given} người dùng yêu cầu xóa một giao dịch  \\ \hspace*{1.5em}  \textbf{When} hệ thống xác định đúng giao dịch cần xóa  \\ \hspace*{1.5em}  \textbf{Then} hệ thống chuyển giao dịch sang trạng thái xóa mềm và không hiển thị giao dịch đó trong danh sách giao dịch đang hoạt động.
+\item \textbf{Given} một giao dịch đã ở trạng thái xóa mềm chưa quá \texttt{48 giờ}  \\ \hspace*{1.5em}  \textbf{When} hệ thống kiểm tra trạng thái dữ liệu  \\ \hspace*{1.5em}  \textbf{Then} giao dịch vẫn còn được lưu trong hệ thống để phục vụ truy vết/xử lý nội bộ theo phạm vi cho phép.
+\item \textbf{Given} một giao dịch đã ở trạng thái xóa mềm quá \texttt{48 giờ}  \\ \hspace*{1.5em}  \textbf{When} hệ thống thực hiện tiến trình dọn dữ liệu  \\ \hspace*{1.5em}  \textbf{Then} hệ thống xóa cứng giao dịch đó khỏi nơi lưu trữ giao dịch chính.
+\end{itemize}
+\warningicon\  AMBIGUOUS: Chưa rõ sau khi xóa cứng, dữ liệu liên quan trong log AI/feedback có cần ẩn danh hóa hoặc xóa theo giao dịch gốc hay không.
+
+
+
+\subsubsection{FR-01-09: Luồng hỏi lại khi thiếu hoặc mơ hồ thông tin}
+
+\textbf{Mô tả}: Khi đầu vào không đủ thông tin để tạo giao dịch chính xác, hệ thống phải hỏi lại thay vì lưu sai. Ngữ cảnh hội thoại được giữ trong \texttt{48 giờ} để hỗ trợ hoàn tất giao dịch và tránh gửi quá nhiều context cho LLM.
+
+
+
+\textbf{Acceptance Criteria}:
+
+\begin{itemize}
+\item \textbf{Given} hệ thống nhận được tin nhắn, giọng nói hoặc hình ảnh có thiếu thông tin quan trọng  \\ \hspace*{1.5em}  \textbf{When} AI Engine không thể xác định giao dịch hợp lệ  \\ \hspace*{1.5em}  \textbf{Then} hệ thống phản hồi bằng câu hỏi làm rõ và không lưu giao dịch vào cơ sở dữ liệu.
+\item \textbf{Given} hệ thống đã hỏi lại người dùng về thông tin còn thiếu  \\ \hspace*{1.5em}  \textbf{When} người dùng trả lời bổ sung thông tin trong vòng \texttt{48 giờ}  \\ \hspace*{1.5em}  \textbf{Then} hệ thống kết hợp câu trả lời mới với ngữ cảnh trước đó để tiếp tục tạo giao dịch.
+\item \textbf{Given} ngữ cảnh hội thoại đã quá \texttt{48 giờ}  \\ \hspace*{1.5em}  \textbf{When} hệ thống chuẩn bị context gửi cho LLM  \\ \hspace*{1.5em}  \textbf{Then} hệ thống không đưa nội dung thô của khung chat đã quá \texttt{48 giờ} vào context xử lý.
+\item \textbf{Given} người dùng trả lời bổ sung cho một câu hỏi làm rõ sau khi ngữ cảnh liên quan đã quá \texttt{48 giờ}  \\ \hspace*{1.5em}  \textbf{When} hệ thống không còn đủ ngữ cảnh để tiếp tục xử lý chính xác  \\ \hspace*{1.5em}  \textbf{Then} hệ thống yêu cầu người dùng cung cấp lại thông tin giao dịch cần thiết.
+\end{itemize}
+\subsubsection{FR-01-10: Ghi nhận phản hồi để cải thiện AI}
+
+\textbf{Mô tả}: Hệ thống ghi nhận trường hợp AI bóc tách sai và người dùng chỉnh sửa lại để làm dữ liệu đánh giá thủ công, cải thiện chất lượng AI và nhận diện đặc điểm/thói quen sử dụng của người dùng.
+
+
+
+\textbf{Acceptance Criteria}:
+
+\begin{itemize}
+\item \textbf{Given} AI đã bóc tách và hệ thống đã lưu một giao dịch  \\ \hspace*{1.5em}  \textbf{When} người dùng chỉnh sửa giao dịch đó do AI nhận diện sai  \\ \hspace*{1.5em}  \textbf{Then} hệ thống lưu log gồm kết quả AI ban đầu, kết quả sau chỉnh sửa và thời điểm chỉnh sửa.
+\item \textbf{Given} hệ thống lưu log phản hồi AI  \\ \hspace*{1.5em}  \textbf{When} dữ liệu được ghi nhận  \\ \hspace*{1.5em}  \textbf{Then} log không được làm thay đổi dữ liệu giao dịch cuối cùng mà người dùng đã chỉnh sửa.
+\item \textbf{Given} Admin/Reviewer cần đánh giá chất lượng bóc tách của AI  \\ \hspace*{1.5em}  \textbf{When} Admin/Reviewer xem log phản hồi AI  \\ \hspace*{1.5em}  \textbf{Then} hệ thống cung cấp dữ liệu đủ để so sánh kết quả AI ban đầu với kết quả người dùng đã chỉnh sửa.
+\item \textbf{Given} hệ thống xử lý lịch sử chat và phản hồi AI của người dùng  \\ \hspace*{1.5em}  \textbf{When} hệ thống nhận diện được đặc điểm sử dụng lặp lại, ví dụ từ người dùng hay dùng, giao dịch hay chi, khung giờ hay chat  \\ \hspace*{1.5em}  \textbf{Then} hệ thống lưu các đặc điểm đã được đánh dấu để hỗ trợ cá nhân hóa xử lý ở các lần sau mà không cần gửi toàn bộ nội dung chat cũ cho LLM.
+\end{itemize}
+\warningicon\  AMBIGUOUS: Danh sách đặc điểm/thói quen người dùng cần nhận diện mới có ví dụ ban đầu gồm từ hay dùng, giao dịch hay chi, khung giờ hay chat; PO sẽ tìm kiếm và bổ sung thêm sau.
+
+
+
+\warningicon\  AMBIGUOUS: Chưa rõ cách thông báo hoặc xin phép người dùng về việc hệ thống lưu đặc điểm/thói quen sử dụng để cá nhân hóa.
+
+
+
+\subsection{Yêu cầu Phi chức năng (NFR)}
+
+\begin{itemize}
+\item \textbf{Ngôn ngữ hỗ trợ}: Hệ thống cần hỗ trợ đầu vào tiếng Việt, tiếng Anh và câu pha trộn Việt - Anh.
+\item \textbf{Giới hạn tin nhắn thoại}: Tối đa \texttt{60 giây} cho mỗi lần ghi âm.
+\item \textbf{Giới hạn hình ảnh}: Dung lượng tối đa \texttt{10MB} cho mỗi ảnh được tải lên.
+\item \textbf{Loại ảnh MVP}: MVP hỗ trợ hóa đơn, bill chuyển khoản và ảnh bối cảnh.
+\item \textbf{Tiêu chí giao dịch hợp lệ}: Giao dịch hợp lệ cần có đủ tên giao dịch và giá tiền; tên giao dịch phải đủ rõ để AI Engine suy đoán được danh mục tương ứng.
+\item \textbf{Tính đúng đắn dữ liệu}: Hệ thống không được lưu giao dịch khi thiếu tên giao dịch, thiếu giá tiền hoặc không đủ chắc chắn để suy đoán danh mục.
+\item \textbf{Quản lý ngữ cảnh chat}: Nội dung thô trong khung chat chỉ được giữ làm ngữ cảnh xử lý trong \texttt{48 giờ}.
+\item \textbf{Giới hạn context LLM}: Hệ thống không gửi toàn bộ lịch sử chat dài hạn cho LLM; chỉ sử dụng ngữ cảnh trong thời gian cho phép và các đặc điểm/thói quen đã được đánh dấu.
+\item \textbf{Xóa dữ liệu}: Giao dịch bị xóa sẽ được xóa mềm trước, sau \texttt{48 giờ} sẽ xóa cứng khỏi nơi lưu trữ giao dịch chính.
+\item \textbf{Khôi phục thao tác xóa}: Người dùng có thể khôi phục giao dịch đã xóa trong vòng \texttt{30 giây} kể từ thời điểm xóa.
+\item \textbf{Truy vết}: Các giao dịch được tạo từ AI cần lưu nguồn đầu vào tương ứng, ví dụ văn bản, voice transcript hoặc hình ảnh đính kèm.
+\item \textbf{Bảo mật}: Hình ảnh hóa đơn, bill chuyển khoản, dữ liệu giao dịch, log phản hồi AI và đặc điểm/thói quen người dùng phải được xem là dữ liệu nhạy cảm và chỉ hiển thị cho đúng người dùng sở hữu hoặc vai trò được phép.
+\item \textbf{Tích hợp AI bên ngoài}: Được phép tích hợp API model AI/LLM bên ngoài trong phạm vi niên luận.
+\end{itemize}
+\subsection{Out of Scope}
+
+\begin{itemize}
+\item Chia tiền nhóm hoặc split bill giữa nhiều người.
+\item Tự động đồng bộ giao dịch trực tiếp từ ngân hàng hoặc ví điện tử.
+\item Xây dựng mô hình AI/OCR riêng từ đầu.
+\item Báo cáo tài chính tuần/tháng/quý/năm.
+\item Nhập liệu từ bảng giá nếu PO chưa xác nhận bổ sung vào MVP.
+\item Đăng nhập/đăng ký chi tiết, nếu chưa được PO xác nhận là thuộc phạm vi tính năng này.
+\item Thiết kế chi tiết mô hình phân loại danh mục; phần này sẽ được đặc tả ở \texttt{REQ-02: Phân loại thông minh}.
+\end{itemize}
+\subsection{Open Questions}
+
+\begin{itemize}
+\item [ ] Phạm vi phép tính cần hỗ trợ ngoài nhân đơn giản gồm những dạng nào?
+\item [ ] Có cần hỗ trợ tiếng địa phương, giọng nói nhiễu, nói nhanh hoặc nhiều người nói trong cùng một đoạn ghi âm không?
+\item [ ] Tiêu chí kỹ thuật để xác định “khớp rõ” giữa ngữ cảnh người dùng và mặt hàng trên bill là gì?
+\item [ ] Sau khi giao dịch bị xóa cứng, dữ liệu liên quan trong log AI/feedback có cần ẩn danh hóa hoặc xóa theo giao dịch gốc không?
+\item [ ] Danh sách đặc điểm/thói quen người dùng cần nhận diện thêm ngoài từ hay dùng, giao dịch hay chi, khung giờ hay chat gồm những gì?
+\item [ ] Có cần hiển thị thông báo/xin phép người dùng trước khi lưu đặc điểm/thói quen sử dụng để cá nhân hóa không?
+\end{itemize}
+\subsection{Hướng dẫn phê duyệt}
+
+\begin{quote}
+Để phê duyệt spec này, PO đổi tên file từ \texttt{DRAFT-REQ-01.md} → \texttt{REQ-01.md}
+\end{quote}
+
+\begin{quote}
+Sau khi đổi tên, chạy lệnh \texttt{/plan-sprint} để PM bắt đầu phân rã task.
+\end{quote}

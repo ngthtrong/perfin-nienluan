@@ -1,0 +1,332 @@
+\section{REQ-05: Quản lý Tài khoản Đa nguồn (Multi-Account Management)}
+
+
+
+\subsection{Metadata}
+
+\begin{itemize}
+\item \textbf{Brief nguồn}: \texttt{Yêu cầu tính năng.md} — mục 5: Quản lý tài khoản đa nguồn; tham chiếu \texttt{REQ-01}, \texttt{REQ-02}, \texttt{REQ-06}
+\item \textbf{Ngày tạo}: 25/05/2026
+\item \textbf{Lần cập nhật cuối}: 27/05/2026 — bản DRAFT đầu tiên
+\item \textbf{Trạng thái}: DRAFT — chờ PO phê duyệt
+\end{itemize}
+\subsection{Tóm tắt}
+
+Cho phép người dùng tạo và quản lý nhiều ví/tài khoản tài chính trong cùng một ứng dụng, bao gồm ví tiền mặt, tài khoản ngân hàng, ví điện tử và tài khoản đầu tư. Hệ thống theo dõi số dư từng ví riêng biệt, tổng hợp số dư toàn bộ để cung cấp tổng quan tài sản, hỗ trợ chuyển tiền giữa các ví (Transfer) mà không tính là chi phí hoặc thu nhập, cho phép gán giao dịch vào ví cụ thể bằng ngôn ngữ tự nhiên trong chat, thiết lập ví mặc định, theo dõi dòng tiền đầu tư giữa ví thường và tài khoản đầu tư, tính tài sản ròng (Net Worth) bằng tổng tất cả ví trừ nợ, và xử lý xóa ví cùng dữ liệu liên quan.
+
+
+
+\subsection{Phân tích yêu cầu}
+
+
+
+\subsubsection{Actors}
+
+\begin{itemize}
+\item \textbf{User}: Người dùng cuối tạo, chỉnh sửa, xóa ví/tài khoản; thực hiện chuyển tiền giữa các ví; gán giao dịch vào ví; xem tổng quan tài sản và tài sản ròng.
+\item \textbf{AI Engine}: Thành phần xử lý ngôn ngữ tự nhiên để nhận diện ví đích từ input chat, xác định giao dịch chuyển tiền (Transfer) và phân biệt với chi phí/thu nhập thông thường.
+\item \textbf{System}: Ứng dụng quản lý danh sách ví, cập nhật số dư, thực hiện chuyển tiền nội bộ, tính toán tổng quan tài sản và tài sản ròng, xử lý xóa ví và dữ liệu liên quan.
+\item \textbf{Admin/Reviewer}: Người đánh giá thủ công các trường hợp AI nhận diện sai loại giao dịch Transfer hoặc gán sai ví để cải thiện chất lượng hệ thống.
+\end{itemize}
+\subsubsection{Features}
+
+\begin{itemize}
+\item Tạo và quản lý nhiều ví/tài khoản thuộc các loại: tiền mặt, ngân hàng, ví điện tử, tài khoản đầu tư.
+\item Theo dõi số dư từng ví riêng biệt, cập nhật tự động khi có giao dịch mới, chỉnh sửa hoặc xóa giao dịch.
+\item Tổng hợp số dư toàn bộ ví để cung cấp tổng quan tài sản cho người dùng.
+\item Hỗ trợ chuyển tiền giữa các ví (Transfer) — không phải chi phí và không phải thu nhập.
+\item Gán giao dịch vào ví cụ thể khi tạo hoặc chỉnh sửa giao dịch.
+\item AI nhận diện ví đích từ ngôn ngữ tự nhiên trong chat.
+\item Thiết lập ví mặc định để giao dịch tự động gán vào ví đó khi người dùng không chỉ định.
+\item Theo dõi dòng tiền đầu tư giữa ví thường và tài khoản đầu tư.
+\item Tính tài sản ròng (Net Worth) = tổng số dư tất cả ví − tổng nợ.
+\item Xóa ví kèm xử lý dữ liệu giao dịch liên quan.
+\end{itemize}
+\subsubsection{Constraints}
+
+\begin{itemize}
+\item Mỗi ví thuộc về một người dùng cụ thể; thay đổi ví của một người dùng không ảnh hưởng đến người dùng khác.
+\item Chuyển tiền giữa các ví (Transfer) không được tính vào chi phí hoặc thu nhập; tổng tài sản không thay đổi sau Transfer.
+\item Khi tạo giao dịch mà người dùng không chỉ định ví, hệ thống gán vào ví mặc định.
+\item Người dùng phải có ít nhất một ví hoạt động trong hệ thống.
+\item Số dư ví có thể âm (ví dụ tài khoản tín dụng hoặc thấu chi).
+\item Tài sản ròng phải tính đúng bao gồm cả khoản nợ từ REQ-06.
+\item Ngữ cảnh chat thô chỉ được giữ trong 48 giờ theo REQ-01.
+\item Đầu vào cần hỗ trợ tiếng Việt, tiếng Anh và câu pha trộn Việt - Anh theo REQ-01.
+\end{itemize}
+\subsubsection{Loại ví/tài khoản hỗ trợ trong MVP}
+
+\begin{table}[htbp]
+\centering
+\begin{tabularx}{\textwidth}{|l|X|}
+\hline
+Loại ví & Mô tả \\ \hline
+Tiền mặt & Ví tiền mặt thực tế \\ \hline
+Ngân hàng & Tài khoản ngân hàng (VCB, MB, TCB, v.v.) \\ \hline
+Ví điện tử & Momo, ZaloPay, VNPay, ShopeePay, v.v. \\ \hline
+Tài khoản đầu tư & Tài khoản chứng khoán, quỹ đầu tư, crypto, v.v. \\ \hline
+\end{tabularx}
+\end{table}
+
+
+
+\subsubsection{Ambiguities}
+
+\begin{itemize}
+\item \warningicon\  AMBIGUOUS: Chưa rõ có cần hỗ trợ loại ví "Tín dụng" riêng biệt hay gộp chung với "Ngân hàng".
+\item \warningicon\  AMBIGUOUS: Chưa rõ số dư ban đầu khi tạo ví mới có bắt buộc nhập hay mặc định là 0.
+\item \warningicon\  AMBIGUOUS: Chưa chốt giới hạn số lượng ví tối đa một người dùng có thể tạo trong MVP.
+\item \warningicon\  AMBIGUOUS: Chưa rõ giao dịch Transfer có hỗ trợ phí chuyển khoản (transfer fee) hay không.
+\item \warningicon\  AMBIGUOUS: Khi ví bị xóa, chưa chốt nên chuyển giao dịch liên quan sang ví khác hay xóa cứng giao dịch.
+\end{itemize}
+\subsubsection{Out of Scope sơ bộ}
+
+\begin{itemize}
+\item Đồng bộ tự động số dư từ ngân hàng hoặc ví điện tử qua API.
+\item Quản lý tài khoản tín dụng chi tiết (hạn mức, lãi suất, kỳ thanh toán).
+\item Chuyển tiền thực tế giữa các tài khoản ngân hàng/ví điện tử.
+\item Quản lý đa tiền tệ hoặc quy đổi ngoại tệ.
+\item Chia tiền nhóm hoặc ví chung giữa nhiều người dùng.
+\end{itemize}
+\subsection{Actors}
+
+\begin{itemize}
+\item \textbf{User}: Người dùng cuối tạo, chỉnh sửa, xóa ví; chuyển tiền giữa ví; gán giao dịch vào ví; xem tổng quan tài sản và tài sản ròng.
+\item \textbf{AI Engine}: Thành phần nhận diện ví đích và loại giao dịch Transfer từ ngôn ngữ tự nhiên.
+\item \textbf{System}: Ứng dụng lưu trữ ví, cập nhật số dư, tính toán tổng tài sản, tài sản ròng, xử lý Transfer và xóa ví.
+\item \textbf{Admin/Reviewer}: Người đánh giá thủ công log AI nhận diện sai Transfer/ví để cải thiện chất lượng.
+\end{itemize}
+\subsection{Yêu cầu Chức năng}
+
+
+
+\subsubsection{FR-05-01: Tạo và quản lý nhiều ví/tài khoản}
+
+\textbf{Mô tả}: Người dùng có thể tạo nhiều ví/tài khoản thuộc các loại khác nhau gồm tiền mặt, ngân hàng, ví điện tử và tài khoản đầu tư. Mỗi ví cần có tên hiển thị, loại ví và số dư ban đầu. Người dùng có thể chỉnh sửa thông tin ví hoặc xóa ví không còn sử dụng.
+
+
+
+\textbf{Acceptance Criteria}:
+
+\begin{itemize}
+\item \textbf{Given} người dùng sử dụng ứng dụng lần đầu  \\ \hspace*{1.5em}  \textbf{When} hệ thống khởi tạo dữ liệu cho người dùng mới  \\ \hspace*{1.5em}  \textbf{Then} hệ thống tạo sẵn một ví mặc định \texttt{Tiền mặt} với số dư ban đầu \texttt{0đ} và đặt làm ví mặc định.
+\item \textbf{Given} người dùng muốn tạo ví mới  \\ \hspace*{1.5em}  \textbf{When} người dùng nhập tên ví, chọn loại ví (tiền mặt, ngân hàng, ví điện tử, tài khoản đầu tư) và nhập số dư ban đầu  \\ \hspace*{1.5em}  \textbf{Then} hệ thống tạo ví mới với thông tin đã cung cấp và thêm vào danh sách ví của người dùng.
+\item \textbf{Given} người dùng muốn tạo ví trùng tên với ví đang tồn tại  \\ \hspace*{1.5em}  \textbf{When} người dùng xác nhận tạo ví  \\ \hspace*{1.5em}  \textbf{Then} hệ thống từ chối tạo ví trùng tên và yêu cầu người dùng chọn tên khác.
+\item \textbf{Given} người dùng muốn chỉnh sửa thông tin ví hiện có  \\ \hspace*{1.5em}  \textbf{When} người dùng cập nhật tên ví hoặc loại ví  \\ \hspace*{1.5em}  \textbf{Then} hệ thống cập nhật thông tin ví và phản hồi xác nhận cho người dùng.
+\item \textbf{Given} người dùng muốn chỉnh sửa số dư ví thủ công  \\ \hspace*{1.5em}  \textbf{When} người dùng nhập số dư mới  \\ \hspace*{1.5em}  \textbf{Then} hệ thống cập nhật số dư ví theo giá trị mới và ghi nhận thao tác điều chỉnh số dư để phục vụ truy vết.
+\end{itemize}
+\warningicon\  AMBIGUOUS: Chưa rõ có cần lưu thông tin bổ sung cho ví ngân hàng như tên ngân hàng, số tài khoản (tùy chọn) hay không.
+
+
+
+\subsubsection{FR-05-02: Theo dõi số dư từng ví}
+
+\textbf{Mô tả}: Hệ thống tự động cập nhật số dư ví khi có giao dịch mới được tạo, chỉnh sửa hoặc xóa. Số dư ví phải phản ánh đúng tổng các giao dịch thu/chi/chuyển tiền đã ghi nhận.
+
+
+
+\textbf{Acceptance Criteria}:
+
+\begin{itemize}
+\item \textbf{Given} người dùng tạo một giao dịch chi phí \texttt{trà sữa 50.000đ} gán vào ví \texttt{Momo}  \\ \hspace*{1.5em}  \textbf{When} hệ thống lưu giao dịch thành công  \\ \hspace*{1.5em}  \textbf{Then} số dư ví \texttt{Momo} giảm \texttt{50.000đ}.
+\item \textbf{Given} người dùng tạo một giao dịch thu nhập \texttt{lương 8.000.000đ} gán vào ví \texttt{VCB}  \\ \hspace*{1.5em}  \textbf{When} hệ thống lưu giao dịch thành công  \\ \hspace*{1.5em}  \textbf{Then} số dư ví \texttt{VCB} tăng \texttt{8.000.000đ}.
+\item \textbf{Given} người dùng chỉnh sửa số tiền giao dịch từ \texttt{50.000đ} thành \texttt{70.000đ}  \\ \hspace*{1.5em}  \textbf{When} hệ thống cập nhật giao dịch thành công  \\ \hspace*{1.5em}  \textbf{Then} số dư ví liên quan được điều chỉnh theo chênh lệch \texttt{20.000đ}.
+\item \textbf{Given} người dùng xóa một giao dịch chi phí \texttt{50.000đ} đã ghi nhận vào ví \texttt{Tiền mặt}  \\ \hspace*{1.5em}  \textbf{When} hệ thống xóa mềm giao dịch theo REQ-01  \\ \hspace*{1.5em}  \textbf{Then} số dư ví \texttt{Tiền mặt} được hoàn lại \texttt{50.000đ}.
+\item \textbf{Given} người dùng khôi phục giao dịch đã xóa trong vòng \texttt{30 giây} theo REQ-01  \\ \hspace*{1.5em}  \textbf{When} hệ thống khôi phục giao dịch thành công  \\ \hspace*{1.5em}  \textbf{Then} số dư ví liên quan được điều chỉnh lại về trạng thái trước khi xóa.
+\item \textbf{Given} người dùng muốn xem số dư hiện tại của một ví cụ thể  \\ \hspace*{1.5em}  \textbf{When} người dùng truy cập thông tin ví  \\ \hspace*{1.5em}  \textbf{Then} hệ thống hiển thị số dư hiện tại của ví đó, đã phản ánh tất cả giao dịch liên quan.
+\end{itemize}
+\subsubsection{FR-05-03: Tổng hợp số dư toàn bộ (tổng quan tài sản)}
+
+\textbf{Mô tả}: Hệ thống tổng hợp số dư từ tất cả ví đang hoạt động của người dùng để cung cấp cái nhìn tổng quan về tài sản hiện có. Tổng quan tài sản bao gồm tổng số dư tất cả ví, chi tiết từng ví và tỷ lệ phân bổ.
+
+
+
+\textbf{Acceptance Criteria}:
+
+\begin{itemize}
+\item \textbf{Given} người dùng có 3 ví: \texttt{Tiền mặt} (2.000.000đ), \texttt{VCB} (15.000.000đ), \texttt{Momo} (500.000đ)  \\ \hspace*{1.5em}  \textbf{When} người dùng xem tổng quan tài sản  \\ \hspace*{1.5em}  \textbf{Then} hệ thống hiển thị tổng số dư \texttt{17.500.000đ} cùng chi tiết số dư từng ví.
+\item \textbf{Given} người dùng tạo giao dịch mới ảnh hưởng đến số dư ví  \\ \hspace*{1.5em}  \textbf{When} hệ thống cập nhật số dư ví  \\ \hspace*{1.5em}  \textbf{Then} tổng quan tài sản được cập nhật tương ứng.
+\item \textbf{Given} người dùng có ví với số dư âm, ví dụ tài khoản thấu chi \texttt{−1.000.000đ}  \\ \hspace*{1.5em}  \textbf{When} hệ thống tính tổng quan tài sản  \\ \hspace*{1.5em}  \textbf{Then} hệ thống tính đúng tổng bao gồm cả ví có số dư âm.
+\item \textbf{Given} người dùng muốn xem tỷ lệ phân bổ tài sản theo từng ví  \\ \hspace*{1.5em}  \textbf{When} người dùng xem tổng quan tài sản  \\ \hspace*{1.5em}  \textbf{Then} hệ thống hiển thị tỷ lệ phần trăm của từng ví so với tổng tài sản.
+\end{itemize}
+\warningicon\  AMBIGUOUS: Chưa rõ tổng quan tài sản có cần hiển thị biểu đồ (pie chart/bar chart) hay chỉ cần số liệu dạng danh sách trong MVP.
+
+
+
+\subsubsection{FR-05-04: Chuyển tiền giữa các ví (Transfer)}
+
+\textbf{Mô tả}: Người dùng có thể chuyển tiền từ ví này sang ví khác trong cùng hệ thống. Giao dịch Transfer giảm số dư ví nguồn và tăng số dư ví đích với cùng số tiền, không tính là chi phí hoặc thu nhập thông thường. AI Engine cần nhận diện input Transfer từ ngôn ngữ tự nhiên để tránh phân loại sai thành Expense.
+
+
+
+\textbf{Acceptance Criteria}:
+
+\begin{itemize}
+\item \textbf{Given} người dùng nhập \texttt{chuyển 1 triệu từ ví tiền mặt sang Momo}  \\ \hspace*{1.5em}  \textbf{When} AI Engine xử lý đầu vào  \\ \hspace*{1.5em}  \textbf{Then} hệ thống nhận diện đây là giao dịch \texttt{Transfer}, giảm số dư ví \texttt{Tiền mặt} 1.000.000đ, tăng số dư ví \texttt{Momo} 1.000.000đ và không tính vào chi phí hoặc thu nhập.
+\item \textbf{Given} người dùng thực hiện Transfer \texttt{500.000đ} từ ví A sang ví B  \\ \hspace*{1.5em}  \textbf{When} hệ thống hoàn tất Transfer  \\ \hspace*{1.5em}  \textbf{Then} tổng tài sản của người dùng không thay đổi so với trước Transfer.
+\item \textbf{Given} người dùng nhập \texttt{chuyển tiền sang VCB 2 triệu}  \\ \hspace*{1.5em}  \textbf{When} AI Engine không xác định được ví nguồn  \\ \hspace*{1.5em}  \textbf{Then} hệ thống hỏi lại người dùng ví nguồn muốn chuyển tiền từ đâu.
+\item \textbf{Given} người dùng yêu cầu Transfer nhưng ví nguồn không đủ số dư  \\ \hspace*{1.5em}  \textbf{When} hệ thống kiểm tra số dư ví nguồn  \\ \hspace*{1.5em}  \textbf{Then} hệ thống cảnh báo ví nguồn không đủ số dư và hỏi người dùng có muốn tiếp tục hay không.
+\item \textbf{Given} người dùng yêu cầu Transfer giữa hai ví cùng tên hoặc không tồn tại  \\ \hspace*{1.5em}  \textbf{When} hệ thống không xác định được ví nguồn hoặc ví đích  \\ \hspace*{1.5em}  \textbf{Then} hệ thống hỏi lại người dùng để chọn đúng ví trước khi thực hiện.
+\item \textbf{Given} giao dịch Transfer đã được lưu  \\ \hspace*{1.5em}  \textbf{When} hệ thống tổng hợp báo cáo chi phí/thu nhập  \\ \hspace*{1.5em}  \textbf{Then} giao dịch Transfer không xuất hiện trong danh sách chi phí hoặc thu nhập.
+\end{itemize}
+\warningicon\  AMBIGUOUS: Chưa rõ Transfer có hỗ trợ phí chuyển khoản (ví dụ phí chuyển tiền liên ngân hàng) hay không. Nếu có, phí chuyển khoản có được tính là chi phí riêng không.
+
+
+
+\subsubsection{FR-05-05: Gán giao dịch vào ví cụ thể}
+
+\textbf{Mô tả}: Khi tạo giao dịch, người dùng có thể chỉ định ví mà giao dịch sẽ được ghi nhận. Nếu không chỉ định, hệ thống gán vào ví mặc định. Người dùng cũng có thể thay đổi ví của giao dịch đã lưu.
+
+
+
+\textbf{Acceptance Criteria}:
+
+\begin{itemize}
+\item \textbf{Given} người dùng nhập \texttt{trà sữa 50k ví Momo}  \\ \hspace*{1.5em}  \textbf{When} AI Engine bóc tách giao dịch và nhận diện ví \texttt{Momo} đang tồn tại  \\ \hspace*{1.5em}  \textbf{Then} hệ thống tạo giao dịch chi phí \texttt{trà sữa 50.000đ} và gán vào ví \texttt{Momo}.
+\item \textbf{Given} người dùng nhập \texttt{ăn sáng 30k} mà không chỉ định ví  \\ \hspace*{1.5em}  \textbf{When} AI Engine bóc tách giao dịch  \\ \hspace*{1.5em}  \textbf{Then} hệ thống gán giao dịch vào ví mặc định của người dùng.
+\item \textbf{Given} người dùng nhập \texttt{đổi giao dịch trà sữa hôm nay sang ví VCB}  \\ \hspace*{1.5em}  \textbf{When} hệ thống xác định đúng giao dịch cần thay đổi  \\ \hspace*{1.5em}  \textbf{Then} hệ thống chuyển giao dịch sang ví \texttt{VCB}, cập nhật số dư ví cũ (hoàn lại) và số dư ví mới (trừ thêm).
+\item \textbf{Given} người dùng nhập tên ví không tồn tại trong danh sách ví hiện có  \\ \hspace*{1.5em}  \textbf{When} AI Engine xử lý đầu vào  \\ \hspace*{1.5em}  \textbf{Then} hệ thống hỏi lại người dùng muốn chọn ví hiện có hay tạo ví mới.
+\item \textbf{Given} người dùng chỉ định ví cho giao dịch nhưng câu lệnh có thể khớp với nhiều ví  \\ \hspace*{1.5em}  \textbf{When} AI Engine không xác định được duy nhất ví đích  \\ \hspace*{1.5em}  \textbf{Then} hệ thống hỏi lại người dùng để chọn đúng ví trước khi gán giao dịch.
+\end{itemize}
+\subsubsection{FR-05-06: Gán ví bằng ngôn ngữ tự nhiên trong chat}
+
+\textbf{Mô tả}: AI Engine nhận diện ví đích từ ngôn ngữ tự nhiên trong tin nhắn chat của người dùng. Hệ thống cần hiểu các cách diễn đạt khác nhau khi người dùng nhắc đến ví trong tiếng Việt, tiếng Anh hoặc câu pha trộn.
+
+
+
+\textbf{Acceptance Criteria}:
+
+\begin{itemize}
+\item \textbf{Given} người dùng nhập \texttt{mua sách 120k bằng VCB}  \\ \hspace*{1.5em}  \textbf{When} AI Engine xử lý đầu vào  \\ \hspace*{1.5em}  \textbf{Then} hệ thống nhận diện ví đích là \texttt{VCB} và gán giao dịch vào ví đó.
+\item \textbf{Given} người dùng nhập \texttt{café 45k, trả bằng momo}  \\ \hspace*{1.5em}  \textbf{When} AI Engine xử lý đầu vào  \\ \hspace*{1.5em}  \textbf{Then} hệ thống nhận diện ví đích là \texttt{Momo} và gán giao dịch vào ví đó.
+\item \textbf{Given} người dùng nhập \texttt{grab 30k pay by cash}  \\ \hspace*{1.5em}  \textbf{When} AI Engine xử lý đầu vào pha trộn Việt - Anh  \\ \hspace*{1.5em}  \textbf{Then} hệ thống nhận diện ví đích là \texttt{Tiền mặt} và gán giao dịch vào ví đó.
+\item \textbf{Given} người dùng nhập \texttt{lunch 80k from my bank account}  \\ \hspace*{1.5em}  \textbf{When} AI Engine xử lý đầu vào tiếng Anh và người dùng có nhiều ví loại ngân hàng  \\ \hspace*{1.5em}  \textbf{Then} hệ thống hỏi lại người dùng để chọn đúng ví ngân hàng cụ thể.
+\item \textbf{Given} người dùng nhắc đến ví bằng tên viết tắt hoặc biệt danh không khớp chính xác  \\ \hspace*{1.5em}  \textbf{When} AI Engine cố gắng khớp với danh sách ví hiện có của người dùng  \\ \hspace*{1.5em}  \textbf{Then} hệ thống chọn ví có tên gần khớp nhất hoặc hỏi lại nếu không đủ tin cậy.
+\end{itemize}
+\warningicon\  AMBIGUOUS: Chưa rõ ngưỡng tin cậy (confidence threshold) để AI tự động gán ví thay vì hỏi lại người dùng.
+
+
+
+\subsubsection{FR-05-07: Ví mặc định}
+
+\textbf{Mô tả}: Người dùng có thể thiết lập một ví làm ví mặc định. Tất cả giao dịch không chỉ định ví sẽ tự động được gán vào ví mặc định. Hệ thống luôn đảm bảo có đúng một ví mặc định.
+
+
+
+\textbf{Acceptance Criteria}:
+
+\begin{itemize}
+\item \textbf{Given} người dùng sử dụng ứng dụng lần đầu  \\ \hspace*{1.5em}  \textbf{When} hệ thống tạo ví mặc định \texttt{Tiền mặt}  \\ \hspace*{1.5em}  \textbf{Then} ví \texttt{Tiền mặt} được đánh dấu là ví mặc định.
+\item \textbf{Given} người dùng muốn đổi ví mặc định sang ví \texttt{Momo}  \\ \hspace*{1.5em}  \textbf{When} người dùng xác nhận thay đổi  \\ \hspace*{1.5em}  \textbf{Then} hệ thống đặt ví \texttt{Momo} làm ví mặc định và bỏ đánh dấu ví mặc định cũ.
+\item \textbf{Given} người dùng tạo giao dịch mà không chỉ định ví  \\ \hspace*{1.5em}  \textbf{When} hệ thống xử lý giao dịch  \\ \hspace*{1.5em}  \textbf{Then} giao dịch được gán vào ví mặc định hiện tại.
+\item \textbf{Given} người dùng nhập \texttt{đặt ví mặc định là VCB} trong chat  \\ \hspace*{1.5em}  \textbf{When} AI Engine nhận diện yêu cầu thay đổi ví mặc định  \\ \hspace*{1.5em}  \textbf{Then} hệ thống cập nhật ví mặc định sang \texttt{VCB} và phản hồi xác nhận.
+\item \textbf{Given} người dùng xóa ví đang được đặt làm ví mặc định  \\ \hspace*{1.5em}  \textbf{When} hệ thống xử lý xóa ví  \\ \hspace*{1.5em}  \textbf{Then} hệ thống yêu cầu người dùng chọn ví khác làm ví mặc định trước khi cho phép xóa.
+\item \textbf{Given} hệ thống kiểm tra trạng thái ví mặc định  \\ \hspace*{1.5em}  \textbf{When} kiểm tra danh sách ví của người dùng  \\ \hspace*{1.5em}  \textbf{Then} luôn có đúng một ví được đánh dấu là ví mặc định.
+\end{itemize}
+\subsubsection{FR-05-08: Tracking dòng tiền đầu tư}
+
+\textbf{Mô tả}: Hệ thống theo dõi dòng tiền giữa ví thường và tài khoản đầu tư. Khi người dùng chuyển tiền từ ví thường sang tài khoản đầu tư, hệ thống ghi nhận đây là giao dịch đặc biệt \texttt{Chuyển tiền đi đầu tư} (theo REQ-02 FR-02-08), không phải chi phí sinh hoạt. Khi rút tiền từ tài khoản đầu tư về ví thường, hệ thống ghi nhận tương tự.
+
+
+
+\textbf{Acceptance Criteria}:
+
+\begin{itemize}
+\item \textbf{Given} người dùng nhập \texttt{chuyển 10 triệu vào tài khoản MBS để đầu tư}  \\ \hspace*{1.5em}  \textbf{When} AI Engine nhận diện giao dịch đặc biệt \texttt{Chuyển tiền đi đầu tư} (theo REQ-02)  \\ \hspace*{1.5em}  \textbf{Then} hệ thống giảm số dư ví nguồn \texttt{10.000.000đ}, tăng số dư tài khoản đầu tư \texttt{MBS} \texttt{10.000.000đ} và ghi nhận loại giao dịch là \texttt{Chuyển tiền đi đầu tư}.
+\item \textbf{Given} người dùng nhập \texttt{rút 5 triệu từ MBS về VCB}  \\ \hspace*{1.5em}  \textbf{When} AI Engine nhận diện giao dịch rút tiền đầu tư  \\ \hspace*{1.5em}  \textbf{Then} hệ thống giảm số dư tài khoản đầu tư \texttt{MBS} \texttt{5.000.000đ}, tăng số dư ví \texttt{VCB} \texttt{5.000.000đ}.
+\item \textbf{Given} người dùng chuyển tiền từ ví thường sang tài khoản đầu tư  \\ \hspace*{1.5em}  \textbf{When} hệ thống tổng hợp chi phí sinh hoạt  \\ \hspace*{1.5em}  \textbf{Then} giao dịch chuyển tiền đầu tư không được tính vào chi phí sinh hoạt thông thường.
+\item \textbf{Given} người dùng chuyển tiền đi đầu tư  \\ \hspace*{1.5em}  \textbf{When} hệ thống tính tổng quan tài sản  \\ \hspace*{1.5em}  \textbf{Then} tổng tài sản không thay đổi vì tiền chỉ di chuyển từ ví này sang ví khác.
+\item \textbf{Given} tài khoản đầu tư có ghi nhận lãi/lỗ theo REQ-06  \\ \hspace*{1.5em}  \textbf{When} hệ thống tính số dư tài khoản đầu tư  \\ \hspace*{1.5em}  \textbf{Then} số dư tài khoản đầu tư phản ánh đúng giá trị bao gồm lãi/lỗ đã ghi nhận.
+\end{itemize}
+\warningicon\  AMBIGUOUS: Chưa rõ lãi/lỗ đầu tư được cập nhật tự động hay người dùng phải nhập thủ công. Chi tiết quản lý lãi/lỗ thuộc REQ-06.
+
+
+
+\subsubsection{FR-05-09: Tính tài sản ròng (Net Worth)}
+
+\textbf{Mô tả}: Hệ thống tính tài sản ròng (Net Worth) của người dùng bằng tổng số dư tất cả ví trừ đi tổng nợ đang có. Nợ bao gồm các khoản vay mượn được quản lý theo REQ-06 (FR-06-05).
+
+
+
+\textbf{Acceptance Criteria}:
+
+\begin{itemize}
+\item \textbf{Given} người dùng có tổng số dư tất cả ví là \texttt{20.000.000đ} và tổng nợ đang có là \texttt{3.000.000đ}  \\ \hspace*{1.5em}  \textbf{When} người dùng xem tài sản ròng  \\ \hspace*{1.5em}  \textbf{Then} hệ thống hiển thị Net Worth = \texttt{17.000.000đ}.
+\item \textbf{Given} người dùng vay thêm \texttt{1.000.000đ} (theo REQ-06)  \\ \hspace*{1.5em}  \textbf{When} hệ thống cập nhật tài sản ròng  \\ \hspace*{1.5em}  \textbf{Then} Net Worth giảm \texttt{1.000.000đ} so với trước đó.
+\item \textbf{Given} người dùng trả hết một khoản nợ \texttt{2.000.000đ}  \\ \hspace*{1.5em}  \textbf{When} hệ thống cập nhật tài sản ròng  \\ \hspace*{1.5em}  \textbf{Then} Net Worth tăng \texttt{2.000.000đ} so với trước đó (do nợ giảm).
+\item \textbf{Given} người dùng có khoản cho vay \texttt{500.000đ} (người khác nợ mình)  \\ \hspace*{1.5em}  \textbf{When} hệ thống tính tài sản ròng  \\ \hspace*{1.5em}  \textbf{Then} khoản cho vay được tính là tài sản, Net Worth bao gồm cả khoản cho vay chưa thu hồi.
+\item \textbf{Given} người dùng thực hiện Transfer giữa các ví  \\ \hspace*{1.5em}  \textbf{When} hệ thống tính tài sản ròng sau Transfer  \\ \hspace*{1.5em}  \textbf{Then} Net Worth không thay đổi so với trước Transfer.
+\item \textbf{Given} người dùng xem tài sản ròng  \\ \hspace*{1.5em}  \textbf{When} hệ thống hiển thị Net Worth  \\ \hspace*{1.5em}  \textbf{Then} hệ thống hiển thị chi tiết gồm: tổng tài sản (tổng ví + cho vay), tổng nợ, và Net Worth = tổng tài sản − tổng nợ.
+\end{itemize}
+\warningicon\  AMBIGUOUS: Chưa rõ khoản tiết kiệm (quản lý theo REQ-06) có được tính riêng trong Net Worth hay đã bao gồm trong số dư ví.
+
+
+
+\subsubsection{FR-05-10: Xóa ví và xử lý dữ liệu liên quan}
+
+\textbf{Mô tả}: Khi người dùng xóa một ví, hệ thống phải cảnh báo về dữ liệu giao dịch liên quan, yêu cầu xác nhận, sau đó xử lý dữ liệu liên quan theo chính sách đã chốt. Hệ thống không cho phép xóa ví cuối cùng hoặc ví mặc định khi chưa có ví thay thế.
+
+
+
+\textbf{Acceptance Criteria}:
+
+\begin{itemize}
+\item \textbf{Given} người dùng yêu cầu xóa một ví có giao dịch liên quan  \\ \hspace*{1.5em}  \textbf{When} hệ thống xử lý yêu cầu xóa  \\ \hspace*{1.5em}  \textbf{Then} hệ thống hiển thị cảnh báo gồm số lượng giao dịch liên quan và yêu cầu người dùng xác nhận trước khi xóa.
+\item \textbf{Given} hệ thống đã hiển thị cảnh báo xóa ví  \\ \hspace*{1.5em}  \textbf{When} người dùng hủy thao tác  \\ \hspace*{1.5em}  \textbf{Then} hệ thống không xóa ví và không xóa giao dịch liên quan.
+\item \textbf{Given} hệ thống đã hiển thị cảnh báo xóa ví  \\ \hspace*{1.5em}  \textbf{When} người dùng xác nhận xóa  \\ \hspace*{1.5em}  \textbf{Then} hệ thống xóa cứng ví và tất cả giao dịch liên quan đến ví đó.
+\item \textbf{Given} người dùng cố gắng xóa ví duy nhất còn lại  \\ \hspace*{1.5em}  \textbf{When} hệ thống kiểm tra danh sách ví  \\ \hspace*{1.5em}  \textbf{Then} hệ thống từ chối xóa và thông báo rằng người dùng phải có ít nhất một ví hoạt động.
+\item \textbf{Given} người dùng cố gắng xóa ví đang được đặt làm ví mặc định  \\ \hspace*{1.5em}  \textbf{When} hệ thống xử lý yêu cầu xóa  \\ \hspace*{1.5em}  \textbf{Then} hệ thống yêu cầu người dùng chọn ví khác làm ví mặc định trước khi cho phép xóa.
+\item \textbf{Given} ví bị xóa là ví nguồn hoặc ví đích của giao dịch Transfer  \\ \hspace*{1.5em}  \textbf{When} hệ thống xóa ví và giao dịch liên quan  \\ \hspace*{1.5em}  \textbf{Then} hệ thống cũng xóa hoặc đánh dấu các giao dịch Transfer liên quan và cập nhật lại số dư ví còn lại cho phù hợp.
+\end{itemize}
+\warningicon\  AMBIGUOUS: Chưa chốt chính sách xóa ví: xóa cứng giao dịch liên quan hay chuyển giao dịch sang ví khác trước khi xóa. Cần PO xác nhận.
+
+
+
+\subsection{Yêu cầu Phi chức năng (NFR)}
+
+\begin{itemize}
+\item \textbf{Loại ví MVP}: Hệ thống cần hỗ trợ ít nhất 4 loại ví: tiền mặt, ngân hàng, ví điện tử, tài khoản đầu tư.
+\item \textbf{Ví mặc định}: Hệ thống luôn đảm bảo có đúng một ví mặc định cho mỗi người dùng; ví mặc định ban đầu là \texttt{Tiền mặt}.
+\item \textbf{Tên ví}: Tên ví phải là duy nhất trong danh sách ví của mỗi người dùng.
+\item \textbf{Ngôn ngữ hỗ trợ}: AI Engine cần nhận diện ví từ đầu vào tiếng Việt, tiếng Anh và câu pha trộn Việt - Anh.
+\item \textbf{Transfer không ảnh hưởng chi phí/thu nhập}: Giao dịch Transfer phải được tách riêng, không tính vào báo cáo chi phí hoặc thu nhập.
+\item \textbf{Tính nhất quán số dư}: Số dư ví phải luôn phản ánh đúng tổng các giao dịch đã ghi nhận; mọi thao tác tạo, sửa, xóa giao dịch phải cập nhật số dư ví tương ứng.
+\item \textbf{Tài sản ròng}: Net Worth = tổng số dư tất cả ví + khoản cho vay chưa thu hồi − tổng nợ đang có.
+\item \textbf{Bảo mật}: Danh sách ví, số dư, lịch sử Transfer và tài sản ròng phải được xem là dữ liệu nhạy cảm và chỉ hiển thị cho đúng người dùng sở hữu.
+\item \textbf{Quản lý ngữ cảnh}: Ngữ cảnh chat thô chỉ được giữ trong 48 giờ theo REQ-01.
+\item \textbf{Truy vết}: Giao dịch Transfer cần lưu thông tin ví nguồn, ví đích và số tiền để phục vụ truy vết.
+\item \textbf{Xóa ví}: Khi xóa ví có giao dịch liên quan, hệ thống phải cảnh báo số lượng giao dịch bị ảnh hưởng và yêu cầu xác nhận trước khi xóa cứng.
+\end{itemize}
+\subsection{Out of Scope}
+
+\begin{itemize}
+\item Đồng bộ tự động số dư từ ngân hàng hoặc ví điện tử qua API.
+\item Quản lý tài khoản tín dụng chi tiết (hạn mức, lãi suất, kỳ thanh toán).
+\item Chuyển tiền thực tế giữa các tài khoản ngân hàng/ví điện tử.
+\item Quản lý đa tiền tệ hoặc quy đổi ngoại tệ.
+\item Chia tiền nhóm hoặc ví chung giữa nhiều người dùng.
+\item Báo cáo biểu đồ chi tiết theo ví tuần/tháng/quý/năm.
+\item Chi tiết quản lý nợ/cho vay, tiết kiệm, lãi/lỗ đầu tư; thuộc phạm vi REQ-06.
+\end{itemize}
+\subsection{Open Questions}
+
+\begin{itemize}
+\item [ ] Có cần hỗ trợ loại ví "Tín dụng" riêng biệt hay gộp chung với loại "Ngân hàng"?
+\item [ ] Số dư ban đầu khi tạo ví mới có bắt buộc nhập hay mặc định là 0?
+\item [ ] Giới hạn số lượng ví tối đa một người dùng có thể tạo trong MVP là bao nhiêu?
+\item [ ] Transfer có hỗ trợ phí chuyển khoản (transfer fee) hay không? Nếu có, phí chuyển khoản có tính là chi phí riêng không?
+\item [ ] Khi xóa ví, giao dịch liên quan nên xóa cứng hay chuyển sang ví khác trước khi xóa?
+\item [ ] Khoản tiết kiệm (REQ-06) được tính riêng trong Net Worth hay đã bao gồm trong số dư ví?
+\item [ ] Có cần lưu thông tin bổ sung cho ví ngân hàng (tên ngân hàng, số tài khoản tùy chọn)?
+\item [ ] Ngưỡng tin cậy để AI tự động gán ví thay vì hỏi lại người dùng là bao nhiêu?
+\item [ ] Lãi/lỗ đầu tư được cập nhật tự động hay người dùng nhập thủ công?
+\end{itemize}
+\subsection{Hướng dẫn phê duyệt}
+
+\begin{quote}
+Để phê duyệt spec này, PO đổi tên file từ \texttt{DRAFT-REQ-05.md} → \texttt{REQ-05.md}
+\end{quote}
+
+\begin{quote}
+Sau khi đổi tên, BA mới chuyển sang tạo DRAFT cho \texttt{REQ-07}.
+\end{quote}

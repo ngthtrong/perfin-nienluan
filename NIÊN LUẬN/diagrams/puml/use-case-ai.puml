@@ -1,0 +1,82 @@
+@startuml PerFin_UseCase_AI
+!theme plain
+skinparam packageStyle rectangle
+skinparam actorStyle awesome
+skinparam usecase {
+    BackgroundColor<<AI>> #E3F2FD
+    BackgroundColor<<Admin>> #FCE4EC
+    BorderColor #333333
+}
+
+title Sơ đồ Use Case: Xử lý & Phân loại bằng AI (AI Features)
+
+actor "Người dùng\n(User)" as User #LightBlue
+actor "AI Engine" as AIEngine #LightGreen
+actor "Admin/\nReviewer" as Admin #LightCoral
+
+rectangle "Xử lý & Phân loại bằng AI" {
+    ' REQ-01: AI-Powered Multimodal Input
+    rectangle "REQ-01: Nhập liệu đa phương thức AI" as REQ01 #E3F2FD {
+        usecase "UC01.1: Nhập giao dịch\nbằng văn bản" as UC01_1
+        usecase "UC01.2: Nhập giao dịch\nbằng giọng nói" as UC01_2
+        usecase "UC01.3: Nhập giao dịch\nbằng hình ảnh/OCR" as UC01_3
+        usecase "UC01.4: Xử lý NLP\ntrích xuất thông tin" as UC01_4 <<AI>>
+        usecase "UC01.5: Xử lý OCR\ntrích xuất hóa đơn" as UC01_5 <<AI>>
+        usecase "UC01.6: Chuyển đổi\ngiọng nói thành văn bản" as UC01_6 <<AI>>
+    }
+
+    ' REQ-02: Auto-Categorization
+    rectangle "REQ-02: Tự động phân loại" as REQ02 #E8F5E9 {
+        usecase "UC02.1: Tự động phân loại\ngiao dịch" as UC02_1 <<AI>>
+        usecase "UC02.2: Quản lý danh mục\nmặc định" as UC02_2
+        usecase "UC02.3: Tạo danh mục\ntùy chỉnh" as UC02_3
+        usecase "UC02.4: Tạo danh mục con" as UC02_4
+        usecase "UC02.5: Sửa kết quả\nphân loại AI" as UC02_5
+        usecase "UC02.6: Học từ phản hồi\nngười dùng" as UC02_6 <<AI>>
+        usecase "UC02.7: Xem nhật ký AI\n(AI Log)" as UC02_7 <<Admin>>
+        usecase "UC02.8: Quản lý thói quen\nngười dùng (UserHabit)" as UC02_8
+    }
+
+    ' REQ-09: AI Personalities
+    rectangle "REQ-09: Nhân cách AI" as REQ09 #EDE7F6 {
+        usecase "UC09.1: Chọn nhân cách\nAI chatbot" as UC09_1
+        usecase "UC09.2: Trò chuyện với AI" as UC09_2
+        usecase "UC09.3: Nhận lời khuyên\ntài chính từ AI" as UC09_3 <<AI>>
+        usecase "UC09.4: Quản lý\nnhân cách AI" as UC09_4 <<Admin>>
+    }
+}
+
+User --> UC01_1
+User --> UC01_2
+User --> UC01_3
+User --> UC02_3
+User --> UC02_4
+User --> UC02_5
+User --> UC09_1
+User --> UC09_2
+User --> UC09_3
+
+AIEngine --> UC01_4
+AIEngine --> UC01_5
+AIEngine --> UC01_6
+AIEngine --> UC02_1
+AIEngine --> UC02_6
+AIEngine --> UC02_8
+AIEngine --> UC09_2
+AIEngine --> UC09_3
+
+Admin --> UC02_2
+Admin --> UC02_7
+Admin --> UC02_8
+Admin --> UC09_4
+
+UC01_1 ..> UC01_4 : <<include>>
+UC01_2 ..> UC01_6 : <<include>>
+UC01_2 ..> UC01_4 : <<include>>
+UC01_3 ..> UC01_5 : <<include>>
+UC01_3 ..> UC01_4 : <<include>>
+UC01_1 ..> UC02_1 : <<include>>
+UC01_2 ..> UC02_1 : <<include>>
+UC01_3 ..> UC02_1 : <<include>>
+UC02_5 ..> UC02_6 : <<extend>>
+@enduml

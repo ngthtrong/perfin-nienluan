@@ -1,0 +1,70 @@
+@startuml PerFin_UseCase_System
+!theme plain
+skinparam packageStyle rectangle
+skinparam actorStyle awesome
+skinparam usecase {
+    BackgroundColor<<System>> #FFF3E0
+    BorderColor #333333
+}
+
+title Sơ đồ Use Case: Phân tích, Sao lưu & Bảo mật (System Features)
+
+actor "Người dùng\n(User)" as User #LightBlue
+actor "Hệ thống\n(System)" as System #LightYellow
+
+rectangle "Phân tích, Sao lưu & Bảo mật" {
+    ' REQ-04: Spending Analytics
+    rectangle "REQ-04: Phân tích chi tiêu" as REQ04 #F3E5F5 {
+        usecase "UC04.1: Xem biểu đồ chi tiêu" as UC04_1
+        usecase "UC04.2: Xem xu hướng chi tiêu" as UC04_2
+        usecase "UC04.3: Nhận phân tích\nAI Insights" as UC04_3
+        usecase "UC04.4: Tạo báo cáo tùy chỉnh" as UC04_4
+        usecase "UC04.5: So sánh chi tiêu\ntheo kỳ" as UC04_5
+    }
+
+    ' REQ-07: Export & Backup
+    rectangle "REQ-07: Xuất dữ liệu & Sao lưu" as REQ07 #F1F8E9 {
+        usecase "UC07.1: Xuất báo cáo CSV" as UC07_1
+        usecase "UC07.2: Xuất báo cáo PDF" as UC07_2
+        usecase "UC07.3: Sao lưu dữ liệu" as UC07_3
+        usecase "UC07.4: Khôi phục dữ liệu" as UC07_4
+        usecase "UC07.5: Tự động\nsao lưu định kỳ" as UC07_5 <<System>>
+    }
+
+    ' REQ-08: Security & Authentication
+    rectangle "REQ-08: Bảo mật & Xác thực" as REQ08 #FCE4EC {
+        usecase "UC08.1: Đăng ký tài khoản" as UC08_1
+        usecase "UC08.2: Đăng nhập\nemail/mật khẩu" as UC08_2
+        usecase "UC08.3: Đăng nhập\nGoogle OAuth" as UC08_3
+        usecase "UC08.4: Đăng nhập\nFacebook OAuth" as UC08_4
+        usecase "UC08.5: Xác thực\nhai yếu tố (2FA)" as UC08_5
+        usecase "UC08.6: Mã hóa dữ liệu" as UC08_6 <<System>>
+        usecase "UC08.7: Quản lý\nphiên đăng nhập" as UC08_7 <<System>>
+    }
+}
+
+User --> UC04_1
+User --> UC04_2
+User --> UC04_3
+User --> UC04_4
+User --> UC04_5
+User --> UC07_1
+User --> UC07_2
+User --> UC07_3
+User --> UC07_4
+User --> UC08_1
+User --> UC08_2
+User --> UC08_3
+User --> UC08_4
+User --> UC08_5
+
+System --> UC07_5
+System --> UC08_6
+System --> UC08_7
+
+UC07_1 ..> UC07_3 : <<extend>>
+UC07_2 ..> UC07_3 : <<extend>>
+UC08_2 ..> UC08_5 : <<extend>>
+UC08_3 ..> UC08_5 : <<extend>>
+UC08_4 ..> UC08_5 : <<extend>>
+@enduml

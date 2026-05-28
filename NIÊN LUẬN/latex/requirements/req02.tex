@@ -1,0 +1,624 @@
+
+
+
+\subsection{Metadata}
+
+\begin{itemize}
+\item \textbf{Brief nguồn}: \texttt{Yêu cầu tính năng.md} — mục 2: Phân loại thông minh; tham chiếu \texttt{DRAFT-REQ-01.md}
+\item \textbf{Ngày tạo}: 25/05/2026
+\item \textbf{Lần cập nhật cuối}: 25/05/2026 — cập nhật theo phản hồi PO lần 3 cho REQ-02
+\item \textbf{Trạng thái}: DRAFT — chờ PO phê duyệt
+\end{itemize}
+\subsection{Tóm tắt}
+
+Tính năng Phân loại thông minh cho phép hệ thống tự động nhận diện loại giao dịch và xếp giao dịch vào danh mục phù hợp dựa trên tên giao dịch, nội dung chat, transcript giọng nói, nội dung hóa đơn/bill hoặc ngữ cảnh ảnh bối cảnh. Hệ thống hỗ trợ danh mục mặc định, danh mục tùy chỉnh và danh mục phụ 1 cấp. Người dùng có thể thêm, sửa, xóa danh mục theo nhu cầu riêng, ngoại trừ danh mục hệ thống bắt buộc \texttt{Khác}. Nếu AI không tìm được danh mục hợp lý trong danh sách hiện tại của người dùng, hệ thống lưu tạm giao dịch vào \texttt{Khác}, đồng thời gợi ý tạo danh mục mới trực tiếp trong chat để người dùng đồng ý hoặc chỉnh sửa tên trước khi thêm.
+
+
+
+\subsection{Phân tích yêu cầu}
+
+
+
+\subsubsection{Actors}
+
+\begin{itemize}
+\item \textbf{User}: Người dùng cuối tạo giao dịch, xem/chỉnh sửa phân loại, quản lý danh mục chính, quản lý danh mục phụ và xác nhận các gợi ý tạo danh mục mới.
+\item \textbf{AI Engine}: Thành phần phân tích tên giao dịch, nội dung chat, transcript giọng nói, hóa đơn/bill/ảnh bối cảnh và ngữ cảnh liên quan để suy đoán loại giao dịch, danh mục chính và danh mục phụ.
+\item \textbf{System}: Ứng dụng lưu danh mục, kiểm soát danh mục hệ thống bắt buộc, lưu giao dịch cùng phân loại, gợi ý tạo danh mục mới, hỏi lại khi cần, xóa dữ liệu theo quy tắc và ghi nhận phản hồi sửa sai.
+\item \textbf{Admin/Reviewer}: Người đánh giá thủ công các trường hợp AI phân loại sai để cải thiện chất lượng hệ thống.
+\end{itemize}
+\subsubsection{Features}
+
+\begin{itemize}
+\item Tự động nhận diện loại giao dịch: chi phí, thu nhập hoặc giao dịch đặc biệt liên quan đến dòng tiền.
+\item Tự động gán danh mục phù hợp cho giao dịch dựa trên danh sách danh mục hiện tại của người dùng.
+\item Khởi tạo danh mục mặc định cho chi phí và thu nhập bằng \textbf{một nhãn duy nhất} cho mỗi danh mục.
+\item Cho phép người dùng thêm, sửa, xóa danh mục theo nhu cầu riêng, bao gồm cả danh mục mặc định, ngoại trừ danh mục hệ thống bắt buộc \texttt{Khác}.
+\item Cho phép người dùng thêm, sửa, xóa danh mục phụ 1 cấp dưới danh mục chính.
+\item Cho phép lưu giao dịch vào danh mục \texttt{Khác} cho cả chi phí và thu nhập khi chưa tìm được danh mục phù hợp.
+\item Nếu AI không tìm được danh mục hợp lý trong danh sách hiện tại, hệ thống gợi ý tạo danh mục mới trực tiếp trong chat.
+\item Khi gợi ý tạo danh mục mới, hệ thống ưu tiên gợi ý tạo \textbf{danh mục phụ} nếu giao dịch phù hợp với một danh mục chính đang tồn tại.
+\item Người dùng có thể chấp nhận nhanh danh mục được gợi ý hoặc chỉnh sửa tên danh mục được gợi ý trước khi thêm.
+\item Nhận diện các giao dịch đặc biệt liên quan đến dòng tiền gồm: quản lý món nợ, cho vay/vay mượn, tiết kiệm, ngân sách, đầu tư có lãi/lỗ và chuyển tiền đi đầu tư.
+\item Phân loại từng giao dịch chi tiết khi hóa đơn có nhiều mặt hàng.
+\item Phân loại trước các mặt hàng có thể phân loại được, sau đó hỏi lại hoặc gợi ý tạo danh mục mới cho các mặt hàng còn chưa rõ.
+\item Ghi nhận phản hồi sửa danh mục để đánh giá thủ công và cá nhân hóa phân loại về sau.
+\item Thông báo/xin phép người dùng trước khi sử dụng thói quen cá nhân để hỗ trợ phân loại.
+\end{itemize}
+\subsubsection{Constraints}
+
+\begin{itemize}
+\item Danh mục phải thuộc về người dùng cụ thể; thay đổi danh mục của một người dùng không làm ảnh hưởng danh mục của người dùng khác.
+\item Mỗi danh mục chỉ có \textbf{một nhãn hiển thị duy nhất}. Không bắt buộc lưu song song nhãn tiếng Anh và tiếng Việt.
+\item Danh mục mặc định có thể được người dùng sửa hoặc xóa theo nhu cầu riêng, trừ danh mục hệ thống bắt buộc \texttt{Khác}.
+\item Danh mục \texttt{Khác} là danh mục hệ thống bắt buộc cho cả chi phí và thu nhập, không cho phép sửa tên hoặc xóa.
+\item Danh mục phụ chỉ hỗ trợ \textbf{1 cấp} dưới danh mục chính; không hỗ trợ danh mục phụ lồng nhiều cấp.
+\item Khi xóa danh mục chính, hệ thống xóa cứng toàn bộ danh mục phụ thuộc danh mục đó và xóa cứng tất cả giao dịch liên quan.
+\item Khi xóa danh mục phụ, hệ thống xóa cứng danh mục phụ và xóa cứng tất cả giao dịch liên quan đến danh mục phụ đó.
+\item Trước khi xóa danh mục có dữ liệu liên quan, hệ thống phải cảnh báo cho người dùng biết số lượng giao dịch sẽ bị xóa và yêu cầu xác nhận.
+\item Sau khi giao dịch bị xóa cứng, log phân loại liên quan phải được ẩn danh hóa.
+\item Danh mục cần gắn với loại giao dịch phù hợp, tối thiểu gồm nhóm \texttt{Expense} và \texttt{Income}.
+\item Ngữ cảnh chat thô chỉ được giữ trong 48 giờ theo REQ-01.
+\item Hệ thống không gửi toàn bộ lịch sử chat dài hạn cho LLM; chỉ sử dụng ngữ cảnh trong thời gian cho phép và các đặc điểm/thói quen đã được đánh dấu.
+\item Đầu vào cần hỗ trợ tiếng Việt, tiếng Anh và câu pha trộn Việt - Anh theo REQ-01.
+\end{itemize}
+\subsubsection{Danh mục mặc định trong MVP}
+
+
+
+\begin{quote}
+Ghi chú BA: PO đã yêu cầu bỏ phần nhãn song ngữ bắt buộc. Vì vậy, hệ thống chỉ cần lưu một nhãn duy nhất cho mỗi danh mục. Bảng dưới đây dùng nhãn tiếng Việt làm nhãn mặc định ban đầu; tên tiếng Anh chỉ dùng để đối chiếu với danh sách PO đã cung cấp, không phải trường bắt buộc trong hệ thống.
+\end{quote}
+
+
+
+\paragraph{Nhóm Chi phí — Expense}
+
+\begin{table}[htbp]
+\centering
+\begin{tabularx}{\textwidth}{|l|X|}
+\hline
+Nhãn mặc định trong app & Tên gốc PO cung cấp \\ \hline
+\end{tabularx}
+\end{table}
+
+\begin{table}[htbp]
+\centering
+\begin{tabularx}{\textwidth}{|l|X|}
+\hline
+--- & --- \\ \hline
+\end{tabularx}
+\end{table}
+
+\begin{table}[htbp]
+\centering
+\begin{tabularx}{\textwidth}{|l|X|}
+\hline
+Ăn uống & Food \& Drinks \\ \hline
+\end{tabularx}
+\end{table}
+
+\begin{table}[htbp]
+\centering
+\begin{tabularx}{\textwidth}{|l|X|}
+\hline
+Nhà cửa & Home \\ \hline
+\end{tabularx}
+\end{table}
+
+\begin{table}[htbp]
+\centering
+\begin{tabularx}{\textwidth}{|l|X|}
+\hline
+Mua sắm & Shopping \\ \hline
+\end{tabularx}
+\end{table}
+
+\begin{table}[htbp]
+\centering
+\begin{tabularx}{\textwidth}{|l|X|}
+\hline
+Di chuyển & Transportation \\ \hline
+\end{tabularx}
+\end{table}
+
+\begin{table}[htbp]
+\centering
+\begin{tabularx}{\textwidth}{|l|X|}
+\hline
+Giải trí & Entertainment \\ \hline
+\end{tabularx}
+\end{table}
+
+\begin{table}[htbp]
+\centering
+\begin{tabularx}{\textwidth}{|l|X|}
+\hline
+Tạp hóa & Grocery \\ \hline
+\end{tabularx}
+\end{table}
+
+\begin{table}[htbp]
+\centering
+\begin{tabularx}{\textwidth}{|l|X|}
+\hline
+Sức khỏe & Health \\ \hline
+\end{tabularx}
+\end{table}
+
+\begin{table}[htbp]
+\centering
+\begin{tabularx}{\textwidth}{|l|X|}
+\hline
+Giáo dục & Education \\ \hline
+\end{tabularx}
+\end{table}
+
+\begin{table}[htbp]
+\centering
+\begin{tabularx}{\textwidth}{|l|X|}
+\hline
+Điện tử & Electronics \\ \hline
+\end{tabularx}
+\end{table}
+
+\begin{table}[htbp]
+\centering
+\begin{tabularx}{\textwidth}{|l|X|}
+\hline
+Thể thao & Sports \\ \hline
+\end{tabularx}
+\end{table}
+
+\begin{table}[htbp]
+\centering
+\begin{tabularx}{\textwidth}{|l|X|}
+\hline
+Làm đẹp & Beauty \\ \hline
+\end{tabularx}
+\end{table}
+
+\begin{table}[htbp]
+\centering
+\begin{tabularx}{\textwidth}{|l|X|}
+\hline
+Khác & Other \\ \hline
+\end{tabularx}
+\end{table}
+
+
+
+\paragraph{Nhóm Thu nhập — Income}
+
+\begin{table}[htbp]
+\centering
+\begin{tabularx}{\textwidth}{|l|X|}
+\hline
+Nhãn mặc định trong app & Tên gốc PO cung cấp \\ \hline
+\end{tabularx}
+\end{table}
+
+\begin{table}[htbp]
+\centering
+\begin{tabularx}{\textwidth}{|l|X|}
+\hline
+--- & --- \\ \hline
+\end{tabularx}
+\end{table}
+
+\begin{table}[htbp]
+\centering
+\begin{tabularx}{\textwidth}{|l|X|}
+\hline
+Lương & Salary \\ \hline
+\end{tabularx}
+\end{table}
+
+\begin{table}[htbp]
+\centering
+\begin{tabularx}{\textwidth}{|l|X|}
+\hline
+Thưởng & Bonus \\ \hline
+\end{tabularx}
+\end{table}
+
+\begin{table}[htbp]
+\centering
+\begin{tabularx}{\textwidth}{|l|X|}
+\hline
+Đầu tư & Investment \\ \hline
+\end{tabularx}
+\end{table}
+
+\begin{table}[htbp]
+\centering
+\begin{tabularx}{\textwidth}{|l|X|}
+\hline
+Khác & Other \\ \hline
+\end{tabularx}
+\end{table}
+
+
+
+\subsubsection{Danh sách giao dịch đặc biệt cần nhận diện trong REQ-02}
+
+\begin{itemize}
+\item \textbf{Quản lý món nợ}.
+\item \textbf{Cho vay}.
+\item \textbf{Vay mượn}.
+\item \textbf{Tiết kiệm}.
+\item \textbf{Ngân sách}.
+\item \textbf{Đầu tư}, bao gồm trường hợp có lãi và lỗ.
+\item \textbf{Chuyển tiền đi đầu tư}.
+\end{itemize}
+REQ-02 chỉ chịu trách nhiệm nhận diện và phân loại ban đầu các giao dịch đặc biệt từ input người dùng. Các chi tiết quản lý dòng tiền, tài sản, ngân sách, lãi/lỗ và đối soát sẽ được mô tả chi tiết ở REQ liên quan, đặc biệt là REQ-06 theo phản hồi PO.
+
+
+
+\subsubsection{Ambiguities}
+
+\begin{itemize}
+\item \warningicon\  AMBIGUOUS: Quy tắc tên hợp lệ của danh mục chưa được chốt, ví dụ độ dài tối đa, ký tự đặc biệt, emoji, trùng tên giữa Expense và Income.
+\item \warningicon\  AMBIGUOUS: Danh sách đặc điểm/thói quen người dùng được phép dùng để cá nhân hóa phân loại chưa được PO chốt đầy đủ.
+\item \warningicon\  AMBIGUOUS: Việc cập nhật lại báo cáo sau khi đổi/xóa danh mục thuộc phạm vi REQ-02 hay REQ-05 chưa được chốt.
+\item \warningicon\  AMBIGUOUS: Các trường dữ liệu chi tiết cho từng giao dịch đặc biệt như nợ, vay, tiết kiệm, ngân sách, đầu tư chưa thuộc phạm vi chi tiết của REQ-02.
+\end{itemize}
+\subsubsection{Out of Scope sơ bộ}
+
+\begin{itemize}
+\item Thiết kế báo cáo biểu đồ và insight tài chính.
+\item Thiết lập ngân sách và cảnh báo chi tiêu chi tiết.
+\item Đồng bộ giao dịch ngân hàng/ví điện tử tự động.
+\item Chia tiền nhóm hoặc split bill giữa nhiều người.
+\item Xây dựng mô hình AI phân loại riêng từ đầu.
+\item Quản lý chi tiết tài sản ròng, số dư ví, tài khoản đầu tư, nợ/vay hoặc đối soát dòng tiền chuyên sâu; REQ-02 chỉ nhận diện và gắn loại/danh mục ban đầu.
+\end{itemize}
+\subsection{Actors}
+
+\begin{itemize}
+\item \textbf{User}: Người dùng cuối tạo giao dịch, quản lý danh mục, quản lý danh mục phụ và chỉnh sửa phân loại khi cần.
+\item \textbf{AI Engine}: Thành phần suy đoán loại giao dịch, danh mục chính và danh mục phụ từ dữ liệu giao dịch/ngữ cảnh liên quan.
+\item \textbf{System}: Ứng dụng lưu danh mục, kiểm soát việc phân loại, lưu \texttt{Khác}, gợi ý tạo danh mục mới, hỏi lại và ghi nhận phản hồi.
+\item \textbf{Admin/Reviewer}: Người đánh giá thủ công log phân loại sai để cải thiện chất lượng AI.
+\end{itemize}
+\subsection{Yêu cầu Chức năng}
+
+
+
+\subsubsection{FR-02-01: Khởi tạo danh mục mặc định}
+
+\textbf{Mô tả}: Khi người dùng sử dụng ứng dụng lần đầu, hệ thống tạo sẵn danh mục mặc định cho chi phí và thu nhập. Mỗi danh mục chỉ cần một nhãn hiển thị duy nhất; người dùng có thể chỉnh sửa nhãn theo nhu cầu, ngoại trừ \texttt{Khác}.
+
+
+
+\textbf{Acceptance Criteria}:
+
+\begin{itemize}
+\item \textbf{Given} người dùng sử dụng ứng dụng lần đầu  \\ \hspace*{1.5em}  \textbf{When} hệ thống khởi tạo danh sách danh mục chi phí  \\ \hspace*{1.5em}  \textbf{Then} hệ thống tạo sẵn các danh mục chi phí mặc định gồm \texttt{Ăn uống}, \texttt{Nhà cửa}, \texttt{Mua sắm}, \texttt{Di chuyển}, \texttt{Giải trí}, \texttt{Tạp hóa}, \texttt{Sức khỏe}, \texttt{Giáo dục}, \texttt{Điện tử}, \texttt{Thể thao}, \texttt{Làm đẹp}, \texttt{Khác}.
+\item \textbf{Given} người dùng sử dụng ứng dụng lần đầu  \\ \hspace*{1.5em}  \textbf{When} hệ thống khởi tạo danh sách danh mục thu nhập  \\ \hspace*{1.5em}  \textbf{Then} hệ thống tạo sẵn các danh mục thu nhập mặc định gồm \texttt{Lương}, \texttt{Thưởng}, \texttt{Đầu tư}, \texttt{Khác}.
+\item \textbf{Given} hệ thống hiển thị danh mục cho người dùng  \\ \hspace*{1.5em}  \textbf{When} danh mục đã được khởi tạo hoặc chỉnh sửa  \\ \hspace*{1.5em}  \textbf{Then} hệ thống hiển thị một nhãn duy nhất của danh mục đó.
+\item \textbf{Given} người dùng muốn chỉnh sửa nhãn của danh mục mặc định không phải \texttt{Khác}  \\ \hspace*{1.5em}  \textbf{When} người dùng nhập nhãn mới hợp lệ và xác nhận  \\ \hspace*{1.5em}  \textbf{Then} hệ thống cập nhật nhãn danh mục đó trong danh sách danh mục của riêng người dùng.
+\end{itemize}
+\subsubsection{FR-02-02: Quản lý danh mục tùy chỉnh}
+
+\textbf{Mô tả}: Người dùng có thể tùy biến danh mục theo nhu cầu riêng bằng cách thêm, sửa hoặc xóa danh mục, bao gồm cả danh mục mặc định, ngoại trừ danh mục hệ thống \texttt{Khác}.
+
+
+
+\textbf{Acceptance Criteria}:
+
+\begin{itemize}
+\item \textbf{Given} người dùng muốn thêm một danh mục mới  \\ \hspace*{1.5em}  \textbf{When} người dùng tạo danh mục với tên hợp lệ và chọn nhóm \texttt{Expense} hoặc \texttt{Income}  \\ \hspace*{1.5em}  \textbf{Then} hệ thống lưu danh mục mới vào danh sách danh mục của riêng người dùng đó.
+\item \textbf{Given} người dùng muốn sửa tên một danh mục hiện có không phải \texttt{Khác}  \\ \hspace*{1.5em}  \textbf{When} người dùng cập nhật tên danh mục hợp lệ  \\ \hspace*{1.5em}  \textbf{Then} hệ thống đổi tên danh mục trong danh sách danh mục của người dùng.
+\item \textbf{Given} người dùng sửa danh mục mặc định không phải \texttt{Khác}  \\ \hspace*{1.5em}  \textbf{When} thao tác được xác nhận thành công  \\ \hspace*{1.5em}  \textbf{Then} thay đổi chỉ áp dụng cho danh sách danh mục của người dùng đó, không làm thay đổi danh mục mặc định của người dùng khác.
+\item \textbf{Given} người dùng muốn tạo danh mục trùng tên với một danh mục đang tồn tại trong cùng nhóm giao dịch  \\ \hspace*{1.5em}  \textbf{When} người dùng xác nhận tạo danh mục  \\ \hspace*{1.5em}  \textbf{Then} hệ thống không tạo danh mục trùng và yêu cầu người dùng chọn tên khác hoặc dùng danh mục đã có.
+\item \textbf{Given} người dùng muốn xóa một danh mục không phải \texttt{Khác}  \\ \hspace*{1.5em}  \textbf{When} người dùng gửi yêu cầu xóa danh mục  \\ \hspace*{1.5em}  \textbf{Then} hệ thống chuyển sang luồng cảnh báo và xác nhận xóa danh mục trước khi xóa cứng dữ liệu.
+\end{itemize}
+\warningicon\  AMBIGUOUS: Quy tắc tên hợp lệ của danh mục chưa được chốt, ví dụ độ dài tối đa, ký tự đặc biệt, emoji, trùng tên giữa Expense và Income.
+
+
+
+\subsubsection{FR-02-03: Quản lý danh mục phụ 1 cấp}
+
+\textbf{Mô tả}: Hệ thống cho phép người dùng thêm, sửa, xóa danh mục phụ dưới một danh mục chính. Danh mục phụ chỉ hỗ trợ 1 cấp, không hỗ trợ danh mục phụ lồng nhiều cấp.
+
+
+
+\textbf{Acceptance Criteria}:
+
+\begin{itemize}
+\item \textbf{Given} người dùng muốn thêm danh mục phụ  \\ \hspace*{1.5em}  \textbf{When} người dùng chọn một danh mục chính và nhập tên danh mục phụ hợp lệ  \\ \hspace*{1.5em}  \textbf{Then} hệ thống tạo danh mục phụ dưới danh mục chính đã chọn.
+\item \textbf{Given} người dùng muốn tạo danh mục phụ bên dưới một danh mục phụ khác  \\ \hspace*{1.5em}  \textbf{When} người dùng gửi yêu cầu tạo danh mục phụ lồng cấp  \\ \hspace*{1.5em}  \textbf{Then} hệ thống từ chối thao tác và thông báo rằng MVP chỉ hỗ trợ danh mục phụ 1 cấp dưới danh mục chính.
+\item \textbf{Given} người dùng muốn sửa tên danh mục phụ  \\ \hspace*{1.5em}  \textbf{When} người dùng cập nhật tên danh mục phụ hợp lệ  \\ \hspace*{1.5em}  \textbf{Then} hệ thống đổi tên danh mục phụ trong danh sách danh mục của người dùng.
+\item \textbf{Given} người dùng muốn xóa một danh mục phụ  \\ \hspace*{1.5em}  \textbf{When} người dùng gửi yêu cầu xóa danh mục phụ  \\ \hspace*{1.5em}  \textbf{Then} hệ thống chuyển sang luồng cảnh báo và xác nhận xóa danh mục trước khi xóa cứng danh mục phụ và dữ liệu liên quan.
+\item \textbf{Given} giao dịch được gán vào danh mục phụ  \\ \hspace*{1.5em}  \textbf{When} hệ thống lưu giao dịch  \\ \hspace*{1.5em}  \textbf{Then} giao dịch phải lưu được cả danh mục chính và danh mục phụ tương ứng.
+\item \textbf{Given} AI Engine phân loại giao dịch \texttt{matcha latte 55k}  \\ \hspace*{1.5em}  \textbf{When} danh mục chính \texttt{Ăn uống} và danh mục phụ \texttt{Cà phê} đang tồn tại trong danh sách danh mục của người dùng  \\ \hspace*{1.5em}  \textbf{Then} hệ thống có thể gán giao dịch vào danh mục chính \texttt{Ăn uống} và danh mục phụ \texttt{Cà phê} nếu phù hợp với ngữ cảnh.
+\end{itemize}
+\subsubsection{FR-02-04: Bảo vệ danh mục hệ thống Khác}
+
+\textbf{Mô tả}: \texttt{Khác} là danh mục hệ thống bắt buộc cho cả chi phí và thu nhập. Người dùng không được phép sửa tên hoặc xóa danh mục này.
+
+
+
+\textbf{Acceptance Criteria}:
+
+\begin{itemize}
+\item \textbf{Given} danh sách danh mục chi phí của người dùng  \\ \hspace*{1.5em}  \textbf{When} hệ thống kiểm tra danh mục hệ thống  \\ \hspace*{1.5em}  \textbf{Then} danh mục \texttt{Khác} thuộc nhóm chi phí phải luôn tồn tại.
+\item \textbf{Given} danh sách danh mục thu nhập của người dùng  \\ \hspace*{1.5em}  \textbf{When} hệ thống kiểm tra danh mục hệ thống  \\ \hspace*{1.5em}  \textbf{Then} danh mục \texttt{Khác} thuộc nhóm thu nhập phải luôn tồn tại.
+\item \textbf{Given} người dùng cố gắng sửa tên danh mục \texttt{Khác}  \\ \hspace*{1.5em}  \textbf{When} người dùng gửi yêu cầu sửa  \\ \hspace*{1.5em}  \textbf{Then} hệ thống từ chối thao tác và thông báo rằng đây là danh mục hệ thống bắt buộc.
+\item \textbf{Given} người dùng cố gắng xóa danh mục \texttt{Khác}  \\ \hspace*{1.5em}  \textbf{When} người dùng gửi yêu cầu xóa  \\ \hspace*{1.5em}  \textbf{Then} hệ thống từ chối thao tác và thông báo rằng đây là danh mục hệ thống bắt buộc.
+\end{itemize}
+\subsubsection{FR-02-05: Xóa cứng danh mục chính và dữ liệu liên quan}
+
+\textbf{Mô tả}: Khi người dùng xóa một danh mục chính không phải \texttt{Khác}, hệ thống phải cảnh báo số lượng giao dịch liên quan, yêu cầu xác nhận, sau đó xóa cứng danh mục chính, toàn bộ danh mục phụ thuộc danh mục đó và tất cả giao dịch liên quan.
+
+
+
+\textbf{Acceptance Criteria}:
+
+\begin{itemize}
+\item \textbf{Given} người dùng yêu cầu xóa một danh mục chính không phải \texttt{Khác}  \\ \hspace*{1.5em}  \textbf{When} danh mục đó có giao dịch liên quan hoặc có danh mục phụ  \\ \hspace*{1.5em}  \textbf{Then} hệ thống hiển thị cảnh báo gồm số lượng giao dịch liên quan và thông tin rằng các danh mục phụ liên quan cũng sẽ bị xóa.
+\item \textbf{Given} hệ thống đã hiển thị cảnh báo xóa danh mục chính  \\ \hspace*{1.5em}  \textbf{When} người dùng hủy thao tác  \\ \hspace*{1.5em}  \textbf{Then} hệ thống không xóa danh mục chính, không xóa danh mục phụ và không xóa giao dịch liên quan.
+\item \textbf{Given} hệ thống đã hiển thị cảnh báo xóa danh mục chính  \\ \hspace*{1.5em}  \textbf{When} người dùng xác nhận xóa  \\ \hspace*{1.5em}  \textbf{Then} hệ thống xóa cứng danh mục chính, toàn bộ danh mục phụ thuộc danh mục đó và tất cả giao dịch liên quan.
+\item \textbf{Given} danh mục chính đã bị xóa cứng  \\ \hspace*{1.5em}  \textbf{When} AI Engine phân loại giao dịch mới  \\ \hspace*{1.5em}  \textbf{Then} hệ thống không được gán giao dịch mới vào danh mục chính hoặc danh mục phụ đã bị xóa.
+\item \textbf{Given} giao dịch bị xóa cứng do xóa danh mục chính  \\ \hspace*{1.5em}  \textbf{When} hệ thống xử lý log phân loại liên quan  \\ \hspace*{1.5em}  \textbf{Then} hệ thống ẩn danh hóa log phân loại liên quan đến giao dịch đã bị xóa cứng.
+\end{itemize}
+\subsubsection{FR-02-06: Xóa cứng danh mục phụ và dữ liệu liên quan}
+
+\textbf{Mô tả}: Khi người dùng xóa một danh mục phụ, hệ thống phải cảnh báo số lượng giao dịch liên quan, yêu cầu xác nhận, sau đó xóa cứng danh mục phụ và tất cả giao dịch liên quan đến danh mục phụ đó.
+
+
+
+\textbf{Acceptance Criteria}:
+
+\begin{itemize}
+\item \textbf{Given} người dùng yêu cầu xóa một danh mục phụ  \\ \hspace*{1.5em}  \textbf{When} danh mục phụ đó có giao dịch liên quan  \\ \hspace*{1.5em}  \textbf{Then} hệ thống hiển thị cảnh báo gồm số lượng giao dịch sẽ bị xóa theo danh mục phụ đó.
+\item \textbf{Given} hệ thống đã hiển thị cảnh báo xóa danh mục phụ  \\ \hspace*{1.5em}  \textbf{When} người dùng hủy thao tác  \\ \hspace*{1.5em}  \textbf{Then} hệ thống không xóa danh mục phụ và không xóa giao dịch liên quan.
+\item \textbf{Given} hệ thống đã hiển thị cảnh báo xóa danh mục phụ  \\ \hspace*{1.5em}  \textbf{When} người dùng xác nhận xóa  \\ \hspace*{1.5em}  \textbf{Then} hệ thống xóa cứng danh mục phụ và tất cả giao dịch liên quan đến danh mục phụ đó.
+\item \textbf{Given} danh mục phụ đã bị xóa cứng  \\ \hspace*{1.5em}  \textbf{When} AI Engine phân loại giao dịch mới  \\ \hspace*{1.5em}  \textbf{Then} hệ thống không được gán giao dịch mới vào danh mục phụ đã bị xóa.
+\item \textbf{Given} giao dịch bị xóa cứng do xóa danh mục phụ  \\ \hspace*{1.5em}  \textbf{When} hệ thống xử lý log phân loại liên quan  \\ \hspace*{1.5em}  \textbf{Then} hệ thống ẩn danh hóa log phân loại liên quan đến giao dịch đã bị xóa cứng.
+\end{itemize}
+\subsubsection{FR-02-07: Tự động nhận diện loại giao dịch}
+
+\textbf{Mô tả}: Trước khi gán danh mục, hệ thống cần nhận diện giao dịch thuộc nhóm chi phí, thu nhập hoặc giao dịch đặc biệt liên quan đến dòng tiền.
+
+
+
+\textbf{Acceptance Criteria}:
+
+\begin{itemize}
+\item \textbf{Given} người dùng nhập \texttt{trà sữa 50k}  \\ \hspace*{1.5em}  \textbf{When} AI Engine xử lý đầu vào  \\ \hspace*{1.5em}  \textbf{Then} hệ thống nhận diện đây là giao dịch \texttt{Expense}.
+\item \textbf{Given} người dùng nhập \texttt{lương tháng này 8 triệu}  \\ \hspace*{1.5em}  \textbf{When} AI Engine xử lý đầu vào  \\ \hspace*{1.5em}  \textbf{Then} hệ thống nhận diện đây là giao dịch \texttt{Income}.
+\item \textbf{Given} người dùng nhập \texttt{chuyển 1 triệu từ ví tiền mặt sang Momo}  \\ \hspace*{1.5em}  \textbf{When} AI Engine xử lý đầu vào  \\ \hspace*{1.5em}  \textbf{Then} hệ thống nhận diện đây là giao dịch đặc biệt liên quan đến dòng tiền, không tự xem là chi phí tiêu dùng thông thường.
+\item \textbf{Given} người dùng nhập \texttt{chuyển 10 triệu vào tài khoản MBS để đầu tư}  \\ \hspace*{1.5em}  \textbf{When} AI Engine xử lý đầu vào  \\ \hspace*{1.5em}  \textbf{Then} hệ thống nhận diện đây là giao dịch đặc biệt liên quan đến đầu tư/chuyển tiền đi đầu tư, không tự xem là chi phí sinh hoạt thông thường.
+\item \textbf{Given} người dùng nhập nội dung thể hiện lãi hoặc lỗ đầu tư, ví dụ \texttt{lãi đầu tư hôm nay 500k} hoặc \texttt{lỗ chứng khoán 300k}  \\ \hspace*{1.5em}  \textbf{When} AI Engine xử lý đầu vào  \\ \hspace*{1.5em}  \textbf{Then} hệ thống nhận diện đây là giao dịch đặc biệt liên quan đến đầu tư có lãi/lỗ.
+\item \textbf{Given} AI Engine không xác định được loại giao dịch là \texttt{Expense}, \texttt{Income} hay giao dịch đặc biệt  \\ \hspace*{1.5em}  \textbf{When} hệ thống xử lý kết quả phân loại  \\ \hspace*{1.5em}  \textbf{Then} hệ thống hỏi lại người dùng để làm rõ loại giao dịch trước khi lưu.
+\end{itemize}
+\subsubsection{FR-02-08: Nhận diện giao dịch đặc biệt liên quan đến dòng tiền}
+
+\textbf{Mô tả}: REQ-02 cần nhận diện các giao dịch đặc biệt ngay từ input của người dùng để tránh phân loại sai thành chi phí/thu nhập thông thường. Phần quản lý chi tiết sẽ được mô tả ở REQ liên quan, đặc biệt là REQ-06.
+
+
+
+\textbf{Acceptance Criteria}:
+
+\begin{itemize}
+\item \textbf{Given} người dùng nhập nội dung thể hiện quản lý món nợ  \\ \hspace*{1.5em}  \textbf{When} AI Engine xử lý đầu vào  \\ \hspace*{1.5em}  \textbf{Then} hệ thống đánh dấu giao dịch là nhóm đặc biệt \texttt{Quản lý món nợ}.
+\item \textbf{Given} người dùng nhập nội dung thể hiện cho vay, ví dụ \texttt{cho An vay 500k}  \\ \hspace*{1.5em}  \textbf{When} AI Engine xử lý đầu vào  \\ \hspace*{1.5em}  \textbf{Then} hệ thống đánh dấu giao dịch là nhóm đặc biệt \texttt{Cho vay}.
+\item \textbf{Given} người dùng nhập nội dung thể hiện vay mượn, ví dụ \texttt{mượn Bình 1 triệu}  \\ \hspace*{1.5em}  \textbf{When} AI Engine xử lý đầu vào  \\ \hspace*{1.5em}  \textbf{Then} hệ thống đánh dấu giao dịch là nhóm đặc biệt \texttt{Vay mượn}.
+\item \textbf{Given} người dùng nhập nội dung thể hiện tiết kiệm, ví dụ \texttt{gửi tiết kiệm 2 triệu}  \\ \hspace*{1.5em}  \textbf{When} AI Engine xử lý đầu vào  \\ \hspace*{1.5em}  \textbf{Then} hệ thống đánh dấu giao dịch là nhóm đặc biệt \texttt{Tiết kiệm}.
+\item \textbf{Given} người dùng nhập nội dung liên quan đến ngân sách, ví dụ \texttt{đặt ngân sách ăn uống tháng này 2 triệu}  \\ \hspace*{1.5em}  \textbf{When} AI Engine xử lý đầu vào  \\ \hspace*{1.5em}  \textbf{Then} hệ thống đánh dấu đây là input liên quan đến \texttt{Ngân sách} thay vì tạo chi phí thông thường.
+\item \textbf{Given} người dùng nhập nội dung đầu tư có lãi hoặc lỗ  \\ \hspace*{1.5em}  \textbf{When} AI Engine xử lý đầu vào  \\ \hspace*{1.5em}  \textbf{Then} hệ thống đánh dấu giao dịch là nhóm đặc biệt \texttt{Đầu tư} kèm trạng thái lãi/lỗ nếu xác định được từ input.
+\item \textbf{Given} người dùng nhập nội dung chuyển tiền đi đầu tư, ví dụ \texttt{chuyển 10 triệu vào tài khoản MBS để đầu tư}  \\ \hspace*{1.5em}  \textbf{When} AI Engine xử lý đầu vào  \\ \hspace*{1.5em}  \textbf{Then} hệ thống đánh dấu đây là giao dịch đặc biệt \texttt{Chuyển tiền đi đầu tư}.
+\end{itemize}
+\warningicon\  AMBIGUOUS: REQ-02 chỉ nhận diện nhóm đặc biệt; các trường dữ liệu chi tiết của từng nhóm đặc biệt chưa được chốt trong spec này.
+
+
+
+\subsubsection{FR-02-09: Tự động gán danh mục cho giao dịch chi phí}
+
+\textbf{Mô tả}: Khi giao dịch được nhận diện là chi phí, hệ thống tự động gán vào danh mục chi phí phù hợp từ danh sách danh mục hiện có của người dùng.
+
+
+
+\textbf{Acceptance Criteria}:
+
+\begin{itemize}
+\item \textbf{Given} AI Engine đã bóc tách được tên giao dịch và giá tiền từ đầu vào của người dùng  \\ \hspace*{1.5em}  \textbf{When} hệ thống nhận diện giao dịch là \texttt{Expense} và tìm được danh mục phù hợp trong danh sách danh mục hiện tại của người dùng  \\ \hspace*{1.5em}  \textbf{Then} hệ thống gán danh mục chi phí phù hợp trước khi lưu giao dịch.
+\item \textbf{Given} người dùng nhập \texttt{trà sữa 50k}  \\ \hspace*{1.5em}  \textbf{When} danh mục \texttt{Ăn uống} đang tồn tại trong danh sách danh mục của người dùng  \\ \hspace*{1.5em}  \textbf{Then} hệ thống gán giao dịch vào danh mục \texttt{Ăn uống}.
+\item \textbf{Given} người dùng nhập \texttt{đổ xăng 80k}  \\ \hspace*{1.5em}  \textbf{When} danh mục \texttt{Di chuyển} đang tồn tại trong danh sách danh mục của người dùng  \\ \hspace*{1.5em}  \textbf{Then} hệ thống gán giao dịch vào danh mục \texttt{Di chuyển}.
+\item \textbf{Given} người dùng nhập \texttt{mua sách tiếng Anh 120k}  \\ \hspace*{1.5em}  \textbf{When} danh mục \texttt{Giáo dục} đang tồn tại trong danh sách danh mục của người dùng  \\ \hspace*{1.5em}  \textbf{Then} hệ thống gán giao dịch vào danh mục \texttt{Giáo dục}.
+\item \textbf{Given} AI Engine xác định đây là chi phí nhưng không tìm được danh mục hợp lý trong danh sách danh mục hiện tại của người dùng  \\ \hspace*{1.5em}  \textbf{When} giao dịch có đủ tên giao dịch và giá tiền  \\ \hspace*{1.5em}  \textbf{Then} hệ thống lưu giao dịch vào \texttt{Khác} thuộc nhóm chi phí và thực thi luồng gợi ý tạo danh mục mới trong chat.
+\end{itemize}
+\subsubsection{FR-02-10: Tự động gán danh mục cho giao dịch thu nhập}
+
+\textbf{Mô tả}: Khi giao dịch được nhận diện là thu nhập, hệ thống tự động gán vào danh mục thu nhập phù hợp từ danh sách danh mục hiện có của người dùng.
+
+
+
+\textbf{Acceptance Criteria}:
+
+\begin{itemize}
+\item \textbf{Given} AI Engine đã bóc tách được tên giao dịch và số tiền từ đầu vào của người dùng  \\ \hspace*{1.5em}  \textbf{When} hệ thống nhận diện giao dịch là \texttt{Income} và tìm được danh mục phù hợp trong danh sách danh mục hiện tại của người dùng  \\ \hspace*{1.5em}  \textbf{Then} hệ thống gán danh mục thu nhập phù hợp trước khi lưu giao dịch.
+\item \textbf{Given} người dùng nhập \texttt{lương tháng 5 8 triệu}  \\ \hspace*{1.5em}  \textbf{When} danh mục \texttt{Lương} đang tồn tại trong danh sách danh mục của người dùng  \\ \hspace*{1.5em}  \textbf{Then} hệ thống gán giao dịch vào danh mục \texttt{Lương}.
+\item \textbf{Given} người dùng nhập \texttt{thưởng dự án 1 triệu}  \\ \hspace*{1.5em}  \textbf{When} danh mục \texttt{Thưởng} đang tồn tại trong danh sách danh mục của người dùng  \\ \hspace*{1.5em}  \textbf{Then} hệ thống gán giao dịch vào danh mục \texttt{Thưởng}.
+\item \textbf{Given} người dùng nhập \texttt{lãi đầu tư 500k}  \\ \hspace*{1.5em}  \textbf{When} danh mục \texttt{Đầu tư} đang tồn tại trong danh sách danh mục của người dùng  \\ \hspace*{1.5em}  \textbf{Then} hệ thống gán hoặc đánh dấu giao dịch theo nhóm \texttt{Đầu tư}, tùy theo luồng chi tiết của giao dịch đầu tư.
+\item \textbf{Given} AI Engine xác định đây là thu nhập nhưng không tìm được danh mục hợp lý trong danh sách danh mục hiện tại của người dùng  \\ \hspace*{1.5em}  \textbf{When} giao dịch có đủ tên giao dịch và giá tiền  \\ \hspace*{1.5em}  \textbf{Then} hệ thống lưu giao dịch vào \texttt{Khác} thuộc nhóm thu nhập và thực thi luồng gợi ý tạo danh mục mới trong chat.
+\end{itemize}
+\warningicon\  AMBIGUOUS: Với \texttt{Đầu tư}, REQ-02 nhận diện và phân loại ban đầu; chi tiết dòng tiền đầu tư, lãi/lỗ và tài sản sẽ được mô tả ở REQ-06.
+
+
+
+\subsubsection{FR-02-11: Luồng lưu Khác và gợi ý tạo danh mục mới}
+
+\textbf{Mô tả}: Khi hệ thống xác định được giao dịch là chi phí hoặc thu nhập nhưng không tìm được danh mục hợp lý trong danh sách hiện tại của người dùng, hệ thống lưu tạm vào \texttt{Khác}, đồng thời gợi ý tạo danh mục mới trực tiếp trong chat. Nếu có thể gợi ý cả danh mục chính và danh mục phụ, hệ thống ưu tiên gợi ý danh mục phụ.
+
+
+
+\textbf{Acceptance Criteria}:
+
+\begin{itemize}
+\item \textbf{Given} giao dịch có đủ tên giao dịch và giá tiền  \\ \hspace*{1.5em}  \textbf{When} hệ thống xác định được giao dịch là \texttt{Expense} nhưng không tìm được danh mục chi phí hợp lý  \\ \hspace*{1.5em}  \textbf{Then} hệ thống lưu giao dịch vào \texttt{Khác} thuộc nhóm chi phí.
+\item \textbf{Given} giao dịch có đủ tên giao dịch và giá tiền  \\ \hspace*{1.5em}  \textbf{When} hệ thống xác định được giao dịch là \texttt{Income} nhưng không tìm được danh mục thu nhập hợp lý  \\ \hspace*{1.5em}  \textbf{Then} hệ thống lưu giao dịch vào \texttt{Khác} thuộc nhóm thu nhập.
+\item \textbf{Given} hệ thống vừa lưu giao dịch vào \texttt{Khác}  \\ \hspace*{1.5em}  \textbf{When} hệ thống phản hồi cho người dùng trong chat  \\ \hspace*{1.5em}  \textbf{Then} hệ thống thông báo giao dịch đã được lưu tạm vào \texttt{Khác} và hiển thị gợi ý tạo danh mục mới phù hợp với giao dịch.
+\item \textbf{Given} hệ thống gợi ý tạo danh mục mới trong chat và có danh mục chính phù hợp đang tồn tại  \\ \hspace*{1.5em}  \textbf{When} hệ thống xác định giao dịch phù hợp hơn với một nhóm nhỏ bên trong danh mục chính đó  \\ \hspace*{1.5em}  \textbf{Then} hệ thống ưu tiên gợi ý tạo danh mục phụ dưới danh mục chính đang tồn tại.
+\item \textbf{Given} hệ thống gợi ý tạo danh mục mới trong chat và không có danh mục chính phù hợp đang tồn tại  \\ \hspace*{1.5em}  \textbf{When} hệ thống cần gợi ý danh mục mới  \\ \hspace*{1.5em}  \textbf{Then} hệ thống gợi ý tạo danh mục chính mới.
+\item \textbf{Given} hệ thống gợi ý tạo danh mục mới trong chat  \\ \hspace*{1.5em}  \textbf{When} người dùng nhấn đồng ý  \\ \hspace*{1.5em}  \textbf{Then} hệ thống tạo danh mục mới theo tên được gợi ý và cập nhật giao dịch từ \texttt{Khác} sang danh mục mới.
+\item \textbf{Given} hệ thống gợi ý tạo danh mục mới trong chat  \\ \hspace*{1.5em}  \textbf{When} người dùng chỉnh sửa lại tên danh mục được gợi ý và xác nhận  \\ \hspace*{1.5em}  \textbf{Then} hệ thống tạo danh mục mới theo tên đã chỉnh sửa và cập nhật giao dịch từ \texttt{Khác} sang danh mục mới.
+\item \textbf{Given} người dùng không phản hồi gợi ý tạo danh mục mới  \\ \hspace*{1.5em}  \textbf{When} ngữ cảnh hỏi lại vẫn còn hiệu lực hoặc đã hết hiệu lực  \\ \hspace*{1.5em}  \textbf{Then} giao dịch vẫn giữ danh mục \texttt{Khác} cho đến khi người dùng chỉnh sửa sau.
+\item \textbf{Given} hệ thống không xác định được giao dịch là \texttt{Expense} hay \texttt{Income}  \\ \hspace*{1.5em}  \textbf{When} giao dịch chưa đủ rõ về loại giao dịch  \\ \hspace*{1.5em}  \textbf{Then} hệ thống không lưu vào \texttt{Khác} và hỏi lại người dùng để làm rõ loại giao dịch trước.
+\end{itemize}
+\subsubsection{FR-02-12: Phân loại từ nhiều loại đầu vào}
+
+\textbf{Mô tả}: Hệ thống cần phân loại giao dịch từ các nguồn đầu vào đã được REQ-01 hỗ trợ, gồm văn bản, giọng nói sau khi chuyển thành transcript, hóa đơn, bill chuyển khoản và ảnh bối cảnh.
+
+
+
+\textbf{Acceptance Criteria}:
+
+\begin{itemize}
+\item \textbf{Given} người dùng tạo giao dịch bằng văn bản tự nhiên  \\ \hspace*{1.5em}  \textbf{When} AI Engine bóc tách được tên giao dịch và giá tiền  \\ \hspace*{1.5em}  \textbf{Then} hệ thống sử dụng nội dung văn bản để suy đoán loại giao dịch và danh mục.
+\item \textbf{Given} người dùng tạo giao dịch bằng giọng nói  \\ \hspace*{1.5em}  \textbf{When} hệ thống đã chuyển giọng nói thành transcript thành công  \\ \hspace*{1.5em}  \textbf{Then} hệ thống sử dụng transcript để suy đoán loại giao dịch và danh mục.
+\item \textbf{Given} người dùng tạo giao dịch từ ảnh hóa đơn hoặc bill chuyển khoản  \\ \hspace*{1.5em}  \textbf{When} AI Engine trích xuất được nội dung giao dịch từ ảnh  \\ \hspace*{1.5em}  \textbf{Then} hệ thống sử dụng nội dung trích xuất để suy đoán loại giao dịch và danh mục.
+\item \textbf{Given} người dùng tạo giao dịch từ ảnh bối cảnh kèm mô tả ngắn, ví dụ ảnh rửa xe kèm \texttt{30k}  \\ \hspace*{1.5em}  \textbf{When} AI Engine nhận diện được bối cảnh ảnh và số tiền  \\ \hspace*{1.5em}  \textbf{Then} hệ thống sử dụng bối cảnh ảnh và mô tả kèm theo để suy đoán loại giao dịch và danh mục.
+\end{itemize}
+\subsubsection{FR-02-13: Phân loại từng giao dịch chi tiết từ hóa đơn nhiều mặt hàng}
+
+\textbf{Mô tả}: Khi REQ-01 bóc tách hóa đơn nhiều mặt hàng thành nhiều giao dịch chi tiết, REQ-02 phải gán danh mục riêng cho từng giao dịch chi tiết thay vì gán một danh mục chung cho toàn bộ hóa đơn.
+
+
+
+\textbf{Acceptance Criteria}:
+
+\begin{itemize}
+\item \textbf{Given} người dùng tải lên hóa đơn có nhiều mặt hàng thuộc nhiều nhóm khác nhau  \\ \hspace*{1.5em}  \textbf{When} hệ thống bóc tách hóa đơn thành nhiều giao dịch chi tiết  \\ \hspace*{1.5em}  \textbf{Then} mỗi giao dịch chi tiết phải được gán danh mục riêng dựa trên tên mặt hàng tương ứng.
+\item \textbf{Given} hóa đơn có mặt hàng \texttt{rau củ} và \texttt{dầu gội}  \\ \hspace*{1.5em}  \textbf{When} hệ thống tạo các giao dịch chi tiết từ hóa đơn  \\ \hspace*{1.5em}  \textbf{Then} hệ thống có thể gán \texttt{rau củ} vào \texttt{Tạp hóa} và \texttt{dầu gội} vào \texttt{Làm đẹp} hoặc danh mục phù hợp đang tồn tại trong danh sách danh mục của người dùng.
+\item \textbf{Given} một hóa đơn có nhiều mặt hàng và chỉ một số mặt hàng phân loại được rõ  \\ \hspace*{1.5em}  \textbf{When} hệ thống xử lý hóa đơn  \\ \hspace*{1.5em}  \textbf{Then} hệ thống phân loại trước các mặt hàng có thể phân loại được, lưu các mặt hàng chưa rõ vào \texttt{Khác} theo loại giao dịch phù hợp, sau đó hỏi lại hoặc gợi ý tạo danh mục mới cho các mặt hàng chưa rõ.
+\item \textbf{Given} người dùng gửi hóa đơn nhiều món kèm ngữ cảnh chỉ muốn lưu một món cụ thể, ví dụ \texttt{matcha latte}  \\ \hspace*{1.5em}  \textbf{When} hệ thống chỉ tạo giao dịch cho món được người dùng nhắc đến  \\ \hspace*{1.5em}  \textbf{Then} hệ thống chỉ phân loại giao dịch của món đó, không phân loại các món không được lưu.
+\item \textbf{Given} một mặt hàng trên hóa đơn không xác định được là chi phí, thu nhập hay giao dịch đặc biệt  \\ \hspace*{1.5em}  \textbf{When} hệ thống không đủ thông tin để xác định loại giao dịch  \\ \hspace*{1.5em}  \textbf{Then} hệ thống hỏi lại người dùng trước khi lưu mặt hàng đó.
+\end{itemize}
+\subsubsection{FR-02-14: Chỉnh sửa phân loại bằng ngôn ngữ tự nhiên}
+
+\textbf{Mô tả}: Người dùng có thể chỉnh sửa danh mục chính hoặc danh mục phụ của giao dịch đã lưu bằng câu lệnh hội thoại tự nhiên.
+
+
+
+\textbf{Acceptance Criteria}:
+
+\begin{itemize}
+\item \textbf{Given} người dùng đã có giao dịch \texttt{trà sữa 50.000đ} đang được gán danh mục \texttt{Ăn uống}  \\ \hspace*{1.5em}  \textbf{When} người dùng nhập \texttt{đổi trà sữa hôm nay sang Giải trí}  \\ \hspace*{1.5em}  \textbf{Then} hệ thống cập nhật danh mục của giao dịch tương ứng theo yêu cầu người dùng và phản hồi xác nhận.
+\item \textbf{Given} người dùng đã có giao dịch được gán danh mục chính  \\ \hspace*{1.5em}  \textbf{When} người dùng yêu cầu chuyển giao dịch sang một danh mục phụ đang tồn tại  \\ \hspace*{1.5em}  \textbf{Then} hệ thống cập nhật giao dịch với danh mục chính và danh mục phụ tương ứng.
+\item \textbf{Given} câu lệnh đổi danh mục có thể khớp với nhiều giao dịch  \\ \hspace*{1.5em}  \textbf{When} hệ thống không xác định được duy nhất giao dịch cần cập nhật  \\ \hspace*{1.5em}  \textbf{Then} hệ thống hỏi lại người dùng để chọn đúng giao dịch trước khi cập nhật danh mục.
+\item \textbf{Given} người dùng yêu cầu đổi sang một danh mục không tồn tại trong danh sách danh mục hiện có  \\ \hspace*{1.5em}  \textbf{When} hệ thống xử lý yêu cầu  \\ \hspace*{1.5em}  \textbf{Then} hệ thống hỏi người dùng muốn chọn danh mục hiện có hay tạo danh mục mới.
+\item \textbf{Given} người dùng xác nhận tạo danh mục mới từ câu lệnh đổi danh mục  \\ \hspace*{1.5em}  \textbf{When} tên danh mục mới hợp lệ và người dùng chọn nhóm giao dịch phù hợp  \\ \hspace*{1.5em}  \textbf{Then} hệ thống tạo danh mục mới và cập nhật giao dịch sang danh mục đó.
+\end{itemize}
+\subsubsection{FR-02-15: Ghi nhận phản hồi phân loại sai và ẩn danh hóa log}
+
+\textbf{Mô tả}: Khi người dùng sửa danh mục do AI phân loại sai, hệ thống cần lưu log để phục vụ đánh giá thủ công và cải thiện chất lượng phân loại. Khi giao dịch liên quan bị xóa cứng, log phân loại phải được ẩn danh hóa.
+
+
+
+\textbf{Acceptance Criteria}:
+
+\begin{itemize}
+\item \textbf{Given} hệ thống đã tự động gán danh mục cho một giao dịch  \\ \hspace*{1.5em}  \textbf{When} người dùng chỉnh sửa danh mục đó  \\ \hspace*{1.5em}  \textbf{Then} hệ thống lưu log gồm danh mục AI gán ban đầu, danh mục người dùng sửa cuối cùng, giao dịch liên quan và thời điểm chỉnh sửa.
+\item \textbf{Given} Admin/Reviewer cần đánh giá lỗi phân loại  \\ \hspace*{1.5em}  \textbf{When} Admin/Reviewer xem log phản hồi phân loại  \\ \hspace*{1.5em}  \textbf{Then} hệ thống cung cấp dữ liệu đủ để so sánh danh mục AI gán ban đầu với danh mục sau khi người dùng chỉnh sửa.
+\item \textbf{Given} log phản hồi phân loại được ghi nhận  \\ \hspace*{1.5em}  \textbf{When} hệ thống lưu log  \\ \hspace*{1.5em}  \textbf{Then} log không được làm thay đổi dữ liệu giao dịch cuối cùng mà người dùng đã chỉnh sửa.
+\item \textbf{Given} một giao dịch bị xóa cứng theo chính sách dữ liệu  \\ \hspace*{1.5em}  \textbf{When} hệ thống xử lý log phản hồi liên quan đến giao dịch đó  \\ \hspace*{1.5em}  \textbf{Then} hệ thống ẩn danh hóa log phân loại liên quan để không còn gắn trực tiếp với giao dịch hoặc người dùng cụ thể.
+\item \textbf{Given} log đã được ẩn danh hóa sau khi giao dịch bị xóa cứng  \\ \hspace*{1.5em}  \textbf{When} Admin/Reviewer xem dữ liệu đánh giá AI  \\ \hspace*{1.5em}  \textbf{Then} hệ thống chỉ hiển thị dữ liệu đã ẩn danh hóa phục vụ thống kê/chất lượng, không hiển thị định danh giao dịch gốc hoặc định danh người dùng.
+\end{itemize}
+\warningicon\  AMBIGUOUS: Tiêu chí ẩn danh hóa cụ thể, ví dụ giữ lại trường nào và loại bỏ trường nào, cần được Tech Lead/PO chốt khi thiết kế dữ liệu.
+
+
+
+\subsubsection{FR-02-16: Cá nhân hóa phân loại dựa trên thói quen người dùng}
+
+\textbf{Mô tả}: Hệ thống có thể sử dụng các đặc điểm/thói quen đã được đánh dấu từ lịch sử sử dụng để hỗ trợ phân loại chính xác hơn mà không cần gửi toàn bộ lịch sử chat dài hạn cho LLM. Hệ thống cần thông báo hoặc xin phép người dùng trước khi dùng thói quen cá nhân cho mục đích phân loại.
+
+
+
+\textbf{Acceptance Criteria}:
+
+\begin{itemize}
+\item \textbf{Given} hệ thống muốn sử dụng thói quen cá nhân của người dùng để hỗ trợ phân loại  \\ \hspace*{1.5em}  \textbf{When} người dùng chưa từng được thông báo hoặc chưa cấp phép  \\ \hspace*{1.5em}  \textbf{Then} hệ thống hiển thị thông báo/xin phép trước khi áp dụng cá nhân hóa phân loại.
+\item \textbf{Given} người dùng đã đồng ý cho hệ thống sử dụng thói quen cá nhân để phân loại  \\ \hspace*{1.5em}  \textbf{When} hệ thống đã ghi nhận đặc điểm sử dụng lặp lại của người dùng, ví dụ từ hay dùng hoặc giao dịch hay chi  \\ \hspace*{1.5em}  \textbf{Then} hệ thống được sử dụng đặc điểm đã được đánh dấu để hỗ trợ suy đoán danh mục.
+\item \textbf{Given} người dùng nhiều lần sửa cùng một kiểu giao dịch sang cùng một danh mục  \\ \hspace*{1.5em}  \textbf{When} hệ thống gặp lại kiểu giao dịch tương tự  \\ \hspace*{1.5em}  \textbf{Then} hệ thống ưu tiên danh mục phù hợp với thói quen đã được ghi nhận của người dùng, nếu không mâu thuẫn với ngữ cảnh hiện tại.
+\item \textbf{Given} dữ liệu ngữ cảnh chat thô đã quá 48 giờ  \\ \hspace*{1.5em}  \textbf{When} hệ thống cần cá nhân hóa phân loại  \\ \hspace*{1.5em}  \textbf{Then} hệ thống không gửi toàn bộ nội dung chat cũ cho LLM mà chỉ sử dụng các đặc điểm/thói quen đã được đánh dấu.
+\item \textbf{Given} người dùng từ chối cho hệ thống dùng thói quen cá nhân để phân loại  \\ \hspace*{1.5em}  \textbf{When} hệ thống phân loại giao dịch mới  \\ \hspace*{1.5em}  \textbf{Then} hệ thống chỉ sử dụng ngữ cảnh hiện tại, dữ liệu giao dịch hiện tại và danh sách danh mục của người dùng.
+\end{itemize}
+\warningicon\  AMBIGUOUS: Danh sách đặc điểm/thói quen được phép dùng để cá nhân hóa phân loại chưa được PO chốt đầy đủ.
+
+
+
+\subsubsection{FR-02-17: Đảm bảo dữ liệu phân loại phục vụ báo cáo về sau}
+
+\textbf{Mô tả}: Danh mục là dữ liệu đầu vào quan trọng cho báo cáo và phân tích tài chính. Hệ thống cần đảm bảo mỗi giao dịch được lưu có loại giao dịch và danh mục cuối cùng phù hợp, kể cả trường hợp tạm thời là \texttt{Khác}.
+
+
+
+\textbf{Acceptance Criteria}:
+
+\begin{itemize}
+\item \textbf{Given} giao dịch được lưu thành công  \\ \hspace*{1.5em}  \textbf{When} hệ thống kiểm tra dữ liệu giao dịch  \\ \hspace*{1.5em}  \textbf{Then} giao dịch phải có loại giao dịch và danh mục cuối cùng, bao gồm cả trường hợp danh mục là \texttt{Khác}.
+\item \textbf{Given} giao dịch được gán vào danh mục phụ  \\ \hspace*{1.5em}  \textbf{When} hệ thống kiểm tra dữ liệu phân loại của giao dịch  \\ \hspace*{1.5em}  \textbf{Then} giao dịch phải có liên kết đến danh mục chính chứa danh mục phụ đó.
+\item \textbf{Given} giao dịch đang được lưu trong danh mục \texttt{Khác}  \\ \hspace*{1.5em}  \textbf{When} hệ thống tổng hợp dữ liệu cho báo cáo về sau  \\ \hspace*{1.5em}  \textbf{Then} giao dịch vẫn được đưa vào báo cáo theo nhóm \texttt{Khác} tương ứng cho đến khi người dùng cập nhật danh mục cụ thể.
+\item \textbf{Given} người dùng sửa danh mục của một giao dịch đã lưu  \\ \hspace*{1.5em}  \textbf{When} hệ thống cập nhật danh mục thành công  \\ \hspace*{1.5em}  \textbf{Then} các dữ liệu phụ thuộc vào danh mục phải sử dụng danh mục mới nhất của giao dịch.
+\item \textbf{Given} người dùng xóa cứng một danh mục có giao dịch liên quan  \\ \hspace*{1.5em}  \textbf{When} hệ thống xóa cứng các giao dịch liên quan  \\ \hspace*{1.5em}  \textbf{Then} các dữ liệu báo cáo về sau không còn tính các giao dịch đã bị xóa cứng đó.
+\end{itemize}
+\warningicon\  AMBIGUOUS: Việc cập nhật lại báo cáo sau khi đổi/xóa danh mục thuộc phạm vi triển khai của REQ-02 hay REQ-05 cần PO xác nhận.
+
+
+
+\subsection{Yêu cầu Phi chức năng (NFR)}
+
+\begin{itemize}
+\item \textbf{Ngôn ngữ đầu vào}: Phân loại cần hỗ trợ đầu vào tiếng Việt, tiếng Anh và câu pha trộn Việt - Anh theo REQ-01.
+\item \textbf{Nhãn danh mục}: Mỗi danh mục chỉ cần một nhãn hiển thị duy nhất; không bắt buộc lưu nhãn song ngữ Anh - Việt.
+\item \textbf{Danh mục tùy biến}: Người dùng có thể thêm, sửa, xóa danh mục theo nhu cầu riêng, bao gồm danh mục mặc định, ngoại trừ \texttt{Khác}.
+\item \textbf{Danh mục phụ}: Hệ thống cần hỗ trợ thêm và quản lý danh mục phụ 1 cấp dưới danh mục chính.
+\item \textbf{Không hỗ trợ danh mục lồng nhiều cấp}: MVP không hỗ trợ danh mục phụ bên dưới danh mục phụ.
+\item \textbf{Danh mục mặc định cho chi phí}: \texttt{Ăn uống}, \texttt{Nhà cửa}, \texttt{Mua sắm}, \texttt{Di chuyển}, \texttt{Giải trí}, \texttt{Tạp hóa}, \texttt{Sức khỏe}, \texttt{Giáo dục}, \texttt{Điện tử}, \texttt{Thể thao}, \texttt{Làm đẹp}, \texttt{Khác}.
+\item \textbf{Danh mục mặc định cho thu nhập}: \texttt{Lương}, \texttt{Thưởng}, \texttt{Đầu tư}, \texttt{Khác}.
+\item \textbf{Danh mục Khác}: Hệ thống cần hỗ trợ \texttt{Khác} cho cả chi phí và thu nhập; đây là danh mục hệ thống bắt buộc, không cho phép sửa hoặc xóa.
+\item \textbf{Gợi ý tạo danh mục mới}: Nếu AI không tìm được danh mục hợp lý trong danh sách hiện tại của người dùng, hệ thống cần gợi ý tạo danh mục mới trực tiếp trong chat, cho phép người dùng nhấn đồng ý hoặc chỉnh sửa tên trước khi thêm.
+\item \textbf{Ưu tiên gợi ý danh mục phụ}: Khi AI có thể gợi ý cả danh mục chính và danh mục phụ, hệ thống ưu tiên gợi ý danh mục phụ nếu có danh mục chính phù hợp đang tồn tại.
+\item \textbf{Xóa danh mục}: Khi người dùng xóa cứng một danh mục không phải \texttt{Khác}, hệ thống phải cảnh báo số lượng giao dịch bị ảnh hưởng, yêu cầu xác nhận, sau đó xóa cứng danh mục và tất cả giao dịch liên quan.
+\item \textbf{Xóa danh mục chính}: Khi xóa danh mục chính, hệ thống xóa cứng toàn bộ danh mục phụ thuộc danh mục đó và tất cả giao dịch liên quan.
+\item \textbf{Ẩn danh hóa log}: Sau khi giao dịch bị xóa cứng, log phân loại liên quan phải được ẩn danh hóa.
+\item \textbf{Tính nhất quán}: Mỗi giao dịch được lưu thành công cần có loại giao dịch và danh mục cuối cùng; nếu có danh mục phụ thì phải giữ liên kết với danh mục chính.
+\item \textbf{Giao dịch đặc biệt}: REQ-02 cần nhận diện quản lý món nợ, cho vay/vay mượn, tiết kiệm, ngân sách, đầu tư có lãi/lỗ và chuyển tiền đi đầu tư, nhưng không xử lý chi tiết nghiệp vụ dòng tiền như REQ-06.
+\item \textbf{Truy vết}: Giao dịch được AI phân loại cần lưu thông tin danh mục AI gán ban đầu và danh mục cuối cùng nếu người dùng có chỉnh sửa.
+\item \textbf{Bảo mật}: Dữ liệu giao dịch, danh mục, log phân loại sai và đặc điểm/thói quen cá nhân của người dùng phải được xem là dữ liệu nhạy cảm và chỉ hiển thị cho đúng người dùng sở hữu hoặc vai trò được phép.
+\item \textbf{Quản lý ngữ cảnh}: Nội dung chat thô chỉ được dùng trong thời hạn ngữ cảnh 48 giờ; sau đó hệ thống chỉ sử dụng đặc điểm/thói quen đã được đánh dấu nếu có.
+\item \textbf{Minh bạch cá nhân hóa}: Hệ thống phải thông báo hoặc xin phép trước khi sử dụng thói quen cá nhân của người dùng để hỗ trợ phân loại.
+\end{itemize}
+\subsection{Out of Scope}
+
+\begin{itemize}
+\item Tạo báo cáo biểu đồ tuần/tháng/quý/năm.
+\item Đưa ra insight tài chính cá nhân hóa từ dữ liệu danh mục.
+\item Thiết lập ngân sách và cảnh báo vượt ngân sách chi tiết.
+\item Tự động đồng bộ giao dịch trực tiếp từ ngân hàng hoặc ví điện tử.
+\item Chia tiền nhóm hoặc split bill giữa nhiều người.
+\item Quản lý chi tiết tài sản ròng, số dư ví, tài khoản đầu tư, nợ/vay hoặc đối soát dòng tiền chuyên sâu.
+\item Xây dựng mô hình AI phân loại riêng từ đầu.
+\end{itemize}
+\subsection{Open Questions}
+
+\begin{itemize}
+\item [ ] Quy tắc tên hợp lệ của danh mục gồm những gì: độ dài tối đa, ký tự đặc biệt, emoji, trùng tên giữa Expense và Income?
+\item [ ] Với giao dịch đặc biệt \texttt{Ngân sách}, hành vi sau nhận diện thuộc REQ-04 hay một REQ riêng?
+\item [ ] Danh sách trường dữ liệu chi tiết cho từng giao dịch đặc biệt sẽ được chốt ở REQ nào?
+\item [ ] Danh sách đặc điểm/thói quen người dùng được phép dùng để cá nhân hóa phân loại gồm những gì?
+\item [ ] Khi người dùng sửa/xóa danh mục của giao dịch đã lưu, việc cập nhật lại báo cáo liên quan thuộc phạm vi REQ-02 hay REQ-05?
+\item [ ] Tiêu chí ẩn danh hóa log sau khi giao dịch bị xóa cứng gồm những trường nào được giữ lại và những trường nào bắt buộc loại bỏ?
+\end{itemize}
+\subsection{Hướng dẫn phê duyệt}
+
+\begin{quote}
+Để phê duyệt spec này, PO đổi tên file từ \texttt{DRAFT-REQ-02.md} → \texttt{REQ-02.md}
+\end{quote}
+
+\begin{quote}
+Sau khi đổi tên, BA mới chuyển sang tạo DRAFT cho \texttt{REQ-03}.
+\end{quote}

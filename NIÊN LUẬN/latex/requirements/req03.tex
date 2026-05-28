@@ -1,0 +1,298 @@
+\section{REQ-03: Quản lý Ngân sách (Budget Management)}
+
+
+
+\subsection{Metadata}
+
+\begin{itemize}
+\item \textbf{Brief nguồn}: \texttt{Yêu cầu tính năng.md} — mục 3: Quản lý ngân sách; tham chiếu \texttt{REQ-02.md} (FR-02-08 nhận diện giao dịch \texttt{Ngân sách})
+\item \textbf{Ngày tạo}: 25/05/2026
+\item \textbf{Lần cập nhật cuối}: 27/05/2026 — khởi tạo DRAFT REQ-03
+\item \textbf{Trạng thái}: DRAFT — chờ PO phê duyệt
+\end{itemize}
+\subsection{Tóm tắt}
+
+Tính năng Quản lý Ngân sách cho phép người dùng thiết lập hạn mức chi tiêu theo danh mục hoặc tổng thể trong kỳ tuần hoặc tháng. Hệ thống tự động theo dõi tiến độ chi tiêu so với ngân sách đã đặt, chủ động cảnh báo khi chi tiêu đạt các ngưỡng 70\%, 90\% và 100\% hạn mức. Người dùng có thể thiết lập, chỉnh sửa, xem tóm tắt và xóa ngân sách thông qua giao diện hội thoại bằng ngôn ngữ tự nhiên trong chat. Hệ thống ghi nhận lịch sử thay đổi ngân sách để phục vụ truy vết và hỗ trợ tính năng tự động chuyển/tích lũy ngân sách chưa dùng hết (rollover) sang kỳ tiếp theo. Ngân sách được gắn với danh mục từ REQ-02 và là dữ liệu đầu vào cho báo cáo ngân sách tại REQ-04.
+
+
+
+\subsection{Phân tích yêu cầu}
+
+
+
+\subsubsection{Actors}
+
+\begin{itemize}
+\item \textbf{User}: Người dùng cuối thiết lập, chỉnh sửa, xem, xóa ngân sách và nhận cảnh báo chi tiêu.
+\item \textbf{AI Engine}: Thành phần xử lý ngôn ngữ tự nhiên để hiểu yêu cầu ngân sách từ chat, tạo tóm tắt ngân sách và chủ động gửi cảnh báo/insight.
+\item \textbf{System}: Ứng dụng lưu trữ ngân sách, tính toán tiến độ chi tiêu, kích hoạt cảnh báo tại các ngưỡng, quản lý rollover và ghi nhận lịch sử thay đổi.
+\item \textbf{Admin/Reviewer}: Người theo dõi log hệ thống và đánh giá chất lượng nhận diện yêu cầu ngân sách từ AI.
+\end{itemize}
+\subsubsection{Features}
+
+\begin{itemize}
+\item Thiết lập ngân sách theo danh mục chi phí với kỳ tuần hoặc tháng.
+\item Thiết lập ngân sách tổng thể cho toàn bộ chi phí với kỳ tuần hoặc tháng.
+\item Theo dõi tiến độ chi tiêu real-time so với hạn mức ngân sách đã đặt.
+\item Cảnh báo chủ động khi chi tiêu đạt ngưỡng 70\%, 90\% và 100\% hạn mức.
+\item Thiết lập và chỉnh sửa ngân sách bằng ngôn ngữ tự nhiên trong chat.
+\item Xem tóm tắt ngân sách trong chat.
+\item Ghi nhận lịch sử thay đổi ngân sách.
+\item Tự động chuyển/tích lũy ngân sách chưa dùng hết sang kỳ tiếp theo (rollover).
+\item Xóa/hủy ngân sách.
+\end{itemize}
+\subsubsection{Constraints}
+
+\begin{itemize}
+\item Ngân sách là dữ liệu per-user; thay đổi ngân sách của một người dùng không ảnh hưởng đến người dùng khác.
+\item Ngân sách theo danh mục phải liên kết với danh mục chi phí đang tồn tại trong danh sách danh mục của người dùng (theo REQ-02).
+\item Khi danh mục bị xóa cứng (theo FR-02-05, FR-02-06), ngân sách liên kết với danh mục đó cũng phải bị xóa.
+\item Mỗi danh mục chỉ có tối đa một ngân sách đang hoạt động trong cùng một kỳ.
+\item Ngân sách tổng thể và ngân sách theo danh mục có thể tồn tại song song; hệ thống cần xử lý cả hai khi theo dõi tiến độ.
+\item Kỳ ngân sách hỗ trợ trong MVP: tuần và tháng.
+\item Ngữ cảnh chat thô chỉ được giữ trong 48 giờ theo REQ-01.
+\item Đầu vào cần hỗ trợ tiếng Việt, tiếng Anh và câu pha trộn Việt - Anh theo REQ-01.
+\item Ngân sách chỉ áp dụng cho giao dịch loại \texttt{Expense}; không áp dụng cho \texttt{Income} hoặc giao dịch đặc biệt.
+\end{itemize}
+\subsubsection{Ambiguities}
+
+\begin{itemize}
+\item \warningicon\  AMBIGUOUS: Chưa rõ kỳ tuần bắt đầu từ thứ Hai hay Chủ Nhật, hoặc có cho phép người dùng tùy chỉnh ngày bắt đầu tuần hay không.
+\item \warningicon\  AMBIGUOUS: Chưa rõ hành vi khi người dùng đặt ngân sách theo danh mục vượt quá ngân sách tổng thể — hệ thống có cần cảnh báo hay không.
+\item \warningicon\  AMBIGUOUS: Chưa rõ rollover có giới hạn tối đa số tiền tích lũy hoặc số kỳ liên tiếp được rollover hay không.
+\item \warningicon\  AMBIGUOUS: Chưa rõ ngân sách có thể áp dụng cho danh mục phụ hay chỉ danh mục chính.
+\item \warningicon\  AMBIGUOUS: Chưa rõ khi giao dịch bị chỉnh sửa (sửa số tiền hoặc đổi danh mục), hệ thống có cần tính lại tiến độ ngân sách ngay lập tức hay không.
+\end{itemize}
+\subsubsection{Out of Scope sơ bộ}
+
+\begin{itemize}
+\item Thiết lập ngân sách theo kỳ quý hoặc năm.
+\item Ngân sách cho giao dịch thu nhập hoặc giao dịch đặc biệt.
+\item Ngân sách nhóm/chia sẻ giữa nhiều người dùng.
+\item Tự động đề xuất hạn mức ngân sách dựa trên lịch sử chi tiêu (AI auto-suggest).
+\item Báo cáo chi tiết ngân sách — thuộc phạm vi REQ-04.
+\end{itemize}
+\subsection{Actors}
+
+\begin{itemize}
+\item \textbf{User}: Người dùng cuối thiết lập, chỉnh sửa, xem, xóa ngân sách và nhận cảnh báo chi tiêu.
+\item \textbf{AI Engine}: Thành phần xử lý ngôn ngữ tự nhiên để hiểu yêu cầu ngân sách từ chat và tạo tóm tắt/cảnh báo.
+\item \textbf{System}: Ứng dụng lưu ngân sách, tính toán tiến độ, kích hoạt cảnh báo, quản lý rollover và ghi nhận lịch sử.
+\item \textbf{Admin/Reviewer}: Người theo dõi log hệ thống để đánh giá chất lượng nhận diện yêu cầu ngân sách.
+\end{itemize}
+\subsection{Yêu cầu Chức năng}
+
+
+
+\subsubsection{FR-03-01: Thiết lập ngân sách theo danh mục}
+
+\textbf{Mô tả}: Người dùng có thể thiết lập hạn mức chi tiêu cho một danh mục chi phí cụ thể trong kỳ tuần hoặc tháng. Ngân sách theo danh mục phải liên kết với danh mục chi phí đang tồn tại trong danh sách danh mục của người dùng.
+
+
+
+\textbf{Acceptance Criteria}:
+
+\begin{itemize}
+\item \textbf{Given} người dùng muốn đặt ngân sách cho danh mục \texttt{Ăn uống}  \\ \hspace*{1.5em}  \textbf{When} người dùng chọn danh mục \texttt{Ăn uống}, nhập hạn mức \texttt{2.000.000đ} và chọn kỳ \texttt{tháng}  \\ \hspace*{1.5em}  \textbf{Then} hệ thống tạo ngân sách \texttt{Ăn uống} với hạn mức \texttt{2.000.000đ} cho kỳ tháng hiện tại và lưu vào hệ thống.
+\item \textbf{Given} người dùng muốn đặt ngân sách cho danh mục \texttt{Di chuyển}  \\ \hspace*{1.5em}  \textbf{When} người dùng chọn danh mục \texttt{Di chuyển}, nhập hạn mức \texttt{500.000đ} và chọn kỳ \texttt{tuần}  \\ \hspace*{1.5em}  \textbf{Then} hệ thống tạo ngân sách \texttt{Di chuyển} với hạn mức \texttt{500.000đ} cho kỳ tuần hiện tại.
+\item \textbf{Given} người dùng đã có ngân sách đang hoạt động cho danh mục \texttt{Ăn uống} trong kỳ tháng  \\ \hspace*{1.5em}  \textbf{When} người dùng cố gắng tạo thêm một ngân sách tháng khác cho \texttt{Ăn uống}  \\ \hspace*{1.5em}  \textbf{Then} hệ thống từ chối tạo trùng và thông báo rằng danh mục đã có ngân sách đang hoạt động trong cùng kỳ, đồng thời gợi ý chỉnh sửa ngân sách hiện tại.
+\item \textbf{Given} người dùng muốn đặt ngân sách cho một danh mục không tồn tại trong danh sách danh mục của người dùng  \\ \hspace*{1.5em}  \textbf{When} người dùng chọn hoặc nhập tên danh mục không có trong hệ thống  \\ \hspace*{1.5em}  \textbf{Then} hệ thống từ chối tạo ngân sách và thông báo rằng danh mục không tồn tại, gợi ý tạo danh mục trước.
+\item \textbf{Given} người dùng muốn đặt ngân sách cho danh mục thuộc nhóm \texttt{Income}  \\ \hspace*{1.5em}  \textbf{When} người dùng chọn danh mục thu nhập, ví dụ \texttt{Lương}  \\ \hspace*{1.5em}  \textbf{Then} hệ thống từ chối tạo ngân sách và thông báo rằng ngân sách chỉ áp dụng cho danh mục chi phí.
+\item \textbf{Given} người dùng nhập hạn mức bằng \texttt{0} hoặc số âm  \\ \hspace*{1.5em}  \textbf{When} hệ thống kiểm tra dữ liệu đầu vào  \\ \hspace*{1.5em}  \textbf{Then} hệ thống từ chối tạo ngân sách và yêu cầu nhập hạn mức lớn hơn \texttt{0}.
+\end{itemize}
+\warningicon\  AMBIGUOUS: Chưa rõ ngân sách có thể áp dụng cho danh mục phụ (subcategory) hay chỉ áp dụng cho danh mục chính.
+
+
+
+\subsubsection{FR-03-02: Thiết lập ngân sách tổng thể}
+
+\textbf{Mô tả}: Người dùng có thể thiết lập hạn mức chi tiêu tổng thể cho toàn bộ chi phí trong kỳ tuần hoặc tháng. Ngân sách tổng thể áp dụng cho tất cả giao dịch chi phí bất kể danh mục.
+
+
+
+\textbf{Acceptance Criteria}:
+
+\begin{itemize}
+\item \textbf{Given} người dùng muốn đặt ngân sách tổng thể  \\ \hspace*{1.5em}  \textbf{When} người dùng nhập hạn mức \texttt{10.000.000đ} và chọn kỳ \texttt{tháng}  \\ \hspace*{1.5em}  \textbf{Then} hệ thống tạo ngân sách tổng thể với hạn mức \texttt{10.000.000đ} cho kỳ tháng hiện tại.
+\item \textbf{Given} người dùng đã có ngân sách tổng thể đang hoạt động cho kỳ tháng  \\ \hspace*{1.5em}  \textbf{When} người dùng cố gắng tạo thêm một ngân sách tổng thể tháng khác  \\ \hspace*{1.5em}  \textbf{Then} hệ thống từ chối tạo trùng và thông báo rằng đã có ngân sách tổng thể đang hoạt động trong cùng kỳ, gợi ý chỉnh sửa ngân sách hiện tại.
+\item \textbf{Given} người dùng đã có ngân sách tổng thể \texttt{10.000.000đ/tháng} và ngân sách theo danh mục \texttt{Ăn uống 2.000.000đ/tháng}, \texttt{Di chuyển 1.000.000đ/tháng}  \\ \hspace*{1.5em}  \textbf{When} hệ thống theo dõi tiến độ chi tiêu  \\ \hspace*{1.5em}  \textbf{Then} hệ thống theo dõi đồng thời ngân sách tổng thể lẫn ngân sách theo từng danh mục và cảnh báo độc lập cho mỗi ngân sách khi đạt ngưỡng.
+\item \textbf{Given} người dùng nhập hạn mức tổng thể nhỏ hơn tổng hạn mức các ngân sách danh mục đang hoạt động  \\ \hspace*{1.5em}  \textbf{When} hệ thống kiểm tra dữ liệu đầu vào  \\ \hspace*{1.5em}  \textbf{Then} hệ thống hiển thị cảnh báo rằng hạn mức tổng thể thấp hơn tổng hạn mức danh mục nhưng vẫn cho phép lưu nếu người dùng xác nhận.
+\end{itemize}
+\warningicon\  AMBIGUOUS: Chưa rõ khi tổng ngân sách theo danh mục vượt ngân sách tổng thể, hệ thống chỉ cảnh báo hay bắt buộc điều chỉnh.
+
+
+
+\subsubsection{FR-03-03: Theo dõi tiến độ chi tiêu so với ngân sách}
+
+\textbf{Mô tả}: Hệ thống tự động tính toán và cập nhật tiến độ chi tiêu thực tế so với hạn mức ngân sách đã đặt. Tiến độ được tính dựa trên tổng giá trị giao dịch chi phí thuộc danh mục và kỳ tương ứng.
+
+
+
+\textbf{Acceptance Criteria}:
+
+\begin{itemize}
+\item \textbf{Given} người dùng đã đặt ngân sách \texttt{Ăn uống 2.000.000đ/tháng}  \\ \hspace*{1.5em}  \textbf{When} người dùng tạo giao dịch chi phí \texttt{trà sữa 50.000đ} thuộc danh mục \texttt{Ăn uống} trong tháng hiện tại  \\ \hspace*{1.5em}  \textbf{Then} hệ thống cập nhật tiến độ chi tiêu ngân sách \texttt{Ăn uống} thành \texttt{50.000đ / 2.000.000đ} (2.5\%).
+\item \textbf{Given} người dùng đã đặt ngân sách tổng thể \texttt{10.000.000đ/tháng}  \\ \hspace*{1.5em}  \textbf{When} người dùng tạo giao dịch chi phí bất kỳ trong tháng hiện tại  \\ \hspace*{1.5em}  \textbf{Then} hệ thống cập nhật tiến độ chi tiêu ngân sách tổng thể bằng cách cộng thêm số tiền giao dịch mới.
+\item \textbf{Given} người dùng chỉnh sửa số tiền của một giao dịch chi phí đã lưu trong kỳ ngân sách hiện tại  \\ \hspace*{1.5em}  \textbf{When} giao dịch đã chỉnh sửa thuộc danh mục có ngân sách đang hoạt động  \\ \hspace*{1.5em}  \textbf{Then} hệ thống tính lại tiến độ chi tiêu ngân sách theo số tiền mới.
+\item \textbf{Given} người dùng xóa một giao dịch chi phí trong kỳ ngân sách hiện tại  \\ \hspace*{1.5em}  \textbf{When} giao dịch bị xóa thuộc danh mục có ngân sách đang hoạt động  \\ \hspace*{1.5em}  \textbf{Then} hệ thống trừ số tiền giao dịch đã xóa khỏi tiến độ chi tiêu ngân sách.
+\item \textbf{Given} người dùng đổi danh mục của một giao dịch chi phí từ \texttt{Ăn uống} sang \texttt{Giải trí}  \\ \hspace*{1.5em}  \textbf{When} cả hai danh mục đều có ngân sách đang hoạt động  \\ \hspace*{1.5em}  \textbf{Then} hệ thống trừ số tiền giao dịch khỏi tiến độ ngân sách \texttt{Ăn uống} và cộng vào tiến độ ngân sách \texttt{Giải trí}.
+\item \textbf{Given} giao dịch thuộc loại \texttt{Income} hoặc giao dịch đặc biệt  \\ \hspace*{1.5em}  \textbf{When} hệ thống tính toán tiến độ ngân sách  \\ \hspace*{1.5em}  \textbf{Then} hệ thống không tính giao dịch \texttt{Income} hoặc giao dịch đặc biệt vào tiến độ chi tiêu ngân sách.
+\end{itemize}
+\subsubsection{FR-03-04: Cảnh báo khi gần/vượt ngân sách}
+
+\textbf{Mô tả}: Hệ thống chủ động gửi cảnh báo cho người dùng khi tiến độ chi tiêu đạt các ngưỡng \texttt{70\%}, \texttt{90\%} và \texttt{100\%} hạn mức ngân sách. Cảnh báo được gửi trực tiếp trong giao diện chat.
+
+
+
+\textbf{Acceptance Criteria}:
+
+\begin{itemize}
+\item \textbf{Given} người dùng đã đặt ngân sách \texttt{Ăn uống 2.000.000đ/tháng} và tiến độ chi tiêu hiện tại chưa đến 70\%  \\ \hspace*{1.5em}  \textbf{When} người dùng tạo giao dịch chi phí \texttt{Ăn uống} khiến tổng chi tiêu đạt hoặc vượt \texttt{1.400.000đ} (70\%)  \\ \hspace*{1.5em}  \textbf{Then} hệ thống gửi cảnh báo trong chat thông báo chi tiêu \texttt{Ăn uống} đã đạt 70\% hạn mức ngân sách.
+\item \textbf{Given} tiến độ chi tiêu danh mục \texttt{Ăn uống} đã vượt ngưỡng 70\% nhưng chưa đến 90\%  \\ \hspace*{1.5em}  \textbf{When} người dùng tạo giao dịch chi phí \texttt{Ăn uống} khiến tổng chi tiêu đạt hoặc vượt \texttt{1.800.000đ} (90\%)  \\ \hspace*{1.5em}  \textbf{Then} hệ thống gửi cảnh báo trong chat thông báo chi tiêu \texttt{Ăn uống} đã đạt 90\% hạn mức ngân sách.
+\item \textbf{Given} tiến độ chi tiêu danh mục \texttt{Ăn uống} đã vượt ngưỡng 90\% nhưng chưa đến 100\%  \\ \hspace*{1.5em}  \textbf{When} người dùng tạo giao dịch chi phí \texttt{Ăn uống} khiến tổng chi tiêu đạt hoặc vượt \texttt{2.000.000đ} (100\%)  \\ \hspace*{1.5em}  \textbf{Then} hệ thống gửi cảnh báo trong chat thông báo chi tiêu \texttt{Ăn uống} đã đạt hoặc vượt 100\% hạn mức ngân sách.
+\item \textbf{Given} tiến độ chi tiêu đã vượt 100\% hạn mức ngân sách  \\ \hspace*{1.5em}  \textbf{When} người dùng tiếp tục tạo giao dịch chi phí trong cùng danh mục và cùng kỳ  \\ \hspace*{1.5em}  \textbf{Then} hệ thống không gửi thêm cảnh báo lặp lại cho cùng ngưỡng đã cảnh báo nhưng vẫn cho phép người dùng tạo giao dịch.
+\item \textbf{Given} người dùng đã đặt cả ngân sách tổng thể và ngân sách theo danh mục  \\ \hspace*{1.5em}  \textbf{When} chi tiêu vượt ngưỡng cảnh báo của ngân sách tổng thể  \\ \hspace*{1.5em}  \textbf{Then} hệ thống gửi cảnh báo riêng cho ngân sách tổng thể, độc lập với cảnh báo ngân sách theo danh mục.
+\item \textbf{Given} hệ thống gửi cảnh báo ngân sách trong chat  \\ \hspace*{1.5em}  \textbf{When} người dùng nhận được cảnh báo  \\ \hspace*{1.5em}  \textbf{Then} cảnh báo phải bao gồm tên ngân sách hoặc danh mục, ngưỡng đã đạt, số tiền đã chi và hạn mức ngân sách.
+\end{itemize}
+\warningicon\  AMBIGUOUS: Chưa rõ có cần hỗ trợ push notification ngoài app hoặc cảnh báo ngoài giao diện chat hay không, ví dụ notification trên thiết bị.
+
+
+
+\subsubsection{FR-03-05: Thiết lập ngân sách bằng ngôn ngữ tự nhiên trong chat}
+
+\textbf{Mô tả}: Người dùng có thể thiết lập hoặc chỉnh sửa ngân sách bằng câu lệnh hội thoại tự nhiên trong chat. AI Engine phân tích yêu cầu để xác định danh mục, hạn mức và kỳ ngân sách. Tính năng này liên kết với FR-02-08 khi REQ-02 nhận diện input liên quan đến \texttt{Ngân sách} và chuyển sang luồng xử lý ngân sách thay vì tạo giao dịch chi phí thông thường.
+
+
+
+\textbf{Acceptance Criteria}:
+
+\begin{itemize}
+\item \textbf{Given} người dùng nhập \texttt{đặt ngân sách ăn uống tháng này 2 triệu}  \\ \hspace*{1.5em}  \textbf{When} AI Engine xử lý đầu vào  \\ \hspace*{1.5em}  \textbf{Then} hệ thống tạo ngân sách cho danh mục \texttt{Ăn uống} với hạn mức \texttt{2.000.000đ} và kỳ tháng hiện tại.
+\item \textbf{Given} người dùng nhập \texttt{budget for food this month 2 million}  \\ \hspace*{1.5em}  \textbf{When} AI Engine xử lý đầu vào bằng tiếng Anh  \\ \hspace*{1.5em}  \textbf{Then} hệ thống tạo ngân sách cho danh mục \texttt{Ăn uống} (hoặc tên danh mục tương ứng) với hạn mức \texttt{2.000.000đ} và kỳ tháng hiện tại.
+\item \textbf{Given} người dùng nhập \texttt{đặt ngân sách tổng 10 triệu/tháng}  \\ \hspace*{1.5em}  \textbf{When} AI Engine xử lý đầu vào  \\ \hspace*{1.5em}  \textbf{Then} hệ thống tạo ngân sách tổng thể với hạn mức \texttt{10.000.000đ} cho kỳ tháng hiện tại.
+\item \textbf{Given} người dùng nhập \texttt{tăng ngân sách ăn uống lên 3 triệu}  \\ \hspace*{1.5em}  \textbf{When} AI Engine xử lý đầu vào và xác định ngân sách \texttt{Ăn uống} đang hoạt động  \\ \hspace*{1.5em}  \textbf{Then} hệ thống cập nhật hạn mức ngân sách \texttt{Ăn uống} thành \texttt{3.000.000đ} và ghi nhận thay đổi vào lịch sử.
+\item \textbf{Given} người dùng nhập \texttt{giảm ngân sách di chuyển xuống 300k}  \\ \hspace*{1.5em}  \textbf{When} AI Engine xử lý đầu vào và xác định ngân sách \texttt{Di chuyển} đang hoạt động  \\ \hspace*{1.5em}  \textbf{Then} hệ thống cập nhật hạn mức ngân sách \texttt{Di chuyển} thành \texttt{300.000đ} và ghi nhận thay đổi vào lịch sử.
+\item \textbf{Given} người dùng nhập yêu cầu ngân sách nhưng thiếu thông tin, ví dụ \texttt{đặt ngân sách 2 triệu} mà không rõ danh mục hoặc kỳ  \\ \hspace*{1.5em}  \textbf{When} AI Engine không xác định đủ thông tin  \\ \hspace*{1.5em}  \textbf{Then} hệ thống hỏi lại người dùng các thông tin còn thiếu trước khi tạo ngân sách.
+\item \textbf{Given} người dùng nhập yêu cầu ngân sách cho danh mục không tồn tại, ví dụ \texttt{đặt ngân sách du lịch 5 triệu/tháng}  \\ \hspace*{1.5em}  \textbf{When} danh mục \texttt{Du lịch} không có trong danh sách danh mục của người dùng  \\ \hspace*{1.5em}  \textbf{Then} hệ thống thông báo danh mục không tồn tại và gợi ý tạo danh mục mới trước khi đặt ngân sách.
+\end{itemize}
+\subsubsection{FR-03-06: Xem tóm tắt ngân sách trong chat}
+
+\textbf{Mô tả}: Người dùng có thể yêu cầu xem tóm tắt tình trạng ngân sách hiện tại bằng ngôn ngữ tự nhiên trong chat. Hệ thống phản hồi bản tóm tắt bao gồm danh sách ngân sách đang hoạt động, hạn mức, số tiền đã chi và tỷ lệ phần trăm tiến độ.
+
+
+
+\textbf{Acceptance Criteria}:
+
+\begin{itemize}
+\item \textbf{Given} người dùng nhập \texttt{ngân sách tháng này thế nào?}  \\ \hspace*{1.5em}  \textbf{When} hệ thống xử lý yêu cầu  \\ \hspace*{1.5em}  \textbf{Then} hệ thống phản hồi tóm tắt toàn bộ ngân sách đang hoạt động trong kỳ tháng hiện tại, bao gồm ngân sách tổng thể và ngân sách theo từng danh mục.
+\item \textbf{Given} người dùng nhập \texttt{ngân sách ăn uống còn bao nhiêu?}  \\ \hspace*{1.5em}  \textbf{When} hệ thống xử lý yêu cầu và xác định danh mục \texttt{Ăn uống}  \\ \hspace*{1.5em}  \textbf{Then} hệ thống phản hồi thông tin ngân sách \texttt{Ăn uống} gồm hạn mức, số tiền đã chi, số tiền còn lại và tỷ lệ phần trăm tiến độ.
+\item \textbf{Given} người dùng nhập \texttt{how is my budget this week?}  \\ \hspace*{1.5em}  \textbf{When} hệ thống xử lý yêu cầu bằng tiếng Anh  \\ \hspace*{1.5em}  \textbf{Then} hệ thống phản hồi tóm tắt ngân sách đang hoạt động trong kỳ tuần hiện tại.
+\item \textbf{Given} người dùng không có ngân sách nào đang hoạt động  \\ \hspace*{1.5em}  \textbf{When} người dùng yêu cầu xem tóm tắt ngân sách  \\ \hspace*{1.5em}  \textbf{Then} hệ thống thông báo rằng chưa có ngân sách nào được thiết lập và gợi ý cách tạo ngân sách.
+\item \textbf{Given} bản tóm tắt ngân sách được hiển thị  \\ \hspace*{1.5em}  \textbf{When} hệ thống phản hồi trong chat  \\ \hspace*{1.5em}  \textbf{Then} bản tóm tắt phải bao gồm: tên ngân sách (hoặc danh mục), kỳ, hạn mức, số tiền đã chi, số tiền còn lại và tỷ lệ phần trăm tiến độ.
+\end{itemize}
+\subsubsection{FR-03-07: Lịch sử thay đổi ngân sách}
+
+\textbf{Mô tả}: Hệ thống ghi nhận mọi thay đổi liên quan đến ngân sách để phục vụ truy vết, bao gồm thời điểm tạo, chỉnh sửa hạn mức, thay đổi kỳ, bật/tắt rollover và xóa ngân sách.
+
+
+
+\textbf{Acceptance Criteria}:
+
+\begin{itemize}
+\item \textbf{Given} người dùng tạo ngân sách mới  \\ \hspace*{1.5em}  \textbf{When} hệ thống lưu ngân sách thành công  \\ \hspace*{1.5em}  \textbf{Then} hệ thống ghi nhận bản ghi lịch sử gồm thời điểm tạo, danh mục, hạn mức và kỳ.
+\item \textbf{Given} người dùng chỉnh sửa hạn mức ngân sách từ \texttt{2.000.000đ} lên \texttt{3.000.000đ}  \\ \hspace*{1.5em}  \textbf{When} hệ thống cập nhật hạn mức thành công  \\ \hspace*{1.5em}  \textbf{Then} hệ thống ghi nhận bản ghi lịch sử gồm thời điểm chỉnh sửa, hạn mức cũ và hạn mức mới.
+\item \textbf{Given} người dùng bật hoặc tắt tính năng rollover cho một ngân sách  \\ \hspace*{1.5em}  \textbf{When} hệ thống cập nhật trạng thái rollover  \\ \hspace*{1.5em}  \textbf{Then} hệ thống ghi nhận bản ghi lịch sử gồm thời điểm thay đổi và trạng thái rollover mới.
+\item \textbf{Given} người dùng xóa một ngân sách  \\ \hspace*{1.5em}  \textbf{When} hệ thống xóa ngân sách thành công  \\ \hspace*{1.5em}  \textbf{Then} hệ thống ghi nhận bản ghi lịch sử gồm thời điểm xóa và thông tin ngân sách đã xóa.
+\item \textbf{Given} người dùng muốn xem lịch sử thay đổi ngân sách  \\ \hspace*{1.5em}  \textbf{When} người dùng yêu cầu xem lịch sử trong chat hoặc giao diện  \\ \hspace*{1.5em}  \textbf{Then} hệ thống hiển thị danh sách các thay đổi theo thứ tự thời gian giảm dần.
+\end{itemize}
+\warningicon\  AMBIGUOUS: Chưa rõ lịch sử thay đổi ngân sách được giữ trong bao lâu và có giới hạn số bản ghi hay không.
+
+
+
+\subsubsection{FR-03-08: Tự động chuyển/tích lũy ngân sách chưa dùng hết (Rollover)}
+
+\textbf{Mô tả}: Khi kỳ ngân sách kết thúc và người dùng chưa chi hết hạn mức, hệ thống có thể tự động chuyển số tiền ngân sách còn lại sang kỳ tiếp theo nếu tính năng rollover được bật. Tính năng rollover có thể bật/tắt cho từng ngân sách riêng lẻ.
+
+
+
+\textbf{Acceptance Criteria}:
+
+\begin{itemize}
+\item \textbf{Given} người dùng đã đặt ngân sách \texttt{Ăn uống 2.000.000đ/tháng} với rollover đang bật  \\ \hspace*{1.5em}  \textbf{When} kỳ tháng kết thúc và chi tiêu thực tế là \texttt{1.500.000đ}  \\ \hspace*{1.5em}  \textbf{Then} hệ thống tạo ngân sách \texttt{Ăn uống} cho kỳ tháng tiếp theo với hạn mức \texttt{2.500.000đ} (hạn mức gốc \texttt{2.000.000đ} + rollover \texttt{500.000đ}).
+\item \textbf{Given} người dùng đã đặt ngân sách \texttt{Ăn uống 2.000.000đ/tháng} với rollover đang tắt  \\ \hspace*{1.5em}  \textbf{When} kỳ tháng kết thúc và chi tiêu thực tế là \texttt{1.500.000đ}  \\ \hspace*{1.5em}  \textbf{Then} hệ thống tạo ngân sách \texttt{Ăn uống} cho kỳ tháng tiếp theo với hạn mức gốc \texttt{2.000.000đ}, không cộng thêm phần chưa dùng hết.
+\item \textbf{Given} người dùng đã đặt ngân sách \texttt{Ăn uống 2.000.000đ/tháng} với rollover đang bật  \\ \hspace*{1.5em}  \textbf{When} kỳ tháng kết thúc và chi tiêu thực tế vượt hạn mức, ví dụ \texttt{2.300.000đ}  \\ \hspace*{1.5em}  \textbf{Then} hệ thống tạo ngân sách \texttt{Ăn uống} cho kỳ tháng tiếp theo với hạn mức \texttt{1.700.000đ} (hạn mức gốc \texttt{2.000.000đ} - phần vượt \texttt{300.000đ}).
+\item \textbf{Given} người dùng bật rollover cho ngân sách đang hoạt động  \\ \hspace*{1.5em}  \textbf{When} người dùng gửi yêu cầu bật rollover trong chat, ví dụ \texttt{bật rollover cho ngân sách ăn uống}  \\ \hspace*{1.5em}  \textbf{Then} hệ thống cập nhật trạng thái rollover thành bật và phản hồi xác nhận.
+\item \textbf{Given} người dùng tắt rollover cho ngân sách đang hoạt động  \\ \hspace*{1.5em}  \textbf{When} người dùng gửi yêu cầu tắt rollover  \\ \hspace*{1.5em}  \textbf{Then} hệ thống cập nhật trạng thái rollover thành tắt và phản hồi xác nhận; kỳ tiếp theo sẽ sử dụng hạn mức gốc.
+\item \textbf{Given} ngân sách tổng thể có rollover đang bật  \\ \hspace*{1.5em}  \textbf{When} kỳ tổng thể kết thúc và còn ngân sách chưa dùng hết  \\ \hspace*{1.5em}  \textbf{Then} hệ thống áp dụng rollover cho ngân sách tổng thể tương tự như ngân sách theo danh mục.
+\end{itemize}
+\warningicon\  AMBIGUOUS: Chưa rõ khi rollover khiến hạn mức kỳ tiếp theo giảm về \texttt{0} hoặc âm do vượt chi nhiều kỳ liên tiếp, hệ thống xử lý thế nào — có đặt hạn mức tối thiểu hay không.
+
+
+
+\subsubsection{FR-03-09: Xóa/hủy ngân sách}
+
+\textbf{Mô tả}: Người dùng có thể xóa hoặc hủy một ngân sách đang hoạt động. Khi xóa, hệ thống ngừng theo dõi tiến độ chi tiêu và ngừng gửi cảnh báo cho ngân sách đó. Giao dịch chi phí đã ghi nhận không bị ảnh hưởng.
+
+
+
+\textbf{Acceptance Criteria}:
+
+\begin{itemize}
+\item \textbf{Given} người dùng muốn xóa ngân sách \texttt{Ăn uống} đang hoạt động  \\ \hspace*{1.5em}  \textbf{When} người dùng gửi yêu cầu xóa ngân sách  \\ \hspace*{1.5em}  \textbf{Then} hệ thống hiển thị xác nhận trước khi xóa, bao gồm thông tin ngân sách sẽ bị xóa.
+\item \textbf{Given} hệ thống đã hiển thị xác nhận xóa ngân sách  \\ \hspace*{1.5em}  \textbf{When} người dùng xác nhận xóa  \\ \hspace*{1.5em}  \textbf{Then} hệ thống xóa ngân sách, ngừng theo dõi tiến độ chi tiêu và ngừng gửi cảnh báo cho ngân sách đó.
+\item \textbf{Given} hệ thống đã hiển thị xác nhận xóa ngân sách  \\ \hspace*{1.5em}  \textbf{When} người dùng hủy thao tác  \\ \hspace*{1.5em}  \textbf{Then} hệ thống không xóa ngân sách và ngân sách vẫn tiếp tục hoạt động bình thường.
+\item \textbf{Given} người dùng xóa ngân sách bằng ngôn ngữ tự nhiên, ví dụ \texttt{xóa ngân sách ăn uống}  \\ \hspace*{1.5em}  \textbf{When} AI Engine xử lý đầu vào và xác định ngân sách \texttt{Ăn uống} đang hoạt động  \\ \hspace*{1.5em}  \textbf{Then} hệ thống chuyển sang luồng xác nhận xóa trước khi thực hiện.
+\item \textbf{Given} người dùng xóa ngân sách  \\ \hspace*{1.5em}  \textbf{When} hệ thống hoàn tất xóa  \\ \hspace*{1.5em}  \textbf{Then} các giao dịch chi phí đã ghi nhận trong kỳ ngân sách vừa xóa không bị ảnh hưởng.
+\item \textbf{Given} danh mục bị xóa cứng theo REQ-02 (FR-02-05, FR-02-06)  \\ \hspace*{1.5em}  \textbf{When} danh mục bị xóa có ngân sách liên kết đang hoạt động  \\ \hspace*{1.5em}  \textbf{Then} hệ thống tự động xóa ngân sách liên kết với danh mục đã bị xóa cứng.
+\item \textbf{Given} người dùng nhập yêu cầu xóa ngân sách nhưng có nhiều ngân sách khớp  \\ \hspace*{1.5em}  \textbf{When} AI Engine không xác định được duy nhất ngân sách cần xóa  \\ \hspace*{1.5em}  \textbf{Then} hệ thống hỏi lại người dùng để chọn đúng ngân sách trước khi xóa.
+\end{itemize}
+\subsection{Yêu cầu Phi chức năng (NFR)}
+
+\begin{itemize}
+\item \textbf{Ngôn ngữ đầu vào}: Hệ thống cần hỗ trợ thiết lập và quản lý ngân sách bằng tiếng Việt, tiếng Anh và câu pha trộn Việt - Anh.
+\item \textbf{Kỳ ngân sách}: MVP hỗ trợ kỳ tuần và tháng.
+\item \textbf{Giới hạn ngân sách trùng}: Mỗi danh mục chỉ được có tối đa một ngân sách đang hoạt động trong cùng một kỳ; ngân sách tổng thể cũng chỉ có tối đa một ngân sách đang hoạt động trong cùng một kỳ.
+\item \textbf{Phạm vi ngân sách}: Ngân sách chỉ áp dụng cho giao dịch chi phí (\texttt{Expense}); không áp dụng cho \texttt{Income} hoặc giao dịch đặc biệt.
+\item \textbf{Liên kết danh mục}: Ngân sách theo danh mục phải liên kết với danh mục chi phí đang tồn tại theo REQ-02; khi danh mục bị xóa cứng, ngân sách liên kết cũng bị xóa.
+\item \textbf{Cập nhật tiến độ}: Tiến độ chi tiêu ngân sách phải được cập nhật khi tạo, sửa, xóa hoặc đổi danh mục giao dịch chi phí.
+\item \textbf{Cảnh báo proactive}: Hệ thống phải chủ động gửi cảnh báo ngân sách tại các ngưỡng 70\%, 90\% và 100\% mà không cần người dùng yêu cầu.
+\item \textbf{Không chặn giao dịch}: Hệ thống không chặn người dùng tạo giao dịch chi phí khi đã vượt hạn mức ngân sách; chỉ cảnh báo.
+\item \textbf{Lịch sử thay đổi}: Mọi thay đổi ngân sách cần được ghi nhận vào lịch sử để truy vết.
+\item \textbf{Dữ liệu per-user}: Ngân sách là dữ liệu riêng tư của từng người dùng.
+\item \textbf{Bảo mật}: Dữ liệu ngân sách, lịch sử thay đổi ngân sách phải được xem là dữ liệu nhạy cảm và chỉ hiển thị cho đúng người dùng sở hữu hoặc vai trò được phép.
+\item \textbf{Quản lý ngữ cảnh}: Nội dung chat thô chỉ được dùng trong thời hạn ngữ cảnh 48 giờ theo REQ-01.
+\item \textbf{Tích hợp REQ-02}: Khi REQ-02 nhận diện input liên quan đến \texttt{Ngân sách} (FR-02-08), hệ thống phải chuyển sang luồng xử lý ngân sách thay vì tạo giao dịch chi phí thông thường.
+\item \textbf{Tích hợp REQ-04}: Dữ liệu ngân sách phải sẵn sàng phục vụ báo cáo ngân sách tại REQ-04 (FR-04-06).
+\end{itemize}
+\subsection{Out of Scope}
+
+\begin{itemize}
+\item Thiết lập ngân sách theo kỳ quý hoặc năm.
+\item Ngân sách cho giao dịch thu nhập hoặc giao dịch đặc biệt.
+\item Ngân sách nhóm/chia sẻ giữa nhiều người dùng.
+\item Tự động đề xuất hạn mức ngân sách dựa trên lịch sử chi tiêu (AI auto-suggest budget).
+\item Báo cáo biểu đồ chi tiết về ngân sách — thuộc phạm vi REQ-04.
+\item Đồng bộ ngân sách với ứng dụng/ngân hàng bên ngoài.
+\item Quản lý chi tiết ví/tài khoản — thuộc phạm vi REQ-05.
+\end{itemize}
+\subsection{Open Questions}
+
+\begin{itemize}
+\item [ ] Kỳ tuần bắt đầu từ thứ Hai hay Chủ Nhật? Có cho phép người dùng tùy chỉnh ngày bắt đầu tuần hay không?
+\item [ ] Khi tổng ngân sách theo danh mục vượt ngân sách tổng thể, hệ thống chỉ cảnh báo hay bắt buộc người dùng điều chỉnh?
+\item [ ] Rollover có giới hạn tối đa số tiền tích lũy hoặc số kỳ liên tiếp được rollover hay không?
+\item [ ] Khi rollover khiến hạn mức kỳ tiếp theo giảm về 0 hoặc âm, hệ thống xử lý thế nào? Có đặt hạn mức tối thiểu không?
+\item [ ] Ngân sách có thể áp dụng cho danh mục phụ (subcategory) hay chỉ áp dụng cho danh mục chính?
+\item [ ] Lịch sử thay đổi ngân sách được giữ trong bao lâu và có giới hạn số bản ghi hay không?
+\item [ ] Có cần hỗ trợ push notification ngoài app hoặc cảnh báo ngoài giao diện chat hay không?
+\item [ ] Khi giao dịch bị chỉnh sửa (sửa số tiền hoặc đổi danh mục), hệ thống cần tính lại tiến độ ngân sách ngay lập tức hay cho phép độ trễ?
+\end{itemize}
+\subsection{Hướng dẫn phê duyệt}
+
+\begin{quote}
+Để phê duyệt spec này, PO đổi tên file từ \texttt{DRAFT-REQ-03.md} → \texttt{REQ-03.md}
+\end{quote}
+
+\begin{quote}
+Sau khi đổi tên, BA mới chuyển sang tạo DRAFT cho \texttt{REQ-04}.
+\end{quote}

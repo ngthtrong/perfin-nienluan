@@ -1,0 +1,254 @@
+\section{REQ-08: Quản lý Chi phí Cố định \& Nhắc nhở (Recurring Bills \& Reminders)}
+
+
+
+\subsection{Metadata}
+
+\begin{itemize}
+\item \textbf{Brief nguồn}: \texttt{Yêu cầu tính năng.md} — mục 6: Phân tách Dòng tiền \& Tài sản — phần Quản lý chi phí cố định (Recurring Bills); tham chiếu \texttt{REQ-01}, \texttt{REQ-02}, \texttt{REQ-05}, \texttt{REQ-06}
+\item \textbf{Ngày tạo}: 28/05/2026
+\item \textbf{Lần cập nhật cuối}: 28/05/2026 — bản DRAFT đầu tiên
+\item \textbf{Trạng thái}: DRAFT — chờ PO phê duyệt
+\end{itemize}
+\subsection{Tóm tắt}
+
+Tính năng Quản lý Chi phí Cố định \& Nhắc nhở cho phép người dùng thiết lập, theo dõi và quản lý các khoản chi phí có tính chất lặp lại theo chu kỳ cố định (hàng tuần, hàng tháng, hàng quý, hàng năm) như tiền nhà trọ, điện nước, Internet, bảo hiểm, học phí, trả góp. AI Engine có khả năng tự động nhận diện các khoản chi phí cố định tiềm năng từ lịch sử giao dịch của người dùng và đề xuất tạo lịch nhắc nhở. Khi đến hạn thanh toán, chatbot chủ động gửi tin nhắn nhắc nhở cho người dùng với nội dung cá nhân hóa, ví dụ: \textit{"Hôm nay đến hạn đóng 1.500.000đ tiền phòng trọ, bạn đã thanh toán chưa để tôi cập nhật số dư?"}. Người dùng có thể xác nhận thanh toán trực tiếp qua chat, hệ thống tự động ghi nhận giao dịch và cập nhật số dư ví tương ứng (REQ-05). Ngoài ra, người dùng có thể quản lý danh sách chi phí cố định (xem, sửa, xóa), tạm dừng/kích hoạt lại chi phí cố định, theo dõi lịch sử thanh toán, và tạo/quản lý chi phí cố định bằng ngôn ngữ tự nhiên qua giao diện chat (REQ-01). Dữ liệu chi phí cố định được tích hợp với hệ thống phân loại (REQ-02) và dòng tiền (REQ-06) để cung cấp bức tranh tài chính toàn diện cho người dùng.
+
+
+
+\subsection{Phân tích yêu cầu}
+
+
+
+\subsubsection{Actors}
+
+\begin{itemize}
+\item \textbf{User}: Người dùng cuối thiết lập, quản lý, xác nhận thanh toán và theo dõi các khoản chi phí cố định.
+\item \textbf{AI Engine}: Thành phần nhận diện chi phí cố định từ lịch sử giao dịch, xử lý yêu cầu tạo/quản lý bằng ngôn ngữ tự nhiên, và gửi nhắc nhở chủ động.
+\item \textbf{System}: Ứng dụng lưu trữ danh sách chi phí cố định, lên lịch nhắc nhở, ghi nhận giao dịch thanh toán, cập nhật số dư ví và quản lý vòng đời chi phí cố định.
+\end{itemize}
+\subsubsection{Features}
+
+\begin{itemize}
+\item Thiết lập chi phí cố định với thông tin: tên, số tiền, danh mục, ví thanh toán, chu kỳ lặp lại và ngày thanh toán.
+\item AI tự động nhận diện các khoản chi phí cố định tiềm năng từ lịch sử giao dịch.
+\item Nhắc nhở chủ động khi đến hạn thanh toán qua giao diện chat.
+\item Xác nhận thanh toán nhanh qua chat và tự động ghi nhận giao dịch vào ví tương ứng.
+\item Quản lý danh sách chi phí cố định: xem, sửa, xóa.
+\item Tạo và quản lý chi phí cố định bằng ngôn ngữ tự nhiên qua chat.
+\item Tạm dừng/Kích hoạt lại chi phí cố định.
+\item Theo dõi lịch sử thanh toán chi phí cố định.
+\end{itemize}
+\subsubsection{Constraints}
+
+\begin{itemize}
+\item Mỗi chi phí cố định phải gắn với một ví/tài khoản thanh toán hợp lệ (REQ-05).
+\item Giao dịch thanh toán chi phí cố định phải được phân loại tự động theo danh mục phù hợp (REQ-02).
+\item Nhắc nhở phải được gửi qua giao diện chat chứ không phải push notification hệ thống (trong MVP).
+\item Chu kỳ lặp lại hỗ trợ: hàng tuần, hàng tháng, hàng quý, hàng năm.
+\item AI nhận diện chi phí cố định chỉ đề xuất, không tự động tạo — phải có xác nhận từ người dùng.
+\item Số tiền chi phí cố định phải dương và hợp lệ; hệ thống không cho phép tạo chi phí cố định với số tiền bằng 0 hoặc âm.
+\item Khi xóa chi phí cố định, lịch sử thanh toán đã ghi nhận trước đó vẫn được giữ nguyên trong danh sách giao dịch.
+\end{itemize}
+\subsubsection{Ambiguities}
+
+\begin{itemize}
+\item \warningicon\  AMBIGUOUS: Thời điểm gửi nhắc nhở trong ngày (sáng sớm, trưa, hay tối) chưa được PO chốt; có thể cần cho phép người dùng tùy chỉnh.
+\item \warningicon\  AMBIGUOUS: Số ngày nhắc nhở trước hạn thanh toán (nhắc trước 1 ngày, đúng ngày, hay nhắc trước 3 ngày) chưa được xác nhận.
+\item \warningicon\  AMBIGUOUS: Khi AI nhận diện chi phí cố định từ lịch sử, ngưỡng tối thiểu (bao nhiêu lần lặp lại liên tiếp) để xác định một khoản chi là "cố định" chưa được chốt.
+\item \warningicon\  AMBIGUOUS: Chưa rõ có hỗ trợ chi phí cố định với số tiền thay đổi (ví dụ tiền điện nước dao động mỗi tháng) hay chỉ hỗ trợ số tiền cố định.
+\item \warningicon\  AMBIGUOUS: Khi người dùng không phản hồi nhắc nhở, hệ thống có nhắc lại lần thứ hai hay không, và sau bao lâu.
+\end{itemize}
+\subsubsection{Out of Scope sơ bộ}
+
+\begin{itemize}
+\item Thanh toán tự động qua cổng thanh toán trực tuyến (auto-pay).
+\item Liên kết với hệ thống ngân hàng hoặc ví điện tử để kiểm tra thanh toán đã hoàn tất hay chưa.
+\item Push notification hệ thống (chỉ nhắc nhở qua chat trong MVP).
+\item Chi phí cố định dùng chung (shared recurring bills) giữa nhiều người dùng.
+\item Dự đoán xu hướng tăng/giảm chi phí cố định theo thời gian.
+\end{itemize}
+\subsection{Actors}
+
+\begin{itemize}
+\item \textbf{User}: Người dùng cuối thiết lập, quản lý, xác nhận thanh toán và theo dõi lịch sử thanh toán các khoản chi phí cố định.
+\item \textbf{AI Engine}: Thành phần xử lý ngôn ngữ tự nhiên nhận diện chi phí cố định từ lịch sử, xử lý yêu cầu qua chat, và gửi nhắc nhở chủ động khi đến hạn.
+\item \textbf{System}: Ứng dụng quản lý vòng đời chi phí cố định, lên lịch nhắc nhở, ghi nhận giao dịch thanh toán, cập nhật số dư ví (REQ-05) và đồng bộ với dòng tiền (REQ-06).
+\end{itemize}
+\subsection{Yêu cầu Chức năng}
+
+
+
+\subsubsection{FR-08-01: Thiết lập chi phí cố định (Create Recurring Bill)}
+
+\textbf{Mô tả}: Người dùng có thể tạo một khoản chi phí cố định mới bằng cách cung cấp các thông tin: tên khoản chi, số tiền, danh mục (REQ-02), ví/tài khoản thanh toán (REQ-05), chu kỳ lặp lại (hàng tuần, hàng tháng, hàng quý, hàng năm) và ngày thanh toán dự kiến. Hệ thống lưu trữ thông tin và tự động lên lịch nhắc nhở theo chu kỳ.
+
+
+
+\textbf{Acceptance Criteria}:
+
+\begin{itemize}
+\item \textbf{Given} người dùng truy cập chức năng tạo chi phí cố định  \\ \hspace*{1.5em}  \textbf{When} người dùng nhập đầy đủ thông tin: tên \texttt{Tiền phòng trọ}, số tiền \texttt{1.500.000đ}, danh mục \texttt{Nhà ở}, ví \texttt{Tiền mặt}, chu kỳ \texttt{Hàng tháng}, ngày thanh toán \texttt{Ngày 5}  \\ \hspace*{1.5em}  \textbf{Then} hệ thống tạo chi phí cố định mới với trạng thái \texttt{Đang hoạt động} và lên lịch nhắc nhở vào ngày 5 mỗi tháng.
+\item \textbf{Given} người dùng tạo chi phí cố định  \\ \hspace*{1.5em}  \textbf{When} người dùng không nhập một trong các trường bắt buộc (tên, số tiền, chu kỳ, ngày thanh toán)  \\ \hspace*{1.5em}  \textbf{Then} hệ thống thông báo lỗi chỉ rõ trường còn thiếu và không tạo chi phí cố định.
+\item \textbf{Given} người dùng nhập số tiền không hợp lệ (bằng 0, âm, hoặc ký tự không phải số)  \\ \hspace*{1.5em}  \textbf{When} hệ thống xác thực dữ liệu đầu vào  \\ \hspace*{1.5em}  \textbf{Then} hệ thống từ chối tạo và thông báo lỗi yêu cầu nhập số tiền dương hợp lệ.
+\item \textbf{Given} người dùng chọn ví thanh toán  \\ \hspace*{1.5em}  \textbf{When} ví được chọn là ví hợp lệ đang tồn tại trong hệ thống (REQ-05)  \\ \hspace*{1.5em}  \textbf{Then} hệ thống gán chi phí cố định vào ví đó và sử dụng ví này khi ghi nhận thanh toán.
+\item \textbf{Given} người dùng không chọn danh mục khi tạo chi phí cố định  \\ \hspace*{1.5em}  \textbf{When} hệ thống xử lý yêu cầu tạo  \\ \hspace*{1.5em}  \textbf{Then} hệ thống sử dụng AI Engine (REQ-02) để tự động gán danh mục phù hợp dựa trên tên khoản chi.
+\item \textbf{Given} người dùng tạo chi phí cố định với chu kỳ \texttt{Hàng tháng} và ngày thanh toán \texttt{Ngày 31}  \\ \hspace*{1.5em}  \textbf{When} tháng hiện tại có ít hơn 31 ngày (ví dụ tháng 2)  \\ \hspace*{1.5em}  \textbf{Then} hệ thống tự động điều chỉnh ngày thanh toán sang ngày cuối cùng của tháng đó.
+\end{itemize}
+\subsubsection{FR-08-02: AI tự động nhận diện chi phí cố định từ lịch sử giao dịch}
+
+\textbf{Mô tả}: AI Engine phân tích lịch sử giao dịch của người dùng để nhận diện các khoản chi lặp lại có quy luật (cùng tên hoặc mô tả tương tự, cùng khoảng số tiền, cùng chu kỳ thời gian). Khi phát hiện, AI đề xuất cho người dùng tạo chi phí cố định tương ứng.
+
+
+
+\textbf{Acceptance Criteria}:
+
+\begin{itemize}
+\item \textbf{Given} người dùng đã có lịch sử giao dịch với ít nhất 3 khoản chi tương tự nhau (ví dụ \texttt{Tiền phòng trọ 1.500.000đ} vào ngày 5 trong 3 tháng liên tiếp)  \\ \hspace*{1.5em}  \textbf{When} AI Engine phân tích lịch sử giao dịch  \\ \hspace*{1.5em}  \textbf{Then} AI Engine nhận diện đây là chi phí cố định tiềm năng và gửi đề xuất qua chat: \textit{"Tôi nhận thấy bạn thanh toán 'Tiền phòng trọ' khoảng 1.500.000đ vào ngày 5 mỗi tháng. Bạn có muốn tôi tạo nhắc nhở tự động không?"}.
+\item \textbf{Given} AI Engine đề xuất chi phí cố định cho người dùng  \\ \hspace*{1.5em}  \textbf{When} người dùng xác nhận đồng ý  \\ \hspace*{1.5em}  \textbf{Then} hệ thống tự động tạo chi phí cố định với thông tin được điền sẵn từ lịch sử giao dịch (tên, số tiền trung bình, chu kỳ, ngày thanh toán) và người dùng có thể chỉnh sửa trước khi lưu.
+\item \textbf{Given} AI Engine đề xuất chi phí cố định cho người dùng  \\ \hspace*{1.5em}  \textbf{When} người dùng từ chối đề xuất  \\ \hspace*{1.5em}  \textbf{Then} hệ thống ghi nhận lựa chọn và không đề xuất lại khoản chi đó trong ít nhất 30 ngày.
+\item \textbf{Given} người dùng có các giao dịch lặp lại nhưng số tiền dao động (ví dụ tiền điện: 300.000đ, 350.000đ, 280.000đ)  \\ \hspace*{1.5em}  \textbf{When} AI Engine phân tích lịch sử  \\ \hspace*{1.5em}  \textbf{Then} AI Engine vẫn nhận diện đây là chi phí cố định tiềm năng và đề xuất với số tiền trung bình, kèm ghi chú rằng số tiền có thể thay đổi mỗi kỳ.
+\item \textbf{Given} người dùng chưa có đủ dữ liệu lịch sử giao dịch (ít hơn 3 khoản chi lặp lại)  \\ \hspace*{1.5em}  \textbf{When} AI Engine phân tích lịch sử  \\ \hspace*{1.5em}  \textbf{Then} AI Engine không đưa ra đề xuất chi phí cố định và chờ thu thập thêm dữ liệu.
+\item \textbf{Given} chi phí cố định đã được tạo từ đề xuất AI trước đó  \\ \hspace*{1.5em}  \textbf{When} AI Engine phân tích lịch sử trong lần tiếp theo  \\ \hspace*{1.5em}  \textbf{Then} AI Engine không đề xuất trùng lặp với chi phí cố định đã tồn tại.
+\end{itemize}
+\subsubsection{FR-08-03: Nhắc nhở chủ động khi đến hạn thanh toán}
+
+\textbf{Mô tả}: Khi đến ngày thanh toán (hoặc trước ngày thanh toán theo cấu hình), hệ thống gửi nhắc nhở chủ động cho người dùng qua giao diện chat. Tin nhắn nhắc nhở có nội dung cá nhân hóa, bao gồm tên khoản chi, số tiền và ví thanh toán. Phong cách nhắc nhở phù hợp với nhân cách AI mà người dùng đang sử dụng (REQ-09).
+
+
+
+\textbf{Acceptance Criteria}:
+
+\begin{itemize}
+\item \textbf{Given} chi phí cố định \texttt{Tiền phòng trọ} có ngày thanh toán là ngày 5 hàng tháng  \\ \hspace*{1.5em}  \textbf{When} đến ngày 5 của tháng hiện tại  \\ \hspace*{1.5em}  \textbf{Then} hệ thống tự động gửi tin nhắn nhắc nhở qua chat với nội dung bao gồm: tên khoản chi, số tiền, ví thanh toán và câu hỏi xác nhận thanh toán, ví dụ: \textit{"Hôm nay đến hạn đóng 1.500.000đ tiền phòng trọ, bạn đã thanh toán chưa để tôi cập nhật số dư?"}.
+\item \textbf{Given} người dùng đã cấu hình nhắc nhở trước hạn 1 ngày  \\ \hspace*{1.5em}  \textbf{When} đến ngày 4 của tháng (trước hạn 1 ngày)  \\ \hspace*{1.5em}  \textbf{Then} hệ thống gửi tin nhắn nhắc nhở trước hạn: \textit{"Ngày mai là hạn đóng 1.500.000đ tiền phòng trọ, bạn chuẩn bị sẵn nhé!"}.
+\item \textbf{Given} người dùng đang sử dụng nhân cách AI \texttt{Bà mẹ nghiêm khắc} (REQ-09)  \\ \hspace*{1.5em}  \textbf{When} hệ thống gửi nhắc nhở thanh toán  \\ \hspace*{1.5em}  \textbf{Then} nội dung nhắc nhở phải phù hợp với phong cách nhân cách AI đang được chọn.
+\item \textbf{Given} người dùng có nhiều chi phí cố định đến hạn cùng một ngày  \\ \hspace*{1.5em}  \textbf{When} đến ngày thanh toán chung  \\ \hspace*{1.5em}  \textbf{Then} hệ thống gửi một tin nhắn tổng hợp liệt kê tất cả các khoản đến hạn, tổng số tiền cần thanh toán và danh sách từng khoản chi kèm ví tương ứng.
+\item \textbf{Given} chi phí cố định đang ở trạng thái \texttt{Tạm dừng}  \\ \hspace*{1.5em}  \textbf{When} đến ngày thanh toán theo lịch  \\ \hspace*{1.5em}  \textbf{Then} hệ thống KHÔNG gửi nhắc nhở cho chi phí cố định đang tạm dừng.
+\item \textbf{Given} người dùng đã xác nhận thanh toán trước ngày đến hạn  \\ \hspace*{1.5em}  \textbf{When} đến ngày thanh toán chính thức  \\ \hspace*{1.5em}  \textbf{Then} hệ thống KHÔNG gửi nhắc nhở lại vì khoản chi đã được thanh toán trong kỳ này.
+\item \textbf{Given} hệ thống gửi nhắc nhở nhưng người dùng không phản hồi trong ngày  \\ \hspace*{1.5em}  \textbf{When} hết ngày thanh toán  \\ \hspace*{1.5em}  \textbf{Then} hệ thống ghi nhận khoản chi là \texttt{Chưa thanh toán} trong kỳ này và đánh dấu trạng thái quá hạn.
+\end{itemize}
+\subsubsection{FR-08-04: Xác nhận và ghi nhận thanh toán chi phí cố định}
+
+\textbf{Mô tả}: Khi nhận được nhắc nhở, người dùng có thể xác nhận thanh toán ngay qua giao diện chat. Hệ thống tự động tạo giao dịch chi phí (REQ-01), phân loại theo danh mục (REQ-02), trừ số dư từ ví tương ứng (REQ-05) và cập nhật trạng thái thanh toán trong kỳ.
+
+
+
+\textbf{Acceptance Criteria}:
+
+\begin{itemize}
+\item \textbf{Given} hệ thống đã gửi nhắc nhở thanh toán \texttt{Tiền phòng trọ 1.500.000đ}  \\ \hspace*{1.5em}  \textbf{When} người dùng phản hồi xác nhận, ví dụ: \texttt{Đã đóng rồi} hoặc \texttt{Xong rồi}  \\ \hspace*{1.5em}  \textbf{Then} hệ thống tự động tạo giao dịch chi phí \texttt{1.500.000đ} với danh mục \texttt{Nhà ở}, trừ từ ví được cấu hình, và phản hồi xác nhận: \textit{"Đã ghi nhận thanh toán 1.500.000đ tiền phòng trọ. Số dư ví Tiền mặt còn X đồng."}.
+\item \textbf{Given} hệ thống gửi nhắc nhở thanh toán  \\ \hspace*{1.5em}  \textbf{When} người dùng phản hồi rằng chưa thanh toán, ví dụ: \texttt{Chưa đóng} hoặc \texttt{Để mai}  \\ \hspace*{1.5em}  \textbf{Then} hệ thống ghi nhận trạng thái chưa thanh toán và hỏi người dùng có muốn được nhắc lại sau không.
+\item \textbf{Given} người dùng xác nhận thanh toán nhưng số tiền thực tế khác so với cấu hình  \\ \hspace*{1.5em}  \textbf{When} người dùng phản hồi: \texttt{Đã đóng nhưng tháng này 1.600.000đ}  \\ \hspace*{1.5em}  \textbf{Then} AI Engine nhận diện số tiền mới \texttt{1.600.000đ} và ghi nhận giao dịch với số tiền cập nhật.
+\item \textbf{Given} người dùng xác nhận thanh toán từ ví khác với ví được cấu hình  \\ \hspace*{1.5em}  \textbf{When} người dùng phản hồi: \texttt{Đã đóng bằng ví Momo}  \\ \hspace*{1.5em}  \textbf{Then} AI Engine nhận diện ví thanh toán khác và ghi nhận giao dịch từ ví \texttt{Momo} thay vì ví mặc định.
+\item \textbf{Given} người dùng xác nhận thanh toán thành công  \\ \hspace*{1.5em}  \textbf{When} hệ thống ghi nhận giao dịch  \\ \hspace*{1.5em}  \textbf{Then} giao dịch được đánh dấu liên kết với chi phí cố định tương ứng để phục vụ theo dõi lịch sử (FR-08-08).
+\item \textbf{Given} số dư ví thanh toán không đủ để ghi nhận giao dịch  \\ \hspace*{1.5em}  \textbf{When} người dùng xác nhận thanh toán  \\ \hspace*{1.5em}  \textbf{Then} hệ thống cảnh báo số dư không đủ, hỏi người dùng có muốn tiếp tục ghi nhận (cho phép số dư âm) hoặc chọn ví khác.
+\end{itemize}
+\subsubsection{FR-08-05: Quản lý danh sách chi phí cố định (Xem, Sửa, Xóa)}
+
+\textbf{Mô tả}: Người dùng có thể xem danh sách tất cả chi phí cố định, bao gồm cả đang hoạt động và tạm dừng. Người dùng có thể chỉnh sửa thông tin (tên, số tiền, chu kỳ, ngày thanh toán, ví, danh mục) hoặc xóa chi phí cố định không cần thiết.
+
+
+
+\textbf{Acceptance Criteria}:
+
+\begin{itemize}
+\item \textbf{Given} người dùng truy cập danh sách chi phí cố định  \\ \hspace*{1.5em}  \textbf{When} hệ thống hiển thị danh sách  \\ \hspace*{1.5em}  \textbf{Then} danh sách hiển thị tất cả chi phí cố định của người dùng với thông tin: tên, số tiền, chu kỳ, ngày thanh toán tiếp theo, ví thanh toán, trạng thái (Đang hoạt động / Tạm dừng) và trạng thái thanh toán kỳ hiện tại.
+\item \textbf{Given} người dùng muốn chỉnh sửa chi phí cố định  \\ \hspace*{1.5em}  \textbf{When} người dùng thay đổi số tiền từ \texttt{1.500.000đ} sang \texttt{1.800.000đ}  \\ \hspace*{1.5em}  \textbf{Then} hệ thống cập nhật số tiền mới và áp dụng từ kỳ thanh toán tiếp theo, các giao dịch đã ghi nhận trước đó không bị ảnh hưởng.
+\item \textbf{Given} người dùng muốn thay đổi chu kỳ thanh toán  \\ \hspace*{1.5em}  \textbf{When} người dùng thay đổi từ \texttt{Hàng tháng} sang \texttt{Hàng quý}  \\ \hspace*{1.5em}  \textbf{Then} hệ thống cập nhật lịch nhắc nhở theo chu kỳ mới và tính ngày thanh toán tiếp theo dựa trên chu kỳ quý.
+\item \textbf{Given} người dùng muốn xóa chi phí cố định  \\ \hspace*{1.5em}  \textbf{When} người dùng nhấn xóa  \\ \hspace*{1.5em}  \textbf{Then} hệ thống hiển thị cảnh báo xác nhận bao gồm tên khoản chi, và thông báo rằng nhắc nhở sẽ bị hủy nhưng lịch sử thanh toán đã ghi nhận vẫn được giữ nguyên.
+\item \textbf{Given} người dùng xác nhận xóa chi phí cố định  \\ \hspace*{1.5em}  \textbf{When} hệ thống xử lý xóa  \\ \hspace*{1.5em}  \textbf{Then} hệ thống xóa chi phí cố định, hủy tất cả lịch nhắc nhở liên quan, và cập nhật danh sách. Các giao dịch thanh toán đã ghi nhận trước đó vẫn tồn tại trong lịch sử giao dịch chung.
+\item \textbf{Given} người dùng thay đổi ví thanh toán cho chi phí cố định  \\ \hspace*{1.5em}  \textbf{When} người dùng chọn ví mới  \\ \hspace*{1.5em}  \textbf{Then} hệ thống xác thực ví mới hợp lệ (REQ-05) trước khi cập nhật, và áp dụng ví mới từ kỳ thanh toán tiếp theo.
+\end{itemize}
+\subsubsection{FR-08-06: Tạo và quản lý chi phí cố định bằng chat}
+
+\textbf{Mô tả}: Người dùng có thể tạo, chỉnh sửa, xóa và truy vấn thông tin chi phí cố định thông qua giao diện chat bằng ngôn ngữ tự nhiên. AI Engine nhận diện ý định và trích xuất thông tin liên quan từ câu lệnh.
+
+
+
+\textbf{Acceptance Criteria}:
+
+\begin{itemize}
+\item \textbf{Given} người dùng đang ở màn hình chat  \\ \hspace*{1.5em}  \textbf{When} người dùng nhập: \texttt{Tạo nhắc nhở tiền phòng trọ 1.5 triệu mỗi tháng ngày 5}  \\ \hspace*{1.5em}  \textbf{Then} AI Engine nhận diện ý định tạo chi phí cố định và trích xuất: tên \texttt{Tiền phòng trọ}, số tiền \texttt{1.500.000đ}, chu kỳ \texttt{Hàng tháng}, ngày \texttt{5}. Hệ thống hỏi xác nhận thông tin trước khi tạo.
+\item \textbf{Given} người dùng muốn xem danh sách chi phí cố định qua chat  \\ \hspace*{1.5em}  \textbf{When} người dùng nhập: \texttt{Liệt kê các khoản chi cố định của tôi}  \\ \hspace*{1.5em}  \textbf{Then} hệ thống hiển thị danh sách chi phí cố định trong giao diện chat với thông tin tóm tắt: tên, số tiền, chu kỳ, ngày thanh toán tiếp theo.
+\item \textbf{Given} người dùng muốn chỉnh sửa chi phí cố định qua chat  \\ \hspace*{1.5em}  \textbf{When} người dùng nhập: \texttt{Đổi tiền phòng trọ thành 1.8 triệu}  \\ \hspace*{1.5em}  \textbf{Then} AI Engine nhận diện ý định sửa, tìm chi phí cố định \texttt{Tiền phòng trọ} và cập nhật số tiền thành \texttt{1.800.000đ} sau khi xác nhận.
+\item \textbf{Given} người dùng nhập câu lệnh tạo chi phí cố định nhưng thiếu thông tin  \\ \hspace*{1.5em}  \textbf{When} người dùng nhập: \texttt{Nhắc tôi đóng tiền điện mỗi tháng}  \\ \hspace*{1.5em}  \textbf{Then} AI Engine nhận diện thiếu thông tin (số tiền, ngày thanh toán) và hỏi lại người dùng các thông tin cần thiết.
+\item \textbf{Given} người dùng nhập câu lệnh bằng tiếng Việt, tiếng Anh hoặc pha trộn Việt - Anh  \\ \hspace*{1.5em}  \textbf{When} AI Engine xử lý yêu cầu liên quan đến chi phí cố định  \\ \hspace*{1.5em}  \textbf{Then} hệ thống nhận diện đúng ý định và thực thi tương ứng, bất kể ngôn ngữ sử dụng.
+\item \textbf{Given} người dùng có nhiều chi phí cố định có tên tương tự (ví dụ \texttt{Tiền nhà} và \texttt{Tiền nhà gửi xe})  \\ \hspace*{1.5em}  \textbf{When} người dùng yêu cầu sửa \texttt{Tiền nhà} qua chat  \\ \hspace*{1.5em}  \textbf{Then} AI Engine hỏi người dùng làm rõ khoản chi cụ thể trước khi thực hiện chỉnh sửa.
+\end{itemize}
+\subsubsection{FR-08-07: Tạm dừng / Kích hoạt lại chi phí cố định}
+
+\textbf{Mô tả}: Người dùng có thể tạm dừng chi phí cố định khi không cần thiết trong một khoảng thời gian (ví dụ nghỉ hè không phải đóng học phí) mà không cần xóa. Khi cần, người dùng có thể kích hoạt lại chi phí cố định đã tạm dừng.
+
+
+
+\textbf{Acceptance Criteria}:
+
+\begin{itemize}
+\item \textbf{Given} người dùng muốn tạm dừng chi phí cố định \texttt{Học phí}  \\ \hspace*{1.5em}  \textbf{When} người dùng chọn tạm dừng  \\ \hspace*{1.5em}  \textbf{Then} hệ thống chuyển trạng thái sang \texttt{Tạm dừng}, hủy tất cả nhắc nhở đang chờ, và hiển thị nhãn \texttt{Tạm dừng} trong danh sách.
+\item \textbf{Given} chi phí cố định đang ở trạng thái \texttt{Tạm dừng}  \\ \hspace*{1.5em}  \textbf{When} người dùng chọn kích hoạt lại  \\ \hspace*{1.5em}  \textbf{Then} hệ thống chuyển trạng thái sang \texttt{Đang hoạt động}, tính toán ngày thanh toán tiếp theo dựa trên chu kỳ và ngày hiện tại, và tái lập lịch nhắc nhở.
+\item \textbf{Given} chi phí cố định \texttt{Học phí} đang tạm dừng từ ngày 01/06/2026 và có chu kỳ hàng tháng ngày 15  \\ \hspace*{1.5em}  \textbf{When} người dùng kích hoạt lại vào ngày 20/07/2026  \\ \hspace*{1.5em}  \textbf{Then} hệ thống tính ngày thanh toán tiếp theo là 15/08/2026 (kỳ tháng tiếp theo sau ngày kích hoạt).
+\item \textbf{Given} người dùng tạm dừng chi phí cố định qua chat  \\ \hspace*{1.5em}  \textbf{When} người dùng nhập: \texttt{Tạm dừng nhắc học phí}  \\ \hspace*{1.5em}  \textbf{Then} AI Engine nhận diện ý định tạm dừng, tìm chi phí cố định \texttt{Học phí} và chuyển sang trạng thái \texttt{Tạm dừng} sau khi xác nhận.
+\item \textbf{Given} chi phí cố định đang ở trạng thái \texttt{Tạm dừng}  \\ \hspace*{1.5em}  \textbf{When} đến ngày thanh toán theo lịch  \\ \hspace*{1.5em}  \textbf{Then} hệ thống KHÔNG gửi nhắc nhở, KHÔNG tạo giao dịch tự động, và KHÔNG đánh dấu quá hạn.
+\end{itemize}
+\subsubsection{FR-08-08: Theo dõi lịch sử thanh toán chi phí cố định}
+
+\textbf{Mô tả}: Hệ thống lưu trữ lịch sử thanh toán cho mỗi chi phí cố định, cho phép người dùng xem lại các kỳ đã thanh toán, chưa thanh toán và quá hạn. Lịch sử bao gồm thông tin: ngày thanh toán dự kiến, ngày thanh toán thực tế, số tiền, ví thanh toán và trạng thái.
+
+
+
+\textbf{Acceptance Criteria}:
+
+\begin{itemize}
+\item \textbf{Given} người dùng truy cập lịch sử thanh toán của chi phí cố định \texttt{Tiền phòng trọ}  \\ \hspace*{1.5em}  \textbf{When} hệ thống hiển thị lịch sử  \\ \hspace*{1.5em}  \textbf{Then} danh sách hiển thị các kỳ thanh toán gồm: ngày thanh toán dự kiến, ngày thanh toán thực tế (nếu đã thanh toán), số tiền, ví thanh toán và trạng thái (\texttt{Đã thanh toán} / \texttt{Chưa thanh toán} / \texttt{Quá hạn}).
+\item \textbf{Given} chi phí cố định có 6 kỳ thanh toán trong lịch sử  \\ \hspace*{1.5em}  \textbf{When} hệ thống hiển thị lịch sử  \\ \hspace*{1.5em}  \textbf{Then} danh sách sắp xếp theo thứ tự thời gian giảm dần (kỳ mới nhất hiển thị trước).
+\item \textbf{Given} người dùng muốn xem tổng quan thanh toán chi phí cố định  \\ \hspace*{1.5em}  \textbf{When} hệ thống hiển thị thông tin tổng quan  \\ \hspace*{1.5em}  \textbf{Then} hệ thống hiển thị: tổng số kỳ đã thanh toán, tổng số kỳ quá hạn, tổng số tiền đã thanh toán tích lũy, và tỷ lệ thanh toán đúng hạn.
+\item \textbf{Given} người dùng muốn xem lịch sử thanh toán qua chat  \\ \hspace*{1.5em}  \textbf{When} người dùng nhập: \texttt{Xem lịch sử thanh toán tiền phòng trọ}  \\ \hspace*{1.5em}  \textbf{Then} AI Engine nhận diện ý định và hiển thị tóm tắt lịch sử thanh toán gần nhất (3-5 kỳ gần nhất) trong giao diện chat.
+\item \textbf{Given} chi phí cố định có kỳ thanh toán bị quá hạn  \\ \hspace*{1.5em}  \textbf{When} hệ thống hiển thị lịch sử  \\ \hspace*{1.5em}  \textbf{Then} kỳ quá hạn được đánh dấu nổi bật để người dùng dễ nhận biết.
+\end{itemize}
+\subsection{Yêu cầu Phi chức năng (NFR)}
+
+\begin{itemize}
+\item \textbf{Độ chính xác nhận diện AI}: AI Engine phải đạt độ chính xác tối thiểu 80\% trong việc nhận diện các khoản chi phí cố định tiềm năng từ lịch sử giao dịch.
+\item \textbf{Thời gian phản hồi nhắc nhở}: Nhắc nhở phải được gửi trong vòng 5 phút kể từ thời điểm đến hạn thanh toán theo cấu hình.
+\item \textbf{Tích hợp REQ-01}: Giao dịch thanh toán chi phí cố định phải tuân thủ quy trình nhập liệu và lưu trữ giao dịch của REQ-01.
+\item \textbf{Tích hợp REQ-02}: Danh mục chi phí cố định phải sử dụng hệ thống danh mục phân loại thông minh của REQ-02.
+\item \textbf{Tích hợp REQ-05}: Số dư ví phải được cập nhật chính xác ngay sau khi ghi nhận thanh toán chi phí cố định theo quy tắc quản lý ví của REQ-05.
+\item \textbf{Tích hợp REQ-06}: Các khoản chi phí cố định phải được phản ánh trong dòng tiền (cashflow) theo REQ-06 để dự báo chi phí tương lai.
+\item \textbf{Tích hợp REQ-09}: Phong cách nhắc nhở phải tùy biến theo nhân cách AI đang được chọn (REQ-09).
+\item \textbf{Ngôn ngữ hỗ trợ}: Yêu cầu tạo/quản lý chi phí cố định qua chat cần hỗ trợ tiếng Việt, tiếng Anh và câu pha trộn Việt - Anh.
+\item \textbf{Bảo mật dữ liệu}: Chỉ người dùng sở hữu dữ liệu mới có quyền xem, tạo, sửa, xóa và quản lý chi phí cố định của mình.
+\item \textbf{Hiệu suất}: Danh sách chi phí cố định phải tải trong thời gian không quá 2 giây cho tối đa 50 khoản chi phí cố định.
+\item \textbf{Độ tin cậy lịch nhắc nhở}: Hệ thống phải đảm bảo nhắc nhở không bị mất hoặc trùng lặp kể cả khi server khởi động lại hoặc có lỗi tạm thời.
+\end{itemize}
+\subsection{Out of Scope}
+
+\begin{itemize}
+\item Thanh toán tự động qua cổng thanh toán trực tuyến (auto-pay liên kết ngân hàng/ví điện tử).
+\item Push notification hệ thống ngoài giao diện chat (trong phiên bản MVP).
+\item Chi phí cố định dùng chung (shared recurring bills) giữa nhiều người dùng hoặc ví dùng chung.
+\item Dự đoán xu hướng tăng/giảm chi phí cố định theo mùa hoặc theo thời gian.
+\item Liên kết với hệ thống hóa đơn điện tử của các nhà cung cấp dịch vụ (EVN, VNPT, v.v.).
+\item Nhắc nhở qua email, SMS hoặc kênh thông báo ngoài ứng dụng.
+\end{itemize}
+\subsection{Open Questions}
+
+\begin{itemize}
+\item [ ] Thời điểm gửi nhắc nhở trong ngày là gì (sáng 8h, trưa 12h, hay tối 20h)? Có cho phép người dùng tùy chỉnh giờ nhắc nhở không?
+\item [ ] Số ngày nhắc nhở trước hạn thanh toán mặc định là bao nhiêu (0 ngày — đúng hạn, 1 ngày trước, hay 3 ngày trước)?
+\item [ ] Ngưỡng tối thiểu để AI nhận diện chi phí cố định là bao nhiêu kỳ lặp lại liên tiếp (2, 3, hay 5 kỳ)?
+\item [ ] Có hỗ trợ chi phí cố định với số tiền thay đổi mỗi kỳ (biến phí như tiền điện nước) hay chỉ chi phí cố định đúng nghĩa?
+\item [ ] Khi người dùng không phản hồi nhắc nhở, hệ thống có gửi nhắc nhở lần hai không? Nếu có, sau bao lâu?
+\item [ ] Giới hạn số lượng chi phí cố định tối đa mỗi người dùng được phép tạo là bao nhiêu?
+\item [ ] Khi xóa ví thanh toán (REQ-05) mà ví đó đang gắn với chi phí cố định, hệ thống xử lý ra sao (tự động gán ví khác, tạm dừng, hay yêu cầu người dùng chọn lại)?
+\item [ ] Có cần hiển thị tổng chi phí cố định hàng tháng trên dashboard chính hoặc trong báo cáo REQ-04 không?
+\end{itemize}
+\subsection{Hướng dẫn phê duyệt}
+
+\begin{quote}
+Để phê duyệt spec này, PO đổi tên file từ \texttt{DRAFT-REQ-08.md} → \texttt{REQ-08.md}
+\end{quote}
+
+\begin{quote}
+Sau khi đổi tên, BA mới chuyển sang tạo DRAFT cho \texttt{REQ-09}.
+\end{quote}
