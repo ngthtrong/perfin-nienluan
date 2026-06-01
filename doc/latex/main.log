@@ -1,4 +1,4 @@
-This is XeTeX, Version 3.141592653-2.6-0.999995 (TeX Live 2023/Debian) (preloaded format=xelatex 2026.5.28)  1 JUN 2026 11:09
+This is XeTeX, Version 3.141592653-2.6-0.999995 (TeX Live 2023/Debian) (preloaded format=xelatex 2026.5.28)  1 JUN 2026 11:30
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -490,16 +490,15 @@ Package hyperref Info: Link coloring ON on input line 79.
 \openout3 = `main.out'.
 
  (./chapters/cover.tex
-Overfull \hbox (7.60507pt too wide) in paragraph at lines 14--14
- \TU/lmtt/m/n/12 images/ctu_logo.png\TU/TimesNewRoman(0)/m/n/12 ) 
- []
+File: images/ctu_logo.png Graphic file (type bmp)
+<images/ctu_logo.png>
+LaTeX Font Info:    Trying to load font information for U+msa on input line 29.
 
-LaTeX Font Info:    Trying to load font information for U+msa on input line 14.
 
 (/usr/share/texlive/texmf-dist/tex/latex/amsfonts/umsa.fd
 File: umsa.fd 2013/01/14 v3.01 AMS symbols A
 )
-LaTeX Font Info:    Trying to load font information for U+msb on input line 14.
+LaTeX Font Info:    Trying to load font information for U+msb on input line 29.
 
 
 (/usr/share/texlive/texmf-dist/tex/latex/amsfonts/umsb.fd
@@ -528,12 +527,17 @@ File: umsb.fd 2013/01/14 v3.01 AMS symbols B
 
  [8
 
-] (./chapters/abbreviations.tex
-Overfull \hbox (28.45274pt too wide) in paragraph at lines 25--26
-[][] 
+] (./chapters/abbreviations.tex)
+Overfull \hbox (28.45274pt too wide) in paragraph at lines 37--105
+[][]
  []
 
-) [9
+
+Underfull \hbox (badness 10000) in paragraph at lines 37--105
+
+ []
+
+[9
 
 ] (./chapters/introduction.tex
 Chapter 1.
@@ -541,29 +545,98 @@ Chapter 1.
 
 ]) [2] (./chapters/theory.tex
 Chapter 2.
-
-Overfull \hbox (12.65747pt too wide) in paragraph at lines 43--44
-[]\TU/TimesNewRoman(0)/m/n/12 [TODO — Liệt kê và giải thích lựa chọn: Flutter/R
-eact Native cho mobile, Node.js/Python
- []
-
 [3
 
-]) [4] (./chapters/results.tex
+]
+
+LaTeX Warning: Citation `ref4' on page 4 undefined on input line 35.
+
+
+LaTeX Warning: Citation `ref5' on page 4 undefined on input line 45.
+
+
+LaTeX Warning: Citation `ref6' on page 4 undefined on input line 51.
+
+
+LaTeX Warning: Citation `ref7' on page 4 undefined on input line 63.
+
+[4]
+
+LaTeX Warning: Citation `ref8' on page 5 undefined on input line 78.
+
+[5]
+
+LaTeX Warning: Citation `ref9' on page 6 undefined on input line 92.
+
+
+LaTeX Warning: Citation `ref10' on page 6 undefined on input line 99.
+
+
+LaTeX Warning: Citation `ref11' on page 6 undefined on input line 109.
+
+
+LaTeX Warning: Citation `ref10' on page 6 undefined on input line 120.
+
+[6]
+
+LaTeX Warning: Citation `ref12' on page 7 undefined on input line 132.
+
+
+LaTeX Warning: `!h' float specifier changed to `!ht'.
+
+
+LaTeX Warning: Citation `ref13' on page 7 undefined on input line 169.
+
+[7] [8]
+
+LaTeX Warning: Citation `ref14' on page 9 undefined on input line 218.
+
+[9]
+
+LaTeX Warning: Citation `ref15' on page 10 undefined on input line 252.
+
+[10]
+
+LaTeX Warning: Citation `ref16' on page 11 undefined on input line 267.
+
+
+LaTeX Warning: Citation `ref17' on page 11 undefined on input line 282.
+
+[11]
+
+LaTeX Warning: Citation `ref18' on page 12 undefined on input line 298.
+
+[12] [13]
+Underfull \hbox (badness 10000) in paragraph at lines 373--373
+[]|\TU/TimesNewRoman(0)/b/n/12 Money
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 373--373
+[]|\TU/TimesNewRoman(0)/m/n/12 Có (Flut-
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 373--373
+[]|\TU/TimesNewRoman(0)/m/n/12 Chưa hỗ
+ []
+
+[14]) [15] (./chapters/results.tex
 Chapter 3.
 
 Underfull \hbox (badness 1400) in paragraph at lines 53--53
 []|\TU/TimesNewRoman(0)/m/n/12 Biểu đồ trực quan, phát hiện bất
  []
 
-[5
+[16
 
-] [6] [7] [8]
+] [17] [18] [19]
 File: images/component-diagram.png Graphic file (type bmp)
 <images/component-diagram.png>
+ [20]
 File: images/class-diagram.png Graphic file (type bmp)
 <images/class-diagram.png>
- [9] [10]
+ [21] [22] [23]
 File: images/use-case-diagram.png Graphic file (type bmp)
 <images/use-case-diagram.png>
 File: images/use-case-core.png Graphic file (type bmp)
@@ -572,7 +645,7 @@ File: images/use-case-ai.png Graphic file (type bmp)
 <images/use-case-ai.png>
 File: images/use-case-system.png Graphic file (type bmp)
 <images/use-case-system.png>
- [11]
+ [24]
 File: images/sequence-nhập-giao-dịch-bằng-văn-bản.png Graphic file (type bmp)
 <images/sequence-nhập-giao-dịch-bằng-văn-bản.png>
 File: images/sequence-nhập-giao-dịch-bằng-giọng-nói.png Graphic file (type bmp)
@@ -591,10 +664,10 @@ File: images/sequence-xuất-dữ-liệu.png Graphic file (type bmp)
 <images/sequence-xuất-dữ-liệu.png>
 File: images/sequence-chi-tiêu-ví-chung.png Graphic file (type bmp)
 <images/sequence-chi-tiêu-ví-chung.png>
+ [25] [26] [27] [28] [29]
 File: images/activity-tạo-giao-dịch-mớinreq-01-ai-powered-multimodal-input.png 
 Graphic file (type bmp)
 <images/activity-tạo-giao-dịch-mớinreq-01-ai-powered-multimodal-input.png>
- [12] [13] [14] [15]
 File: images/activity-phân-loại-tự-độngnreq-02-auto-categorization.png Graphic 
 file (type bmp)
 <images/activity-phân-loại-tự-độngnreq-02-auto-categorization.png>
@@ -608,361 +681,407 @@ File: images/activity-shared-wallet-expense-flownreq-10-collaboration-shared-wa
 llets.png Graphic file (type bmp)
 <images/activity-shared-wallet-expense-flownreq-10-collaboration-shared-wallets
 .png>
- [16] [17]
-Underfull \hbox (badness 10000) in paragraph at lines 396--396
+ [30]
+[31] [32] [33] [34]
+Underfull \hbox (badness 10000) in paragraph at lines 428--428
+[]|\TU/TimesNewRoman(0)/m/n/12 Kiểm thử từng hàm/module
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 452--452
 []|\TU/TimesNewRoman(0)/b/n/12 Kết quả
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 396--396
+Underfull \hbox (badness 10000) in paragraph at lines 452--452
 []|\TU/TimesNewRoman(0)/b/n/12 Kết quả
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 396--396
+Underfull \hbox (badness 10000) in paragraph at lines 452--452
 []|\TU/TimesNewRoman(0)/b/n/12 Trạng
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 396--396
+Underfull \hbox (badness 10000) in paragraph at lines 452--452
 []|\TU/TimesNewRoman(0)/m/n/12 Tạo giao
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 396--396
+Underfull \hbox (badness 10000) in paragraph at lines 452--452
 \TU/TimesNewRoman(0)/m/n/12 dịch:
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 396--396
+Underfull \hbox (badness 10000) in paragraph at lines 452--452
 \TU/TimesNewRoman(0)/m/n/12 tên=”trà
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 396--396
+Underfull \hbox (badness 10000) in paragraph at lines 452--452
 \TU/TimesNewRoman(0)/m/n/12 sữa”, số
  []
 
 
-Overfull \hbox (9.85622pt too wide) in paragraph at lines 396--396
+Overfull \hbox (9.85622pt too wide) in paragraph at lines 452--452
 \TU/TimesNewRoman(0)/m/n/12 tiền=50.000đ,
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 396--396
+Underfull \hbox (badness 10000) in paragraph at lines 452--452
 \TU/TimesNewRoman(0)/m/n/12 danh
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 396--396
+Underfull \hbox (badness 10000) in paragraph at lines 452--452
 \TU/TimesNewRoman(0)/m/n/12 mục=”Ăn
  []
 
 
-Underfull \hbox (badness 4673) in paragraph at lines 396--396
+Underfull \hbox (badness 4673) in paragraph at lines 452--452
 []|\TU/TimesNewRoman(0)/m/n/12 Ảnh hóa đơn
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 396--396
+Underfull \hbox (badness 10000) in paragraph at lines 452--452
 []|\TU/TimesNewRoman(0)/m/n/12 Trích xuất
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 396--396
+Underfull \hbox (badness 10000) in paragraph at lines 452--452
 \TU/TimesNewRoman(0)/m/n/12 danh sách
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 396--396
+Underfull \hbox (badness 10000) in paragraph at lines 452--452
 \TU/TimesNewRoman(0)/m/n/12 sản phẩm
  []
 
 
-Underfull \hbox (badness 3302) in paragraph at lines 396--396
+Underfull \hbox (badness 3302) in paragraph at lines 452--452
 []|\TU/TimesNewRoman(0)/m/n/12 Chi tiêu vượt
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 396--396
+Underfull \hbox (badness 10000) in paragraph at lines 452--452
 []|\TU/TimesNewRoman(0)/m/n/12 Hệ thống
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 396--396
+Underfull \hbox (badness 10000) in paragraph at lines 452--452
 \TU/TimesNewRoman(0)/m/n/12 gửi cảnh
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 396--396
+Underfull \hbox (badness 10000) in paragraph at lines 452--452
 \TU/TimesNewRoman(0)/m/n/12 báo trong
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 396--396
+Underfull \hbox (badness 10000) in paragraph at lines 452--452
 []|\TU/TimesNewRoman(0)/m/n/12 ”grab đi làm
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 396--396
+Underfull \hbox (badness 10000) in paragraph at lines 452--452
 []|\TU/TimesNewRoman(0)/m/n/12 Giao dịch
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 396--396
+Underfull \hbox (badness 10000) in paragraph at lines 452--452
 \TU/TimesNewRoman(0)/m/n/12 phân loại
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 396--396
+Underfull \hbox (badness 10000) in paragraph at lines 452--452
 \TU/TimesNewRoman(0)/m/n/12 vào ”Di
  []
 
-[18] [19] [20]) [21] (./chapters/conclusion.tex [22]
-Chapter 4.
-) [23
 
-] (./chapters/references.tex) [24
+Underfull \hbox (badness 10000) in paragraph at lines 452--452
+\TU/TimesNewRoman(0)/m/n/12 mươi nghìn”
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 452--452
+[]|\TU/TimesNewRoman(0)/m/n/12 Tạo giao
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 452--452
+\TU/TimesNewRoman(0)/m/n/12 dịch:
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 452--452
+\TU/TimesNewRoman(0)/m/n/12 tên=”cà
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 452--452
+\TU/TimesNewRoman(0)/m/n/12 phê”, số
+ []
+
+
+Overfull \hbox (9.85622pt too wide) in paragraph at lines 452--452
+\TU/TimesNewRoman(0)/m/n/12 tiền=30.000đ,
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 452--452
+\TU/TimesNewRoman(0)/m/n/12 danh
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 452--452
+\TU/TimesNewRoman(0)/m/n/12 mục=”Ăn
+ []
+
+
+Underfull \hbox (badness 6944) in paragraph at lines 452--452
+[]|\TU/TimesNewRoman(0)/m/n/12 ”chuyển 500k
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 452--452
+\TU/TimesNewRoman(0)/m/n/12 từ tiền mặt
+ []
+
+
+Underfull \hbox (badness 2435) in paragraph at lines 452--452
+[]|\TU/TimesNewRoman(0)/m/n/12 Tạo Trans-
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 452--452
+\TU/TimesNewRoman(0)/m/n/12 fer, số
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 452--452
+\TU/TimesNewRoman(0)/m/n/12 dư tiền
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 452--452
+\TU/TimesNewRoman(0)/m/n/12 mặt giảm
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 452--452
+\TU/TimesNewRoman(0)/m/n/12 500.000đ,
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 452--452
+\TU/TimesNewRoman(0)/m/n/12 số dư
+ []
+
+
+Underfull \hbox (badness 3525) in paragraph at lines 452--452
+[]|\TU/TimesNewRoman(0)/m/n/12 Yêu cầu xem
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 452--452
+[]|\TU/TimesNewRoman(0)/m/n/12 Hiển thị
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 452--452
+\TU/TimesNewRoman(0)/m/n/12 theo danh
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 452--452
+\TU/TimesNewRoman(0)/m/n/12 mục, tổng
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 452--452
+\TU/TimesNewRoman(0)/m/n/12 thu/chi
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 452--452
+[]|\TU/TimesNewRoman(0)/m/n/12 Chọn nhân
+ []
+
+
+Underfull \hbox (badness 6157) in paragraph at lines 452--452
+\TU/TimesNewRoman(0)/m/n/12 cách “Bà mẹ
+ []
+
+
+Underfull \hbox (badness 1009) in paragraph at lines 452--452
+[]|\TU/TimesNewRoman(0)/m/n/12 Giọng điệu
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 452--452
+\TU/TimesNewRoman(0)/m/n/12 chat thay
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 452--452
+\TU/TimesNewRoman(0)/m/n/12 đổi phù
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 452--452
+\TU/TimesNewRoman(0)/m/n/12 hợp, logic
+ []
+
+
+Underfull \hbox (badness 2197) in paragraph at lines 452--452
+\TU/TimesNewRoman(0)/m/n/12 xử lý giao
+ []
+
+
+Underfull \hbox (badness 1009) in paragraph at lines 452--452
+\TU/TimesNewRoman(0)/m/n/12 dịch không
+ []
+
+
+Underfull \hbox (badness 3525) in paragraph at lines 452--452
+[]|\TU/TimesNewRoman(0)/m/n/12 Yêu cầu xuất
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 452--452
+\TU/TimesNewRoman(0)/m/n/12 giao dịch 3
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 452--452
+[]|\TU/TimesNewRoman(0)/m/n/12 File CSV
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 452--452
+\TU/TimesNewRoman(0)/m/n/12 công, dữ
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 452--452
+\TU/TimesNewRoman(0)/m/n/12 và đúng
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 452--452
+[]|\TU/TimesNewRoman(0)/m/n/12 Yêu cầu sao
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 452--452
+\TU/TimesNewRoman(0)/m/n/12 mã hóa
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 452--452
+\TU/TimesNewRoman(0)/m/n/12 AES-256
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 452--452
+\TU/TimesNewRoman(0)/m/n/12 được tạo
+ []
+
+
+LaTeX Warning: Float too large for page by 197.51169pt on input line 455.
+
+) [35] [36] [37] (./chapters/conclusion.tex
+Chapter 4.
+[38
+
+]) [39] (./chapters/references.tex) [40
 
 ] (./chapters/appendices.tex
 Appendix A.
-[25
 
-] (./requirements/req01.tex
-Overfull \hbox (33.7029pt too wide) in paragraph at lines 1--1
-|[]\TU/Arial(0)/b/n/14.4 REQ-01: NHẬP LIỆU ĐA PHƯƠNG THỨC BẰNG AI (AI-POWERED
- []
-
-[26] [27] [28] [29] [30] [31] [32]) [33] (./requirements/req02.tex [34]
-[35] [36] [37] [38] [39] [40] [41] [42] [43] [44] [45] [46] [47] [48] [49]
-[50] [51]) [52] (./requirements/req03.tex [53] [54] [55] [56] [57] [58]
-[59]
-Overfull \hbox (17.4993pt too wide) in paragraph at lines 221--222
-|  \TU/TimesNewRoman(0)/b/n/12 Then \TU/TimesNewRoman(0)/m/n/12 hệ thống tạo ng
-ân sách \TU/lmtt/m/n/12 Ăn uống \TU/TimesNewRoman(0)/m/n/12 cho kỳ tháng tiếp t
-heo với hạn mức \TU/lmtt/m/n/12 2.500.000đ
- []
-
-
-Overfull \hbox (17.4993pt too wide) in paragraph at lines 223--224
-|  \TU/TimesNewRoman(0)/b/n/12 Then \TU/TimesNewRoman(0)/m/n/12 hệ thống tạo ng
-ân sách \TU/lmtt/m/n/12 Ăn uống \TU/TimesNewRoman(0)/m/n/12 cho kỳ tháng tiếp t
-heo với hạn mức \TU/lmtt/m/n/12 1.700.000đ
- []
-
-[60] [61] [62]) [63] (./requirements/req04.tex [64] [65] [66] [67] [68]
-Overfull \hbox (3.77266pt too wide) in paragraph at lines 145--146
-[]\TU/TimesNewRoman(0)/b/n/12 Given \TU/TimesNewRoman(0)/m/n/12 người dùng có l
-ịch sử chi tiêu danh mục \TU/lmtt/m/n/12 Di chuyển \TU/TimesNewRoman(0)/m/n/12 
-trung bình \TU/lmtt/m/n/12 500.000đ/tháng
- []
-
-[69] [70]
-Overfull \hbox (1.68027pt too wide) in paragraph at lines 200--201
-[]\TU/TimesNewRoman(0)/b/n/12 Given \TU/TimesNewRoman(0)/m/n/12 người dùng nhập
- \TU/lmtt/m/n/12 show me my spending breakdown this month \TU/TimesNewRoman(0)/
-m/n/12 bằng tiếng
- []
-
-[71] [72] [73] [74]) [75] (./requirements/req05.tex
-Overfull \hbox (9.76048pt too wide) in paragraph at lines 1--1
-|[]\TU/Arial(0)/b/n/14.4 REQ-05: QUẢN LÝ TÀI KHOẢN ĐA NGUỒN (MULTI-ACCOUNT
- []
-
-[76] [77] [78] [79]
-Overfull \hbox (7.40358pt too wide) in paragraph at lines 147--148
-[]\TU/TimesNewRoman(0)/b/n/12 Given \TU/TimesNewRoman(0)/m/n/12 người dùng có 3
- ví: \TU/lmtt/m/n/12 Tiền mặt \TU/TimesNewRoman(0)/m/n/12 (2.000.000đ), \TU/lmt
-t/m/n/12 VCB \TU/TimesNewRoman(0)/m/n/12 (15.000.000đ), \TU/lmtt/m/n/12 Momo \T
-U/TimesNewRoman(0)/m/n/12 (500.000đ) 
- []
-
-[80] [81] [82] [83] [84] [85]) [86] (./requirements/req06.tex [87]
-Overfull \hbox (3.93735pt too wide) in paragraph at lines 56--57
-[][]\TU/TimesNewRoman(0)/b/n/12 [!][] \TU/TimesNewRoman(0)/m/n/12 AMBIGUOUS: Ch
-ưa rõ lãi/lỗ đầu tư có hỗ trợ nhập theo từng mã chứng khoán/khoản
- []
-
-[88]
-Overfull \hbox (18.33995pt too wide) in paragraph at lines 93--94
-[]\TU/TimesNewRoman(0)/b/n/12 Given \TU/TimesNewRoman(0)/m/n/12 người dùng nhập
- \TU/lmtt/m/n/12 chuyển 10 triệu vào tài khoản MBS để đánh phái sinh 
- []
-
-[89]
-Overfull \hbox (13.74182pt too wide) in paragraph at lines 110--111
-|  \TU/TimesNewRoman(0)/b/n/12 Then \TU/TimesNewRoman(0)/m/n/12 số dư ví \TU/lm
-tt/m/n/12 VCB \TU/TimesNewRoman(0)/m/n/12 giảm \TU/lmtt/m/n/12 10.000.000đ\TU/T
-imesNewRoman(0)/m/n/12 , số dư tài khoản đầu tư \TU/lmtt/m/n/12 MBS \TU/TimesNe
-wRoman(0)/m/n/12 tăng \TU/lmtt/m/n/12 10.000.000đ\TU/TimesNewRoman(0)/m/n/12 ,
- []
-
-[90] [91]
-Overfull \hbox (1.55817pt too wide) in paragraph at lines 146--147
-|  \TU/TimesNewRoman(0)/b/n/12 When \TU/TimesNewRoman(0)/m/n/12 người dùng yêu 
-cầu \TU/lmtt/m/n/12 đổi giao dịch chuyển 10 triệu MBS thành chi
- []
-
-[92] [93]
-Overfull \hbox (23.30801pt too wide) in paragraph at lines 177--178
-[]\TU/TimesNewRoman(0)/b/n/12 Given \TU/TimesNewRoman(0)/m/n/12 người dùng có t
-hu nhập \TU/lmtt/m/n/12 10.000.000đ\TU/TimesNewRoman(0)/m/n/12 , chi phí \TU/lm
-tt/m/n/12 7.000.000đ\TU/TimesNewRoman(0)/m/n/12 , nạp đầu tư \TU/lmtt/m/n/12 5.
-000.000đ\TU/TimesNewRoman(0)/m/n/12 ,
- []
-
-[94] [95] [96]) [97] (./requirements/req07.tex [98] [99] [100] [101] [102]
-[103] [104] [105] [106]) [107] (./requirements/req08.tex [108] [109]
-Overfull \hbox (11.1722pt too wide) in paragraph at lines 91--92
-|  \TU/TimesNewRoman(0)/b/n/12 When \TU/TimesNewRoman(0)/m/n/12 người dùng nhập
- đầy đủ thông tin: tên \TU/lmtt/m/n/12 Tiền phòng trọ\TU/TimesNewRoman(0)/m/n/1
-2 , số tiền \TU/lmtt/m/n/12 1.500.000đ\TU/TimesNewRoman(0)/m/n/12 ,
- []
-
-[110] [111]
-Overfull \hbox (0.15414pt too wide) in paragraph at lines 124--125
-|  \TU/TimesNewRoman(0)/b/n/12 Then \TU/TimesNewRoman(0)/m/n/12 hệ thống gửi ti
-n nhắn nhắc nhở trước hạn: \TU/TimesNewRoman(0)/m/it/12 ”Ngày mai là hạn đóng 1
-.500.000đ
- []
-
-[112] [113]
-Overfull \hbox (18.45981pt too wide) in paragraph at lines 172--173
-|  \TU/TimesNewRoman(0)/b/n/12 When \TU/TimesNewRoman(0)/m/n/12 người dùng nhập
-: \TU/lmtt/m/n/12 Tạo nhắc nhở tiền phòng trọ 1.5 triệu mỗi tháng
- []
-
-[114] [115] [116]) [117] (./requirements/req09.tex [118] [119]
-Underfull \hbox (badness 1845) in paragraph at lines 114--114
-[]|\TU/TimesNewRoman(0)/m/n/12 Lời khuyên nhẹ nhàng, chuyên nghiệp,
- []
-
-[120] [121]
-Overfull \hbox (5.10222pt too wide) in paragraph at lines 157--158
-\TU/lmtt/m/n/12 nhận chi tiêu Trà sữa 50.000đ vào danh mục Ăn uống. Tuần này bạ
-n đã
- []
-
-Missing character: There is no 🤦 (U+1F926) in font [lmmono12-regular]:!
-Missing character: There is no ‍ (U+200D) in font [lmmono12-regular]:!
-Missing character: There is no ♀ (U+2640) in font [lmmono12-regular]:!
-Missing character: There is no ️ (U+FE0F) in font [lmmono12-regular]:!
-
-Overfull \hbox (1.52222pt too wide) in paragraph at lines 158--159
-\TU/lmtt/m/n/12 Lại trà sữa nữa hả con?! 🤦‍♀️ 50.000đ đó! Tuần này con uống bao
- nhiêu
- []
-
-
-Overfull \hbox (7.16222pt too wide) in paragraph at lines 158--159
-\TU/lmtt/m/n/12 ly rồi biết không? 350.000đ cho mỗi trà sữa thôi! Tiết kiệm chú
-t đi
- []
-
-Missing character: There is no 🧋 (U+1F9CB) in font [lmmono12-regular]:!
-Missing character: There is no 😋 (U+1F60B) in font [lmmono12-regular]:!
-
-Overfull \hbox (28.30219pt too wide) in paragraph at lines 159--160
-\TU/lmtt/m/n/12 🧋 Trà sữa 50k — ai mà cưỡng lại được đúng không 😋 Tuần này mình
- chi 350k
- []
-
-Missing character: There is no 💪 (U+1F4AA) in font [lmmono12-regular]:!
-Missing character: There is no 🔥 (U+1F525) in font [lmmono12-regular]:!
-
-Overfull \hbox (42.18222pt too wide) in paragraph at lines 160--161
-\TU/lmtt/m/n/12 nhận Trà sữa 50.000đ! Mỗi khoản chi đều là cơ hội để kiểm soát 
-tài chính.
- []
-
-
-Overfull \hbox (9.22223pt too wide) in paragraph at lines 160--161
-\TU/lmtt/m/n/12 Tuần này bạn đã chi 350.000đ cho Ăn uống — hãy đặt mục tiêu giả
-m 10%
- []
-
-[122]
-Missing character: There is no 😤 (U+1F624) in font [lmmono12-regular]:!
-
-Overfull \hbox (11.2822pt too wide) in paragraph at lines 174--175
-\TU/lmtt/m/n/12 Ngân sách ăn uống vượt rồi! Mẹ nói bao nhiêu lần rồi, phải biết
- tiết
- []
-
-Missing character: There is no 🎉 (U+1F389) in font [lmmono12-regular]:!
-Missing character: There is no 🍕 (U+1F355) in font [lmmono12-regular]:!
-Missing character: There is no 💪 (U+1F4AA) in font [lmmono12-regular]:!
-Missing character: There is no 🔥 (U+1F525) in font [lmmono12-regular]:!
-
-Overfull \hbox (10.5222pt too wide) in paragraph at lines 176--177
-\TU/lmtt/m/n/12 khoản tiết kiệm nào! 💪 Nhớ mục tiêu đầu tháng không? Hôm nay là
- ngày
- []
-
-[123]
-Overfull \hbox (5.74203pt too wide) in paragraph at lines 180--181
-[]\TU/TimesNewRoman(0)/b/n/12 [!][] \TU/TimesNewRoman(0)/m/n/12 AMBIGUOUS: Chưa
- xác định danh sách tình huống tài chính nào kích hoạt lời khuyên/nhắc
- []
-
-Missing character: There is no 😤 (U+1F624) in font [lmmono12-regular]:!
-[124] [125] [126] [127] [128]) [129]
-Appendix B.
-
-Underfull \hbox (badness 10000) in paragraph at lines 60--60
-[]|\TU/TimesNewRoman(0)/b/n/12 Đường dẫn
- []
-
-
-Overfull \hbox (142.52274pt too wide) in paragraph at lines 60--60
+Overfull \hbox (71.26135pt too wide) in paragraph at lines 18--18
 []|\TU/lmtt/m/n/12 diagrams/mermaid/use-case-diagram.md| 
  []
 
 
-Overfull \hbox (148.70274pt too wide) in paragraph at lines 60--60
+Overfull \hbox (65.08136pt too wide) in paragraph at lines 18--18
+[]|\TU/lmtt/m/n/12 diagrams/puml/use-case-diagram.puml| 
+ []
+
+
+Overfull \hbox (77.44136pt too wide) in paragraph at lines 18--18
 []|\TU/lmtt/m/n/12 diagrams/mermaid/component-diagram.md| 
  []
 
 
-Overfull \hbox (123.98274pt too wide) in paragraph at lines 60--60
+Overfull \hbox (71.26135pt too wide) in paragraph at lines 18--18
+[]|\TU/lmtt/m/n/12 diagrams/puml/component-diagram.puml| 
+ []
+
+
+Overfull \hbox (52.72136pt too wide) in paragraph at lines 18--18
 []|\TU/lmtt/m/n/12 diagrams/mermaid/class-diagram.md| 
  []
 
 
-Overfull \hbox (148.70274pt too wide) in paragraph at lines 60--60
+Overfull \hbox (46.54135pt too wide) in paragraph at lines 18--18
+[]|\TU/lmtt/m/n/12 diagrams/puml/class-diagram.puml| 
+ []
+
+
+Overfull \hbox (77.44136pt too wide) in paragraph at lines 18--18
 []|\TU/lmtt/m/n/12 diagrams/mermaid/sequence-diagrams.md| 
  []
 
 
-Overfull \hbox (148.70274pt too wide) in paragraph at lines 60--60
+Overfull \hbox (71.26135pt too wide) in paragraph at lines 18--18
+[]|\TU/lmtt/m/n/12 diagrams/puml/sequence-diagrams.puml| 
+ []
+
+
+Overfull \hbox (77.44136pt too wide) in paragraph at lines 18--18
 []|\TU/lmtt/m/n/12 diagrams/mermaid/activity-diagrams.md| 
  []
 
-[130
+
+Overfull \hbox (71.26135pt too wide) in paragraph at lines 18--18
+[]|\TU/lmtt/m/n/12 diagrams/puml/activity-diagrams.puml| 
+ []
+
+[41
 
 ]
-Appendix C.
-[131
-
-]
-Appendix D.
-) [132
+Appendix B.
+) [42
 
 ] (./main.aux)
  ***********
 LaTeX2e <2023-11-01> patch level 1
 L3 programming layer <2024-01-22>
  ***********
-Package rerunfilecheck Info: File `main.out' has not changed.
-(rerunfilecheck)             Checksum: E34C90FC6A3014A220F0D32DE2ED29DF;23301.
+
+
+LaTeX Warning: There were undefined references.
+
+
+LaTeX Warning: Label(s) may have changed. Rerun to get cross-references right.
+
+
+Package rerunfilecheck Warning: File `main.out' has changed.
+(rerunfilecheck)                Rerun to get outlines right
+(rerunfilecheck)                or use package `bookmark'.
+
+Package rerunfilecheck Info: Checksums for `main.out':
+(rerunfilecheck)             Before: E34C90FC6A3014A220F0D32DE2ED29DF;23301
+(rerunfilecheck)             After:  71EC0661294E5FB97DECFA650A81CC07;13052.
  ) 
 Here is how much of TeX's memory you used:
- 12974 strings out of 476878
- 256421 string characters out of 5805249
- 1933627 words of memory out of 5000000
- 34620 multiletter control sequences out of 15000+600000
+ 12959 strings out of 476878
+ 255927 string characters out of 5805249
+ 1938627 words of memory out of 5000000
+ 34632 multiletter control sequences out of 15000+600000
  566009 words of font info for 108 fonts, out of 8000000 for 9000
  14 hyphenation exceptions out of 8191
- 79i,11n,104p,1243b,417s stack positions out of 10000i,1000n,20000p,200000b,200000s
+ 79i,11n,104p,975b,417s stack positions out of 10000i,1000n,20000p,200000b,200000s
 
-Output written on main.pdf (142 pages).
+Output written on main.pdf (52 pages).

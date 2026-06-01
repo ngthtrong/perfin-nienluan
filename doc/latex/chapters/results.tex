@@ -25,7 +25,7 @@ PerFin là ứng dụng mobile quản lý tài chính cá nhân với giao diệ
 \textbf{User} & Người dùng cuối quản lý tài chính cá nhân \\ \hline
 \textbf{AI Engine} & Hệ thống AI xử lý NLP, OCR, Voice-to-Text, phân loại tự động \\ \hline
 \textbf{System} & Hệ thống backend tự động (cron jobs, notifications, encryption) \\ \hline
-\textbf{Admin/Reviewer} & Quản trị viên duyệt dữ liệu, quản lý danh mục hệ thống \& nhân cách AI \\ \hline
+\textbf{Admin/Reviewer} & Quản trị viên duyệt dữ liệu, quản lý danh mục hệ thống và nhân cách AI \\ \hline
 \end{tabularx}
 \caption{Các tác nhân trong hệ thống}
 \label{tab:actors}
@@ -126,8 +126,7 @@ NFR-10 & Xuất dữ liệu & Hỗ trợ xuất CSV và PDF với định dạng
 \label{tab:nfr}
 \end{table}
 
-\vspace{0.5cm}
-[TODO --- Bổ sung và chi tiết hóa NFR nếu cần]
+
 
 \section{Thiết kế Phần mềm}
 \label{sec:software_design}
@@ -151,7 +150,19 @@ PerFin được xây dựng theo kiến trúc phân tầng (Layered Architecture
     \label{fig:component_diagram}
 \end{figure}
 
-[TODO --- Giải thích chi tiết từng tầng sau khi phát triển phần mềm]
+Dưới đây là mô tả chi tiết vai trò và trách nhiệm của từng tầng trong kiến trúc hệ thống:
+
+\begin{itemize}
+    \item \textbf{Tầng Client (Mobile App):} Ứng dụng Flutter đa nền tảng (Android/iOS) đóng vai trò là giao diện tương tác trực tiếp với người dùng. Tầng này bao gồm các module giao diện chính: \textit{Chat UI} (giao diện hội thoại với AI --- màn hình trung tâm), \textit{Transaction UI} (quản lý và xem danh sách giao dịch), \textit{Report UI} (biểu đồ và báo cáo chi tiêu), \textit{Budget UI} (thiết lập và theo dõi ngân sách), \textit{Wallet UI} (quản lý ví/tài khoản), và \textit{Settings UI} (cài đặt ứng dụng, nhân cách AI). Flutter cho phép dùng chung codebase cho cả hai nền tảng, giảm chi phí phát triển và đảm bảo trải nghiệm đồng nhất.
+
+    \item \textbf{Tầng API Gateway:} Đóng vai trò là điểm vào duy nhất (single entry point) cho mọi yêu cầu HTTP từ phía client. API Gateway thực hiện các chức năng: \textit{routing} (điều phối yêu cầu đến đúng service xử lý), \textit{rate limiting} (giới hạn số lượng yêu cầu nhằm chống lạm dụng), \textit{JWT validation} (xác minh token xác thực trước khi chuyển tiếp yêu cầu), và \textit{request/response transformation} (chuẩn hóa định dạng dữ liệu). Việc tập trung các chức năng cross-cutting tại Gateway giúp các service phía sau tập trung vào logic nghiệp vụ.
+
+    \item \textbf{Tầng Dịch vụ Lõi (Core Services):} Bao gồm các service xử lý nghiệp vụ chính của ứng dụng, mỗi service đảm nhận một miền chức năng riêng biệt: \textit{Auth Service} (đăng ký, đăng nhập, quản lý phiên JWT, OAuth 2.0), \textit{Transaction Service} (CRUD giao dịch, tính toán số dư), \textit{Category Service} (quản lý danh mục mặc định và tùy chỉnh), \textit{Budget Service} (thiết lập hạn mức, theo dõi tiến độ, kiểm tra ngưỡng cảnh báo), \textit{Wallet Service} (quản lý ví, chuyển tiền, tính Net Worth), \textit{Reminder Service} (nhắc nhở định kỳ, chi phí cố định), \textit{Export Service} (xuất CSV/PDF), \textit{Backup Service} (sao lưu mã hóa, khôi phục), \textit{Report Service} (tổng hợp dữ liệu, phân tích xu hướng), và \textit{Notification Service} (gửi thông báo đẩy, cảnh báo trong chat).
+
+    \item \textbf{Tầng Dịch vụ AI (AI Services):} AI Service đóng vai trò là bộ điều phối (orchestrator) cho các engine xử lý trí tuệ nhân tạo. Khi nhận được yêu cầu từ Core Services, AI Service xác định loại tác vụ và chuyển đến engine phù hợp: \textit{NLP Engine} (sử dụng Google Gemini API để phân tích ngữ nghĩa văn bản tiếng Việt, trích xuất intent và entity từ câu chat), \textit{OCR Engine} (sử dụng Google Vision API để nhận dạng văn bản từ ảnh hóa đơn), \textit{Voice-to-Text Engine} (sử dụng Google Speech-to-Text để chuyển đổi giọng nói thành văn bản), \textit{Categorization Engine} (phân loại giao dịch dựa trên ngữ cảnh và lịch sử người dùng), và \textit{Personality Engine} (áp dụng phong cách giao tiếp theo nhân cách AI đã chọn). Các engine hoạt động theo pipeline: đầu ra của engine này có thể là đầu vào của engine khác, ví dụ Voice-to-Text $\rightarrow$ NLP $\rightarrow$ Categorization.
+
+    \item \textbf{Tầng Dữ liệu (Data Tier):} Bao gồm hai thành phần lưu trữ chính: \textit{PostgreSQL} làm cơ sở dữ liệu quan hệ chính, lưu trữ toàn bộ dữ liệu có cấu trúc (structured data) như thông tin người dùng, giao dịch, danh mục, ngân sách, ví; và \textit{Object Storage} (Firebase/Cloud Storage) lưu trữ các tệp nhị phân như ảnh hóa đơn, file xuất CSV/PDF, và bản sao lưu mã hóa. PostgreSQL được chọn vì hỗ trợ tốt các ràng buộc toàn vẹn dữ liệu (foreign key, check constraint), giao dịch ACID, và hiệu năng truy vấn phân tích với các hàm tổng hợp (aggregate functions).
+\end{itemize}
 
 \subsection{Thiết kế dữ liệu (Data Design)}
 \label{subsec:data_design}
@@ -176,7 +187,20 @@ Hệ thống PerFin bao gồm các thực thể (entity) chính:
     \label{fig:class_diagram}
 \end{figure}
 
-[TODO --- Giải thích các quan hệ giữa các thực thể sau khi hoàn thiện cơ sở dữ liệu]
+Các quan hệ chính giữa các thực thể trong hệ thống được mô tả như sau:
+
+\begin{itemize}
+    \item \textbf{User $\leftrightarrow$ Transaction:} Quan hệ 1-n (one-to-many). Mỗi User sở hữu nhiều Transaction, mỗi Transaction thuộc về đúng một User. Đây là quan hệ cốt lõi đảm bảo tính riêng tư dữ liệu (data isolation per user).
+    \item \textbf{Transaction $\leftrightarrow$ Category:} Quan hệ n-1 (many-to-one). Mỗi Transaction được gán vào một Category (do AI phân loại tự động hoặc người dùng chọn). Một Category có thể chứa nhiều Transaction.
+    \item \textbf{Category $\leftrightarrow$ Category:} Quan hệ tự tham chiếu (self-referencing). Mỗi Category có thể có một parent\_category, cho phép xây dựng cấu trúc danh mục cha-con (ví dụ: ``Ăn uống'' $\rightarrow$ ``Trà sữa'', ``Cơm trưa'').
+    \item \textbf{Transaction $\leftrightarrow$ Wallet:} Quan hệ n-1. Mỗi Transaction liên kết với một Wallet, cho phép theo dõi số dư từng ví. Giao dịch chuyển tiền (Transfer) liên kết với hai Wallet (nguồn và đích).
+    \item \textbf{User $\leftrightarrow$ Wallet:} Quan hệ 1-n. Mỗi User có thể tạo nhiều Wallet (tiền mặt, ngân hàng, ví điện tử, đầu tư).
+    \item \textbf{Budget $\leftrightarrow$ Category:} Quan hệ n-1. Mỗi Budget thiết lập hạn mức chi tiêu cho một Category cụ thể (hoặc tổng thể nếu không gắn Category). Hệ thống so sánh tổng Transaction của Category trong kỳ với hạn mức Budget để đưa ra cảnh báo.
+    \item \textbf{User $\leftrightarrow$ Budget:} Quan hệ 1-n. Mỗi User có thể thiết lập nhiều Budget cho các danh mục khác nhau.
+    \item \textbf{User $\leftrightarrow$ Reminder:} Quan hệ 1-n. Mỗi User có thể tạo nhiều Reminder cho các chi phí cố định.
+    \item \textbf{User $\leftrightarrow$ AIPersonality:} Quan hệ n-1. Mỗi User chọn một AIPersonality đang hoạt động, nhưng một AIPersonality có thể được nhiều User sử dụng.
+    \item \textbf{User $\leftrightarrow$ ChatMessage:} Quan hệ 1-n. Lịch sử hội thoại được lưu trữ theo từng User, bao gồm cả tin nhắn của người dùng và phản hồi của AI.
+\end{itemize}
 
 \subsubsection{Sơ đồ quan hệ thực thể (ERD)}
 
@@ -188,7 +212,7 @@ Hệ thống PerFin bao gồm các thực thể (entity) chính:
     \label{fig:erd_diagram}
 \end{figure}
 
-[TODO --- Tạo ERD từ Class Diagram, bổ sung các trường dữ liệu, kiểu dữ liệu, khóa chính, khóa ngoại]
+Sơ đồ quan hệ thực thể (ERD) được dẫn xuất trực tiếp từ Class Diagram ở trên, với việc bổ sung các thông tin cụ thể cho tầng cơ sở dữ liệu: kiểu dữ liệu cụ thể cho từng trường (VARCHAR, INTEGER, DECIMAL, TIMESTAMP, ENUM...), khóa chính (PRIMARY KEY) cho mỗi bảng, khóa ngoại (FOREIGN KEY) thể hiện các mối quan hệ giữa các thực thể, các ràng buộc toàn vẹn (NOT NULL, UNIQUE, CHECK), và chỉ mục (INDEX) cho các trường thường xuyên truy vấn. ERD sẽ được cập nhật đầy đủ sau khi hoàn thiện quá trình phát triển cơ sở dữ liệu.
 
 \subsection{Thiết kế chi tiết (Detailed Design)}
 \label{subsec:detailed_design}
@@ -226,7 +250,17 @@ Do sơ đồ Use Case tổng quan chứa số lượng lớn các chức năng (
     \label{fig:use_case_system}
 \end{figure}
 
-[TODO --- Giải thích chi tiết use case]
+Hệ thống Use Case của PerFin được tổ chức theo cấu trúc phân cấp với 4 loại tác nhân (User, AI Engine, System, Admin/Reviewer) và các use case được nhóm theo phân hệ chức năng:
+
+\begin{itemize}
+    \item \textbf{Sơ đồ tổng quan (Hình~\ref{fig:use_case_overview}):} Thể hiện mức cao các phân hệ chức năng chính và mối quan hệ giữa 4 loại actor với hệ thống. Mỗi phân hệ được biểu diễn dưới dạng một subsystem boundary, giúp người đọc nhanh chóng nắm bắt phạm vi tổng thể của ứng dụng.
+
+    \item \textbf{Phân hệ Core Features (Hình~\ref{fig:use_case_core}):} Bao gồm các chức năng quản lý tài chính cốt lõi --- quản lý giao dịch (tạo, sửa, xóa, xem lịch sử), quản lý danh mục (tạo danh mục tùy chỉnh, cấu trúc cha-con), quản lý ngân sách (thiết lập hạn mức, theo dõi tiến độ), quản lý ví/tài khoản (tạo ví, chuyển tiền giữa các ví), và quản lý nhắc nhở (chi phí cố định, giao dịch định kỳ). Đây là phân hệ có số lượng use case lớn nhất, phản ánh tính chất ứng dụng quản lý tài chính.
+
+    \item \textbf{Phân hệ AI Features (Hình~\ref{fig:use_case_ai}):} Tập trung vào các chức năng tích hợp trí tuệ nhân tạo --- nhập liệu thông minh (văn bản, giọng nói, ảnh hóa đơn), phân loại giao dịch tự động, phát hiện chi phí cố định từ lịch sử, và tùy chỉnh nhân cách AI. Các use case trong phân hệ này chủ yếu liên quan đến tác nhân AI Engine với các mối quan hệ \texttt{<<include>>} và \texttt{<<extend>>} phức tạp.
+
+    \item \textbf{Phân hệ System Features (Hình~\ref{fig:use_case_system}):} Bao gồm các chức năng hỗ trợ và vận hành hệ thống --- báo cáo và phân tích chi tiêu (biểu đồ, phát hiện bất thường, tư vấn AI), sao lưu và khôi phục dữ liệu (sao lưu mã hóa, sao lưu tự động), xuất dữ liệu (CSV, PDF), và bảo mật (xác thực JWT, OAuth 2.0, mã hóa dữ liệu). Tác nhân System đóng vai trò chủ yếu trong phân hệ này với các tác vụ tự động chạy nền (background jobs).
+\end{itemize}
 
 \subsubsection{Sơ đồ tuần tự (Sequence Diagrams)}
 Các sơ đồ tuần tự mô tả luồng tương tác giữa các tác nhân và hệ thống cho các use case quan trọng.
@@ -289,7 +323,15 @@ Các sơ đồ tuần tự chi tiết hóa luồng tương tác giữa các tác
     \label{fig:seq_shared_wallet}
 \end{figure}
 
-[TODO --- Giải thích các luồng tương tác chính]
+Dưới đây là mô tả 3 luồng tương tác quan trọng nhất trong hệ thống:
+
+\begin{enumerate}
+    \item \textbf{Nhập giao dịch bằng văn bản (Hình~\ref{fig:seq_text_input}):} Người dùng gửi tin nhắn dạng văn bản tự nhiên (ví dụ: ``trà sữa 50k'') qua Chat UI. Client gửi yêu cầu đến API Gateway, Gateway xác minh JWT token rồi chuyển tiếp đến AI Service. AI Service điều phối NLP Engine (Google Gemini API) để phân tích ngữ nghĩa, trích xuất intent (tạo giao dịch chi), entity (tên=``trà sữa'', số tiền=50.000đ), đồng thời Categorization Engine suy đoán danh mục phù hợp (``Ăn uống''). Kết quả trả về Transaction Service để tạo giao dịch mới trong Database, cập nhật số dư Wallet, và kiểm tra ngưỡng Budget. Phản hồi xác nhận được Personality Engine định dạng theo nhân cách AI đã chọn rồi trả về cho người dùng.
+
+    \item \textbf{Nhập giao dịch bằng ảnh hóa đơn --- OCR (Hình~\ref{fig:seq_ocr_input}):} Người dùng chụp ảnh hóa đơn và gửi qua Chat UI. API Gateway chuyển ảnh đến AI Service, AI Service gọi OCR Engine (Google Vision API) để nhận dạng văn bản trong ảnh. Kết quả OCR (raw text) được chuyển tiếp cho NLP Engine để phân tích cấu trúc hóa đơn, trích xuất danh sách sản phẩm, đơn giá, và tổng tiền. Nếu thông tin đầy đủ, Transaction Service tạo giao dịch; nếu thiếu thông tin (ví dụ không xác định được danh mục), AI hỏi lại người dùng qua chat (xem Hình~\ref{fig:seq_ai_clarify}).
+
+    \item \textbf{Cảnh báo ngân sách (Hình~\ref{fig:seq_budget_alert}):} Sau khi một Transaction mới được tạo thành công, Transaction Service phát sự kiện (event) đến Budget Service. Budget Service tính tổng chi tiêu hiện tại trong kỳ cho danh mục tương ứng, so sánh với hạn mức đã thiết lập. Khi tổng chi tiêu vượt các ngưỡng cảnh báo (70\%, 90\%, hoặc 100\% hạn mức), Budget Service gửi yêu cầu đến Notification Service để tạo cảnh báo. Notification Service gửi thông báo đẩy (push notification) và hiển thị cảnh báo trong giao diện chat để người dùng kịp thời điều chỉnh hành vi chi tiêu.
+\end{enumerate}
 
 \subsubsection{Sơ đồ hoạt động (Activity Diagrams)}
 Các sơ đồ hoạt động mô tả chi tiết quy trình xử lý cho các luồng nghiệp vụ phức tạp.
@@ -331,7 +373,15 @@ Các sơ đồ hoạt động mô tả chi tiết quy trình xử lý và logic 
     \label{fig:act_shared_wallet}
 \end{figure}
 
-[TODO --- Giải thích quy trình xử lý chi tiết]
+Dưới đây là mô tả các quy trình xử lý chính được thể hiện trong các sơ đồ hoạt động:
+
+\begin{enumerate}
+    \item \textbf{Luồng tạo giao dịch mới (Hình~\ref{fig:act_create_trans}):} Quy trình bắt đầu khi hệ thống nhận đầu vào từ người dùng. Bước đầu tiên là xác định loại đầu vào: văn bản (text), giọng nói (voice), hoặc hình ảnh (image). Nếu là giọng nói, hệ thống chuyển đổi thành văn bản qua Voice-to-Text Engine; nếu là hình ảnh, hệ thống trích xuất văn bản qua OCR Engine. Sau đó, NLP Engine phân tích ngữ nghĩa văn bản để trích xuất thông tin giao dịch (tên, số tiền, ngày). Categorization Engine suy đoán danh mục phù hợp dựa trên ngữ cảnh và lịch sử. Nếu thông tin đầy đủ và AI có độ tin cậy cao, hệ thống hiển thị kết quả để người dùng xác nhận; nếu thiếu thông tin, AI hỏi lại. Cuối cùng, giao dịch được lưu vào cơ sở dữ liệu và số dư ví được cập nhật.
+
+    \item \textbf{Luồng phân loại tự động (Hình~\ref{fig:act_auto_cat}):} Khi nhận được nội dung giao dịch cần phân loại, Categorization Engine thực hiện phân tích ngữ cảnh (context analysis) dựa trên từ khóa, mô tả giao dịch, và lịch sử phân loại của người dùng. Hệ thống tra cứu danh sách danh mục hiện có (cả mặc định và tùy chỉnh), tính toán độ tin cậy (confidence score) cho danh mục phù hợp nhất. Nếu confidence $\ge$ ngưỡng cấu hình (mặc định 85\%), hệ thống tự động gán danh mục; nếu confidence thấp hơn, hệ thống đề xuất danh mục kèm theo câu hỏi xác nhận từ người dùng. Phản hồi của người dùng (chấp nhận hoặc chọn danh mục khác) được ghi nhận để cải thiện độ chính xác cho các lần phân loại sau (feedback loop).
+
+    \item \textbf{Luồng quản lý ngân sách (Hình~\ref{fig:act_budget_mgmt}):} Quy trình bắt đầu khi người dùng thiết lập ngân sách cho một danh mục trong kỳ (tuần/tháng). Mỗi khi giao dịch mới được tạo, hệ thống tự động tính toán tổng chi tiêu hiện tại so với hạn mức. Tại các ngưỡng 70\%, 90\%, và 100\%, hệ thống kích hoạt cảnh báo tương ứng. Khi kết thúc kỳ, nếu ngân sách chưa dùng hết và tùy chọn rollover được bật, phần dư sẽ được chuyển sang kỳ tiếp theo.
+\end{enumerate}
 
 \subsubsection{Thiết kế giao diện người dùng (UI Design)}
 [TODO --- Trình bày wireframe/mockup cho các màn hình chính:
@@ -362,7 +412,7 @@ Các sơ đồ hoạt động mô tả chi tiết quy trình xử lý và logic 
 \subsection{Kế hoạch kiểm thử (Test Plan)}
 \label{subsec:test_plan}
 
-[TODO --- Trình bày chiến lược kiểm thử bao gồm:]
+Chiến lược kiểm thử của PerFin được xây dựng theo mô hình kim tự tháp kiểm thử (Testing Pyramid), trong đó Unit Testing chiếm tỷ trọng lớn nhất, tiếp theo là Integration Testing, System Testing, và cuối cùng là User Acceptance Testing. Các loại kiểm thử cụ thể:
 
 \subsubsection{Các loại kiểm thử}
 
@@ -371,10 +421,10 @@ Các sơ đồ hoạt động mô tả chi tiết quy trình xử lý và logic 
 \begin{tabularx}{\textwidth}{|l|X|l|}
 \hline
 \textbf{Loại kiểm thử} & \textbf{Mô tả} & \textbf{Công cụ} \\ \hline
-Unit Testing & Kiểm thử từng hàm/module riêng lẻ & [TODO] \\ \hline
-Integration Testing & Kiểm thử tích hợp giữa các service & [TODO] \\ \hline
-System Testing & Kiểm thử toàn hệ thống end-to-end & [TODO] \\ \hline
-User Acceptance Testing & Kiểm thử chấp nhận với người dùng thực & [TODO] \\ \hline
+Unit Testing & Kiểm thử từng hàm/module riêng lẻ, đặc biệt các hàm xử lý logic nghiệp vụ (tính toán số dư, kiểm tra ngưỡng ngân sách) và các hàm tiện ích (format tiền tệ, parse ngày tháng) & Jest (Node.js), Flutter Test \\ \hline
+Integration Testing & Kiểm thử tích hợp giữa các service, đảm bảo API endpoint hoạt động đúng với request/response, kiểm tra luồng dữ liệu giữa các tầng & Supertest, Postman \\ \hline
+System Testing & Kiểm thử toàn hệ thống end-to-end, mô phỏng luồng sử dụng thực tế từ giao diện mobile đến database & Appium, Flutter Driver \\ \hline
+User Acceptance Testing & Kiểm thử chấp nhận với 5--10 người dùng thực thuộc nhóm đối tượng mục tiêu (sinh viên, người đi làm trẻ), đánh giá tính dễ sử dụng và độ chính xác AI & Manual Testing \\ \hline
 \end{tabularx}
 \caption{Kế hoạch kiểm thử}
 \label{tab:test_plan}
@@ -382,7 +432,7 @@ User Acceptance Testing & Kiểm thử chấp nhận với người dùng thực
 
 \subsubsection{Các test case chính}
 
-[TODO --- Liệt kê test case cho các luồng quan trọng:]
+Bảng~\ref{tab:test_cases} liệt kê các test case cho các luồng nghiệp vụ quan trọng nhất của hệ thống:
 
 \begin{table}[htbp]
 \centering
@@ -393,12 +443,16 @@ TC-01 & Nhập giao dịch bằng văn bản tiếng Việt & "trà sữa 50k" &
 TC-02 & Nhập giao dịch bằng hình ảnh hóa đơn & Ảnh hóa đơn siêu thị & Trích xuất danh sách sản phẩm và tổng tiền & [TODO] & [TODO] \\ \hline
 TC-03 & Cảnh báo ngân sách 70\% & Chi tiêu vượt 70\% hạn mức & Hệ thống gửi cảnh báo trong chat & [TODO] & [TODO] \\ \hline
 TC-04 & Phân loại tự động & "grab đi làm 30k" & Giao dịch phân loại vào "Di chuyển" & [TODO] & [TODO] \\ \hline
+TC-05 & Nhập giao dịch bằng giọng nói & "mua cà phê ba mươi nghìn" (voice) & Tạo giao dịch: tên="cà phê", số tiền=30.000đ, danh mục="Ăn uống" & [TODO] & [TODO] \\ \hline
+TC-06 & Chuyển tiền giữa ví & "chuyển 500k từ tiền mặt sang Momo" & Tạo Transfer, số dư tiền mặt giảm 500.000đ, số dư Momo tăng 500.000đ & [TODO] & [TODO] \\ \hline
+TC-07 & Xem báo cáo chi tiêu tháng & Yêu cầu xem báo cáo tháng 6 & Hiển thị biểu đồ tròn theo danh mục, tổng thu/chi chính xác & [TODO] & [TODO] \\ \hline
+TC-08 & Đổi nhân cách AI & Chọn nhân cách ``Bà mẹ nghiêm khắc'' & Giọng điệu chat thay đổi phù hợp, logic xử lý giao dịch không đổi & [TODO] & [TODO] \\ \hline
+TC-09 & Xuất dữ liệu CSV & Yêu cầu xuất giao dịch 3 tháng gần nhất & File CSV tải về thành công, dữ liệu đầy đủ và đúng định dạng & [TODO] & [TODO] \\ \hline
+TC-10 & Sao lưu dữ liệu & Yêu cầu sao lưu toàn bộ dữ liệu & File backup mã hóa AES-256 được tạo thành công & [TODO] & [TODO] \\ \hline
 \end{tabularx}
 \caption{Các test case chính}
 \label{tab:test_cases}
 \end{table}
-
-[TODO --- Bổ sung thêm test case]
 
 \subsection{Kết quả và phân tích (Results \& Analysis)}
 \label{subsec:test_results}

@@ -1,28 +1,26 @@
 \addvspace {10\p@ }
 \addvspace {10\p@ }
 \addvspace {10\p@ }
-\contentsline {figure}{\numberline {3.1}{\ignorespaces Sơ đồ thành phần (Component Diagram)}}{9}{figure.3.1}%
-\contentsline {figure}{\numberline {3.2}{\ignorespaces Sơ đồ lớp (Class Diagram)}}{10}{figure.3.2}%
-\contentsline {figure}{\numberline {3.3}{\ignorespaces Sơ đồ quan hệ thực thể (ERD)}}{11}{figure.3.3}%
-\contentsline {figure}{\numberline {3.4}{\ignorespaces Sơ đồ Use Case tổng quan mức cao (Overview)}}{11}{figure.3.4}%
-\contentsline {figure}{\numberline {3.5}{\ignorespaces Sơ đồ Use Case phân hệ Quản lý Tài chính \& Ví chung (Core Features)}}{11}{figure.3.5}%
-\contentsline {figure}{\numberline {3.6}{\ignorespaces Sơ đồ Use Case phân hệ Xử lý \& Phân loại bằng AI (AI Features)}}{12}{figure.3.6}%
-\contentsline {figure}{\numberline {3.7}{\ignorespaces Sơ đồ Use Case phân hệ Phân tích, Sao lưu \& Bảo mật (System Features)}}{12}{figure.3.7}%
-\contentsline {figure}{\numberline {3.8}{\ignorespaces Sơ đồ tuần tự: Nhập giao dịch bằng văn bản}}{12}{figure.3.8}%
-\contentsline {figure}{\numberline {3.9}{\ignorespaces Sơ đồ tuần tự: Nhập giao dịch bằng giọng nói}}{13}{figure.3.9}%
-\contentsline {figure}{\numberline {3.10}{\ignorespaces Sơ đồ tuần tự: Nhập giao dịch bằng ảnh hóa đơn (OCR)}}{13}{figure.3.10}%
-\contentsline {figure}{\numberline {3.11}{\ignorespaces Sơ đồ tuần tự: AI làm rõ thông tin thiếu}}{14}{figure.3.11}%
-\contentsline {figure}{\numberline {3.12}{\ignorespaces Sơ đồ tuần tự: Cảnh báo ngân sách}}{14}{figure.3.12}%
-\contentsline {figure}{\numberline {3.13}{\ignorespaces Sơ đồ tuần tự: Nhắc nhở giao dịch định kỳ}}{15}{figure.3.13}%
-\contentsline {figure}{\numberline {3.14}{\ignorespaces Sơ đồ tuần tự: Xuất dữ liệu}}{15}{figure.3.14}%
-\contentsline {figure}{\numberline {3.15}{\ignorespaces Sơ đồ tuần tự: Chi tiêu ví chung}}{16}{figure.3.15}%
-\contentsline {figure}{\numberline {3.16}{\ignorespaces Sơ đồ hoạt động: Tạo giao dịch mới (REQ-01)}}{17}{figure.3.16}%
-\contentsline {figure}{\numberline {3.17}{\ignorespaces Sơ đồ hoạt động: Phân loại tự động (REQ-02)}}{18}{figure.3.17}%
-\contentsline {figure}{\numberline {3.18}{\ignorespaces Sơ đồ hoạt động: Quản lý ngân sách (REQ-03)}}{19}{figure.3.18}%
-\contentsline {figure}{\numberline {3.19}{\ignorespaces Sơ đồ hoạt động: Xóa danh mục (REQ-02)}}{20}{figure.3.19}%
-\contentsline {figure}{\numberline {3.20}{\ignorespaces Sơ đồ hoạt động: Quy trình chi tiêu ví chung (REQ-10)}}{21}{figure.3.20}%
-\addvspace {10\p@ }
-\addvspace {10\p@ }
+\contentsline {figure}{\numberline {3.1}{\ignorespaces Sơ đồ thành phần (Component Diagram)}}{20}{figure.3.1}%
+\contentsline {figure}{\numberline {3.2}{\ignorespaces Sơ đồ lớp (Class Diagram)}}{22}{figure.3.2}%
+\contentsline {figure}{\numberline {3.3}{\ignorespaces Sơ đồ quan hệ thực thể (ERD)}}{23}{figure.3.3}%
+\contentsline {figure}{\numberline {3.4}{\ignorespaces Sơ đồ Use Case tổng quan mức cao (Overview)}}{24}{figure.3.4}%
+\contentsline {figure}{\numberline {3.5}{\ignorespaces Sơ đồ Use Case phân hệ Quản lý Tài chính \& Ví chung (Core Features)}}{24}{figure.3.5}%
+\contentsline {figure}{\numberline {3.6}{\ignorespaces Sơ đồ Use Case phân hệ Xử lý \& Phân loại bằng AI (AI Features)}}{24}{figure.3.6}%
+\contentsline {figure}{\numberline {3.7}{\ignorespaces Sơ đồ Use Case phân hệ Phân tích, Sao lưu \& Bảo mật (System Features)}}{25}{figure.3.7}%
+\contentsline {figure}{\numberline {3.8}{\ignorespaces Sơ đồ tuần tự: Nhập giao dịch bằng văn bản}}{25}{figure.3.8}%
+\contentsline {figure}{\numberline {3.9}{\ignorespaces Sơ đồ tuần tự: Nhập giao dịch bằng giọng nói}}{26}{figure.3.9}%
+\contentsline {figure}{\numberline {3.10}{\ignorespaces Sơ đồ tuần tự: Nhập giao dịch bằng ảnh hóa đơn (OCR)}}{26}{figure.3.10}%
+\contentsline {figure}{\numberline {3.11}{\ignorespaces Sơ đồ tuần tự: AI làm rõ thông tin thiếu}}{27}{figure.3.11}%
+\contentsline {figure}{\numberline {3.12}{\ignorespaces Sơ đồ tuần tự: Cảnh báo ngân sách}}{27}{figure.3.12}%
+\contentsline {figure}{\numberline {3.13}{\ignorespaces Sơ đồ tuần tự: Nhắc nhở giao dịch định kỳ}}{28}{figure.3.13}%
+\contentsline {figure}{\numberline {3.14}{\ignorespaces Sơ đồ tuần tự: Xuất dữ liệu}}{28}{figure.3.14}%
+\contentsline {figure}{\numberline {3.15}{\ignorespaces Sơ đồ tuần tự: Chi tiêu ví chung}}{29}{figure.3.15}%
+\contentsline {figure}{\numberline {3.16}{\ignorespaces Sơ đồ hoạt động: Tạo giao dịch mới (REQ-01)}}{30}{figure.3.16}%
+\contentsline {figure}{\numberline {3.17}{\ignorespaces Sơ đồ hoạt động: Phân loại tự động (REQ-02)}}{31}{figure.3.17}%
+\contentsline {figure}{\numberline {3.18}{\ignorespaces Sơ đồ hoạt động: Quản lý ngân sách (REQ-03)}}{32}{figure.3.18}%
+\contentsline {figure}{\numberline {3.19}{\ignorespaces Sơ đồ hoạt động: Xóa danh mục (REQ-02)}}{33}{figure.3.19}%
+\contentsline {figure}{\numberline {3.20}{\ignorespaces Sơ đồ hoạt động: Quy trình chi tiêu ví chung (REQ-10)}}{34}{figure.3.20}%
 \addvspace {10\p@ }
 \addvspace {10\p@ }
 \addvspace {10\p@ }

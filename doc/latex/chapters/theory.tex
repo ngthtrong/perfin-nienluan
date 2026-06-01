@@ -4,60 +4,388 @@
 \section{Tổng quan về quản lý tài chính cá nhân}
 \label{sec:overview_personal_finance}
 
-[TODO --- Trình bày khái niệm quản lý tài chính cá nhân, tầm quan trọng, các phương pháp phổ biến (nguyên tắc 50/30/20, envelope budgeting...), thực trạng quản lý tài chính của giới trẻ Việt Nam.]
+\subsection{Định nghĩa quản lý tài chính cá nhân}
+\label{subsec:personal_finance_definition}
 
+Quản lý tài chính cá nhân (Personal Finance Management) là quá trình lập kế hoạch, tổ chức, kiểm soát và theo dõi các hoạt động tài chính của cá nhân hoặc hộ gia đình, bao gồm thu nhập, chi tiêu, tiết kiệm, đầu tư và quản lý nợ \cite{ref1}. Mục tiêu cốt lõi của quản lý tài chính cá nhân là đảm bảo cá nhân có khả năng đáp ứng các nhu cầu tài chính hiện tại, đồng thời xây dựng nền tảng vững chắc cho các mục tiêu tài chính dài hạn như mua nhà, nghỉ hưu, hoặc dự phòng rủi ro.
+
+Quản lý tài chính cá nhân bao gồm nhiều khía cạnh khác nhau:
+
+\begin{itemize}
+    \item \textbf{Lập ngân sách (Budgeting)}: Phân bổ thu nhập vào các khoản chi tiêu cụ thể, đảm bảo chi tiêu không vượt quá thu nhập.
+    \item \textbf{Theo dõi chi tiêu (Expense Tracking)}: Ghi chép và phân loại các khoản chi tiêu hàng ngày để nhận diện thói quen tiêu dùng.
+    \item \textbf{Tiết kiệm và đầu tư (Saving \& Investing)}: Trích lập khoản tiết kiệm và phân bổ vào các kênh đầu tư phù hợp.
+    \item \textbf{Quản lý nợ (Debt Management)}: Kiểm soát các khoản vay, trả nợ đúng hạn và tối ưu hóa chi phí lãi suất.
+    \item \textbf{Quản lý rủi ro (Risk Management)}: Xây dựng quỹ dự phòng và bảo hiểm phù hợp.
+\end{itemize}
+
+\subsection{Tầm quan trọng trong bối cảnh kinh tế hiện đại}
+\label{subsec:importance_modern_economy}
+
+Trong bối cảnh kinh tế toàn cầu ngày càng phức tạp với lạm phát, biến động thị trường tài chính và sự đa dạng hóa các kênh chi tiêu (thương mại điện tử, ví điện tử, thanh toán không tiền mặt), việc quản lý tài chính cá nhân trở nên cấp thiết hơn bao giờ hết. Theo báo cáo của Ngân hàng Thế giới (World Bank) năm 2022, chỉ có khoảng 33\% người trưởng thành tại các quốc gia đang phát triển có kiến thức tài chính cơ bản (financial literacy) \cite{ref2}. Điều này dẫn đến tình trạng chi tiêu thiếu kiểm soát, tích lũy nợ xấu, và thiếu chuẩn bị cho các tình huống tài chính bất ngờ.
+
+Đặc biệt tại Việt Nam, sự bùng nổ của thanh toán số đã tạo ra thách thức mới trong quản lý tài chính. Theo số liệu từ Ngân hàng Nhà nước Việt Nam, tính đến cuối năm 2023, số lượng giao dịch thanh toán không dùng tiền mặt tăng hơn 50\% so với cùng kỳ năm trước \cite{ref3}. Sự tiện lợi của các phương thức thanh toán số (QR code, ví điện tử MoMo, ZaloPay, chuyển khoản ngân hàng) vô hình trung khiến người dùng khó kiểm soát dòng tiền hơn khi giao dịch diễn ra nhanh chóng và phân tán trên nhiều nền tảng.
+
+\subsection{Các phương pháp quản lý tài chính phổ biến}
+\label{subsec:budgeting_methods}
+
+Qua quá trình nghiên cứu, nhóm tác giả nhận diện ba phương pháp quản lý tài chính cá nhân phổ biến được áp dụng rộng rãi trên thế giới:
+
+\begin{enumerate}
+    \item \textbf{Nguyên tắc 50/30/20}: Được đề xuất bởi Elizabeth Warren trong cuốn sách \textit{``All Your Worth''} \cite{ref4}, nguyên tắc này chia thu nhập sau thuế thành ba phần: 50\% cho nhu cầu thiết yếu (nhà ở, ăn uống, đi lại), 30\% cho mong muốn cá nhân (giải trí, mua sắm, du lịch), và 20\% cho tiết kiệm và trả nợ. Phương pháp này có ưu điểm đơn giản, dễ áp dụng, phù hợp với người mới bắt đầu quản lý tài chính.
+
+    \item \textbf{Envelope Budgeting (Phương pháp phong bì)}: Người dùng chia tiền mặt vào các phong bì được dán nhãn theo từng danh mục chi tiêu (ăn uống, xăng xe, giải trí...). Khi phong bì hết tiền, người dùng không được phép chi tiêu thêm cho danh mục đó trong tháng. Phương pháp này hiệu quả trong việc kiểm soát chi tiêu quá mức nhưng gặp hạn chế trong thời đại thanh toán số. Các ứng dụng tài chính hiện đại đã số hóa phương pháp này thành tính năng \textit{``budget categories''} --- PerFin cũng áp dụng nguyên lý tương tự trong module quản lý ngân sách.
+
+    \item \textbf{Zero-Based Budgeting (Ngân sách về 0)}: Mọi đồng thu nhập đều được phân bổ một mục đích cụ thể, sao cho tổng thu nhập trừ tổng chi tiêu (bao gồm cả tiết kiệm) bằng 0. Phương pháp này đòi hỏi kỷ luật cao và sự theo dõi chi tiết nhưng mang lại hiệu quả tốt nhất trong việc kiểm soát tài chính toàn diện.
+\end{enumerate}
+
+\subsection{Thực trạng quản lý tài chính của giới trẻ Việt Nam}
+\label{subsec:vietnam_youth_finance}
+
+Theo khảo sát của Viện Nghiên cứu Quản lý Kinh tế Trung ương (CIEM) năm 2023, khoảng 56\% người trẻ Việt Nam (độ tuổi 18--30) không có thói quen ghi chép chi tiêu hàng ngày, và hơn 68\% không lập ngân sách chi tiêu hàng tháng \cite{ref5}. Trong số những người có sử dụng ứng dụng quản lý tài chính, tỷ lệ bỏ cuộc sau 2 tuần sử dụng lên đến 72\%, chủ yếu do quy trình nhập liệu thủ công rườm rà và thiếu tính tương tác. Các lý do chính bao gồm:
+
+\begin{itemize}
+    \item \textbf{Rào cản thao tác}: Quy trình nhập giao dịch truyền thống yêu cầu nhiều bước (mở app $\rightarrow$ chọn loại $\rightarrow$ chọn danh mục $\rightarrow$ nhập số tiền $\rightarrow$ chọn ngày $\rightarrow$ lưu), tạo cảm giác phiền phức.
+    \item \textbf{Thiếu phản hồi thông minh}: Các ứng dụng truyền thống chỉ ghi chép thụ động, thiếu khả năng phân tích và đưa ra lời khuyên tài chính cá nhân hóa.
+    \item \textbf{Thiếu yếu tố gắn kết}: Giao diện đơn điệu, thiếu gamification, khiến việc quản lý tài chính trở nên nhàm chán.
+    \item \textbf{Kiến thức tài chính hạn chế}: Nhiều người trẻ thiếu kiến thức nền tảng về lập ngân sách, tiết kiệm và đầu tư \cite{ref6}.
+\end{itemize}
+
+Những thực trạng trên cho thấy nhu cầu cấp thiết về một giải pháp quản lý tài chính cá nhân thông minh, tận dụng công nghệ AI để đơn giản hóa quy trình nhập liệu và tăng cường trải nghiệm người dùng --- đây chính là động lực để nhóm tác giả phát triển PerFin.
+
+%% ====================================================================
 \section{Trí tuệ nhân tạo và Xử lý ngôn ngữ tự nhiên (NLP)}
 \label{sec:ai_and_nlp}
 
 \subsection{Khái niệm trí tuệ nhân tạo (AI)}
 \label{subsec:ai_concept}
 
-[TODO --- Định nghĩa AI, phân loại AI (Narrow AI, General AI), các ứng dụng của AI trong đời sống.]
+Trí tuệ nhân tạo (Artificial Intelligence --- AI) là một lĩnh vực của khoa học máy tính tập trung vào việc xây dựng các hệ thống có khả năng thực hiện những nhiệm vụ thường đòi hỏi trí thông minh của con người, bao gồm: nhận dạng hình ảnh, hiểu ngôn ngữ tự nhiên, ra quyết định, và học từ dữ liệu \cite{ref7}. John McCarthy, người đặt ra thuật ngữ ``Artificial Intelligence'' vào năm 1956, định nghĩa AI là \textit{``khoa học và kỹ thuật tạo ra máy móc thông minh, đặc biệt là các chương trình máy tính thông minh''}.
+
+AI được phân loại thành hai nhóm chính:
+
+\begin{itemize}
+    \item \textbf{AI hẹp (Narrow AI / Weak AI)}: Hệ thống AI được thiết kế để thực hiện một nhiệm vụ cụ thể, không có khả năng suy luận tổng quát. Ví dụ: hệ thống nhận dạng giọng nói (Siri, Google Assistant), hệ thống gợi ý sản phẩm (Netflix, Spotify), chatbot dịch vụ khách hàng, và các mô hình phát hiện gian lận trong ngân hàng. Đây là loại AI phổ biến nhất hiện nay và là nền tảng cho các tính năng AI trong PerFin.
+
+    \item \textbf{AI tổng quát (Artificial General Intelligence --- AGI / Strong AI)}: Hệ thống AI có khả năng hiểu, học hỏi và vận dụng trí tuệ ở mọi lĩnh vực giống như con người. AGI hiện chưa tồn tại và vẫn đang là mục tiêu nghiên cứu dài hạn của cộng đồng AI toàn cầu.
+\end{itemize}
+
+Trong lĩnh vực công nghệ tài chính (fintech), AI đã và đang được ứng dụng rộng rãi bao gồm: phát hiện giao dịch gian lận (fraud detection), đánh giá tín dụng tự động (credit scoring), chatbot tư vấn tài chính (robo-advisor), phân loại giao dịch tự động, và dự báo xu hướng chi tiêu. PerFin khai thác AI hẹp, cụ thể là các mô hình ngôn ngữ lớn (LLM) và dịch vụ nhận dạng (OCR, Speech-to-Text), để xây dựng trải nghiệm quản lý tài chính thông minh.
 
 \subsection{Xử lý ngôn ngữ tự nhiên (NLP)}
 \label{subsec:nlp}
 
-[TODO --- Định nghĩa NLP, các bài toán chính trong NLP (Named Entity Recognition, Intent Classification, Text Classification), ứng dụng NLP trong fintech.]
+Xử lý ngôn ngữ tự nhiên (Natural Language Processing --- NLP) là một nhánh con của AI tập trung vào sự tương tác giữa máy tính và ngôn ngữ tự nhiên của con người \cite{ref8}. Mục tiêu của NLP là giúp máy tính có khả năng đọc hiểu, diễn giải, và tạo ra văn bản hoặc lời nói ở dạng ngôn ngữ tự nhiên. NLP kết hợp nhiều kỹ thuật từ ngôn ngữ học tính toán, thống kê, và học sâu (deep learning).
+
+Các bài toán chính trong NLP có liên quan đến PerFin bao gồm:
+
+\begin{itemize}
+    \item \textbf{Nhận dạng thực thể có tên (Named Entity Recognition --- NER)}: Trích xuất các thực thể cụ thể từ văn bản như tên người, địa điểm, tổ chức, số tiền, ngày tháng. Trong PerFin, NER được sử dụng để bóc tách thông tin giao dịch từ tin nhắn người dùng, ví dụ từ câu \textit{``ăn phở 45 nghìn sáng nay''}, hệ thống cần nhận dạng: mô tả = ``ăn phở'', số tiền = 45.000 VNĐ, thời gian = sáng nay.
+
+    \item \textbf{Phân loại ý định (Intent Classification)}: Xác định mục đích của người dùng khi gửi tin nhắn. PerFin cần phân biệt các ý định như: ghi chép giao dịch, truy vấn số dư, hỏi báo cáo chi tiêu, thiết lập ngân sách, hoặc hỏi tư vấn tài chính.
+
+    \item \textbf{Phân loại văn bản (Text Classification)}: Tự động gán nhãn danh mục cho giao dịch dựa trên mô tả. Ví dụ, phân loại ``grab đi làm'' vào danh mục ``Di chuyển'', ``trà sữa gong cha'' vào danh mục ``Ăn uống''.
+
+    \item \textbf{Sinh văn bản tự nhiên (Natural Language Generation --- NLG)}: Tạo ra các phản hồi tự nhiên, mạch lạc cho người dùng. Trong PerFin, NLG được sử dụng để AI đưa ra nhận xét về thói quen chi tiêu, tư vấn tài chính, và phản hồi xác nhận giao dịch một cách tự nhiên.
+\end{itemize}
+
+Ứng dụng NLP trong fintech đã chứng minh hiệu quả vượt trội trong việc nâng cao trải nghiệm người dùng. Các nghiên cứu cho thấy giao diện hội thoại (conversational interface) giúp giảm thời gian nhập liệu trung bình 60--70\% so với giao diện biểu mẫu truyền thống, đồng thời tăng tỷ lệ duy trì sử dụng (retention rate) lên đáng kể \cite{ref9}.
 
 \subsection{Mô hình ngôn ngữ lớn (LLM)}
 \label{subsec:llm}
 
-[TODO --- Giới thiệu LLM (GPT, Gemini), cách hoạt động cơ bản (Transformer architecture), khả năng few-shot learning và in-context learning, ưu/nhược điểm khi tích hợp vào ứng dụng.]
+\subsubsection{Giới thiệu về LLM}
 
+Mô hình ngôn ngữ lớn (Large Language Model --- LLM) là các mô hình AI được huấn luyện trên lượng dữ liệu văn bản khổng lồ, có khả năng hiểu và sinh ra ngôn ngữ tự nhiên với chất lượng gần giống con người \cite{ref10}. Các LLM tiêu biểu hiện nay bao gồm:
+
+\begin{itemize}
+    \item \textbf{GPT (Generative Pre-trained Transformer)}: Do OpenAI phát triển, các phiên bản GPT-3.5, GPT-4 đã tạo ra bước ngoặt trong lĩnh vực AI với khả năng suy luận, sinh văn bản, và xử lý đa nhiệm vụ xuất sắc.
+    \item \textbf{Google Gemini}: Do Google DeepMind phát triển, Gemini là mô hình đa phương thức (multimodal) có khả năng xử lý đồng thời văn bản, hình ảnh, âm thanh và video. PerFin lựa chọn Gemini làm LLM chính nhờ khả năng multimodal, hỗ trợ tiếng Việt tốt, và chi phí hợp lý.
+    \item \textbf{Meta LLaMA, Anthropic Claude}: Các mô hình mã nguồn mở và thương mại khác cũng đạt hiệu suất cao trong nhiều tác vụ NLP.
+\end{itemize}
+
+\subsubsection{Kiến trúc Transformer}
+
+Nền tảng kỹ thuật của hầu hết các LLM hiện đại là kiến trúc Transformer, được giới thiệu bởi Vaswani và cộng sự trong bài báo nổi tiếng \textit{``Attention Is All You Need''} (2017) \cite{ref11}. Kiến trúc Transformer bao gồm hai thành phần chính:
+
+\begin{itemize}
+    \item \textbf{Encoder}: Mã hóa chuỗi đầu vào thành các biểu diễn vector ngữ cảnh (contextual embeddings). Encoder sử dụng cơ chế Self-Attention để mỗi từ trong câu có thể ``chú ý'' đến tất cả các từ khác, nắm bắt mối quan hệ ngữ nghĩa giữa chúng.
+    \item \textbf{Decoder}: Sinh ra chuỗi đầu ra từng token một, sử dụng cả Self-Attention và Cross-Attention (chú ý đến đầu ra của Encoder).
+\end{itemize}
+
+Cơ chế \textbf{Self-Attention} là đổi mới quan trọng nhất của Transformer, cho phép mô hình tính trọng số quan trọng cho từng cặp từ trong câu, từ đó hiểu được ngữ cảnh xa (long-range dependencies) mà các mô hình tuần tự (RNN, LSTM) khó đạt được. Các LLM như GPT sử dụng phần Decoder, trong khi BERT sử dụng phần Encoder. Gemini kết hợp kiến trúc Transformer cải tiến với khả năng xử lý đa phương thức.
+
+\subsubsection{Khả năng Few-shot Learning và In-context Learning}
+
+Một trong những khả năng đột phá của LLM là \textbf{in-context learning} --- khả năng thực hiện các tác vụ mới chỉ dựa trên vài ví dụ (few-shot) hoặc không cần ví dụ (zero-shot) được cung cấp trong prompt, mà không cần huấn luyện lại mô hình \cite{ref10}. Cụ thể:
+
+\begin{itemize}
+    \item \textbf{Zero-shot Learning}: Mô hình thực hiện tác vụ chỉ dựa trên mô tả tác vụ, không có ví dụ. Ví dụ: \textit{``Phân loại giao dịch sau vào danh mục phù hợp: grab đi làm''}.
+    \item \textbf{Few-shot Learning}: Mô hình được cung cấp vài ví dụ mẫu trong prompt trước khi thực hiện tác vụ. Ví dụ, cung cấp 3--5 cặp (mô tả giao dịch, danh mục) để mô hình học mẫu phân loại.
+    \item \textbf{Chain-of-Thought (CoT)}: Hướng dẫn mô hình suy luận từng bước trước khi đưa ra kết quả, giúp tăng độ chính xác cho các tác vụ phức tạp.
+\end{itemize}
+
+PerFin tận dụng khả năng few-shot learning và in-context learning của Gemini để phân loại giao dịch, bóc tách thông tin, và đưa ra phản hồi mà không cần xây dựng và huấn luyện mô hình riêng --- giúp giảm đáng kể chi phí phát triển và thời gian triển khai.
+
+\subsubsection{Prompt Engineering}
+
+Prompt Engineering là kỹ thuật thiết kế và tối ưu hóa các chỉ dẫn (prompt) gửi đến LLM để nhận được kết quả chính xác và phù hợp nhất \cite{ref12}. Đây là kỹ thuật cốt lõi trong việc tích hợp LLM vào ứng dụng. Các chiến lược prompt engineering được PerFin áp dụng bao gồm:
+
+\begin{itemize}
+    \item \textbf{System Prompt}: Định nghĩa vai trò và ngữ cảnh cho AI, ví dụ: \textit{``Bạn là trợ lý tài chính cá nhân thông minh, hỗ trợ người dùng ghi chép và phân tích chi tiêu''}.
+    \item \textbf{Structured Output}: Yêu cầu LLM trả về kết quả dạng JSON có cấu trúc xác định, giúp ứng dụng dễ dàng parse và xử lý dữ liệu.
+    \item \textbf{Persona Prompting}: Gán nhân cách (personality) cho AI để tạo trải nghiệm hội thoại độc đáo --- PerFin cung cấp nhiều nhân cách AI như ``Chuyên gia tài chính'', ``Bà mẹ nghiêm khắc'', ``Bạn thân Gen Z''.
+    \item \textbf{Contextual Prompting}: Đưa thông tin ngữ cảnh (lịch sử giao dịch, ngân sách, danh mục hiện có) vào prompt để LLM đưa ra phản hồi cá nhân hóa.
+\end{itemize}
+
+\subsubsection{Ưu điểm và hạn chế khi tích hợp LLM vào ứng dụng}
+
+Việc tích hợp LLM vào ứng dụng mang lại nhiều ưu điểm nhưng cũng đi kèm với các thách thức:
+
+\begin{table}[h!]
+\centering
+\caption{Ưu điểm và hạn chế khi tích hợp LLM vào ứng dụng}
+\label{tab:llm_pros_cons}
+\begin{tabularx}{\textwidth}{|X|X|}
+\hline
+\textbf{Ưu điểm} & \textbf{Hạn chế} \\ \hline
+Không cần huấn luyện mô hình riêng, tiết kiệm thời gian và chi phí phát triển & Phụ thuộc vào nhà cung cấp API (vendor lock-in), rủi ro gián đoạn dịch vụ \\ \hline
+Khả năng hiểu ngôn ngữ tự nhiên xuất sắc, hỗ trợ đa ngôn ngữ bao gồm tiếng Việt & Chi phí API có thể tăng theo lượng người dùng (pay-per-token) \\ \hline
+Cập nhật và cải thiện liên tục bởi nhà cung cấp mà không cần can thiệp từ phía ứng dụng & Độ trễ (latency) do phải gọi API qua mạng, ảnh hưởng trải nghiệm thời gian thực \\ \hline
+Linh hoạt trong việc thay đổi hành vi thông qua prompt engineering mà không cần thay đổi mã nguồn & Hiện tượng ``ảo giác'' (hallucination): LLM có thể sinh ra thông tin không chính xác \\ \hline
+Hỗ trợ đa phương thức (văn bản, hình ảnh) giúp xử lý nhiều loại đầu vào & Vấn đề bảo mật dữ liệu khi gửi thông tin tài chính qua API bên thứ ba \\ \hline
+\end{tabularx}
+\end{table}
+
+Để giải quyết các hạn chế trên, PerFin áp dụng chiến lược: thiết kế prompt chặt chẽ với output schema cố định để giảm hallucination, thêm lớp validation phía backend trước khi lưu dữ liệu, sử dụng caching để giảm chi phí và latency, đồng thời tối giản dữ liệu nhạy cảm gửi đến LLM API.
+
+%% ====================================================================
 \section{Nhận dạng ký tự quang học (OCR)}
 \label{sec:ocr}
 
-[TODO --- Giới thiệu OCR, quy trình xử lý ảnh (preprocessing $\rightarrow$ text detection $\rightarrow$ recognition), các công cụ/thư viện OCR phổ biến (Tesseract, Google Vision API), thách thức với hóa đơn tiếng Việt.]
+\subsection{Định nghĩa OCR}
+\label{subsec:ocr_definition}
 
+Nhận dạng ký tự quang học (Optical Character Recognition --- OCR) là công nghệ cho phép chuyển đổi hình ảnh chứa văn bản (ảnh chụp, tài liệu scan, ảnh hóa đơn) thành dữ liệu văn bản có thể đọc và xử lý bằng máy tính \cite{ref13}. OCR đóng vai trò quan trọng trong việc số hóa tài liệu, tự động hóa nhập liệu, và trích xuất thông tin từ các nguồn phi cấu trúc.
+
+Trong bối cảnh quản lý tài chính cá nhân, OCR cho phép người dùng chỉ cần chụp ảnh hóa đơn, biên lai thanh toán, hoặc sao kê ngân hàng, hệ thống sẽ tự động trích xuất các thông tin quan trọng như: tên cửa hàng, danh sách mặt hàng, tổng tiền thanh toán, ngày giao dịch, và phương thức thanh toán.
+
+\subsection{Quy trình xử lý OCR}
+\label{subsec:ocr_pipeline}
+
+Quy trình xử lý OCR điển hình bao gồm ba giai đoạn chính:
+
+\begin{enumerate}
+    \item \textbf{Tiền xử lý ảnh (Preprocessing)}: Cải thiện chất lượng ảnh đầu vào để tăng độ chính xác nhận dạng. Các kỹ thuật bao gồm: chuyển đổi ảnh sang grayscale, khử nhiễu (denoising), cân bằng sáng (contrast adjustment), nhị phân hóa (binarization), và chỉnh góc xoay (deskewing).
+
+    \item \textbf{Phát hiện vùng văn bản (Text Detection)}: Xác định vị trí các vùng chứa văn bản trong ảnh. Các kỹ thuật hiện đại sử dụng mạng neural tích chập (CNN) như EAST, CRAFT để phát hiện vùng văn bản với độ chính xác cao, kể cả trong các trường hợp văn bản nghiêng, cong, hoặc có nền phức tạp.
+
+    \item \textbf{Nhận dạng ký tự (Character Recognition)}: Chuyển đổi các vùng văn bản đã phát hiện thành chuỗi ký tự. Các mô hình nhận dạng hiện đại sử dụng kiến trúc CRNN (Convolutional Recurrent Neural Network) kết hợp với CTC (Connectionist Temporal Classification) hoặc cơ chế Attention để nhận dạng toàn bộ dòng văn bản.
+\end{enumerate}
+
+\subsection{Các công cụ OCR phổ biến}
+\label{subsec:ocr_tools}
+
+\begin{itemize}
+    \item \textbf{Tesseract OCR}: Công cụ mã nguồn mở do Google phát triển, hỗ trợ hơn 100 ngôn ngữ. Tesseract phù hợp cho các ứng dụng offline và có chi phí triển khai thấp, tuy nhiên độ chính xác với hóa đơn tiếng Việt và ảnh chất lượng thấp còn hạn chế.
+
+    \item \textbf{Google Cloud Vision API}: Dịch vụ OCR đám mây của Google, sử dụng các mô hình deep learning tiên tiến nhất. Vision API có độ chính xác cao, hỗ trợ tốt tiếng Việt (bao gồm ký tự có dấu), và cung cấp thêm khả năng phát hiện cấu trúc tài liệu (document structure detection) giúp trích xuất thông tin từ hóa đơn có bố cục phức tạp.
+\end{itemize}
+
+PerFin lựa chọn \textbf{Google Cloud Vision API} làm công cụ OCR chính vì các lý do: (1) độ chính xác vượt trội với văn bản tiếng Việt có dấu, (2) khả năng xử lý hóa đơn đa dạng (siêu thị, nhà hàng, cửa hàng tiện lợi), (3) tích hợp dễ dàng với hệ sinh thái Google Cloud mà PerFin đã sử dụng (Gemini API, Speech-to-Text), và (4) gói miễn phí 1.000 lượt gọi/tháng phù hợp cho giai đoạn phát triển và MVP.
+
+\subsection{Thách thức xử lý hóa đơn tiếng Việt}
+\label{subsec:ocr_vietnamese_challenges}
+
+Việc xử lý OCR trên hóa đơn tiếng Việt đối mặt với nhiều thách thức đặc thù:
+
+\begin{itemize}
+    \item \textbf{Ký tự có dấu}: Tiếng Việt sử dụng hệ thống dấu thanh phức tạp (sắc, huyền, hỏi, ngã, nặng) kết hợp với các ký tự đặc biệt (ă, â, ê, ô, ơ, ư, đ), tạo thách thức lớn cho mô hình OCR truyền thống.
+    \item \textbf{Chất lượng ảnh}: Hóa đơn thực tế thường bị mờ, nhòe, xoay nghiêng, chữ nhỏ, hoặc bị che khuất một phần, làm giảm đáng kể độ chính xác nhận dạng.
+    \item \textbf{Đa dạng định dạng}: Hóa đơn tại Việt Nam không có chuẩn định dạng thống nhất, mỗi cửa hàng có bố cục khác nhau, gây khó khăn cho việc trích xuất thông tin có cấu trúc.
+    \item \textbf{Viết tắt và tiếng lóng}: Hóa đơn thường sử dụng viết tắt (``SL'' cho số lượng, ``TT'' cho thanh toán) hoặc tên sản phẩm viết tắt.
+\end{itemize}
+
+Để giải quyết các thách thức trên, PerFin kết hợp Google Vision API (OCR) với Gemini (LLM) trong quy trình hai bước: Vision API trích xuất text thô từ ảnh hóa đơn, sau đó Gemini phân tích ngữ cảnh, sửa lỗi OCR, và bóc tách thông tin giao dịch có cấu trúc (tổng tiền, danh mục, mô tả).
+
+%% ====================================================================
 \section{Chuyển đổi giọng nói thành văn bản (Speech-to-Text)}
 \label{sec:speech_to_text}
 
-[TODO --- Giới thiệu Speech-to-Text, các dịch vụ cloud (Google Speech API, Whisper), xử lý tiếng Việt.]
+\subsection{Định nghĩa Speech-to-Text}
+\label{subsec:stt_definition}
 
+Chuyển đổi giọng nói thành văn bản (Speech-to-Text --- STT), còn gọi là nhận dạng giọng nói tự động (Automatic Speech Recognition --- ASR), là công nghệ cho phép chuyển đổi tín hiệu âm thanh chứa lời nói thành dạng văn bản tương ứng \cite{ref14}. Công nghệ STT là thành phần quan trọng trong giao diện người dùng hiện đại, cho phép tương tác bằng giọng nói một cách tự nhiên và tiện lợi.
+
+Trong PerFin, tính năng STT cho phép người dùng ghi chép giao dịch bằng giọng nói, ví dụ: người dùng nói \textit{``ăn trưa phở bò năm mươi nghìn''}, hệ thống sẽ chuyển đổi thành văn bản, sau đó LLM phân tích để trích xuất thông tin giao dịch. Phương thức này đặc biệt tiện lợi khi người dùng đang di chuyển hoặc bận tay.
+
+\subsection{Các dịch vụ Speech-to-Text phổ biến}
+\label{subsec:stt_services}
+
+\begin{itemize}
+    \item \textbf{Google Cloud Speech-to-Text API}: Dịch vụ nhận dạng giọng nói của Google, hỗ trợ hơn 125 ngôn ngữ và phương ngữ, bao gồm tiếng Việt (vi-VN). Google STT cung cấp hai chế độ: nhận dạng đồng bộ (synchronous) cho đoạn âm thanh ngắn dưới 1 phút, và nhận dạng bất đồng bộ (asynchronous) cho đoạn âm thanh dài hơn. Dịch vụ này đạt tỷ lệ nhận dạng chính xác (Word Error Rate --- WER) khá tốt cho tiếng Việt, đặc biệt trong môi trường ít nhiễu.
+
+    \item \textbf{OpenAI Whisper}: Mô hình nhận dạng giọng nói mã nguồn mở của OpenAI, được huấn luyện trên 680.000 giờ dữ liệu đa ngôn ngữ. Whisper có ưu điểm về khả năng chống nhiễu (noise robustness) và hỗ trợ đa ngôn ngữ, tuy nhiên yêu cầu tài nguyên tính toán lớn hơn khi tự triển khai (self-host) hoặc phát sinh chi phí khi sử dụng qua API.
+
+    \item \textbf{Microsoft Azure Speech Service}: Dịch vụ STT của Microsoft, hỗ trợ tiếng Việt và tích hợp tốt với hệ sinh thái Azure.
+\end{itemize}
+
+\subsection{Lý do chọn Google Cloud Speech-to-Text cho PerFin}
+\label{subsec:stt_choice}
+
+PerFin lựa chọn \textbf{Google Cloud Speech-to-Text API} vì các lý do sau:
+
+\begin{enumerate}
+    \item \textbf{Hỗ trợ tiếng Việt tốt}: Google STT có mô hình nhận dạng tiếng Việt được tối ưu hóa, với khả năng nhận dạng chính xác các dấu thanh và âm tiết tiếng Việt.
+    \item \textbf{Đồng bộ hệ sinh thái}: PerFin đã sử dụng Google Cloud cho Gemini API và Vision API, việc sử dụng chung hệ sinh thái Google giúp đơn giản hóa quản lý API key, billing, và monitoring.
+    \item \textbf{Độ trễ thấp}: Chế độ nhận dạng đồng bộ (synchronous recognition) phù hợp với các đoạn giọng nói ngắn (ghi chép giao dịch thường dưới 15 giây), cho phản hồi nhanh chóng.
+    \item \textbf{Chi phí hợp lý}: Gói miễn phí 60 phút/tháng phù hợp cho giai đoạn MVP, và chi phí mở rộng cạnh tranh so với các dịch vụ tương đương.
+\end{enumerate}
+
+%% ====================================================================
 \section{Công nghệ và công cụ sử dụng}
 \label{sec:technology_stack}
 
-\subsection{Ngôn ngữ lập trình và Framework}
-\label{subsec:languages_frameworks}
+\subsection{Flutter và ngôn ngữ Dart cho phát triển ứng dụng di động}
+\label{subsec:flutter_dart}
 
-[TODO --- Liệt kê và giải thích lựa chọn: Flutter/React Native cho mobile, Node.js/Python cho backend, lý do chọn.]
+Flutter là một framework mã nguồn mở được phát triển bởi Google, cho phép xây dựng ứng dụng di động đa nền tảng (cross-platform) từ một mã nguồn duy nhất (single codebase), hỗ trợ cả Android và iOS \cite{ref15}. Flutter sử dụng ngôn ngữ lập trình Dart --- một ngôn ngữ hướng đối tượng, biên dịch AOT (Ahead-of-Time) cho hiệu năng cao và JIT (Just-in-Time) cho tính năng Hot Reload.
 
-\subsection{Cơ sở dữ liệu}
-\label{subsec:databases}
+Lý do PerFin chọn Flutter:
 
-[TODO --- PostgreSQL/MongoDB, lý do chọn, so sánh ưu nhược điểm.]
+\begin{itemize}
+    \item \textbf{Single Codebase}: Một mã nguồn duy nhất chạy trên cả Android và iOS, giảm 40--50\% thời gian phát triển so với phát triển native riêng cho từng nền tảng.
+    \item \textbf{Hot Reload}: Cho phép lập trình viên thấy ngay kết quả thay đổi mã nguồn trên thiết bị/giả lập mà không cần biên dịch lại toàn bộ ứng dụng, tăng tốc đáng kể chu kỳ phát triển.
+    \item \textbf{Hệ thống Widget phong phú}: Flutter cung cấp thư viện widget đa dạng, tuân thủ Material Design (Android) và Cupertino (iOS), giúp xây dựng giao diện đẹp và nhất quán.
+    \item \textbf{Hiệu năng gần native}: Flutter biên dịch trực tiếp sang mã máy (ARM) thay vì sử dụng bridge (như React Native), mang lại hiệu năng gần bằng ứng dụng native.
+    \item \textbf{Hệ sinh thái packages}: Kho thư viện pub.dev cung cấp nhiều packages hỗ trợ cho các tính năng của PerFin: \texttt{fl\_chart} (biểu đồ), \texttt{image\_picker} (chọn ảnh), \texttt{record} (ghi âm), \texttt{provider/riverpod} (quản lý state).
+\end{itemize}
 
-\subsection{Dịch vụ AI/Cloud}
-\label{subsec:ai_cloud_services}
+\subsection{Node.js và Express.js cho phát triển backend}
+\label{subsec:nodejs_express}
 
-[TODO --- LLM API (GPT/Gemini), Google Vision API, Speech-to-Text API, lý do chọn và chi phí.]
+Node.js là môi trường runtime JavaScript phía server, xây dựng trên engine V8 của Google Chrome, nổi tiếng với mô hình xử lý I/O không đồng bộ, đơn luồng, event-driven \cite{ref16}. Express.js là framework web tối giản (minimalist) phổ biến nhất cho Node.js, cung cấp các công cụ để xây dựng RESTful API nhanh chóng.
 
-\subsection{Công cụ phát triển và quản lý dự án}
+Lý do PerFin chọn Node.js với Express.js:
+
+\begin{itemize}
+    \item \textbf{Kiến trúc Event-driven, Non-blocking I/O}: Phù hợp cho các ứng dụng có nhiều thao tác I/O (gọi API bên thứ ba như Gemini, Vision, STT), xử lý đồng thời nhiều request mà không chặn (blocking) tiến trình.
+    \item \textbf{Hệ sinh thái NPM phong phú}: NPM (Node Package Manager) là kho thư viện lớn nhất thế giới với hơn 2 triệu packages, cung cấp sẵn các thư viện cho JWT authentication (\texttt{jsonwebtoken}), ORM (\texttt{sequelize}, \texttt{prisma}), validation (\texttt{joi}), và tích hợp Google Cloud SDK.
+    \item \textbf{JavaScript full-stack}: Sử dụng JavaScript/TypeScript cho cả frontend (Flutter sử dụng Dart nhưng cấu trúc tương tự) và backend giúp giảm chi phí chuyển đổi ngữ cảnh cho nhóm phát triển.
+    \item \textbf{Triển khai linh hoạt}: Node.js dễ dàng triển khai trên nhiều nền tảng cloud (Google Cloud Run, AWS Lambda, Heroku, Railway) với Docker container.
+    \item \textbf{Cộng đồng lớn}: Node.js có cộng đồng phát triển đông đảo, tài liệu phong phú, giúp giải quyết vấn đề nhanh chóng trong quá trình phát triển.
+\end{itemize}
+
+\subsection{PostgreSQL cho hệ quản trị cơ sở dữ liệu}
+\label{subsec:postgresql}
+
+PostgreSQL là hệ quản trị cơ sở dữ liệu quan hệ (RDBMS) mã nguồn mở, nổi tiếng với độ tin cậy cao, tuân thủ chuẩn SQL, và hỗ trợ đầy đủ các tính chất ACID (Atomicity, Consistency, Isolation, Durability) \cite{ref17}. PostgreSQL được đánh giá là RDBMS mã nguồn mở mạnh mẽ nhất hiện nay, phù hợp cho các ứng dụng yêu cầu tính toàn vẹn dữ liệu cao.
+
+Lý do PerFin chọn PostgreSQL:
+
+\begin{itemize}
+    \item \textbf{Tính toàn vẹn dữ liệu}: Dữ liệu tài chính yêu cầu độ chính xác tuyệt đối, các tính chất ACID đảm bảo mọi giao dịch được ghi nhận chính xác, không bị mất mát hoặc sai lệch.
+    \item \textbf{Mô hình dữ liệu quan hệ}: Dữ liệu tài chính có cấu trúc quan hệ rõ ràng (người dùng --- tài khoản --- giao dịch --- danh mục --- ngân sách), phù hợp với mô hình quan hệ hơn mô hình document (NoSQL).
+    \item \textbf{Hỗ trợ JSON}: PostgreSQL hỗ trợ kiểu dữ liệu JSONB, cho phép lưu trữ dữ liệu bán cấu trúc (semi-structured) khi cần thiết, kết hợp ưu điểm của cả SQL và NoSQL.
+    \item \textbf{Hiệu suất truy vấn}: Hỗ trợ index đa dạng (B-tree, Hash, GiST, GIN), materialized views, và query optimizer tiên tiến, phù hợp cho các truy vấn phân tích và báo cáo tài chính phức tạp.
+\end{itemize}
+
+\textbf{So sánh ngắn gọn với MongoDB}: MongoDB là hệ quản trị NoSQL document-based, phù hợp cho dữ liệu phi cấu trúc và ứng dụng cần scale ngang linh hoạt. Tuy nhiên, MongoDB không đảm bảo ACID ở cấp multi-document (trước phiên bản 4.0), và mô hình document không phù hợp cho dữ liệu tài chính có quan hệ phức tạp. Do đó, PostgreSQL là lựa chọn phù hợp hơn cho PerFin.
+
+\subsection{Google Gemini API}
+\label{subsec:gemini_api}
+
+Google Gemini là mô hình ngôn ngữ lớn đa phương thức (multimodal LLM) thế hệ mới được phát triển bởi Google DeepMind, ra mắt cuối năm 2023 \cite{ref18}. Gemini có khả năng xử lý và sinh ra nội dung dựa trên nhiều loại đầu vào: văn bản, hình ảnh, âm thanh, video và mã nguồn. Gemini cung cấp nhiều phiên bản: Gemini Ultra (mạnh nhất), Gemini Pro (cân bằng hiệu suất và chi phí), và Gemini Flash (nhanh và tiết kiệm nhất).
+
+Lý do PerFin chọn Google Gemini API:
+
+\begin{itemize}
+    \item \textbf{Khả năng multimodal}: Gemini có thể xử lý đồng thời văn bản và hình ảnh trong cùng một prompt, phù hợp cho tính năng phân tích hóa đơn (OCR + LLM) trong PerFin.
+    \item \textbf{Hỗ trợ tiếng Việt tốt}: Gemini được huấn luyện trên dữ liệu đa ngôn ngữ phong phú, có khả năng hiểu và sinh văn bản tiếng Việt tự nhiên, chính xác, bao gồm tiếng lóng và viết tắt phổ biến.
+    \item \textbf{Chi phí hợp lý}: Gemini Flash cung cấp gói miễn phí với giới hạn đủ cho phát triển và thử nghiệm. Chi phí API cho production thấp hơn đáng kể so với GPT-4 của OpenAI.
+    \item \textbf{Structured Output}: Gemini hỗ trợ JSON mode và function calling, cho phép PerFin nhận kết quả phân tích giao dịch dạng JSON có cấu trúc cố định, giảm thiểu lỗi parse.
+    \item \textbf{Đồng bộ hệ sinh thái Google Cloud}: Tích hợp dễ dàng với Google Cloud Vision API và Speech-to-Text trong cùng dự án Google Cloud.
+\end{itemize}
+
+\subsection{Các công cụ phát triển và quản lý}
 \label{subsec:dev_tools}
 
-[TODO --- Git, GitHub/GitLab, Figma, draw.io, VS Code, các công cụ khác.]
+Ngoài các công nghệ nền tảng, PerFin sử dụng các công cụ hỗ trợ sau trong quá trình phát triển:
 
+\begin{itemize}
+    \item \textbf{Git và GitHub}: Hệ thống quản lý phiên bản phân tán (distributed version control) để theo dõi lịch sử thay đổi mã nguồn, quản lý nhánh phát triển (branching), và cộng tác nhóm. GitHub đóng vai trò là kho lưu trữ mã nguồn trung tâm (remote repository), hỗ trợ code review qua Pull Request, và quản lý issue/task.
+
+    \item \textbf{Visual Studio Code (VS Code)}: Trình soạn thảo mã nguồn mạnh mẽ với hệ sinh thái extension phong phú, hỗ trợ tốt cả Dart/Flutter (thông qua Flutter extension) và Node.js. Tích hợp terminal, debugger, và Git giúp tăng năng suất phát triển.
+
+    \item \textbf{Figma}: Công cụ thiết kế giao diện (UI/UX Design) trực tuyến, hỗ trợ thiết kế prototype tương tác, design system, và cộng tác thời gian thực. PerFin sử dụng Figma để thiết kế toàn bộ giao diện ứng dụng trước khi triển khai.
+
+    \item \textbf{PlantUML}: Công cụ tạo sơ đồ UML từ mã text, hỗ trợ các loại sơ đồ: use case, class diagram, sequence diagram, ERD. PlantUML giúp quản lý các sơ đồ thiết kế dưới dạng mã nguồn, dễ dàng phiên bản hóa bằng Git.
+
+    \item \textbf{Postman}: Công cụ kiểm thử API, cho phép gửi HTTP request, kiểm tra response, và tạo bộ test tự động cho các API endpoint của PerFin backend. Postman hỗ trợ tạo collection các API, chia sẻ với nhóm, và tạo tài liệu API tự động.
+\end{itemize}
+
+%% ====================================================================
 \section{Các nghiên cứu và ứng dụng liên quan}
 \label{sec:related_works}
 
-[TODO --- Review các ứng dụng tương tự: Money Lover, Misa, Cleo AI, Plum, các nghiên cứu liên quan về AI trong fintech cá nhân.]
+\subsection{Các ứng dụng quản lý tài chính tại Việt Nam}
+\label{subsec:vietnam_apps}
+
+\subsubsection{Money Lover}
+
+Money Lover là ứng dụng quản lý tài chính cá nhân phổ biến nhất tại Việt Nam, được phát triển bởi công ty Finsify (Hà Nội) từ năm 2010. Ứng dụng cung cấp các tính năng cốt lõi: ghi chép thu chi, quản lý ngân sách, theo dõi nợ, lập kế hoạch tiết kiệm, và báo cáo biểu đồ. Money Lover hỗ trợ đa nền tảng (iOS, Android, Web) và đã đạt hơn 10 triệu lượt tải trên Google Play. Tuy nhiên, Money Lover chủ yếu dựa vào phương thức nhập liệu thủ công truyền thống (chọn danh mục, nhập số tiền, chọn ví), chưa tích hợp AI để tự động hóa quy trình ghi chép.
+
+\subsubsection{MISA --- Quản lý tài chính}
+
+MISA là thương hiệu phần mềm kế toán và quản lý tài chính lâu đời tại Việt Nam, với ứng dụng di động ``MISA --- Quản lý tài chính'' hướng đến cá nhân và hộ gia đình. MISA nổi bật với khả năng liên kết tài khoản ngân hàng (bank sync), nhận diện giao dịch từ SMS ngân hàng, và báo cáo tài chính chuyên nghiệp. Tuy nhiên, MISA thiên về quản lý tài chính chuyên sâu (gần với phần mềm kế toán), giao diện phức tạp, và chưa có giao diện hội thoại AI.
+
+\subsection{Các ứng dụng AI quản lý tài chính quốc tế}
+\label{subsec:international_apps}
+
+\subsubsection{Cleo AI}
+
+Cleo AI là ứng dụng quản lý tài chính thông minh có trụ sở tại Anh, ra mắt năm 2016, với giao diện chatbot AI làm trung tâm. Người dùng tương tác với Cleo thông qua hội thoại văn bản để hỏi số dư, xem chi tiêu, lập ngân sách. Cleo nổi bật với tính cách AI ``sassy'' (hài hước, thẳng thắn), tạo trải nghiệm gắn kết cao. Tuy nhiên, Cleo chỉ hỗ trợ tiếng Anh, yêu cầu liên kết tài khoản ngân hàng (thông qua Plaid API), và không hoạt động tại thị trường Việt Nam.
+
+\subsubsection{Plum}
+
+Plum là ứng dụng tiết kiệm và đầu tư tự động tại Anh, sử dụng AI để phân tích thói quen chi tiêu và tự động trích tiền tiết kiệm phù hợp. Plum tích hợp qua Facebook Messenger và ứng dụng riêng, cung cấp tính năng ``round-up'' (làm tròn số tiền giao dịch và tiết kiệm phần chênh lệch). Plum tập trung vào tiết kiệm tự động hơn là quản lý chi tiêu toàn diện, và không hỗ trợ thị trường Việt Nam.
+
+\subsection{Bảng so sánh các ứng dụng liên quan}
+\label{subsec:comparison_table}
+
+\begin{table}[h!]
+\centering
+\caption{So sánh PerFin với các ứng dụng quản lý tài chính liên quan}
+\label{tab:app_comparison}
+\begin{tabularx}{\textwidth}{|l|X|X|X|X|X|}
+\hline
+\textbf{Tiêu chí} & \textbf{Money Lover} & \textbf{MISA} & \textbf{Cleo AI} & \textbf{Plum} & \textbf{PerFin} \\ \hline
+Chat AI & Không & Không & Có (EN) & Hạn chế & Có (VI) \\ \hline
+OCR hóa đơn & Không & Không & Không & Không & Có \\ \hline
+Voice input & Không & Không & Không & Không & Có \\ \hline
+Hỗ trợ tiếng Việt & Có & Có & Không & Không & Có \\ \hline
+Nhân cách AI & Không & Không & 1 persona & Không & Đa persona \\ \hline
+Phân loại tự động & Hạn chế & SMS parse & Có & Có & Có (LLM) \\ \hline
+Quản lý ngân sách & Có & Có & Có & Hạn chế & Có \\ \hline
+Báo cáo AI & Không & Không & Có & Hạn chế & Có \\ \hline
+Đa nền tảng & Có & Có & Có & Có & Có (Flutter) \\ \hline
+Bank sync & Không & Có & Có (Plaid) & Có & Chưa hỗ trợ \\ \hline
+\end{tabularx}
+\end{table}
+
+\subsection{Khoảng trống nghiên cứu và đóng góp của PerFin}
+\label{subsec:research_gap}
+
+Qua phân tích các ứng dụng liên quan, nhóm tác giả nhận diện một số khoảng trống quan trọng mà PerFin hướng đến lấp đầy:
+
+\begin{enumerate}
+    \item \textbf{Giao diện hội thoại bằng tiếng Việt}: Các ứng dụng AI quản lý tài chính hiện có (Cleo, Plum) chỉ hỗ trợ tiếng Anh. Chưa có ứng dụng nào cung cấp giao diện chatbot AI bằng tiếng Việt cho quản lý tài chính cá nhân. PerFin là ứng dụng tiên phong trong việc kết hợp LLM (Gemini) với giao diện hội thoại tiếng Việt.
+
+    \item \textbf{Nhập liệu đa phương thức (Multi-modal Input)}: Hầu hết các ứng dụng hiện có chỉ hỗ trợ một phương thức nhập liệu (thủ công hoặc bank sync). PerFin kết hợp ba phương thức: chat văn bản, giọng nói, và OCR hóa đơn, tạo trải nghiệm nhập liệu linh hoạt và tiện lợi nhất.
+
+    \item \textbf{Nhân cách AI đa dạng (AI Persona)}: Cleo AI chỉ cung cấp một tính cách cố định. PerFin cho phép người dùng lựa chọn từ nhiều nhân cách AI khác nhau (Chuyên gia tài chính, Bà mẹ nghiêm khắc, Bạn thân Gen Z...), ứng dụng yếu tố tâm lý hành vi để tạo động lực quản lý tài chính phù hợp với từng cá nhân.
+
+    \item \textbf{Kết hợp AI toàn diện}: PerFin không chỉ sử dụng AI cho chatbot mà còn tích hợp AI vào toàn bộ quy trình: phân loại giao dịch tự động, phân tích thói quen chi tiêu, cảnh báo chủ động, tư vấn tài chính cá nhân hóa, và xử lý đa phương thức (OCR, STT).
+\end{enumerate}
+
+Tóm lại, PerFin hướng đến trở thành ứng dụng quản lý tài chính cá nhân đầu tiên tại Việt Nam kết hợp trọn vẹn ba yếu tố: \textbf{giao diện hội thoại AI tiếng Việt}, \textbf{nhập liệu đa phương thức}, và \textbf{nhân cách AI cá nhân hóa} --- tạo nên trải nghiệm quản lý tài chính thông minh, tự nhiên, và gắn kết.
