@@ -1,7 +1,7 @@
 \contentsline {chapter}{Tóm tắt}{i}{chapter*.1}%
-\contentsline {chapter}{Danh mục bảng}{vii}{chapter*.3}%
-\contentsline {chapter}{Danh mục hình}{viii}{chapter*.4}%
-\contentsline {chapter}{Danh mục các từ viết tắt}{ix}{chapter*.5}%
+\contentsline {chapter}{Danh mục bảng}{iv}{chapter*.3}%
+\contentsline {chapter}{Danh mục hình}{v}{chapter*.4}%
+\contentsline {chapter}{Danh mục các từ viết tắt}{vi}{chapter*.5}%
 \contentsline {chapter}{\numberline {1}GIỚI THIỆU}{1}{chapter.1}%
 \contentsline {section}{\numberline {1.1}Đặt vấn đề}{1}{section.1.1}%
 \contentsline {section}{\numberline {1.2}Mục tiêu}{1}{section.1.2}%
@@ -31,7 +31,7 @@
 \contentsline {subsection}{\numberline {2.4.2}Các dịch vụ Speech-to-Text phổ biến}{10}{subsection.2.4.2}%
 \contentsline {subsection}{\numberline {2.4.3}Lý do chọn Google Cloud Speech-to-Text cho PerFin}{10}{subsection.2.4.3}%
 \contentsline {section}{\numberline {2.5}Công nghệ và công cụ sử dụng}{10}{section.2.5}%
-\contentsline {subsection}{\numberline {2.5.1}Flutter và ngôn ngữ Dart cho phát triển ứng dụng di động}{10}{subsection.2.5.1}%
+\contentsline {subsection}{\numberline {2.5.1}React Native và hệ sinh thái Expo cho phát triển ứng dụng di động}{10}{subsection.2.5.1}%
 \contentsline {subsection}{\numberline {2.5.2}Node.js và Express.js cho phát triển backend}{11}{subsection.2.5.2}%
 \contentsline {subsection}{\numberline {2.5.3}PostgreSQL cho hệ quản trị cơ sở dữ liệu}{12}{subsection.2.5.3}%
 \contentsline {subsection}{\numberline {2.5.4}Google Gemini API}{12}{subsection.2.5.4}%
@@ -39,12 +39,12 @@
 \contentsline {section}{\numberline {2.6}Các nghiên cứu và ứng dụng liên quan}{13}{section.2.6}%
 \contentsline {subsection}{\numberline {2.6.1}Các ứng dụng quản lý tài chính tại Việt Nam}{13}{subsection.2.6.1}%
 \contentsline {subsubsection}{Money Lover}{13}{subsubsection*.11}%
-\contentsline {subsubsection}{MISA --- Quản lý tài chính}{13}{subsubsection*.12}%
+\contentsline {subsubsection}{MISA --- Quản lý tài chính}{14}{subsubsection*.12}%
 \contentsline {subsection}{\numberline {2.6.2}Các ứng dụng AI quản lý tài chính quốc tế}{14}{subsection.2.6.2}%
 \contentsline {subsubsection}{Cleo AI}{14}{subsubsection*.13}%
 \contentsline {subsubsection}{Plum}{14}{subsubsection*.14}%
 \contentsline {subsection}{\numberline {2.6.3}Bảng so sánh các ứng dụng liên quan}{14}{subsection.2.6.3}%
-\contentsline {subsection}{\numberline {2.6.4}Khoảng trống nghiên cứu và đóng góp của PerFin}{14}{subsection.2.6.4}%
+\contentsline {subsection}{\numberline {2.6.4}Khoảng trống nghiên cứu và đóng góp của PerFin}{15}{subsection.2.6.4}%
 \contentsline {chapter}{\numberline {3}KẾT QUẢ ỨNG DỤNG}{16}{chapter.3}%
 \contentsline {section}{\numberline {3.1}Đặc tả Yêu cầu Phần mềm (SRS)}{16}{section.3.1}%
 \contentsline {subsection}{\numberline {3.1.1}Mô tả tổng quan}{16}{subsection.3.1.1}%

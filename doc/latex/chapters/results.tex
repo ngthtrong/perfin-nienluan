@@ -153,7 +153,7 @@ PerFin được xây dựng theo kiến trúc phân tầng (Layered Architecture
 Dưới đây là mô tả chi tiết vai trò và trách nhiệm của từng tầng trong kiến trúc hệ thống:
 
 \begin{itemize}
-    \item \textbf{Tầng Client (Mobile App):} Ứng dụng Flutter đa nền tảng (Android/iOS) đóng vai trò là giao diện tương tác trực tiếp với người dùng. Tầng này bao gồm các module giao diện chính: \textit{Chat UI} (giao diện hội thoại với AI --- màn hình trung tâm), \textit{Transaction UI} (quản lý và xem danh sách giao dịch), \textit{Report UI} (biểu đồ và báo cáo chi tiêu), \textit{Budget UI} (thiết lập và theo dõi ngân sách), \textit{Wallet UI} (quản lý ví/tài khoản), và \textit{Settings UI} (cài đặt ứng dụng, nhân cách AI). Flutter cho phép dùng chung codebase cho cả hai nền tảng, giảm chi phí phát triển và đảm bảo trải nghiệm đồng nhất.
+    \item \textbf{Tầng Client (Mobile App):} Ứng dụng React Native đa nền tảng (Android/iOS) đóng vai trò là giao diện tương tác trực tiếp với người dùng. Tầng này bao gồm các module giao diện chính: \textit{Chat UI} (giao diện hội thoại với AI --- màn hình trung tâm), \textit{Transaction UI} (quản lý và xem danh sách giao dịch), \textit{Report UI} (biểu đồ và báo cáo chi tiêu), \textit{Budget UI} (thiết lập và theo dõi ngân sách), \textit{Wallet UI} (quản lý ví/tài khoản), và \textit{Settings UI} (cài đặt ứng dụng, nhân cách AI). React Native cho phép dùng chung codebase cho cả hai nền tảng, tối ưu thời gian phát triển và đảm bảo trải nghiệm đồng nhất.
 
     \item \textbf{Tầng API Gateway:} Đóng vai trò là điểm vào duy nhất (single entry point) cho mọi yêu cầu HTTP từ phía client. API Gateway thực hiện các chức năng: \textit{routing} (điều phối yêu cầu đến đúng service xử lý), \textit{rate limiting} (giới hạn số lượng yêu cầu nhằm chống lạm dụng), \textit{JWT validation} (xác minh token xác thực trước khi chuyển tiếp yêu cầu), và \textit{request/response transformation} (chuẩn hóa định dạng dữ liệu). Việc tập trung các chức năng cross-cutting tại Gateway giúp các service phía sau tập trung vào logic nghiệp vụ.
 
@@ -421,9 +421,9 @@ Chiến lược kiểm thử của PerFin được xây dựng theo mô hình ki
 \begin{tabularx}{\textwidth}{|l|X|l|}
 \hline
 \textbf{Loại kiểm thử} & \textbf{Mô tả} & \textbf{Công cụ} \\ \hline
-Unit Testing & Kiểm thử từng hàm/module riêng lẻ, đặc biệt các hàm xử lý logic nghiệp vụ (tính toán số dư, kiểm tra ngưỡng ngân sách) và các hàm tiện ích (format tiền tệ, parse ngày tháng) & Jest (Node.js), Flutter Test \\ \hline
+Unit Testing & Kiểm thử từng hàm/module riêng lẻ, đặc biệt các hàm xử lý logic nghiệp vụ (tính toán số dư, kiểm tra ngưỡng ngân sách) và các hàm tiện ích (format tiền tệ, parse ngày tháng) & Jest (Node.js, React Native) \\ \hline
 Integration Testing & Kiểm thử tích hợp giữa các service, đảm bảo API endpoint hoạt động đúng với request/response, kiểm tra luồng dữ liệu giữa các tầng & Supertest, Postman \\ \hline
-System Testing & Kiểm thử toàn hệ thống end-to-end, mô phỏng luồng sử dụng thực tế từ giao diện mobile đến database & Appium, Flutter Driver \\ \hline
+System Testing & Kiểm thử toàn hệ thống end-to-end, mô phỏng luồng sử dụng thực tế từ giao diện mobile đến database & Appium, Detox \\ \hline
 User Acceptance Testing & Kiểm thử chấp nhận với 5--10 người dùng thực thuộc nhóm đối tượng mục tiêu (sinh viên, người đi làm trẻ), đánh giá tính dễ sử dụng và độ chính xác AI & Manual Testing \\ \hline
 \end{tabularx}
 \caption{Kế hoạch kiểm thử}

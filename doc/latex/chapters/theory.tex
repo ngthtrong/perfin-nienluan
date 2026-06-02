@@ -246,19 +246,19 @@ PerFin lựa chọn \textbf{Google Cloud Speech-to-Text API} vì các lý do sau
 \section{Công nghệ và công cụ sử dụng}
 \label{sec:technology_stack}
 
-\subsection{Flutter và ngôn ngữ Dart cho phát triển ứng dụng di động}
-\label{subsec:flutter_dart}
+\subsection{React Native và hệ sinh thái Expo cho phát triển ứng dụng di động}
+\label{subsec:react_native_expo}
 
-Flutter là một framework mã nguồn mở được phát triển bởi Google, cho phép xây dựng ứng dụng di động đa nền tảng (cross-platform) từ một mã nguồn duy nhất (single codebase), hỗ trợ cả Android và iOS \cite{ref15}. Flutter sử dụng ngôn ngữ lập trình Dart --- một ngôn ngữ hướng đối tượng, biên dịch AOT (Ahead-of-Time) cho hiệu năng cao và JIT (Just-in-Time) cho tính năng Hot Reload.
+React Native là một framework mã nguồn mở được phát triển bởi Meta, cho phép xây dựng ứng dụng di động đa nền tảng (cross-platform) từ một mã nguồn duy nhất (single codebase) sử dụng ngôn ngữ JavaScript/TypeScript, hỗ trợ cả Android và iOS \cite{reactnative2024}. Ứng dụng PerFin kết hợp React Native với hệ sinh thái Expo, giúp đơn giản hóa đáng kể quá trình phát triển, kiểm thử và triển khai.
 
-Lý do PerFin chọn Flutter:
+Lý do PerFin chọn React Native (Expo) thay vì Flutter (Dart) dựa trên điều kiện thực tế:
 
 \begin{itemize}
-    \item \textbf{Single Codebase}: Một mã nguồn duy nhất chạy trên cả Android và iOS, giảm 40--50\% thời gian phát triển so với phát triển native riêng cho từng nền tảng.
-    \item \textbf{Hot Reload}: Cho phép lập trình viên thấy ngay kết quả thay đổi mã nguồn trên thiết bị/giả lập mà không cần biên dịch lại toàn bộ ứng dụng, tăng tốc đáng kể chu kỳ phát triển.
-    \item \textbf{Hệ thống Widget phong phú}: Flutter cung cấp thư viện widget đa dạng, tuân thủ Material Design (Android) và Cupertino (iOS), giúp xây dựng giao diện đẹp và nhất quán.
-    \item \textbf{Hiệu năng gần native}: Flutter biên dịch trực tiếp sang mã máy (ARM) thay vì sử dụng bridge (như React Native), mang lại hiệu năng gần bằng ứng dụng native.
-    \item \textbf{Hệ sinh thái packages}: Kho thư viện pub.dev cung cấp nhiều packages hỗ trợ cho các tính năng của PerFin: \texttt{fl\_chart} (biểu đồ), \texttt{image\_picker} (chọn ảnh), \texttt{record} (ghi âm), \texttt{provider/riverpod} (quản lý state).
+    \item \textbf{Hỗ trợ kiểm thử trên thiết bị thực dễ dàng}: Với giới hạn phần cứng (sử dụng laptop Windows cấu hình thấp) nhưng cần kiểm thử thực tế trên iPhone (iOS), Expo Go cho phép lập trình viên quét mã QR và chạy ứng dụng trực tiếp trên iPhone qua Wi-Fi mà không cần máy Mac hay cài đặt Xcode nặng nề.
+    \item \textbf{Hiệu suất phần mềm và tối ưu tài nguyên}: Việc sử dụng React Native và Expo giúp tránh được việc phải cài đặt Android Studio hay các Emulator máy ảo nặng nề trên laptop Windows có cấu hình giới hạn. Việc phát triển chỉ cần Node.js và VS Code, máy tính chỉ đóng vai trò server gửi code text qua Wi-Fi, giảm thiểu tối đa tài nguyên hệ thống.
+    \item \textbf{Tính năng Fast Refresh}: Tương tự Hot Reload, cho phép lập trình viên thấy ngay kết quả thay đổi mã nguồn trên thiết bị ngay lập tức qua kết nối mạng nội bộ mà không cần biên dịch lại toàn bộ ứng dụng.
+    \item \textbf{Hệ sinh thái thư viện phong phú (Expo SDK)}: React Native Expo hỗ trợ hoàn hảo các tính năng AI đòi hỏi phần cứng di động trong PerFin như Ghi âm (Voice-to-Text) và Chụp ảnh (OCR) thông qua các thư viện có sẵn (như \texttt{expo-camera}, \texttt{expo-image-picker}, \texttt{expo-av}). Do PerFin xử lý AI qua các API trên server, mobile app chỉ đóng vai trò giao diện (chụp ảnh/ghi âm rồi gửi file lên backend), và React Native hoàn toàn đáp ứng tốt các yêu cầu này.
+    \item \textbf{JavaScript full-stack}: Đồng bộ ngôn ngữ JavaScript/TypeScript cho cả frontend (React Native) và backend (Node.js) giúp giảm chi phí chuyển đổi ngữ cảnh cho nhà phát triển.
 \end{itemize}
 
 \subsection{Node.js và Express.js cho phát triển backend}
@@ -271,7 +271,7 @@ Lý do PerFin chọn Node.js với Express.js:
 \begin{itemize}
     \item \textbf{Kiến trúc Event-driven, Non-blocking I/O}: Phù hợp cho các ứng dụng có nhiều thao tác I/O (gọi API bên thứ ba như Gemini, Vision, STT), xử lý đồng thời nhiều request mà không chặn (blocking) tiến trình.
     \item \textbf{Hệ sinh thái NPM phong phú}: NPM (Node Package Manager) là kho thư viện lớn nhất thế giới với hơn 2 triệu packages, cung cấp sẵn các thư viện cho JWT authentication (\texttt{jsonwebtoken}), ORM (\texttt{sequelize}, \texttt{prisma}), validation (\texttt{joi}), và tích hợp Google Cloud SDK.
-    \item \textbf{JavaScript full-stack}: Sử dụng JavaScript/TypeScript cho cả frontend (Flutter sử dụng Dart nhưng cấu trúc tương tự) và backend giúp giảm chi phí chuyển đổi ngữ cảnh cho nhóm phát triển.
+    \item \textbf{JavaScript full-stack}: Sử dụng thống nhất JavaScript/TypeScript cho cả frontend (React Native) và backend (Node.js) giúp tận dụng tối đa kỹ năng của lập trình viên và giảm thiểu chi phí chuyển đổi ngôn ngữ.
     \item \textbf{Triển khai linh hoạt}: Node.js dễ dàng triển khai trên nhiều nền tảng cloud (Google Cloud Run, AWS Lambda, Heroku, Railway) với Docker container.
     \item \textbf{Cộng đồng lớn}: Node.js có cộng đồng phát triển đông đảo, tài liệu phong phú, giúp giải quyết vấn đề nhanh chóng trong quá trình phát triển.
 \end{itemize}
@@ -315,7 +315,7 @@ Ngoài các công nghệ nền tảng, PerFin sử dụng các công cụ hỗ t
 \begin{itemize}
     \item \textbf{Git và GitHub}: Hệ thống quản lý phiên bản phân tán (distributed version control) để theo dõi lịch sử thay đổi mã nguồn, quản lý nhánh phát triển (branching), và cộng tác nhóm. GitHub đóng vai trò là kho lưu trữ mã nguồn trung tâm (remote repository), hỗ trợ code review qua Pull Request, và quản lý issue/task.
 
-    \item \textbf{Visual Studio Code (VS Code)}: Trình soạn thảo mã nguồn mạnh mẽ với hệ sinh thái extension phong phú, hỗ trợ tốt cả Dart/Flutter (thông qua Flutter extension) và Node.js. Tích hợp terminal, debugger, và Git giúp tăng năng suất phát triển.
+    \item \textbf{Visual Studio Code (VS Code)}: Trình soạn thảo mã nguồn gọn nhẹ và mạnh mẽ với hệ sinh thái extension phong phú, hỗ trợ tuyệt vời cho JavaScript/TypeScript, React Native và Node.js. Đặc biệt lý tưởng cho máy tính cấu hình thấp, thay thế các IDE nặng nề.
 
     \item \textbf{Figma}: Công cụ thiết kế giao diện (UI/UX Design) trực tuyến, hỗ trợ thiết kế prototype tương tác, design system, và cộng tác thời gian thực. PerFin sử dụng Figma để thiết kế toàn bộ giao diện ứng dụng trước khi triển khai.
 
@@ -368,7 +368,7 @@ Nhân cách AI & Không & Không & 1 persona & Không & Đa persona \\ \hline
 Phân loại tự động & Hạn chế & SMS parse & Có & Có & Có (LLM) \\ \hline
 Quản lý ngân sách & Có & Có & Có & Hạn chế & Có \\ \hline
 Báo cáo AI & Không & Không & Có & Hạn chế & Có \\ \hline
-Đa nền tảng & Có & Có & Có & Có & Có (Flutter) \\ \hline
+Đa nền tảng & Có & Có & Có & Có & Có (React Native) \\ \hline
 Bank sync & Không & Có & Có (Plaid) & Có & Chưa hỗ trợ \\ \hline
 \end{tabularx}
 \end{table}

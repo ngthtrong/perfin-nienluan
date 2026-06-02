@@ -1,4 +1,4 @@
-This is XeTeX, Version 3.141592653-2.6-0.999995 (TeX Live 2023/Debian) (preloaded format=xelatex 2026.5.28)  1 JUN 2026 11:30
+This is XeTeX, Version 3.141592653-2.6-0.999995 (TeX Live 2023/Debian) (preloaded format=xelatex 2026.5.28)  1 JUN 2026 11:50
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -510,22 +510,21 @@ File: umsb.fd 2013/01/14 v3.01 AMS symbols B
 
 ] (./main.toc [2
 
-] [3] [4] [5])
+])
 \tf@toc=\write4
 \openout4 = `main.toc'.
 
- [6] (./main.lot)
+ [3] (./main.lot)
 \tf@lot=\write5
 \openout5 = `main.lot'.
 
-
-[7
+ [4
 
 ] (./main.lof)
 \tf@lof=\write6
 \openout6 = `main.lof'.
 
- [8
+ [5
 
 ] (./chapters/abbreviations.tex)
 Overfull \hbox (28.45274pt too wide) in paragraph at lines 37--105
@@ -537,7 +536,7 @@ Underfull \hbox (badness 10000) in paragraph at lines 37--105
 
  []
 
-[9
+[6
 
 ] (./chapters/introduction.tex
 Chapter 1.
@@ -545,6 +544,15 @@ Chapter 1.
 
 ]) [2] (./chapters/theory.tex
 Chapter 2.
+
+LaTeX Warning: Citation `ref1' on page 3 undefined on input line 10.
+
+
+LaTeX Warning: Citation `ref2' on page 3 undefined on input line 25.
+
+
+LaTeX Warning: Citation `ref3' on page 3 undefined on input line 27.
+
 [3
 
 ]
@@ -591,18 +599,20 @@ LaTeX Warning: Citation `ref13' on page 7 undefined on input line 169.
 
 LaTeX Warning: Citation `ref14' on page 9 undefined on input line 218.
 
-[9]
+[9] [10]
+Overfull \hbox (15.19981pt too wide) in paragraph at lines 260--261
+\TU/TimesNewRoman(0)/m/n/12 Chụp ảnh (OCR) thông qua các thư viện có sẵn (như \
+TU/lmtt/m/n/12 expo-camera\TU/TimesNewRoman(0)/m/n/12 , \TU/lmtt/m/n/12 expo-im
+age-picker\TU/TimesNewRoman(0)/m/n/12 ,
+ []
 
-LaTeX Warning: Citation `ref15' on page 10 undefined on input line 252.
-
-[10]
 
 LaTeX Warning: Citation `ref16' on page 11 undefined on input line 267.
 
-
-LaTeX Warning: Citation `ref17' on page 11 undefined on input line 282.
-
 [11]
+
+LaTeX Warning: Citation `ref17' on page 12 undefined on input line 282.
+
 
 LaTeX Warning: Citation `ref18' on page 12 undefined on input line 298.
 
@@ -613,7 +623,7 @@ Underfull \hbox (badness 10000) in paragraph at lines 373--373
 
 
 Underfull \hbox (badness 10000) in paragraph at lines 373--373
-[]|\TU/TimesNewRoman(0)/m/n/12 Có (Flut-
+[]|\TU/TimesNewRoman(0)/m/n/12 Có (React
  []
 
 
@@ -628,9 +638,47 @@ Underfull \hbox (badness 1400) in paragraph at lines 53--53
 []|\TU/TimesNewRoman(0)/m/n/12 Biểu đồ trực quan, phát hiện bất
  []
 
+
+LaTeX Warning: Reference `sec:appendix_req01' on page 16 undefined on input lin
+e 64.
+
 [16
 
-] [17] [18] [19]
+] [17]
+
+LaTeX Warning: Reference `sec:appendix_req02' on page 18 undefined on input lin
+e 69.
+
+
+LaTeX Warning: Reference `sec:appendix_req03' on page 18 undefined on input lin
+e 74.
+
+
+LaTeX Warning: Reference `sec:appendix_req04' on page 18 undefined on input lin
+e 79.
+
+
+LaTeX Warning: Reference `sec:appendix_req05' on page 18 undefined on input lin
+e 84.
+
+
+LaTeX Warning: Reference `sec:appendix_req06' on page 18 undefined on input lin
+e 89.
+
+
+LaTeX Warning: Reference `sec:appendix_req07' on page 18 undefined on input lin
+e 94.
+
+[18]
+
+LaTeX Warning: Reference `sec:appendix_req08' on page 19 undefined on input lin
+e 99.
+
+
+LaTeX Warning: Reference `sec:appendix_req09' on page 19 undefined on input lin
+e 104.
+
+[19]
 File: images/component-diagram.png Graphic file (type bmp)
 <images/component-diagram.png>
  [20]
@@ -681,10 +729,20 @@ File: images/activity-shared-wallet-expense-flownreq-10-collaboration-shared-wa
 llets.png Graphic file (type bmp)
 <images/activity-shared-wallet-expense-flownreq-10-collaboration-shared-wallets
 .png>
- [30]
-[31] [32] [33] [34]
-Underfull \hbox (badness 10000) in paragraph at lines 428--428
+ [30] [31] [32] [33]
+[34]
+Underfull \hbox (badness 4518) in paragraph at lines 428--428
 []|\TU/TimesNewRoman(0)/m/n/12 Kiểm thử từng hàm/module
+ []
+
+
+Underfull \hbox (badness 1466) in paragraph at lines 428--428
+[]|\TU/TimesNewRoman(0)/m/n/12 Kiểm thử tích hợp giữa các
+ []
+
+
+Underfull \hbox (badness 3954) in paragraph at lines 428--428
+\TU/TimesNewRoman(0)/m/n/12 service, đảm bảo API end-
  []
 
 
@@ -1063,25 +1121,16 @@ L3 programming layer <2024-01-22>
 
 LaTeX Warning: There were undefined references.
 
-
-LaTeX Warning: Label(s) may have changed. Rerun to get cross-references right.
-
-
-Package rerunfilecheck Warning: File `main.out' has changed.
-(rerunfilecheck)                Rerun to get outlines right
-(rerunfilecheck)                or use package `bookmark'.
-
-Package rerunfilecheck Info: Checksums for `main.out':
-(rerunfilecheck)             Before: E34C90FC6A3014A220F0D32DE2ED29DF;23301
-(rerunfilecheck)             After:  71EC0661294E5FB97DECFA650A81CC07;13052.
+Package rerunfilecheck Info: File `main.out' has not changed.
+(rerunfilecheck)             Checksum: B36B8B78CEF473D256AB6B9E5F27F5BD;13103.
  ) 
 Here is how much of TeX's memory you used:
- 12959 strings out of 476878
- 255927 string characters out of 5805249
+ 12946 strings out of 476878
+ 255745 string characters out of 5805249
  1938627 words of memory out of 5000000
- 34632 multiletter control sequences out of 15000+600000
+ 34619 multiletter control sequences out of 15000+600000
  566009 words of font info for 108 fonts, out of 8000000 for 9000
  14 hyphenation exceptions out of 8191
  79i,11n,104p,975b,417s stack positions out of 10000i,1000n,20000p,200000b,200000s
 
-Output written on main.pdf (52 pages).
+Output written on main.pdf (49 pages).
