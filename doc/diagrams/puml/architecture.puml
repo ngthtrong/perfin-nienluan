@@ -1,0 +1,74 @@
+@startuml architecture
+skinparam componentStyle rectangle
+skinparam linetype ortho
+
+package "Tầng Client (Mobile App - React Native / Expo)" {
+    [Chat UI]
+    [Transaction UI]
+    [Report UI]
+    [Budget UI]
+    [Wallet UI]
+    [Settings UI]
+}
+
+node "Tầng API Gateway" {
+    [API Gateway\n(Routing, Rate Limiting, JWT Validation)] as Gateway
+}
+
+package "Tầng Core Services (Node.js / Express.js)" {
+    [Auth Service]
+    [Transaction Service]
+    [Category Service]
+    [Budget Service]
+    [Wallet Service]
+    [Reminder Service]
+    [Export Service]
+    [Backup Service]
+    [Report Service]
+    [Notification Service]
+}
+
+package "Tầng AI Services" {
+    [NLP Engine\n(Google Gemini API)]
+    [OCR Engine\n(Google Cloud Vision API)]
+    [Voice-to-Text Engine\n(Google Speech-to-Text)]
+    [Categorization Engine]
+    [Personality Engine]
+}
+
+database "Tầng Dữ liệu" {
+    [PostgreSQL\n(RDBMS)] as DB
+    [Object Storage\n(S3/Firebase)] as Storage
+}
+
+[Chat UI] --> Gateway : HTTP/REST
+[Transaction UI] --> Gateway
+[Report UI] --> Gateway
+[Budget UI] --> Gateway
+[Wallet UI] --> Gateway
+
+Gateway --> [Auth Service]
+Gateway --> [Transaction Service]
+Gateway --> [Budget Service]
+Gateway --> [Wallet Service]
+Gateway --> [Report Service]
+Gateway --> [NLP Engine\n(Google Gemini API)]
+Gateway --> [OCR Engine\n(Google Cloud Vision API)]
+Gateway --> [Voice-to-Text Engine\n(Google Speech-to-Text)]
+
+[Transaction Service] <--> [Categorization Engine]
+[Chat UI] <--> [Personality Engine]
+[NLP Engine\n(Google Gemini API)] --> [Categorization Engine]
+
+[Auth Service] --> DB
+[Transaction Service] --> DB
+[Budget Service] --> DB
+[Category Service] --> DB
+[Wallet Service] --> DB
+[Report Service] --> DB
+
+[OCR Engine\n(Google Cloud Vision API)] --> Storage
+[Backup Service] --> Storage
+[Export Service] --> Storage
+
+@enduml

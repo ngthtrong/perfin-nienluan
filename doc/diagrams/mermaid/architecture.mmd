@@ -1,0 +1,45 @@
+graph TD
+    subgraph Client [Tầng Client: Mobile App - React Native / Expo]
+        C_UI[Chat UI]
+        T_UI[Transaction UI]
+        R_UI[Report UI]
+        B_UI[Budget UI]
+        W_UI[Wallet UI]
+        S_UI[Settings UI]
+    end
+
+    API_GW[Tầng API Gateway\nRouting, Rate Limiting, JWT]
+
+    subgraph CoreServices [Tầng Core Services - Node.js / Express.js]
+        Auth[Auth Service]
+        Trans[Transaction Service]
+        Cat[Category Service]
+        Budg[Budget Service]
+        Wall[Wallet Service]
+        Rem[Reminder Service]
+        Exp[Export Service]
+        Bak[Backup Service]
+        Rep[Report Service]
+        Notif[Notification Service]
+    end
+
+    subgraph AIServices [Tầng AI Services]
+        NLP[NLP Engine\nGoogle Gemini API]
+        OCR[OCR Engine\nGoogle Cloud Vision API]
+        V2T[Voice-to-Text Engine\nGoogle Speech-to-Text API]
+        Categorize[Categorization Engine]
+        Persona[Personality Engine]
+    end
+
+    subgraph Database [Tầng Dữ liệu]
+        PG[(PostgreSQL\nUser, Transaction, Budget,...)]
+        S3[(Object Storage\nHóa đơn, Backups, Exports)]
+    end
+
+    Client -->|HTTP/REST| API_GW
+    API_GW --> CoreServices
+    API_GW --> AIServices
+    CoreServices <--> AIServices
+    CoreServices --> PG
+    CoreServices --> S3
+    AIServices --> PG
