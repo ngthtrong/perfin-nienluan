@@ -1,0 +1,24 @@
+node_modules/
+.env
+.DS_Store
+npm-debug.log
+yarn-error.log
+
+# Expo / React Native
+.expo/
+dist/
+web-build/
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.orig.*
+
+# macOS
+.DS_Store
+
+# IDEs
+.idea/
+.vscode/
+*.swp
