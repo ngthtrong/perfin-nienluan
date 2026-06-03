@@ -1,0 +1,26 @@
+erDiagram
+    USERS ||--o{ TRANSACTIONS : creates
+    USERS ||--o{ WALLETS : owns
+    USERS ||--o{ CATEGORIES : defines
+    USERS ||--o{ BUDGETS : sets
+    USERS ||--o{ RECURRING_BILLS : manages
+    USERS ||--o{ CHAT_MESSAGES : sends_receives
+    USERS ||--o{ AI_PERSONALITIES : selects
+    USERS ||--|| BACKUP_CONFIGS : configures
+    
+    TRANSACTIONS }|--|| WALLETS : uses_source
+    TRANSACTIONS }o--o| WALLETS : uses_dest
+    TRANSACTIONS }o--|| CATEGORIES : categorized_by
+    TRANSACTIONS }o--o| CATEGORIES : sub_categorized_by
+    TRANSACTIONS }o--o| RECURRING_BILLS : generated_by
+
+    CATEGORIES ||--o{ CATEGORIES : parent_child
+
+    BUDGETS }o--o| CATEGORIES : tracks
+    BUDGETS ||--o{ BUDGET_HISTORY : logs
+
+    RECURRING_BILLS }|--|| WALLETS : deducts_from
+    RECURRING_BILLS }|--|| CATEGORIES : categorizes
+    RECURRING_BILLS ||--o{ RECURRING_BILL_PAYMENTS : tracks
+
+    CHAT_MESSAGES }o--o| AI_PERSONALITIES : uses_style

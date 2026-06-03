@@ -1,0 +1,54 @@
+@startuml
+entity "Users" as users {
+  * id : SERIAL <<PK>>
+  --
+  * username : VARCHAR(100) <<UNIQUE>>
+  * email : VARCHAR(255) <<UNIQUE>>
+  * password_hash : VARCHAR(255)
+  language_preference : VARCHAR(20)
+  active_personality_id : INTEGER <<FK>>
+}
+
+entity "AIPersonalities" as personalities {
+  * id : SERIAL <<PK>>
+  --
+  * name : VARCHAR(100)
+  description : TEXT
+  user_id : INTEGER <<FK>>
+}
+
+entity "Categories" as categories {
+  * id : SERIAL <<PK>>
+  --
+  * user_id : INTEGER <<FK>>
+  * name : VARCHAR(100)
+  * type : ENUM
+  parent_id : INTEGER <<FK>>
+}
+
+entity "Wallets" as wallets {
+  * id : SERIAL <<PK>>
+  --
+  * user_id : INTEGER <<FK>>
+  * name : VARCHAR(100)
+  * type : ENUM
+  balance : DECIMAL
+}
+
+entity "Transactions" as transactions {
+  * id : SERIAL <<PK>>
+  --
+  * user_id : INTEGER <<FK>>
+  * name : VARCHAR(255)
+  * amount : DECIMAL
+  * wallet_id : INTEGER <<FK>>
+  category_id : INTEGER <<FK>>
+}
+
+users ||--o{ transactions
+users ||--o{ wallets
+users ||--o{ categories
+users ||--o{ personalities
+transactions }|--|| wallets
+transactions }o--|| categories
+@enduml
