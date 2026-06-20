@@ -3,3 +3,13 @@ node_modules/
 npm-debug.log
 yarn-error.log
 .DS_Store
+gcp-credentials.json
+
+
+
+
+
+*-credentials.json
+*.json
+!package.json
+!package-lock.json
