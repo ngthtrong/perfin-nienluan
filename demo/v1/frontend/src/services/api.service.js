@@ -1,11 +1,53 @@
-const BASE_URL = (process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000').replace(/\/$/, '');
+import { NativeModules, Platform } from 'react-native';
+
+function getDevServerHost() {
+  const scriptURL = NativeModules.SourceCode?.scriptURL;
+  if (!scriptURL) return null;
+
+  const match = scriptURL.match(/^(?:https?|exp):\/\/([^/:]+)/);
+  const host = match?.[1];
+  if (!host || host === 'localhost' || host === '127.0.0.1') return null;
+  if (!/^(?:\d{1,3}\.){3}\d{1,3}$/.test(host)) return null;
+  return host;
+}
+
+function getBaseUrl() {
+  const envUrl = process.env.EXPO_PUBLIC_API_URL;
+  if (envUrl) return envUrl.replace(/\/$/, '');
+
+  if (Platform.OS !== 'web') {
+    const devHost = getDevServerHost();
+    if (devHost) return `http://${devHost}:3000`;
+  }
+
+  return 'http://localhost:3000';
+}
+
+const BASE_URL = getBaseUrl();
+
+async function parseJson(response) {
+  const text = await response.text();
+  if (!text) return {};
+
+  try {
+    return JSON.parse(text);
+  } catch {
+    throw new Error(`API không trả về JSON hợp lệ từ ${BASE_URL}`);
+  }
+}
 
 async function request(path, options = {}) {
-  const response = await fetch(`${BASE_URL}${path}`, {
-    ...options,
-    headers: { 'Content-Type': 'application/json', ...(options.headers || {}) },
-  });
-  const data = await response.json();
+  let response;
+  try {
+    response = await fetch(`${BASE_URL}${path}`, {
+      ...options,
+      headers: { 'Content-Type': 'application/json', ...(options.headers || {}) },
+    });
+  } catch (error) {
+    throw new Error(`Không kết nối được API tại ${BASE_URL}. Kiểm tra backend và cùng mạng Wi-Fi.`);
+  }
+
+  const data = await parseJson(response);
   if (!response.ok || data.success === false) throw new Error(data.error || 'Có lỗi xảy ra');
   return data;
 }
@@ -21,11 +63,17 @@ async function upload(path, fieldName, asset, fallbackMimeType) {
     type: asset.mimeType || fallbackMimeType,
   });
 
-  const response = await fetch(`${BASE_URL}${path}`, {
-    method: 'POST',
-    body: formData,
-  });
-  const data = await response.json();
+  let response;
+  try {
+    response = await fetch(`${BASE_URL}${path}`, {
+      method: 'POST',
+      body: formData,
+    });
+  } catch (error) {
+    throw new Error(`Không kết nối được API tại ${BASE_URL}. Kiểm tra backend và cùng mạng Wi-Fi.`);
+  }
+
+  const data = await parseJson(response);
   if (!response.ok || data.success === false) throw new Error(data.error || 'Có lỗi xảy ra');
   return data;
 }

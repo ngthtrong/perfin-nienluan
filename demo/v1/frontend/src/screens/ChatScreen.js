@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, FlatList, KeyboardAvoidingView, Platform, StyleSheet, ActivityIndicator, Alert } from 'react-native';
-import { Audio } from 'expo-av';
+import { RecordingPresets, requestRecordingPermissionsAsync, setAudioModeAsync, useAudioRecorder, useAudioRecorderState } from 'expo-audio';
 import * as ImagePicker from 'expo-image-picker';
 import { api } from '../services/api.service';
 import { COLORS } from '../utils/constants';
@@ -10,7 +10,8 @@ export default function ChatScreen() {
   const [messages, setMessages] = useState([{ id: 'welcome', role: 'assistant', type: 'text', text: 'Chào bạn! Hãy nhắn khoản thu chi như "ăn phở 50k" để PERFIN ghi nhận.' }]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
-  const [recording, setRecording] = useState(null);
+  const recorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
+  const recorderState = useAudioRecorderState(recorder);
 
   function push(message) {
     setMessages((prev) => [...prev, { id: `${Date.now()}-${Math.random()}`, ...message }]);
@@ -44,30 +45,28 @@ export default function ChatScreen() {
   }
 
   async function startRecording() {
-    if (loading || recording) return;
+    if (loading || recorderState.isRecording) return;
     try {
-      const permission = await Audio.requestPermissionsAsync();
+      const permission = await requestRecordingPermissionsAsync();
       if (!permission.granted) {
         Alert.alert('Cần quyền micro', 'Hãy cấp quyền micro để nhập giao dịch bằng giọng nói.');
         return;
       }
-      await Audio.setAudioModeAsync({ allowsRecordingIOS: true, playsInSilentModeIOS: true });
-      const { recording: nextRecording } = await Audio.Recording.createAsync(Audio.RecordingOptionsPresets.HIGH_QUALITY);
-      setRecording(nextRecording);
+      await setAudioModeAsync({ allowsRecording: true, playsInSilentMode: true });
+      await recorder.prepareToRecordAsync();
+      recorder.record();
     } catch (error) {
       push({ role: 'system', type: 'text', text: error.message });
     }
   }
 
   async function stopRecording() {
-    if (!recording) return;
-    const current = recording;
-    setRecording(null);
+    if (!recorderState.isRecording) return;
     setLoading(true);
     try {
-      await current.stopAndUnloadAsync();
-      await Audio.setAudioModeAsync({ allowsRecordingIOS: false });
-      const uri = current.getURI();
+      await recorder.stop();
+      await setAudioModeAsync({ allowsRecording: false });
+      const uri = recorder.uri || recorder.getStatus().url;
       if (!uri) throw new Error('Không lấy được file ghi âm');
       const response = await api.transcribeAudio({ uri, fileName: 'voice.m4a', mimeType: Platform.OS === 'ios' ? 'audio/m4a' : 'audio/mp4' });
       await handleTranscribedText(response.text, 'Giọng nói');
@@ -137,8 +136,8 @@ export default function ChatScreen() {
       <FlatList data={messages} keyExtractor={(item) => item.id} renderItem={renderItem} contentContainerStyle={styles.list} />
       {loading && <ActivityIndicator color={COLORS.primary} style={{ marginBottom: 8 }} />}
       <View style={styles.inputRow}>
-        <TouchableOpacity style={[styles.iconButton, recording && styles.recording]} onPress={recording ? stopRecording : startRecording}>
-          <Text style={styles.iconText}>{recording ? '■' : '🎙'}</Text>
+        <TouchableOpacity style={[styles.iconButton, recorderState.isRecording && styles.recording]} onPress={recorderState.isRecording ? stopRecording : startRecording}>
+          <Text style={styles.iconText}>{recorderState.isRecording ? '■' : '🎙'}</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.iconButton} onPress={() => pickImage(true)}>
           <Text style={styles.iconText}>📷</Text>

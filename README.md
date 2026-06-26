@@ -161,6 +161,7 @@ Dưới đây là bảng theo dõi tiến độ phát triển các cấu phần 
    node index.js
    ```
    *Server sẽ khởi chạy tại cổng 3000 và hiển thị log kết nối thành công tới PostgreSQL.*
+5. Trước khi mở Expo Go, kiểm tra từ trình duyệt điện thoại bằng `http://IP_WIFI_CUA_MAY_TINH:3000`. Nếu không thấy thông báo API đang chạy, hãy cho phép Node.js qua Windows Firewall và đảm bảo điện thoại cùng mạng Wi-Fi với máy tính.
 
 ### 📱 Bước 2: Khởi động Frontend (Expo React Native)
 1. Di chuyển vào thư mục frontend:
@@ -171,12 +172,16 @@ Dưới đây là bảng theo dõi tiến độ phát triển các cấu phần 
    ```bash
    npm install
    ```
-3. Đổi địa chỉ kết nối API trong file `App.js` (hoặc cấu hình `.env` cho Expo) trỏ về địa chỉ IP Wi-Fi của máy tính đang chạy backend (không dùng `localhost` nếu test trên thiết bị điện thoại thật).
-4. Khởi chạy ứng dụng:
+3. Khởi chạy Expo ở chế độ LAN để điện thoại và máy tính cùng mạng Wi-Fi nhìn thấy nhau:
    ```bash
-   npm start
+   npm run start:lan
    ```
-5. Mở ứng dụng **Expo Go** trên điện thoại (iOS/Android), quét mã QR hiển thị ở terminal để trải nghiệm trực tiếp giao diện kết nối.
+4. Mở ứng dụng **Expo Go** trên điện thoại (iOS/Android), quét mã QR hiển thị ở terminal để trải nghiệm trực tiếp giao diện kết nối.
+5. Ứng dụng sẽ tự suy ra API backend theo IP LAN của máy đang chạy Metro, ví dụ `http://192.168.1.10:3000`. Nếu bắt buộc chạy Expo bằng tunnel, tạo file `.env.local` trong `demo/v1/frontend` và khai báo thủ công:
+   ```env
+   EXPO_PUBLIC_API_URL=http://IP_WIFI_CUA_MAY_TINH:3000
+   ```
+   Sau đó khởi động lại Expo bằng `npm start -- --clear`.
 
 ### 📄 Bước 3: Đồng bộ và Biên dịch Báo cáo LaTeX
 1. Di chuyển vào thư mục LaTeX:
