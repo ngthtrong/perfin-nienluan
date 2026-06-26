@@ -5,6 +5,23 @@ yarn-error.log
 .DS_Store
 gcp-credentials.json
 
+# Python media AI runtime
+.venv-ai/
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+
+# PaddleOCR / PhoWhisper model and runtime cache
+.cache/
+.paddleocr/
+.paddle/
+paddleocr/
+inference_results/
+
+# Temporary uploads used by OCR/speech endpoints
+uploads/
+
 
 
 

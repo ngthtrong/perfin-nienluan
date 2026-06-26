@@ -9,7 +9,10 @@
     "migrate": "node scripts/migrate.js",
     "migrate:fresh": "node scripts/migrate.js --fresh",
     "seed": "node scripts/migrate.js --seed-only",
-    "test:ai": "node tests/ai-accuracy-test.js"
+    "test:ai": "node tests/ai-accuracy-test.js",
+    "seed:demo": "node scripts/seed-demo.js",
+    "seed:demo:fresh": "node scripts/seed-demo.js --clear",
+    "setup:media-ai": "python3 -m venv .venv-ai && .venv-ai/bin/python -m pip install --upgrade pip && .venv-ai/bin/pip install -r requirements-ai.txt"
   },
   "keywords": [],
   "author": "",

@@ -24,16 +24,82 @@ function getBaseUrl() {
 }
 
 const BASE_URL = getBaseUrl();
+const TUNNEL_HEADERS = {
+  'bypass-tunnel-reminder': 'true',
+  'ngrok-skip-browser-warning': 'true',
+};
+
+function getExtension(uri = '') {
+  const cleanUri = uri.split('?')[0];
+  const fileName = cleanUri.split('/').pop() || '';
+  const match = fileName.match(/\.([a-z0-9]+)$/i);
+  return match?.[1]?.toLowerCase() || '';
+}
+
+function getMimeType(asset, fallbackMimeType) {
+  if (asset.mimeType) return asset.mimeType;
+
+  const extension = getExtension(asset.uri);
+  const mimeByExtension = {
+    jpg: 'image/jpeg',
+    jpeg: 'image/jpeg',
+    png: 'image/png',
+    heic: 'image/heic',
+    heif: 'image/heif',
+    m4a: 'audio/m4a',
+    mp4: 'audio/mp4',
+    aac: 'audio/aac',
+    wav: 'audio/wav',
+  };
+
+  return mimeByExtension[extension] || fallbackMimeType;
+}
+
+function getUploadName(fieldName, asset, mimeType) {
+  const rawName = asset.fileName || asset.name || asset.uri.split('?')[0].split('/').pop();
+  if (rawName && rawName.includes('.')) return rawName.replace(/\s+/g, '-');
+
+  const extensionByMime = {
+    'image/jpeg': 'jpg',
+    'image/png': 'png',
+    'image/heic': 'heic',
+    'image/heif': 'heif',
+    'audio/m4a': 'm4a',
+    'audio/mp4': 'mp4',
+    'video/mp4': 'mp4',
+    'audio/aac': 'aac',
+    'audio/wav': 'wav',
+  };
+  const extension = extensionByMime[mimeType] || (fieldName === 'image' ? 'jpg' : 'm4a');
+  return `${fieldName}-${Date.now()}.${extension}`;
+}
 
 async function parseJson(response) {
   const text = await response.text();
   if (!text) return {};
 
+  const contentType = response.headers?.get?.('content-type') || '';
+  if (!contentType.includes('application/json')) {
+    throw new Error(`API trả về ${response.status} dạng ${contentType || 'không rõ'} từ ${BASE_URL}`);
+  }
+
   try {
     return JSON.parse(text);
   } catch {
-    throw new Error(`API không trả về JSON hợp lệ từ ${BASE_URL}`);
+    throw new Error(`API trả về JSON lỗi từ ${BASE_URL}`);
   }
+}
+
+function apiError(message) {
+  const error = new Error(message);
+  error.fromApi = true;
+  return error;
+}
+
+async function unwrapResponse(response) {
+  const data = await parseJson(response);
+  if (!response.ok || data.success === false) throw apiError(data.error || 'Có lỗi xảy ra');
+  return data;
 }
 
 async function request(path, options = {}) {
@@ -41,41 +107,75 @@ async function request(path, options = {}) {
   try {
     response = await fetch(`${BASE_URL}${path}`, {
       ...options,
-      headers: { 'Content-Type': 'application/json', ...(options.headers || {}) },
+      headers: { ...TUNNEL_HEADERS, 'Content-Type': 'application/json', ...(options.headers || {}) },
     });
   } catch (error) {
     throw new Error(`Không kết nối được API tại ${BASE_URL}. Kiểm tra backend và cùng mạng Wi-Fi.`);
   }
 
-  const data = await parseJson(response);
-  if (!response.ok || data.success === false) throw new Error(data.error || 'Có lỗi xảy ra');
-  return data;
+  return unwrapResponse(response);
+}
+
+function readBlobAsBase64(blob) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const result = String(reader.result || '');
+      resolve(result.includes(',') ? result.split(',')[1] : result);
+    };
+    reader.onerror = () => reject(new Error('Không đọc được file đã chọn'));
+    reader.readAsDataURL(blob);
+  });
+}
+
+async function readUriAsBase64(uri) {
+  const response = await fetch(uri);
+  const blob = await response.blob();
+  return readBlobAsBase64(blob);
+}
+
+async function uploadBase64(path, name, mimeType, asset) {
+  const base64 = await readUriAsBase64(asset.uri);
+  const response = await fetch(`${BASE_URL}${path}`, {
+    method: 'POST',
+    headers: { ...TUNNEL_HEADERS, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ fileName: name, mimeType, base64 }),
+  });
+  return unwrapResponse(response);
 }
 
 async function upload(path, fieldName, asset, fallbackMimeType) {
   const formData = new FormData();
-  const uriParts = asset.uri.split('/');
-  const name = asset.fileName || uriParts[uriParts.length - 1] || `${fieldName}-${Date.now()}`;
+  const mimeType = getMimeType(asset, fallbackMimeType);
+  const name = getUploadName(fieldName, asset, mimeType);
+
+  if (Platform.OS !== 'web') {
+    try {
+      return await uploadBase64(path, name, mimeType, asset);
+    } catch (error) {
+      if (error.fromApi) throw error;
+      console.warn(`[api.upload] base64 upload failed, falling back to multipart: ${error.message}`);
+    }
+  }
 
   formData.append(fieldName, {
     uri: asset.uri,
     name,
-    type: asset.mimeType || fallbackMimeType,
+    type: mimeType,
   });
 
   let response;
   try {
     response = await fetch(`${BASE_URL}${path}`, {
       method: 'POST',
+      headers: TUNNEL_HEADERS,
       body: formData,
     });
   } catch (error) {
     throw new Error(`Không kết nối được API tại ${BASE_URL}. Kiểm tra backend và cùng mạng Wi-Fi.`);
   }
 
-  const data = await parseJson(response);
-  if (!response.ok || data.success === false) throw new Error(data.error || 'Có lỗi xảy ra');
-  return data;
+  return unwrapResponse(response);
 }
 
 export const api = {
@@ -99,4 +199,6 @@ export const api = {
   getReportSummary: (month, year) => request(`/api/reports/summary?month=${month}&year=${year}`),
   getCategoryBreakdown: (month, year) => request(`/api/reports/category-breakdown?month=${month}&year=${year}`),
   getMonthlyTrend: (year) => request(`/api/reports/monthly-trend?year=${year}`),
+  getAIModels: () => request('/api/ai/models'),
+  setAISelection: (data) => request('/api/ai/selection', { method: 'POST', body: JSON.stringify(data) }),
 };

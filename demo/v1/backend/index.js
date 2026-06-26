@@ -18,7 +18,7 @@ const app = express();
 const port = process.env.PORT || 3000;
 
 app.use(cors());
-app.use(express.json({ limit: '2mb' }));
+app.use(express.json({ limit: '15mb' }));
 
 app.get('/', (req, res) => {
   res.json({ success: true, message: 'PERFIN MVP API is running' });
@@ -53,6 +53,10 @@ app.post('/api/ocr', (req, res, next) => {
 app.post('/api/speech', (req, res, next) => {
   req.url = '/speech';
   aiRoutes(req, res, next);
+});
+
+app.use((req, res) => {
+  res.status(404).json({ success: false, error: `Không tìm thấy endpoint ${req.method} ${req.originalUrl}`, code: 'NOT_FOUND' });
 });
 
 app.use(errorMiddleware);

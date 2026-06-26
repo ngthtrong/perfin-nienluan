@@ -18,6 +18,22 @@ web-build/
 # macOS
 .DS_Store
 
+# Python / AI runtime
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+.venv-ai/
+
+# Media AI providers (PaddleOCR / PhoWhisper)
+.cache/
+.paddleocr/
+.paddle/
+paddleocr/
+inference_results/
+uploads/
+
 # IDEs
 .idea/
 .vscode/
