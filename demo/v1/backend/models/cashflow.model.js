@@ -1,0 +1,306 @@
+const { pool, query } = require('../config/database');
+
+const DEFAULT_USER = 'default_user';
+
+// ─── Wallet Transfers (REQ-06: Transfer / Investment Inflow / Outflow) ──────
+
+const TransferModel = {
+  /**
+   * Create a wallet-to-wallet transfer.
+   * transfer_type: 'transfer' | 'investment_inflow' | 'investment_outflow'
+   */
+  async create(data) {
+    const { userId = DEFAULT_USER, from_wallet_id, to_wallet_id, amount, transfer_type = 'transfer', note, transaction_date } = data;
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+
+      // Debit source wallet
+      if (from_wallet_id) {
+        await client.query(
+          'UPDATE wallets SET balance = balance - $1, updated_at = NOW() WHERE id = $2 AND user_id = $3',
+          [amount, from_wallet_id, userId]
+        );
+      }
+
+      // Credit destination wallet
+      if (to_wallet_id) {
+        await client.query(
+          'UPDATE wallets SET balance = balance + $1, updated_at = NOW() WHERE id = $2 AND user_id = $3',
+          [amount, to_wallet_id, userId]
+        );
+      }
+
+      // Insert transfer log
+      const result = await client.query(
+        `INSERT INTO wallet_transfers (user_id, from_wallet_id, to_wallet_id, amount, transfer_type, note, transaction_date)
+         VALUES ($1, $2, $3, $4, $5, $6, COALESCE($7, CURRENT_DATE))
+         RETURNING *`,
+        [userId, from_wallet_id || null, to_wallet_id || null, amount, transfer_type, note || null, transaction_date || null]
+      );
+
+      await client.query('COMMIT');
+      return this.getById(result.rows[0].id);
+    } catch (err) {
+      await client.query('ROLLBACK');
+      throw err;
+    } finally {
+      client.release();
+    }
+  },
+
+  async getById(id) {
+    const result = await query(
+      `SELECT wt.*,
+              fw.name AS from_wallet_name, fw.type AS from_wallet_type,
+              tw.name AS to_wallet_name, tw.type AS to_wallet_type
+       FROM wallet_transfers wt
+       LEFT JOIN wallets fw ON fw.id = wt.from_wallet_id
+       LEFT JOIN wallets tw ON tw.id = wt.to_wallet_id
+       WHERE wt.id = $1`,
+      [id]
+    );
+    return result.rows[0] || null;
+  },
+
+  async getAll(userId = DEFAULT_USER, filters = {}) {
+    const where = ['wt.user_id = $1'];
+    const params = [userId];
+    const add = (clause, value) => {
+      params.push(value);
+      where.push(clause.replace('?', `$${params.length}`));
+    };
+
+    if (filters.wallet_id) {
+      // Filter by wallet (either from or to)
+      params.push(filters.wallet_id);
+      where.push(`(wt.from_wallet_id = $${params.length} OR wt.to_wallet_id = $${params.length})`);
+    }
+    if (filters.transfer_type) add('wt.transfer_type = ?', filters.transfer_type);
+    if (filters.from) add('wt.transaction_date >= ?', filters.from);
+    if (filters.to) add('wt.transaction_date <= ?', filters.to);
+
+    const limit = Math.min(Number(filters.limit || 50), 200);
+    params.push(limit);
+
+    const result = await query(
+      `SELECT wt.*,
+              fw.name AS from_wallet_name, fw.type AS from_wallet_type,
+              tw.name AS to_wallet_name, tw.type AS to_wallet_type
+       FROM wallet_transfers wt
+       LEFT JOIN wallets fw ON fw.id = wt.from_wallet_id
+       LEFT JOIN wallets tw ON tw.id = wt.to_wallet_id
+       WHERE ${where.join(' AND ')}
+       ORDER BY wt.transaction_date DESC, wt.created_at DESC
+       LIMIT $${params.length}`,
+      params
+    );
+    return result.rows;
+  },
+};
+
+// ─── Investment P&L (REQ-06-05) ───────────────────────────────────────────────
+
+const InvestmentPnLModel = {
+  async create(data) {
+    const { userId = DEFAULT_USER, wallet_id, amount, note, recorded_at } = data;
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+
+      // Adjust investment wallet balance
+      await client.query(
+        'UPDATE wallets SET balance = balance + $1, updated_at = NOW() WHERE id = $2 AND user_id = $3',
+        [amount, wallet_id, userId]
+      );
+
+      const result = await client.query(
+        `INSERT INTO investment_pnl (user_id, wallet_id, amount, note, recorded_at)
+         VALUES ($1, $2, $3, $4, COALESCE($5, CURRENT_DATE))
+         RETURNING *`,
+        [userId, wallet_id, amount, note || null, recorded_at || null]
+      );
+
+      await client.query('COMMIT');
+      return result.rows[0];
+    } catch (err) {
+      await client.query('ROLLBACK');
+      throw err;
+    } finally {
+      client.release();
+    }
+  },
+
+  async update(id, data) {
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      const old = await client.query('SELECT * FROM investment_pnl WHERE id = $1 FOR UPDATE', [id]);
+      if (!old.rows[0]) return null;
+
+      const diff = Number(data.amount) - Number(old.rows[0].amount);
+      await client.query(
+        'UPDATE wallets SET balance = balance + $1, updated_at = NOW() WHERE id = $2',
+        [diff, old.rows[0].wallet_id]
+      );
+
+      const result = await client.query(
+        `UPDATE investment_pnl SET amount = $2, note = $3, recorded_at = COALESCE($4, recorded_at), updated_at = NOW()
+         WHERE id = $1 RETURNING *`,
+        [id, data.amount, data.note ?? old.rows[0].note, data.recorded_at || null]
+      );
+
+      await client.query('COMMIT');
+      return result.rows[0];
+    } catch (err) {
+      await client.query('ROLLBACK');
+      throw err;
+    } finally {
+      client.release();
+    }
+  },
+
+  async delete(id) {
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      const old = await client.query('SELECT * FROM investment_pnl WHERE id = $1 FOR UPDATE', [id]);
+      if (!old.rows[0]) return null;
+
+      // Reverse the balance impact
+      await client.query(
+        'UPDATE wallets SET balance = balance - $1, updated_at = NOW() WHERE id = $2',
+        [old.rows[0].amount, old.rows[0].wallet_id]
+      );
+      await client.query('DELETE FROM investment_pnl WHERE id = $1', [id]);
+      await client.query('COMMIT');
+      return old.rows[0];
+    } catch (err) {
+      await client.query('ROLLBACK');
+      throw err;
+    } finally {
+      client.release();
+    }
+  },
+
+  async getByWallet(walletId, userId = DEFAULT_USER) {
+    const result = await query(
+      `SELECT p.*, w.name AS wallet_name
+       FROM investment_pnl p
+       JOIN wallets w ON w.id = p.wallet_id
+       WHERE p.wallet_id = $1 AND p.user_id = $2
+       ORDER BY p.recorded_at DESC, p.created_at DESC`,
+      [walletId, userId]
+    );
+    return result.rows;
+  },
+};
+
+// ─── Net Worth (REQ-06-03) ─────────────────────────────────────────────────────
+
+const NetWorthModel = {
+  async calculate(userId = DEFAULT_USER) {
+    const result = await query(
+      `SELECT
+         COALESCE(SUM(CASE WHEN type IN ('cash','bank','e_wallet','credit_card') THEN balance ELSE 0 END), 0) AS regular_wallets,
+         COALESCE(SUM(CASE WHEN type IN ('investment','savings') THEN balance ELSE 0 END), 0)              AS investment_wallets,
+         COALESCE(SUM(balance), 0)                                                                         AS total_balance
+       FROM wallets
+       WHERE user_id = $1`,
+      [userId]
+    );
+    const row = result.rows[0];
+    const regular = Number(row.regular_wallets);
+    const investment = Number(row.investment_wallets);
+    const net_worth = regular + investment; // loans/debts are tracked in wallets (negative balance)
+    return { regular_wallets: regular, investment_wallets: investment, net_worth };
+  },
+};
+
+// ─── Cashflow Report (REQ-06-06) ─────────────────────────────────────────────
+
+const CashflowModel = {
+  async getReport(userId = DEFAULT_USER, filters = {}) {
+    const { from, to } = filters;
+
+    // Operating cashflow: income & expense transactions
+    const txResult = await query(
+      `SELECT
+         COALESCE(SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END), 0)  AS total_income,
+         COALESCE(SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END), 0) AS total_expense
+       FROM transactions
+       WHERE deleted_at IS NULL AND user_id = $1
+         AND ($2::date IS NULL OR transaction_date >= $2::date)
+         AND ($3::date IS NULL OR transaction_date <= $3::date)`,
+      [userId, from || null, to || null]
+    );
+
+    // Investment cashflow: inflows, outflows, P&L
+    const investResult = await query(
+      `SELECT
+         COALESCE(SUM(CASE WHEN transfer_type = 'investment_inflow'  THEN amount ELSE 0 END), 0) AS investment_inflow,
+         COALESCE(SUM(CASE WHEN transfer_type = 'investment_outflow' THEN amount ELSE 0 END), 0) AS investment_outflow
+       FROM wallet_transfers
+       WHERE user_id = $1
+         AND ($2::date IS NULL OR transaction_date >= $2::date)
+         AND ($3::date IS NULL OR transaction_date <= $3::date)`,
+      [userId, from || null, to || null]
+    );
+
+    const pnlResult = await query(
+      `SELECT COALESCE(SUM(amount), 0) AS total_pnl
+       FROM investment_pnl
+       WHERE user_id = $1
+         AND ($2::date IS NULL OR recorded_at >= $2::date)
+         AND ($3::date IS NULL OR recorded_at <= $3::date)`,
+      [userId, from || null, to || null]
+    );
+
+    // Transfer cashflow: transfers between regular wallets
+    const transferResult = await query(
+      `SELECT COALESCE(SUM(amount), 0) AS total_transfer
+       FROM wallet_transfers
+       WHERE user_id = $1 AND transfer_type = 'transfer'
+         AND ($2::date IS NULL OR transaction_date >= $2::date)
+         AND ($3::date IS NULL OR transaction_date <= $3::date)`,
+      [userId, from || null, to || null]
+    );
+
+    const txRow = txResult.rows[0];
+    const invRow = investResult.rows[0];
+    const pnlRow = pnlResult.rows[0];
+    const trRow = transferResult.rows[0];
+
+    const operating_income = Number(txRow.total_income);
+    const operating_expense = Number(txRow.total_expense);
+    const operating_cashflow = operating_income - operating_expense;
+
+    const investment_inflow = Number(invRow.investment_inflow);
+    const investment_outflow = Number(invRow.investment_outflow);
+    const investment_pnl = Number(pnlRow.total_pnl);
+    const investment_cashflow = investment_pnl - investment_inflow + investment_outflow; // net from investor perspective
+
+    const transfer_total = Number(trRow.total_transfer);
+
+    return {
+      period: { from: from || null, to: to || null },
+      operating: {
+        income: operating_income,
+        expense: operating_expense,
+        net: operating_cashflow,
+      },
+      investment: {
+        inflow: investment_inflow,
+        outflow: investment_outflow,
+        pnl: investment_pnl,
+        net: investment_cashflow,
+      },
+      transfer: {
+        total: transfer_total,
+      },
+      net_cashflow: operating_cashflow + investment_cashflow,
+    };
+  },
+};
+
+module.exports = { TransferModel, InvestmentPnLModel, NetWorthModel, CashflowModel };

@@ -1,27 +1,31 @@
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, FlatList,
   StyleSheet, ActivityIndicator, RefreshControl, Alert,
 } from 'react-native';
 import { api } from '../services/api.service';
-import { COLORS } from '../utils/constants';
+import { COLORS, SHADOWS, RADIUS } from '../utils/constants';
 import { formatVND, formatDate } from '../utils/formatters';
 import TransactionCard from '../components/TransactionCard';
+import AppIcon from '../components/AppIcon';
 
 const FILTERS = [
-  { key: null,      label: 'Tất cả' },
-  { key: 'expense', label: 'Chi tiêu' },
-  { key: 'income',  label: 'Thu nhập' },
+  { key: null,      label: 'Tất cả', icon: 'apps' },
+  { key: 'expense', label: 'Chi tiêu', icon: 'trending-down' },
+  { key: 'income',  label: 'Thu nhập', icon: 'trending-up' },
 ];
 
 function SkeletonRow() {
   return (
-    <View style={{ backgroundColor: COLORS.surface, padding: 14, borderRadius: 10, marginBottom: 8, borderWidth: 1, borderColor: COLORS.border }}>
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-        <View style={{ width: '55%', height: 14, backgroundColor: '#E5E7EB', borderRadius: 4 }} />
-        <View style={{ width: '25%', height: 14, backgroundColor: '#E5E7EB', borderRadius: 4 }} />
+    <View style={{ backgroundColor: COLORS.surface, padding: 14, borderRadius: RADIUS.md, marginBottom: 8, borderWidth: 1, borderColor: COLORS.border }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+        <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: COLORS.borderLight }} />
+        <View style={{ flex: 1, gap: 8 }}>
+          <View style={{ width: '60%', height: 14, backgroundColor: COLORS.borderLight, borderRadius: 4 }} />
+          <View style={{ width: '40%', height: 10, backgroundColor: COLORS.borderLight, borderRadius: 4 }} />
+        </View>
+        <View style={{ width: 60, height: 14, backgroundColor: COLORS.borderLight, borderRadius: 4 }} />
       </View>
-      <View style={{ width: '35%', height: 10, backgroundColor: '#E5E7EB', borderRadius: 4, marginTop: 8 }} />
     </View>
   );
 }
@@ -32,7 +36,7 @@ export default function TransactionScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [filter, setFilter] = useState(null); // null = all
+  const [filter, setFilter] = useState(null);
   const [search, setSearch] = useState('');
   const [form, setForm] = useState({ description: '', amount: '', type: 'expense', category_id: null });
   const [showForm, setShowForm] = useState(false);
@@ -98,12 +102,8 @@ export default function TransactionScreen() {
       { text: 'Huỷ', style: 'cancel' },
       {
         text: 'Xoá', style: 'destructive', onPress: async () => {
-          try {
-            await api.deleteTransaction(id);
-            await load();
-          } catch (err) {
-            Alert.alert('Lỗi', err.message);
-          }
+          try { await api.deleteTransaction(id); await load(); }
+          catch (err) { Alert.alert('Lỗi', err.message); }
         },
       },
     ]);
@@ -112,37 +112,42 @@ export default function TransactionScreen() {
   const expenseCategories = categories.filter((c) => c.type === form.type);
 
   const renderItem = ({ item }) => (
-    <TransactionCard
-      transaction={item}
-      onLongPress={() => deleteTransaction(item.id)}
-    />
+    <TransactionCard transaction={item} onLongPress={() => deleteTransaction(item.id)} />
   );
 
   const ListHeader = (
     <View>
-      {/* Add form toggle */}
+      {/* Add button */}
       <TouchableOpacity
-        style={[styles.toggleForm, showForm && styles.toggleFormActive]}
+        style={[styles.addToggle, showForm && styles.addToggleActive]}
         onPress={() => setShowForm((v) => !v)}
+        activeOpacity={0.8}
       >
-        <Text style={[styles.toggleFormText, showForm && styles.toggleFormTextActive]}>
-          {showForm ? '✕ Đóng form' : '＋ Thêm giao dịch thủ công'}
+        <View style={[styles.addIcon, showForm && styles.addIconActive]}>
+          <AppIcon name={showForm ? 'close' : 'add'} size={18} color={showForm ? COLORS.expense : '#fff'} />
+        </View>
+        <Text style={[styles.addToggleText, showForm && styles.addToggleTextActive]}>
+          {showForm ? 'Đóng form' : 'Thêm giao dịch mới'}
         </Text>
+        {!showForm && <AppIcon name="chevron-right" size={18} color="rgba(255,255,255,0.7)" />}
       </TouchableOpacity>
 
       {showForm && (
         <View style={styles.form}>
           {/* Type selector */}
           <View style={styles.segment}>
-            {[['expense', '📉 Chi tiêu'], ['income', '📈 Thu nhập']].map(([type, label]) => (
+            {[['expense', 'Chi tiêu', 'trending-down'], ['income', 'Thu nhập', 'trending-up']].map(([type, label, icon]) => (
               <TouchableOpacity
                 key={type}
-                style={[styles.segmentButton, form.type === type && styles.segmentActive]}
+                style={[styles.segmentButton, form.type === type && (type === 'expense' ? styles.segmentExpense : styles.segmentIncome)]}
                 onPress={() => {
                   const defCat = categories.find((c) => c.type === type);
                   setForm((prev) => ({ ...prev, type, category_id: defCat?.id || null }));
                 }}
               >
+                <AppIcon name={icon} size={16} color={
+                  form.type === type ? '#fff' : COLORS.muted
+                } />
                 <Text style={[styles.segmentText, form.type === type && styles.segmentActiveText]}>
                   {label}
                 </Text>
@@ -157,16 +162,22 @@ export default function TransactionScreen() {
             value={form.description}
             onChangeText={(v) => setForm((p) => ({ ...p, description: v }))}
           />
-          <TextInput
-            style={styles.input}
-            placeholder="Số tiền (VND)"
-            placeholderTextColor={COLORS.muted}
-            value={form.amount}
-            keyboardType="numeric"
-            onChangeText={(v) => setForm((p) => ({ ...p, amount: v }))}
-          />
+          <View style={styles.amountWrapper}>
+            <TextInput
+              style={[styles.input, { flex: 1, marginBottom: 0 }]}
+              placeholder="Số tiền (VND)"
+              placeholderTextColor={COLORS.muted}
+              value={form.amount}
+              keyboardType="numeric"
+              onChangeText={(v) => setForm((p) => ({ ...p, amount: v }))}
+            />
+            {form.amount.length > 0 && (
+              <View style={styles.amountPreviewPill}>
+                <Text style={styles.amountPreviewText}>{formatVND(Number(form.amount))}</Text>
+              </View>
+            )}
+          </View>
 
-          {/* Category chips */}
           <Text style={styles.inputLabel}>Danh mục</Text>
           <FlatList
             data={expenseCategories}
@@ -175,24 +186,32 @@ export default function TransactionScreen() {
             keyExtractor={(c) => c.id}
             renderItem={({ item }) => (
               <TouchableOpacity
-                style={[styles.chip, form.category_id === item.id && styles.chipActive]}
+                style={[styles.catChip, form.category_id === item.id && styles.catChipActive]}
                 onPress={() => setForm((p) => ({ ...p, category_id: item.id }))}
               >
-                <Text style={[styles.chipText, form.category_id === item.id && styles.chipActiveText]}>
-                  {item.icon} {item.name}
+                <Text style={styles.catChipIcon}>{item.icon}</Text>
+                <Text style={[styles.catChipText, form.category_id === item.id && styles.catChipTextActive]}>
+                  {item.name}
                 </Text>
               </TouchableOpacity>
             )}
-            style={{ marginBottom: 12 }}
+            contentContainerStyle={{ gap: 8, paddingBottom: 14 }}
           />
 
           <TouchableOpacity style={[styles.saveBtn, saving && styles.saveBtnDisabled]} onPress={add} disabled={saving}>
-            {saving ? <ActivityIndicator color="#fff" size="small" /> : <Text style={styles.saveBtnText}>💾 Lưu giao dịch</Text>}
+            {saving
+              ? <ActivityIndicator color="#fff" size="small" />
+              : (
+                <>
+                  <AppIcon name="check-circle" size={18} color="#fff" />
+                  <Text style={styles.saveBtnText}>Lưu giao dịch</Text>
+                </>
+              )}
           </TouchableOpacity>
         </View>
       )}
 
-      {/* Filter & search */}
+      {/* Filter row */}
       <View style={styles.filterRow}>
         {FILTERS.map((f) => (
           <TouchableOpacity
@@ -200,18 +219,30 @@ export default function TransactionScreen() {
             style={[styles.filterBtn, filter === f.key && styles.filterBtnActive]}
             onPress={() => setFilter(f.key)}
           >
+            <AppIcon name={f.icon} size={14} color={filter === f.key ? '#fff' : COLORS.muted} />
             <Text style={[styles.filterText, filter === f.key && styles.filterTextActive]}>{f.label}</Text>
           </TouchableOpacity>
         ))}
       </View>
-      <TextInput
-        style={styles.searchInput}
-        placeholder="🔍 Tìm kiếm giao dịch..."
-        placeholderTextColor={COLORS.muted}
-        value={search}
-        onChangeText={setSearch}
-        returnKeyType="search"
-      />
+
+      {/* Search */}
+      <View style={styles.searchWrapper}>
+        <AppIcon name="search" size={18} color={COLORS.muted} />
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Tìm kiếm giao dịch..."
+          placeholderTextColor={COLORS.muted}
+          value={search}
+          onChangeText={setSearch}
+          returnKeyType="search"
+        />
+        {search.length > 0 && (
+          <TouchableOpacity onPress={() => setSearch('')}>
+            <AppIcon name="close" size={16} color={COLORS.muted} />
+          </TouchableOpacity>
+        )}
+      </View>
+
       <Text style={styles.resultCount}>{transactions.length} giao dịch</Text>
     </View>
   );
@@ -238,7 +269,7 @@ export default function TransactionScreen() {
         <View style={styles.emptyState}>
           <Text style={styles.emptyIcon}>📭</Text>
           <Text style={styles.emptyTitle}>Chưa có giao dịch nào</Text>
-          <Text style={styles.emptyMsg}>Hãy nhắn cho PERFIN khoản thu chi đầu tiên!</Text>
+          <Text style={styles.emptyMsg}>Hãy thêm giao dịch đầu tiên!</Text>
         </View>
       }
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.primary} />}
@@ -252,42 +283,131 @@ export default function TransactionScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.background },
-  content: { padding: 16, paddingBottom: 24 },
+  content: { padding: 16, paddingBottom: 32 },
 
-  toggleForm: {
-    borderWidth: 1, borderColor: COLORS.border, borderRadius: 10, padding: 12,
-    alignItems: 'center', backgroundColor: COLORS.surface, marginBottom: 12,
+  // ── Add toggle ───────────────────────────────────────────────────────────────
+  addToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: COLORS.primary,
+    padding: 14,
+    borderRadius: RADIUS.lg,
+    marginBottom: 12,
+    ...SHADOWS.sm,
   },
-  toggleFormActive: { borderColor: COLORS.primary, backgroundColor: '#EFF6FF' },
-  toggleFormText: { color: COLORS.muted, fontWeight: '700' },
-  toggleFormTextActive: { color: COLORS.primary },
+  addToggleActive: { backgroundColor: COLORS.expenseLight, borderWidth: 1.5, borderColor: COLORS.expense, ...SHADOWS.sm, shadowColor: COLORS.expense },
+  addIcon: { width: 32, height: 32, borderRadius: 16, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center' },
+  addIconActive: { backgroundColor: 'rgba(244,63,94,0.1)' },
+  addToggleText: { flex: 1, color: '#fff', fontWeight: '800', fontSize: 14 },
+  addToggleTextActive: { color: COLORS.expense },
 
-  form: { backgroundColor: COLORS.surface, padding: 14, borderRadius: 12, borderWidth: 1, borderColor: COLORS.border, marginBottom: 14 },
-  segment: { flexDirection: 'row', gap: 8, marginBottom: 12 },
-  segmentButton: { flex: 1, alignItems: 'center', paddingVertical: 10, borderRadius: 8, backgroundColor: COLORS.background, borderWidth: 1, borderColor: COLORS.border },
-  segmentActive: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
-  segmentText: { fontSize: 13, fontWeight: '700', color: COLORS.muted },
+  // ── Form ─────────────────────────────────────────────────────────────────────
+  form: {
+    backgroundColor: COLORS.surface,
+    padding: 16,
+    borderRadius: RADIUS.lg,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    marginBottom: 14,
+    ...SHADOWS.sm,
+  },
+  segment: { flexDirection: 'row', gap: 10, marginBottom: 14 },
+  segmentButton: {
+    flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
+    paddingVertical: 11, borderRadius: RADIUS.md,
+    backgroundColor: COLORS.background, borderWidth: 1.5, borderColor: COLORS.border,
+  },
+  segmentExpense: { backgroundColor: COLORS.expense, borderColor: COLORS.expense },
+  segmentIncome: { backgroundColor: COLORS.income, borderColor: COLORS.income },
+  segmentText: { fontSize: 14, fontWeight: '700', color: COLORS.muted },
   segmentActiveText: { color: '#fff' },
-  input: { borderWidth: 1, borderColor: COLORS.border, borderRadius: 8, padding: 12, marginBottom: 10, fontSize: 15, color: COLORS.text, backgroundColor: COLORS.background },
-  inputLabel: { color: COLORS.muted, fontWeight: '700', marginBottom: 6, fontSize: 13 },
-  chip: { backgroundColor: COLORS.background, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20, marginRight: 8, borderWidth: 1, borderColor: COLORS.border },
-  chipActive: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
-  chipText: { fontSize: 13, color: COLORS.text },
-  chipActiveText: { color: '#fff', fontWeight: '700' },
-  saveBtn: { backgroundColor: COLORS.primary, padding: 14, borderRadius: 10, alignItems: 'center', marginTop: 4 },
+
+  input: {
+    borderWidth: 1.5,
+    borderColor: COLORS.border,
+    borderRadius: RADIUS.md,
+    padding: 13,
+    marginBottom: 12,
+    fontSize: 15,
+    color: COLORS.text,
+    backgroundColor: COLORS.background,
+  },
+  amountWrapper: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 14 },
+  amountPreviewPill: {
+    backgroundColor: COLORS.primaryLight,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: RADIUS.full,
+  },
+  amountPreviewText: { color: COLORS.primary, fontWeight: '800', fontSize: 13 },
+
+  inputLabel: { color: COLORS.muted, fontWeight: '700', marginBottom: 8, fontSize: 13 },
+  catChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    backgroundColor: COLORS.background,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: RADIUS.full,
+    borderWidth: 1.5,
+    borderColor: COLORS.border,
+  },
+  catChipActive: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
+  catChipIcon: { fontSize: 14 },
+  catChipText: { fontSize: 13, color: COLORS.textSecondary, fontWeight: '600' },
+  catChipTextActive: { color: '#fff', fontWeight: '700' },
+
+  saveBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: COLORS.primary,
+    padding: 14,
+    borderRadius: RADIUS.md,
+    ...SHADOWS.sm,
+  },
   saveBtnDisabled: { opacity: 0.6 },
   saveBtnText: { color: '#fff', fontWeight: '800', fontSize: 15 },
 
-  filterRow: { flexDirection: 'row', gap: 8, marginBottom: 10 },
-  filterBtn: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, backgroundColor: COLORS.surface, borderWidth: 1, borderColor: COLORS.border },
+  // ── Filter ───────────────────────────────────────────────────────────────────
+  filterRow: { flexDirection: 'row', gap: 8, marginBottom: 12 },
+  filterBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: RADIUS.full,
+    backgroundColor: COLORS.surface,
+    borderWidth: 1.5,
+    borderColor: COLORS.border,
+  },
   filterBtnActive: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
-  filterText: { fontSize: 13, color: COLORS.muted, fontWeight: '600' },
+  filterText: { fontSize: 13, color: COLORS.muted, fontWeight: '700' },
   filterTextActive: { color: '#fff', fontWeight: '800' },
-  searchInput: { borderWidth: 1, borderColor: COLORS.border, borderRadius: 8, padding: 10, marginBottom: 10, color: COLORS.text, backgroundColor: COLORS.surface },
-  resultCount: { color: COLORS.muted, fontSize: 12, marginBottom: 8 },
 
+  // ── Search ───────────────────────────────────────────────────────────────────
+  searchWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    backgroundColor: COLORS.surface,
+    borderWidth: 1.5,
+    borderColor: COLORS.border,
+    borderRadius: RADIUS.md,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    marginBottom: 10,
+  },
+  searchInput: { flex: 1, fontSize: 14, color: COLORS.text },
+  resultCount: { color: COLORS.muted, fontSize: 12, fontWeight: '600', marginBottom: 10 },
+
+  // ── Empty ────────────────────────────────────────────────────────────────────
   emptyState: { alignItems: 'center', paddingVertical: 48 },
-  emptyIcon: { fontSize: 48, marginBottom: 12 },
-  emptyTitle: { fontSize: 16, fontWeight: '800', color: COLORS.text, marginBottom: 6 },
+  emptyIcon: { fontSize: 52, marginBottom: 14 },
+  emptyTitle: { fontSize: 17, fontWeight: '800', color: COLORS.text, marginBottom: 6 },
   emptyMsg: { color: COLORS.muted, textAlign: 'center' },
 });

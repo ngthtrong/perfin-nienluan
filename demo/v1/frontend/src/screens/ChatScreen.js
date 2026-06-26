@@ -1,9 +1,13 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
-import { View, Text, TextInput, TouchableOpacity, FlatList, KeyboardAvoidingView, Platform, StyleSheet, ActivityIndicator, Alert, ScrollView, Keyboard } from 'react-native';
+import {
+  View, Text, TextInput, TouchableOpacity, FlatList,
+  KeyboardAvoidingView, Platform, StyleSheet, ActivityIndicator,
+  Alert, ScrollView, Animated,
+} from 'react-native';
 import { RecordingPresets, requestRecordingPermissionsAsync, setAudioModeAsync, useAudioRecorder, useAudioRecorderState } from 'expo-audio';
 import * as ImagePicker from 'expo-image-picker';
 import { api } from '../services/api.service';
-import { COLORS } from '../utils/constants';
+import { COLORS, SHADOWS, RADIUS } from '../utils/constants';
 import TransactionPreviewCard from '../components/TransactionPreviewCard';
 import AppIcon from '../components/AppIcon';
 
@@ -19,6 +23,75 @@ const FALLBACK_AI_CONFIG = {
   },
 };
 
+// ── Provider chip labels & icons ─────────────────────────────────────────────
+const PROVIDER_META = {
+  gemini:  { label: 'Gemini',  icon: 'auto-awesome' },
+  chatgpt: { label: 'ChatGPT', icon: 'smart-toy' },
+  local:   { label: 'Local',   icon: 'memory' },
+};
+
+// ── Typing dots animation ────────────────────────────────────────────────────
+function TypingIndicator() {
+  const dot1 = useRef(new Animated.Value(0)).current;
+  const dot2 = useRef(new Animated.Value(0)).current;
+  const dot3 = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    const animate = (dot, delay) =>
+      Animated.loop(
+        Animated.sequence([
+          Animated.delay(delay),
+          Animated.timing(dot, { toValue: 1, duration: 300, useNativeDriver: true }),
+          Animated.timing(dot, { toValue: 0, duration: 300, useNativeDriver: true }),
+          Animated.delay(600 - delay),
+        ])
+      ).start();
+    animate(dot1, 0);
+    animate(dot2, 200);
+    animate(dot3, 400);
+  }, []);
+
+  const dotStyle = (dot) => ({
+    width: 7, height: 7, borderRadius: 3.5,
+    backgroundColor: COLORS.muted,
+    opacity: dot.interpolate({ inputRange: [0, 1], outputRange: [0.3, 1] }),
+    transform: [{ translateY: dot.interpolate({ inputRange: [0, 1], outputRange: [0, -4] }) }],
+  });
+
+  return (
+    <View style={styles.typingBubble}>
+      <Animated.View style={dotStyle(dot1)} />
+      <Animated.View style={dotStyle(dot2)} />
+      <Animated.View style={dotStyle(dot3)} />
+    </View>
+  );
+}
+
+// ── Recording pulse animation ─────────────────────────────────────────────────
+function RecordingPulse() {
+  const pulse = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulse, { toValue: 1.3, duration: 700, useNativeDriver: true }),
+        Animated.timing(pulse, { toValue: 1, duration: 700, useNativeDriver: true }),
+      ])
+    ).start();
+  }, []);
+
+  return (
+    <View style={styles.recordingOverlay}>
+      <Animated.View style={[styles.pulseBg, { transform: [{ scale: pulse }] }]} />
+      <View style={styles.pulseIcon}>
+        <AppIcon name="mic" size={28} color="#fff" />
+      </View>
+      <Text style={styles.recordingLabel}>Đang ghi âm...</Text>
+      <Text style={styles.recordingHint}>Nhấn nút mic để dừng</Text>
+    </View>
+  );
+}
+
 export default function ChatScreen() {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
@@ -26,27 +99,23 @@ export default function ChatScreen() {
   const [historyLoading, setHistoryLoading] = useState(true);
   const [aiConfig, setAIConfig] = useState(null);
   const [aiLoading, setAILoading] = useState(false);
+  const [showAiPanel, setShowAiPanel] = useState(false);
+  const [imageLoading, setImageLoading] = useState(false); // separate image state
   const listRef = useRef(null);
   const recorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
   const recorderState = useAudioRecorderState(recorder);
+  const isRecording = recorderState.isRecording;
 
   const scrollToBottom = useCallback(() => {
     setTimeout(() => listRef.current?.scrollToEnd({ animated: true }), 100);
   }, []);
 
-  useEffect(() => {
-    loadHistory();
-    loadAIModels();
-  }, []);
-
-  useEffect(() => {
-    if (messages.length > 0) scrollToBottom();
-  }, [messages.length]);
+  useEffect(() => { loadHistory(); loadAIModels(); }, []);
+  useEffect(() => { if (messages.length > 0) scrollToBottom(); }, [messages.length]);
 
   async function loadHistory() {
     setHistoryLoading(true);
     try {
-      // Thử load history từ API
       const historyRes = await fetch(`${api.getBaseUrl()}/api/chat/messages?limit=20`);
       if (historyRes.ok) {
         const data = await historyRes.json();
@@ -64,8 +133,12 @@ export default function ChatScreen() {
         }
       }
     } catch (_) {}
-    // Nếu không có history, hiện welcome message
-    setMessages([{ id: 'welcome', role: 'assistant', type: 'text', text: 'Chào bạn! Mình là PERFIN, trợ lý tài chính cá nhân. Hãy nhắn khoản thu chi như "ăn phở 50k" để mình ghi nhận nhé!' }]);
+    setMessages([{
+      id: 'welcome',
+      role: 'assistant',
+      type: 'text',
+      text: 'Xin chào! Mình là PERFIN 👋\nHãy nhắn khoản thu chi như "ăn phở 50k" hay chụp hóa đơn để mình ghi nhận nhé!',
+    }]);
     setHistoryLoading(false);
   }
 
@@ -79,7 +152,6 @@ export default function ChatScreen() {
       const response = await api.getAIModels();
       setAIConfig({ models: response.data, status: response.status });
     } catch (error) {
-      console.warn(`[ChatScreen] AI model config unavailable: ${error.message}`);
       setAIConfig(FALLBACK_AI_CONFIG);
     } finally {
       setAILoading(false);
@@ -110,7 +182,6 @@ export default function ChatScreen() {
       const data = response.data;
       push({ role: 'assistant', type: data.type, text: data.message, transaction: data.transaction });
     } catch (error) {
-      console.warn(`[ChatScreen] speech failed: ${error.message}`);
       push({ role: 'system', type: 'text', text: error.message });
     } finally {
       setLoading(false);
@@ -128,7 +199,7 @@ export default function ChatScreen() {
   }
 
   async function startRecording() {
-    if (loading || recorderState.isRecording) return;
+    if (loading || isRecording) return;
     try {
       const permission = await requestRecordingPermissionsAsync();
       if (!permission.granted) {
@@ -144,15 +215,18 @@ export default function ChatScreen() {
   }
 
   async function stopRecording() {
-    if (!recorderState.isRecording) return;
+    if (!isRecording) return;
     setLoading(true);
     try {
       await recorder.stop();
       await setAudioModeAsync({ allowsRecording: false });
       const uri = recorder.uri || recorder.getStatus().url;
       if (!uri) throw new Error('Không lấy được file ghi âm');
-      console.log(`[ChatScreen] audio recorded: ${uri}`);
-      const response = await api.transcribeAudio({ uri, fileName: 'voice.m4a', mimeType: Platform.OS === 'ios' ? 'audio/m4a' : 'audio/mp4' });
+      const response = await api.transcribeAudio({
+        uri,
+        fileName: 'voice.m4a',
+        mimeType: Platform.OS === 'ios' ? 'audio/m4a' : 'audio/mp4',
+      });
       await handleTranscribedText(response.text, 'Giọng nói');
     } catch (error) {
       push({ role: 'system', type: 'text', text: error.message });
@@ -168,26 +242,31 @@ export default function ChatScreen() {
         ? await ImagePicker.requestCameraPermissionsAsync()
         : await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (!permission.granted) {
-        Alert.alert('Cần quyền truy cập', useCamera ? 'Hãy cấp quyền camera để chụp hóa đơn.' : 'Hãy cấp quyền thư viện ảnh để chọn hóa đơn.');
+        Alert.alert('Cần quyền truy cập', useCamera
+          ? 'Hãy cấp quyền camera để chụp hóa đơn.'
+          : 'Hãy cấp quyền thư viện ảnh để chọn hóa đơn.');
         return;
       }
-
       const result = useCamera
         ? await ImagePicker.launchCameraAsync({ mediaTypes: ['images'], quality: 0.8 })
         : await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.8 });
       if (result.canceled || !result.assets?.[0]) return;
 
-      setLoading(true);
+      setImageLoading(true);
       const asset = result.assets[0];
-      console.log(`[ChatScreen] image selected: ${asset.fileName || asset.uri} (${asset.mimeType || 'unknown'})`);
-      push({ role: 'user', type: 'text', text: useCamera ? 'Đã chụp ảnh hóa đơn' : 'Đã chọn ảnh hóa đơn' });
+      // Show image message in chat
+      push({
+        role: 'user',
+        type: 'image',
+        text: useCamera ? '📸 Đã chụp ảnh hóa đơn' : '🖼️ Đã chọn ảnh hóa đơn',
+        imageUri: asset.uri,
+      });
       const response = await api.extractImageText(asset);
       await handleTranscribedText(response.text, 'Ảnh hóa đơn');
     } catch (error) {
-      console.warn(`[ChatScreen] image failed: ${error.message}`);
       push({ role: 'system', type: 'text', text: error.message });
     } finally {
-      setLoading(false);
+      setImageLoading(false);
     }
   }
 
@@ -207,12 +286,39 @@ export default function ChatScreen() {
   }
 
   const renderItem = ({ item }) => {
-    if (item.type === 'transaction_preview') return <TransactionPreviewCard transaction={item.transaction} onConfirm={confirm} onCancel={cancel} onEdit={edit} />;
+    if (item.type === 'transaction_preview') {
+      return <TransactionPreviewCard transaction={item.transaction} onConfirm={confirm} onCancel={cancel} onEdit={edit} />;
+    }
     const isUser = item.role === 'user';
     const isSystem = item.role === 'system';
+
+    if (isSystem) {
+      return (
+        <View style={styles.systemMsgWrap}>
+          <View style={styles.systemMsg}>
+            <AppIcon name="info-outline" size={12} color={COLORS.warning} />
+            <Text style={styles.systemMsgText}>{item.text}</Text>
+          </View>
+        </View>
+      );
+    }
+
     return (
-      <View style={[styles.bubble, isUser ? styles.userBubble : isSystem ? styles.systemBubble : styles.aiBubble]}>
-        <Text style={isUser ? styles.userText : styles.text}>{item.text}</Text>
+      <View style={[styles.msgRow, isUser ? styles.msgRowUser : styles.msgRowAI]}>
+        {!isUser && (
+          <View style={styles.aiAvatar}>
+            <AppIcon name="auto-awesome" size={12} color="#fff" />
+          </View>
+        )}
+        <View style={[styles.bubble, isUser ? styles.userBubble : styles.aiBubble]}>
+          {item.type === 'image' && (
+            <View style={styles.imageTag}>
+              <AppIcon name="image" size={14} color={COLORS.primary} />
+              <Text style={styles.imageTagText}>Ảnh hóa đơn</Text>
+            </View>
+          )}
+          <Text style={isUser ? styles.userText : styles.aiText}>{item.text}</Text>
+        </View>
       </View>
     );
   };
@@ -221,30 +327,65 @@ export default function ChatScreen() {
   const currentModels = aiConfig?.models?.[selectedProvider]?.models || [];
   const selectedModel = aiConfig?.status?.selected_models?.[selectedProvider] || selectedProvider;
 
+  const isLoadingAny = loading || imageLoading;
+
   return (
     <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <View style={styles.aiPanel}>
-        <View style={styles.providerRow}>
-          {['gemini', 'chatgpt', 'local'].map((provider) => {
-            const info = aiConfig?.models?.[provider];
-            const disabled = provider !== 'local' && info?.status !== 'available';
-            const active = selectedProvider === provider;
-            return (
-              <TouchableOpacity key={provider} disabled={disabled || aiLoading} style={[styles.providerButton, active && styles.providerActive, disabled && styles.disabled]} onPress={() => selectAI(provider)}>
-                <Text style={[styles.providerText, active && styles.providerTextActive]}>{provider === 'chatgpt' ? 'ChatGPT' : provider === 'gemini' ? 'Gemini' : 'Local'}</Text>
-                <Text style={styles.providerStatus}>{info?.status || 'loading'}</Text>
-              </TouchableOpacity>
-            );
-          })}
+      {/* AI Model Panel (collapsible) */}
+      <TouchableOpacity style={styles.aiPanelToggle} onPress={() => setShowAiPanel((v) => !v)} activeOpacity={0.8}>
+        <View style={styles.aiPanelToggleLeft}>
+          <View style={[styles.providerDot, { backgroundColor: COLORS.income }]} />
+          <Text style={styles.aiPanelToggleText}>
+            {PROVIDER_META[selectedProvider]?.label} · {selectedModel}
+          </Text>
         </View>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.modelRow}>
-          {currentModels.map((model) => (
-            <TouchableOpacity key={model} disabled={aiLoading || selectedProvider === 'local'} style={[styles.modelButton, selectedModel === model && styles.modelActive]} onPress={() => selectAI(selectedProvider, model)}>
-              <Text style={[styles.modelText, selectedModel === model && styles.modelTextActive]} numberOfLines={1}>{model}</Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-      </View>
+        <AppIcon name={showAiPanel ? 'keyboard-arrow-up' : 'keyboard-arrow-down'} size={18} color={COLORS.muted} />
+      </TouchableOpacity>
+
+      {showAiPanel && (
+        <View style={styles.aiPanel}>
+          <View style={styles.providerRow}>
+            {['gemini', 'chatgpt', 'local'].map((provider) => {
+              const info = aiConfig?.models?.[provider];
+              const disabled = provider !== 'local' && info?.status !== 'available';
+              const active = selectedProvider === provider;
+              const meta = PROVIDER_META[provider];
+              return (
+                <TouchableOpacity
+                  key={provider}
+                  disabled={disabled || aiLoading}
+                  style={[styles.providerChip, active && styles.providerChipActive, disabled && styles.disabled]}
+                  onPress={() => selectAI(provider)}
+                >
+                  <AppIcon name={meta.icon} size={14} color={active ? COLORS.primary : COLORS.muted} />
+                  <Text style={[styles.providerChipText, active && styles.providerChipTextActive]}>
+                    {meta.label}
+                  </Text>
+                  <View style={[styles.statusDot, { backgroundColor: info?.status === 'available' ? COLORS.income : COLORS.muted }]} />
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+          {currentModels.length > 1 && (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.modelRow}>
+              {currentModels.map((model) => (
+                <TouchableOpacity
+                  key={model}
+                  disabled={aiLoading || selectedProvider === 'local'}
+                  style={[styles.modelChip, selectedModel === model && styles.modelChipActive]}
+                  onPress={() => selectAI(selectedProvider, model)}
+                >
+                  <Text style={[styles.modelChipText, selectedModel === model && styles.modelChipTextActive]} numberOfLines={1}>
+                    {model}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          )}
+        </View>
+      )}
+
+      {/* Message list */}
       {historyLoading ? (
         <View style={styles.historyLoading}>
           <ActivityIndicator color={COLORS.primary} size="small" />
@@ -259,63 +400,332 @@ export default function ChatScreen() {
           contentContainerStyle={styles.list}
           onContentSizeChange={scrollToBottom}
           removeClippedSubviews
+          ListFooterComponent={isLoadingAny ? <TypingIndicator /> : null}
         />
       )}
-      {loading && <ActivityIndicator color={COLORS.primary} style={{ marginBottom: 8 }} />}
-      <View style={styles.inputRow}>
-        <TouchableOpacity style={[styles.iconButton, recorderState.isRecording && styles.recording]} onPress={recorderState.isRecording ? stopRecording : startRecording}>
-          <AppIcon name={recorderState.isRecording ? 'stop' : 'mic'} size={20} color={recorderState.isRecording ? COLORS.expense : COLORS.text} />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.iconButton} onPress={() => pickImage(true)}>
-          <AppIcon name="photo-camera" size={20} color={COLORS.text} />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.iconButton} onPress={() => pickImage(false)}>
-          <AppIcon name="image" size={20} color={COLORS.text} />
-        </TouchableOpacity>
-        <TextInput
-          style={styles.input}
-          value={input}
-          onChangeText={setInput}
-          placeholder="Nhập giao dịch..."
-          placeholderTextColor={COLORS.muted}
-          onSubmitEditing={send}
-          returnKeyType="send"
-          editable={!loading}
-        />
-        <TouchableOpacity style={styles.send} onPress={send}><Text style={styles.sendText}>Gửi</Text></TouchableOpacity>
+
+      {/* Recording overlay (full-width banner) */}
+      {isRecording && <RecordingPulse />}
+
+      {/* Image loading banner */}
+      {imageLoading && !isRecording && (
+        <View style={styles.imageBanner}>
+          <ActivityIndicator color={COLORS.primary} size="small" />
+          <Text style={styles.imageBannerText}>Đang phân tích ảnh hóa đơn...</Text>
+        </View>
+      )}
+
+      {/* Input area */}
+      <View style={styles.inputArea}>
+        {/* Action buttons row */}
+        <View style={styles.inputRow}>
+          {/* Voice button */}
+          <TouchableOpacity
+            style={[styles.micBtn, isRecording && styles.micBtnActive]}
+            onPress={isRecording ? stopRecording : startRecording}
+            disabled={isLoadingAny && !isRecording}
+            activeOpacity={0.75}
+          >
+            <AppIcon name={isRecording ? 'stop' : 'mic'} size={20} color={isRecording ? '#fff' : COLORS.primary} />
+          </TouchableOpacity>
+
+          {/* Text input */}
+          <TextInput
+            style={[styles.input, isRecording && styles.inputHidden]}
+            value={input}
+            onChangeText={setInput}
+            placeholder="Nhập giao dịch..."
+            placeholderTextColor={COLORS.muted}
+            onSubmitEditing={send}
+            returnKeyType="send"
+            editable={!isLoadingAny}
+            multiline
+          />
+
+          {/* Camera & Gallery (shown when not recording, and text is empty) */}
+          {!isRecording && !input.trim() && (
+            <>
+              <TouchableOpacity
+                style={styles.iconBtn}
+                onPress={() => pickImage(true)}
+                disabled={isLoadingAny}
+              >
+                <AppIcon name="photo-camera" size={20} color={imageLoading ? COLORS.muted : COLORS.textSecondary} />
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.iconBtn}
+                onPress={() => pickImage(false)}
+                disabled={isLoadingAny}
+              >
+                <AppIcon name="image" size={20} color={imageLoading ? COLORS.muted : COLORS.textSecondary} />
+              </TouchableOpacity>
+            </>
+          )}
+
+          {/* Send button (shown when there is text) */}
+          {!isRecording && input.trim().length > 0 && (
+            <TouchableOpacity style={styles.sendBtn} onPress={() => send()} disabled={isLoadingAny}>
+              <AppIcon name="send" size={18} color="#fff" />
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
     </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: COLORS.background },
+
+  // ── AI Panel ────────────────────────────────────────────────────────────────
+  aiPanelToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: COLORS.surface,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+  },
+  aiPanelToggleLeft: { flexDirection: 'row', alignItems: 'center', gap: 7 },
+  providerDot: { width: 7, height: 7, borderRadius: 3.5 },
+  aiPanelToggleText: { fontSize: 13, color: COLORS.textSecondary, fontWeight: '600' },
+
+  aiPanel: {
+    backgroundColor: COLORS.surface,
+    paddingHorizontal: 12,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+  },
+  providerRow: { flexDirection: 'row', gap: 8, paddingTop: 10 },
+  providerChip: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 5,
+    paddingVertical: 8,
+    borderRadius: RADIUS.sm,
+    backgroundColor: COLORS.background,
+    borderWidth: 1.5,
+    borderColor: COLORS.border,
+  },
+  providerChipActive: { borderColor: COLORS.primary, backgroundColor: COLORS.primaryLight },
+  providerChipText: { fontSize: 12, fontWeight: '700', color: COLORS.muted },
+  providerChipTextActive: { color: COLORS.primary },
+  statusDot: { width: 6, height: 6, borderRadius: 3 },
+  disabled: { opacity: 0.4 },
+  modelRow: { paddingTop: 8, gap: 6 },
+  modelChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: RADIUS.full,
+    backgroundColor: COLORS.background,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  modelChipActive: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
+  modelChipText: { fontSize: 12, color: COLORS.muted },
+  modelChipTextActive: { color: '#fff', fontWeight: '700' },
+
+  // ── Loading ─────────────────────────────────────────────────────────────────
   historyLoading: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 10 },
   historyLoadingText: { color: COLORS.muted, fontSize: 14 },
-  container: { flex: 1, backgroundColor: COLORS.background },
-  list: { padding: 16 },
-  aiPanel: { backgroundColor: COLORS.surface, borderBottomWidth: 1, borderBottomColor: COLORS.border, paddingHorizontal: 10, paddingVertical: 8 },
-  providerRow: { flexDirection: 'row' },
-  providerButton: { flex: 1, borderWidth: 1, borderColor: COLORS.border, borderRadius: 8, paddingVertical: 7, paddingHorizontal: 8, marginHorizontal: 3, backgroundColor: COLORS.background },
-  providerActive: { borderColor: COLORS.primary, backgroundColor: '#DBEAFE' },
-  disabled: { opacity: 0.45 },
-  providerText: { color: COLORS.text, fontSize: 13, fontWeight: '800', textAlign: 'center' },
-  providerTextActive: { color: COLORS.primary },
-  providerStatus: { color: COLORS.muted, fontSize: 10, textAlign: 'center', marginTop: 2 },
-  modelRow: { paddingTop: 8, paddingHorizontal: 3 },
-  modelButton: { maxWidth: 180, borderWidth: 1, borderColor: COLORS.border, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6, marginRight: 6, backgroundColor: COLORS.background },
-  modelActive: { borderColor: COLORS.primary, backgroundColor: '#EFF6FF' },
-  modelText: { color: COLORS.muted, fontSize: 12 },
-  modelTextActive: { color: COLORS.primary, fontWeight: '800' },
-  bubble: { maxWidth: '82%', padding: 12, borderRadius: 8, marginBottom: 10 },
-  userBubble: { backgroundColor: COLORS.primary, alignSelf: 'flex-end' },
-  aiBubble: { backgroundColor: COLORS.surface, alignSelf: 'flex-start', borderWidth: 1, borderColor: COLORS.border },
-  systemBubble: { backgroundColor: '#FEF3C7', alignSelf: 'center' },
-  text: { color: COLORS.text, fontSize: 15 },
-  userText: { color: '#fff', fontSize: 15 },
-  inputRow: { flexDirection: 'row', padding: 10, backgroundColor: COLORS.surface, borderTopWidth: 1, borderTopColor: COLORS.border, alignItems: 'center' },
-  iconButton: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center', borderRadius: 8, backgroundColor: COLORS.background, borderWidth: 1, borderColor: COLORS.border, marginRight: 6 },
-  recording: { borderColor: '#DC2626', backgroundColor: '#FEE2E2' },
-  input: { flex: 1, backgroundColor: COLORS.background, paddingHorizontal: 12, borderRadius: 8, marginRight: 8 },
-  send: { backgroundColor: COLORS.primary, paddingHorizontal: 16, justifyContent: 'center', borderRadius: 8 },
-  sendText: { color: '#fff', fontWeight: '700' },
+
+  // ── Messages ────────────────────────────────────────────────────────────────
+  list: { padding: 16, paddingBottom: 8 },
+
+  msgRow: { flexDirection: 'row', alignItems: 'flex-end', marginBottom: 12, gap: 8 },
+  msgRowUser: { justifyContent: 'flex-end' },
+  msgRowAI: { justifyContent: 'flex-start' },
+
+  aiAvatar: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: COLORS.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 2,
+    ...SHADOWS.sm,
+  },
+
+  bubble: {
+    maxWidth: '78%',
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 18,
+  },
+  userBubble: {
+    backgroundColor: COLORS.primary,
+    borderBottomRightRadius: 4,
+    ...SHADOWS.sm,
+  },
+  aiBubble: {
+    backgroundColor: COLORS.surface,
+    borderBottomLeftRadius: 4,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    ...SHADOWS.sm,
+  },
+  userText: { color: '#fff', fontSize: 15, lineHeight: 21 },
+  aiText: { color: COLORS.text, fontSize: 15, lineHeight: 21 },
+
+  // Image bubble tag
+  imageTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    marginBottom: 6,
+    paddingBottom: 6,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+  },
+  imageTagText: { fontSize: 12, color: COLORS.primary, fontWeight: '700' },
+
+  // System message
+  systemMsgWrap: { alignItems: 'center', marginBottom: 10 },
+  systemMsg: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    backgroundColor: COLORS.warningLight,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: RADIUS.full,
+  },
+  systemMsgText: { color: COLORS.warning, fontSize: 12, fontWeight: '600' },
+
+  // Typing indicator
+  typingBubble: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    gap: 5,
+    backgroundColor: COLORS.surface,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 18,
+    borderBottomLeftRadius: 4,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    marginLeft: 36,
+    marginBottom: 12,
+    ...SHADOWS.sm,
+  },
+
+  // ── Recording overlay ────────────────────────────────────────────────────────
+  recordingOverlay: {
+    alignItems: 'center',
+    paddingVertical: 16,
+    backgroundColor: '#FFF0F3',
+    borderTopWidth: 1,
+    borderTopColor: '#FECDD3',
+  },
+  pulseBg: {
+    position: 'absolute',
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: COLORS.expense,
+    opacity: 0.15,
+  },
+  pulseIcon: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: COLORS.expense,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 10,
+    ...SHADOWS.md,
+  },
+  recordingLabel: { fontSize: 14, fontWeight: '800', color: COLORS.expense },
+  recordingHint: { fontSize: 12, color: COLORS.muted, marginTop: 2 },
+
+  // ── Image loading banner ────────────────────────────────────────────────────
+  imageBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    backgroundColor: COLORS.primaryLight,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.border,
+  },
+  imageBannerText: { fontSize: 13, color: COLORS.primary, fontWeight: '600' },
+
+  // ── Input area ──────────────────────────────────────────────────────────────
+  inputArea: {
+    backgroundColor: COLORS.surface,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.border,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    ...SHADOWS.sm,
+  },
+  inputRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    gap: 8,
+  },
+
+  // Mic button
+  micBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: COLORS.primaryLight,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1.5,
+    borderColor: COLORS.primary,
+  },
+  micBtnActive: {
+    backgroundColor: COLORS.expense,
+    borderColor: COLORS.expense,
+    ...SHADOWS.md,
+  },
+
+  // Text input
+  input: {
+    flex: 1,
+    minHeight: 44,
+    maxHeight: 100,
+    backgroundColor: COLORS.background,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 22,
+    fontSize: 15,
+    color: COLORS.text,
+    borderWidth: 1.5,
+    borderColor: COLORS.border,
+  },
+  inputHidden: { display: 'none' },
+
+  // Camera / Gallery icon buttons
+  iconBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: COLORS.background,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1.5,
+    borderColor: COLORS.border,
+  },
+
+  // Send button
+  sendBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: COLORS.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...SHADOWS.sm,
+  },
 });

@@ -201,4 +201,31 @@ export const api = {
   getMonthlyTrend: (year) => request(`/api/reports/monthly-trend?year=${year}`),
   getAIModels: () => request('/api/ai/models'),
   setAISelection: (data) => request('/api/ai/selection', { method: 'POST', body: JSON.stringify(data) }),
+
+  // ── REQ-06: Cashflow & Asset Management ──────────────────────────────────────
+  getNetWorth: () => request('/api/cashflow/net-worth'),
+  getCashflowReport: (params = {}) => {
+    const qs = new URLSearchParams(Object.entries(params).filter(([, v]) => v)).toString();
+    return request(`/api/cashflow/report${qs ? '?' + qs : ''}`);
+  },
+  createTransfer: (data) => request('/api/cashflow/transfers', { method: 'POST', body: JSON.stringify(data) }),
+  getTransfers: (params = {}) => {
+    const qs = new URLSearchParams(Object.entries(params).filter(([, v]) => v)).toString();
+    return request(`/api/cashflow/transfers${qs ? '?' + qs : ''}`);
+  },
+  getInvestmentPnL: (walletId) => request(`/api/cashflow/investment-pnl?wallet_id=${walletId}`),
+  createInvestmentPnL: (data) => request('/api/cashflow/investment-pnl', { method: 'POST', body: JSON.stringify(data) }),
+  updateInvestmentPnL: (id, data) => request(`/api/cashflow/investment-pnl/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  deleteInvestmentPnL: (id) => request(`/api/cashflow/investment-pnl/${id}`, { method: 'DELETE' }),
+
+  // ── REQ-07: Export & Backup ───────────────────────────────────────────────────
+  exportCSV: (filters = {}) => request('/api/export/csv', { method: 'POST', body: JSON.stringify(filters) }),
+  exportPDF: (filters = {}) => request('/api/export/pdf', { method: 'POST', body: JSON.stringify(filters) }),
+  createBackup: () => request('/api/export/backup', { method: 'POST', body: '{}' }),
+  getExportHistory: () => request('/api/export/history'),
+  deleteExportHistory: (id) => request(`/api/export/history/${id}`, { method: 'DELETE' }),
+  getBackupConfig: () => request('/api/export/backup-config'),
+  updateBackupConfig: (data) => request('/api/export/backup-config', { method: 'PUT', body: JSON.stringify(data) }),
+  exportFromIntent: (format, filters = {}) => request('/api/export/from-intent', { method: 'POST', body: JSON.stringify({ format, filters }) }),
+  getDownloadUrl: (historyId) => `${BASE_URL}/api/export/history/${historyId}/download`,
 };

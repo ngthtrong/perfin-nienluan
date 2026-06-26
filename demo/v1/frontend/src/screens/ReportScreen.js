@@ -4,13 +4,14 @@ import {
   RefreshControl,
 } from 'react-native';
 import { api } from '../services/api.service';
-import { COLORS, CATEGORY_COLORS } from '../utils/constants';
+import { COLORS, CATEGORY_COLORS, SHADOWS, RADIUS } from '../utils/constants';
 import { currentPeriod, formatVND } from '../utils/formatters';
+import AppIcon from '../components/AppIcon';
 
 const MONTHS_VI = ['T1','T2','T3','T4','T5','T6','T7','T8','T9','T10','T11','T12'];
 
-function SkeletonBar({ w = '100%' }) {
-  return <View style={{ width: w, height: 8, backgroundColor: '#E5E7EB', borderRadius: 4 }} />;
+function SkeletonBar({ w = '100%', h = 8 }) {
+  return <View style={{ width: w, height: h, backgroundColor: COLORS.borderLight, borderRadius: 4 }} />;
 }
 
 export default function ReportScreen() {
@@ -61,11 +62,14 @@ export default function ReportScreen() {
   }
 
   const maxExpense = Math.max(1, ...trend.map((item) => Number(item.expense)));
+  const netPositive = Number(summary.net ?? 0) >= 0;
 
   if (error) {
     return (
       <View style={styles.centered}>
-        <Text style={{ fontSize: 40, marginBottom: 12 }}>⚠️</Text>
+        <View style={styles.errorIconWrap}>
+          <AppIcon name="warning-amber" size={28} color={COLORS.expense} />
+        </View>
         <Text style={styles.errorTitle}>Không tải được dữ liệu</Text>
         <Text style={styles.errorMsg}>{error}</Text>
         <TouchableOpacity style={styles.retryBtn} onPress={() => load(period.month, period.year)}>
@@ -81,63 +85,80 @@ export default function ReportScreen() {
       contentContainerStyle={styles.content}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.primary} />}
     >
-      {/* Month navigation */}
+      {/* ── Month navigator ── */}
       <View style={styles.monthNav}>
-        <TouchableOpacity style={styles.monthBtn} onPress={() => changeMonth(-1)}>
-          <Text style={styles.monthBtnText}>‹</Text>
+        <TouchableOpacity style={styles.monthNavBtn} onPress={() => changeMonth(-1)}>
+          <AppIcon name="chevron-left" size={22} color={COLORS.primary} />
         </TouchableOpacity>
-        <Text style={styles.monthTitle}>📅 Tháng {period.month}/{period.year}</Text>
+        <View style={styles.monthTitle}>
+          <AppIcon name="calendar-today" size={15} color={COLORS.primary} />
+          <Text style={styles.monthTitleText}>Tháng {period.month} · {period.year}</Text>
+        </View>
         <TouchableOpacity
-          style={[styles.monthBtn, period.month === now.month && period.year === now.year && styles.monthBtnDisabled]}
+          style={[styles.monthNavBtn, period.month === now.month && period.year === now.year && styles.monthNavBtnDisabled]}
           onPress={() => changeMonth(1)}
           disabled={period.month === now.month && period.year === now.year}
         >
-          <Text style={styles.monthBtnText}>›</Text>
+          <AppIcon name="chevron-right" size={22} color={period.month === now.month && period.year === now.year ? COLORS.border : COLORS.primary} />
         </TouchableOpacity>
       </View>
 
-      {/* Summary cards */}
+      {/* ── Summary cards ── */}
       {loading ? (
         <View style={styles.summaryRow}>
-          <View style={[styles.summaryCard, { flex: 1 }]}>
-            <SkeletonBar w="60%" /><View style={{ height: 8 }} /><SkeletonBar w="80%" />
-          </View>
-          <View style={{ width: 8 }} />
-          <View style={[styles.summaryCard, { flex: 1 }]}>
-            <SkeletonBar w="60%" /><View style={{ height: 8 }} /><SkeletonBar w="80%" />
-          </View>
+          {[0, 1].map((i) => (
+            <View key={i} style={styles.summaryCard}>
+              <SkeletonBar w="60%" h={12} />
+              <View style={{ height: 8 }} />
+              <SkeletonBar w="80%" h={22} />
+            </View>
+          ))}
         </View>
       ) : (
         <View style={styles.summaryRow}>
           <View style={[styles.summaryCard, styles.incomeCard]}>
-            <Text style={styles.summaryLabel}>📈 Thu nhập</Text>
-            <Text style={[styles.summaryValue, styles.incomeText]}>{formatVND(summary.total_income)}</Text>
+            <View style={styles.summaryIcon}>
+              <AppIcon name="trending-up" size={16} color={COLORS.income} />
+            </View>
+            <Text style={styles.summaryLabel}>Thu nhập</Text>
+            <Text style={[styles.summaryValue, { color: COLORS.income }]}>{formatVND(summary.total_income)}</Text>
           </View>
-          <View style={{ width: 8 }} />
           <View style={[styles.summaryCard, styles.expenseCard]}>
-            <Text style={styles.summaryLabel}>📉 Chi tiêu</Text>
-            <Text style={[styles.summaryValue, styles.expenseText]}>{formatVND(summary.total_expense)}</Text>
+            <View style={[styles.summaryIcon, { backgroundColor: COLORS.expenseLight }]}>
+              <AppIcon name="trending-down" size={16} color={COLORS.expense} />
+            </View>
+            <Text style={styles.summaryLabel}>Chi tiêu</Text>
+            <Text style={[styles.summaryValue, { color: COLORS.expense }]}>{formatVND(summary.total_expense)}</Text>
           </View>
         </View>
       )}
 
-      {/* Net */}
+      {/* ── Net card ── */}
       {!loading && (
-        <View style={[styles.netCard, Number(summary.net) >= 0 ? styles.netPositive : styles.netNegative]}>
-          <Text style={styles.netLabel}>Chênh lệch</Text>
-          <Text style={styles.netValue}>{formatVND(summary.net, true)}</Text>
-          <Text style={styles.netSub}>{summary.transaction_count || 0} giao dịch</Text>
+        <View style={[styles.netCard, netPositive ? styles.netPositive : styles.netNegative]}>
+          <View style={styles.netLeft}>
+            <AppIcon name={netPositive ? 'savings' : 'money-off'} size={20} color={netPositive ? COLORS.income : COLORS.expense} />
+            <Text style={styles.netLabel}>{netPositive ? 'Tiết kiệm được' : 'Bội chi'}</Text>
+          </View>
+          <View style={styles.netRight}>
+            <Text style={[styles.netValue, { color: netPositive ? COLORS.income : COLORS.expense }]}>
+              {formatVND(Math.abs(summary.net ?? 0), false)}
+            </Text>
+            <Text style={styles.netSub}>{summary.transaction_count || 0} giao dịch</Text>
+          </View>
         </View>
       )}
 
-      {/* Category breakdown */}
+      {/* ── Category breakdown ── */}
       <Text style={styles.sectionTitle}>Chi tiêu theo danh mục</Text>
       {loading ? (
         [1, 2, 3].map((i) => (
           <View key={i} style={[styles.catRow, { marginBottom: 8 }]}>
-            <SkeletonBar w="40%" /><View style={{ height: 6 }} />
-            <SkeletonBar /><View style={{ height: 4 }} />
-            <SkeletonBar w="30%" />
+            <SkeletonBar w="40%" h={14} />
+            <View style={{ height: 8 }} />
+            <SkeletonBar h={10} />
+            <View style={{ height: 6 }} />
+            <SkeletonBar w="30%" h={11} />
           </View>
         ))
       ) : breakdown.length === 0 ? (
@@ -146,30 +167,38 @@ export default function ReportScreen() {
           <Text style={styles.emptyMsg}>Chưa có dữ liệu chi tiêu tháng này</Text>
         </View>
       ) : (
-        breakdown.map((item, index) => (
-          <View key={item.category_id} style={styles.catRow}>
-            <View style={styles.catHeader}>
-              <Text style={styles.catName}>{item.icon} {item.category_name}</Text>
-              <Text style={styles.catPct}>{item.percentage}%</Text>
+        breakdown.map((item, index) => {
+          const color = CATEGORY_COLORS[index % CATEGORY_COLORS.length];
+          return (
+            <View key={item.category_id} style={styles.catRow}>
+              <View style={styles.catHeader}>
+                <View style={styles.catLeft}>
+                  <View style={[styles.catDot, { backgroundColor: color }]} />
+                  <Text style={styles.catName}>{item.icon} {item.category_name}</Text>
+                </View>
+                <View style={styles.catRight}>
+                  <Text style={styles.catPct}>{item.percentage}%</Text>
+                  <Text style={styles.catAmount}>{formatVND(item.total)}</Text>
+                </View>
+              </View>
+              <View style={styles.barTrack}>
+                <View style={[styles.barFill, {
+                  width: `${Math.min(100, item.percentage)}%`,
+                  backgroundColor: color,
+                }]} />
+              </View>
             </View>
-            <View style={styles.barTrack}>
-              <View style={[styles.barFill, {
-                width: `${Math.min(100, item.percentage)}%`,
-                backgroundColor: CATEGORY_COLORS[index % CATEGORY_COLORS.length],
-              }]} />
-            </View>
-            <Text style={styles.catAmount}>{formatVND(item.total)}</Text>
-          </View>
-        ))
+          );
+        })
       )}
 
-      {/* Monthly trend bar chart */}
-      <Text style={styles.sectionTitle}>Xu hướng chi tiêu 12 tháng</Text>
+      {/* ── Monthly trend ── */}
+      <Text style={styles.sectionTitle}>Xu hướng 12 tháng</Text>
       <View style={styles.trendCard}>
         {loading ? (
-          <View style={{ flexDirection: 'row', alignItems: 'flex-end', height: 100, gap: 4 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'flex-end', height: 110, gap: 3 }}>
             {Array.from({ length: 12 }).map((_, i) => (
-              <View key={i} style={{ flex: 1, height: Math.random() * 60 + 20, backgroundColor: '#E5E7EB', borderRadius: 4 }} />
+              <View key={i} style={{ flex: 1, height: 30 + i * 5, backgroundColor: COLORS.borderLight, borderRadius: 4 }} />
             ))}
           </View>
         ) : trend.length === 0 ? (
@@ -180,15 +209,18 @@ export default function ReportScreen() {
           <View style={styles.trend}>
             {trend.map((item) => {
               const isCurrentMonth = item.month === period.month;
-              const barHeight = Math.max(4, (Number(item.expense) / maxExpense) * 100);
+              const expH = Math.max(4, (Number(item.expense) / maxExpense) * 100);
+              const incH = Math.max(2, (Number(item.income) / maxExpense) * 100);
               return (
                 <View key={item.month} style={styles.trendMonth}>
                   {Number(item.income) > 0 && (
-                    <View style={[styles.incomeBar, {
-                      height: Math.max(2, (Number(item.income) / maxExpense) * 100),
-                    }]} />
+                    <View style={[styles.incomeBar, { height: incH }]} />
                   )}
-                  <View style={[styles.expenseBar, { height: barHeight, opacity: isCurrentMonth ? 1 : 0.6 }]} />
+                  <View style={[
+                    styles.expenseBar,
+                    { height: expH },
+                    isCurrentMonth && styles.expenseBarActive,
+                  ]} />
                   <Text style={[styles.monthLabel, isCurrentMonth && styles.monthLabelActive]}>
                     {MONTHS_VI[(item.month - 1)] || item.month}
                   </Text>
@@ -198,14 +230,15 @@ export default function ReportScreen() {
           </View>
         )}
         <View style={styles.legend}>
-          <View style={styles.legendItem}>
-            <View style={[styles.legendDot, { backgroundColor: COLORS.expense }]} />
-            <Text style={styles.legendText}>Chi tiêu</Text>
-          </View>
-          <View style={styles.legendItem}>
-            <View style={[styles.legendDot, { backgroundColor: COLORS.income }]} />
-            <Text style={styles.legendText}>Thu nhập</Text>
-          </View>
+          {[
+            { color: COLORS.expense, label: 'Chi tiêu' },
+            { color: COLORS.income,  label: 'Thu nhập' },
+          ].map((l) => (
+            <View key={l.label} style={styles.legendItem}>
+              <View style={[styles.legendDot, { backgroundColor: l.color }]} />
+              <Text style={styles.legendText}>{l.label}</Text>
+            </View>
+          ))}
         </View>
       </View>
     </ScrollView>
@@ -214,66 +247,118 @@ export default function ReportScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.background },
-  content: { padding: 16, paddingBottom: 24 },
+  content: { padding: 16, paddingBottom: 32 },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
 
+  // ── Month nav ────────────────────────────────────────────────────────────────
   monthNav: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    backgroundColor: COLORS.surface, padding: 12, borderRadius: 12, borderWidth: 1,
-    borderColor: COLORS.border, marginBottom: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: COLORS.surface,
+    padding: 12,
+    borderRadius: RADIUS.lg,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    marginBottom: 14,
+    ...SHADOWS.sm,
   },
-  monthBtn: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center', borderRadius: 8, backgroundColor: COLORS.background },
-  monthBtnText: { fontSize: 22, color: COLORS.primary, fontWeight: '900' },
-  monthBtnDisabled: { opacity: 0.3 },
-  monthTitle: { fontSize: 16, fontWeight: '800', color: COLORS.text },
+  monthNavBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: COLORS.primaryLight,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  monthNavBtnDisabled: { backgroundColor: COLORS.background },
+  monthTitle: { flexDirection: 'row', alignItems: 'center', gap: 7 },
+  monthTitleText: { fontSize: 16, fontWeight: '800', color: COLORS.text },
 
-  summaryRow: { flexDirection: 'row', marginBottom: 10 },
-  summaryCard: { flex: 1, padding: 14, borderRadius: 12, borderWidth: 1, borderColor: COLORS.border },
+  // ── Summary cards ─────────────────────────────────────────────────────────────
+  summaryRow: { flexDirection: 'row', gap: 12, marginBottom: 12 },
+  summaryCard: { flex: 1, padding: 16, borderRadius: RADIUS.lg, borderWidth: 1, borderColor: COLORS.border, ...SHADOWS.sm },
   incomeCard: { backgroundColor: '#F0FDF4' },
-  expenseCard: { backgroundColor: '#FFF7ED' },
-  summaryLabel: { fontSize: 12, color: COLORS.muted, marginBottom: 6 },
-  summaryValue: { fontSize: 18, fontWeight: '900' },
-  incomeText: { color: COLORS.income },
-  expenseText: { color: COLORS.expense },
-
-  netCard: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    padding: 12, borderRadius: 10, marginBottom: 16,
+  expenseCard: { backgroundColor: '#FFF1F2' },
+  summaryIcon: {
+    width: 36, height: 36, borderRadius: 12,
+    backgroundColor: COLORS.incomeLight,
+    alignItems: 'center', justifyContent: 'center', marginBottom: 10,
   },
-  netPositive: { backgroundColor: '#DCFCE7' },
-  netNegative: { backgroundColor: '#FEE2E2' },
-  netLabel: { color: COLORS.muted, fontWeight: '700', fontSize: 13 },
-  netValue: { fontSize: 16, fontWeight: '900', color: COLORS.text },
-  netSub: { color: COLORS.muted, fontSize: 12 },
+  summaryLabel: { fontSize: 12, color: COLORS.muted, marginBottom: 5, fontWeight: '600' },
+  summaryValue: { fontSize: 18, fontWeight: '900' },
 
-  sectionTitle: { fontSize: 16, fontWeight: '800', color: COLORS.text, marginBottom: 10, marginTop: 4 },
+  // ── Net card ──────────────────────────────────────────────────────────────────
+  netCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 14,
+    borderRadius: RADIUS.lg,
+    marginBottom: 20,
+    ...SHADOWS.sm,
+  },
+  netPositive: { backgroundColor: COLORS.incomeLight, borderWidth: 1, borderColor: COLORS.income + '40' },
+  netNegative: { backgroundColor: COLORS.expenseLight, borderWidth: 1, borderColor: COLORS.expense + '40' },
+  netLeft: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  netRight: { alignItems: 'flex-end' },
+  netLabel: { fontWeight: '700', color: COLORS.text, fontSize: 14 },
+  netValue: { fontSize: 18, fontWeight: '900' },
+  netSub: { color: COLORS.muted, fontSize: 11, marginTop: 2 },
 
-  catRow: { backgroundColor: COLORS.surface, padding: 12, borderRadius: 10, borderWidth: 1, borderColor: COLORS.border, marginBottom: 8 },
-  catHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
-  catName: { fontWeight: '700', fontSize: 14 },
-  catPct: { color: COLORS.muted, fontSize: 13 },
-  barTrack: { height: 8, backgroundColor: '#E5E7EB', borderRadius: 4, overflow: 'hidden', marginBottom: 6 },
+  // ── Section title ──────────────────────────────────────────────────────────────
+  sectionTitle: { fontSize: 16, fontWeight: '800', color: COLORS.text, marginBottom: 12 },
+
+  // ── Category rows ─────────────────────────────────────────────────────────────
+  catRow: {
+    backgroundColor: COLORS.surface,
+    padding: 14,
+    borderRadius: RADIUS.md,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    marginBottom: 8,
+    ...SHADOWS.sm,
+  },
+  catHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
+  catLeft: { flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1 },
+  catDot: { width: 10, height: 10, borderRadius: 5 },
+  catName: { fontWeight: '700', fontSize: 14, color: COLORS.text },
+  catRight: { alignItems: 'flex-end' },
+  catPct: { color: COLORS.muted, fontSize: 13, fontWeight: '700' },
+  catAmount: { color: COLORS.textSecondary, fontSize: 12, marginTop: 1 },
+  barTrack: { height: 8, backgroundColor: COLORS.background, borderRadius: 4, overflow: 'hidden' },
   barFill: { height: 8, borderRadius: 4 },
-  catAmount: { color: COLORS.muted, fontSize: 12 },
 
-  trendCard: { backgroundColor: COLORS.surface, padding: 14, borderRadius: 12, borderWidth: 1, borderColor: COLORS.border },
-  trend: { height: 120, flexDirection: 'row', alignItems: 'flex-end', marginBottom: 8, gap: 2 },
+  // ── Trend ─────────────────────────────────────────────────────────────────────
+  trendCard: {
+    backgroundColor: COLORS.surface,
+    padding: 16,
+    borderRadius: RADIUS.lg,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    ...SHADOWS.sm,
+  },
+  trend: { height: 120, flexDirection: 'row', alignItems: 'flex-end', marginBottom: 8, gap: 3 },
   trendMonth: { flex: 1, alignItems: 'center', justifyContent: 'flex-end', gap: 2 },
-  incomeBar: { width: '60%', backgroundColor: COLORS.income, borderRadius: 3, opacity: 0.5 },
-  expenseBar: { width: '80%', backgroundColor: COLORS.expense, borderRadius: 3 },
-  monthLabel: { fontSize: 9, color: COLORS.muted, marginTop: 4 },
-  monthLabelActive: { color: COLORS.primary, fontWeight: '800' },
-  legend: { flexDirection: 'row', gap: 16, justifyContent: 'center', marginTop: 8 },
+  incomeBar: { width: '55%', backgroundColor: COLORS.income, borderRadius: 3, opacity: 0.4 },
+  expenseBar: { width: '80%', backgroundColor: COLORS.expense, borderRadius: 3, opacity: 0.55 },
+  expenseBarActive: { opacity: 1 },
+  monthLabel: { fontSize: 9, color: COLORS.muted, marginTop: 4, fontWeight: '600' },
+  monthLabelActive: { color: COLORS.primary, fontWeight: '900' },
+  legend: { flexDirection: 'row', gap: 16, justifyContent: 'center', marginTop: 10 },
   legendItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   legendDot: { width: 10, height: 10, borderRadius: 5 },
-  legendText: { fontSize: 12, color: COLORS.muted },
+  legendText: { fontSize: 12, color: COLORS.muted, fontWeight: '600' },
 
+  // ── Empty ─────────────────────────────────────────────────────────────────────
   emptyState: { alignItems: 'center', paddingVertical: 24 },
   emptyIcon: { fontSize: 40, marginBottom: 8 },
-  emptyMsg: { color: COLORS.muted, textAlign: 'center' },
+  emptyMsg: { color: COLORS.muted, textAlign: 'center', fontWeight: '600' },
 
-  errorTitle: { fontSize: 16, fontWeight: '800', color: COLORS.text, marginBottom: 6 },
-  errorMsg: { color: COLORS.muted, textAlign: 'center', marginBottom: 16 },
-  retryBtn: { backgroundColor: COLORS.primary, paddingHorizontal: 20, paddingVertical: 10, borderRadius: 10 },
+  // ── Error ─────────────────────────────────────────────────────────────────────
+  errorIconWrap: { width: 64, height: 64, borderRadius: 32, backgroundColor: COLORS.expenseLight, alignItems: 'center', justifyContent: 'center', marginBottom: 16 },
+  errorTitle: { fontSize: 17, fontWeight: '800', color: COLORS.text, marginBottom: 6 },
+  errorMsg: { color: COLORS.muted, textAlign: 'center', marginBottom: 20 },
+  retryBtn: { backgroundColor: COLORS.primary, paddingHorizontal: 24, paddingVertical: 12, borderRadius: RADIUS.full, ...SHADOWS.sm },
   retryText: { color: '#fff', fontWeight: '700' },
 });

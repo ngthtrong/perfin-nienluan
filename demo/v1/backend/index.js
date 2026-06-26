@@ -12,6 +12,8 @@ const categoryRoutes = require('./routes/category.routes');
 const budgetRoutes = require('./routes/budget.routes');
 const accountRoutes = require('./routes/account.routes');
 const reportRoutes = require('./routes/report.routes');
+const cashflowRoutes = require('./routes/cashflow.routes');
+const exportRoutes = require('./routes/export.routes');
 const errorMiddleware = require('./middleware/error.middleware');
 
 const app = express();
@@ -40,6 +42,8 @@ app.use('/api/categories', categoryRoutes);
 app.use('/api/budgets', budgetRoutes);
 app.use('/api/accounts', accountRoutes);
 app.use('/api/reports', reportRoutes);
+app.use('/api/cashflow', cashflowRoutes);
+app.use('/api/export', exportRoutes);
 
 app.post('/api/chat', async (req, res, next) => {
   req.url = '/message';

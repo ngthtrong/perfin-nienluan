@@ -5,16 +5,20 @@ import ChatScreen from './src/screens/ChatScreen';
 import TransactionScreen from './src/screens/TransactionScreen';
 import BudgetScreen from './src/screens/BudgetScreen';
 import ReportScreen from './src/screens/ReportScreen';
+import CashflowScreen from './src/screens/CashflowScreen';
+import ExportScreen from './src/screens/ExportScreen';
 import { AppProvider } from './src/context/AppContext';
-import { COLORS } from './src/utils/constants';
+import { COLORS, SHADOWS } from './src/utils/constants';
 import AppIcon from './src/components/AppIcon';
 
 const TABS = [
-  { key: 'dashboard', label: 'Tổng quan', icon: 'dashboard' },
-  { key: 'chat',         label: 'Chat',       icon: 'chat' },
-  { key: 'transactions', label: 'Giao dịch',  icon: 'format-list-bulleted' },
-  { key: 'budgets',      label: 'Ngân sách',  icon: 'account-balance-wallet' },
-  { key: 'reports',      label: 'Báo cáo',    icon: 'bar-chart' },
+  { key: 'dashboard',    label: 'Tổng quan', icon: 'dashboard' },
+  { key: 'chat',         label: 'Chat AI',   icon: 'chat' },
+  { key: 'transactions', label: 'Giao dịch', icon: 'format-list-bulleted' },
+  { key: 'budgets',      label: 'Ngân sách', icon: 'account-balance-wallet' },
+  { key: 'cashflow',     label: 'Dòng tiền', icon: 'trending-up' },
+  { key: 'reports',      label: 'Báo cáo',   icon: 'bar-chart' },
+  { key: 'export',       label: 'Xuất/Lưu',  icon: 'cloud-done' },
 ];
 
 export default function App() {
@@ -25,38 +29,56 @@ export default function App() {
     chat:         <ChatScreen />,
     transactions: <TransactionScreen />,
     budgets:      <BudgetScreen />,
+    cashflow:     <CashflowScreen />,
     reports:      <ReportScreen />,
+    export:       <ExportScreen />,
   };
 
   return (
     <AppProvider>
       <StatusBar barStyle="dark-content" backgroundColor={COLORS.surface} />
       <SafeAreaView style={styles.container}>
+        {/* Header */}
         <View style={styles.header}>
-          <View style={styles.headerLogo}>
-            <AppIcon name="account-balance-wallet" size={18} color="#fff" />
+          <View style={styles.headerLeft}>
+            <View style={styles.logoRing}>
+              <View style={styles.logoInner}>
+                <AppIcon name="account-balance-wallet" size={14} color="#fff" />
+              </View>
+            </View>
+            <View>
+              <Text style={styles.headerTitle}>PERFIN</Text>
+              <Text style={styles.headerSub}>Trợ lý tài chính AI</Text>
+            </View>
           </View>
-          <Text style={styles.headerTitle}>PERFIN</Text>
-          <Text style={styles.headerSub}>Trợ lý tài chính</Text>
+          <View style={styles.headerRight}>
+            <View style={styles.aiDot} />
+            <Text style={styles.aiLabel}>AI Online</Text>
+          </View>
         </View>
+
+        {/* Body */}
         <View style={styles.body}>{screens[tab]}</View>
-        <View style={styles.tabs}>
+
+        {/* Tab bar */}
+        <View style={styles.tabBar}>
           {TABS.map((item) => {
             const active = tab === item.key;
             return (
               <TouchableOpacity
                 key={item.key}
-                style={[styles.tab, active && styles.tabActive]}
+                style={styles.tabItem}
                 onPress={() => setTab(item.key)}
-                activeOpacity={0.75}
+                activeOpacity={0.7}
               >
-                <AppIcon
-                  name={item.icon}
-                  size={20}
-                  color={active ? COLORS.primary : COLORS.muted}
-                  style={styles.tabIcon}
-                />
-                <Text style={[styles.tabText, active && styles.tabTextActive]} numberOfLines={1}>
+                <View style={[styles.tabIconWrap, active && styles.tabIconWrapActive]}>
+                  <AppIcon
+                    name={item.icon}
+                    size={item.key === 'chat' ? 22 : 20}
+                    color={active ? '#fff' : COLORS.muted}
+                  />
+                </View>
+                <Text style={[styles.tabText, active && styles.tabTextActive]}>
                   {item.label}
                 </Text>
               </TouchableOpacity>
@@ -70,44 +92,67 @@ export default function App() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.background },
+
+  // Header
   header: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 10,
     backgroundColor: COLORS.surface,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border,
-    gap: 8,
+    ...SHADOWS.sm,
   },
-  headerLogo: {
-    width: 30,
-    height: 30,
-    borderRadius: 8,
+  headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  logoRing: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: COLORS.primaryLight,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: COLORS.primary,
   },
-  headerTitle: { fontSize: 20, fontWeight: '900', color: COLORS.primary, letterSpacing: 1 },
-  headerSub: { fontSize: 12, color: COLORS.muted, marginLeft: 2 },
+  logoInner: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: COLORS.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerTitle: { fontSize: 18, fontWeight: '900', color: COLORS.text, letterSpacing: 1.5 },
+  headerSub: { fontSize: 10, color: COLORS.muted, fontWeight: '500', marginTop: 1 },
+  headerRight: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+  aiDot: { width: 7, height: 7, borderRadius: 3.5, backgroundColor: COLORS.income },
+  aiLabel: { fontSize: 11, color: COLORS.income, fontWeight: '700' },
+
   body: { flex: 1 },
-  tabs: {
+
+  // Tab bar
+  tabBar: {
     flexDirection: 'row',
     backgroundColor: COLORS.surface,
     borderTopWidth: 1,
     borderTopColor: COLORS.border,
-    paddingVertical: 4,
-    paddingHorizontal: 2,
-  },
-  tab: {
-    flex: 1,
-    alignItems: 'center',
     paddingVertical: 8,
-    borderRadius: 8,
-    marginHorizontal: 2,
+    paddingBottom: 10,
+    paddingHorizontal: 4,
+    ...SHADOWS.sm,
   },
-  tabActive: { backgroundColor: '#EFF6FF' },
-  tabIcon: { marginBottom: 2 },
-  tabText: { fontSize: 10, color: COLORS.muted, fontWeight: '600' },
+  tabItem: { flex: 1, alignItems: 'center', gap: 3 },
+  tabIconWrap: {
+    width: 40,
+    height: 32,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  tabIconWrapActive: {
+    backgroundColor: COLORS.primary,
+    ...SHADOWS.sm,
+  },
+  tabText: { fontSize: 9, color: COLORS.muted, fontWeight: '600' },
   tabTextActive: { color: COLORS.primary, fontWeight: '800' },
 });
