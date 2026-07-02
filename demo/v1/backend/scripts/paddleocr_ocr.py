@@ -3,6 +3,7 @@
 import json
 import os
 import sys
+import time
 
 
 def print_json(payload):
@@ -38,17 +39,36 @@ def collect_text(value, texts):
             collect_text(item, texts)
 
 
+# Preprocess the receipt image to improve OCR accuracy: convert to grayscale, upscale small
+# images, and boost contrast. Returns a path to the processed image (or the original on failure).
+def preprocess_image(image_path):
+    try:
+        from PIL import Image, ImageOps, ImageEnhance
+    except Exception:
+        return image_path
+
+    try:
+        img = Image.open(image_path)
+        img = ImageOps.exif_transpose(img)
+        img = img.convert("L")
+        # Upscale narrow images so small receipt fonts are legible
+        if img.width < 1000:
+            scale = 1000 / img.width
+            img = img.resize((1000, int(img.height * scale)), Image.LANCZOS)
+        img = ImageEnhance.Contrast(img).enhance(1.5)
+        img = img.convert("RGB")
+        out_path = image_path + ".pre.png"
+        img.save(out_path)
+        return out_path
+    except Exception:
+        return image_path
+
+
 def get_ocr_attempts(lang):
+    # Best-quality config first; only fall back if it raises.
     return [
         {
             "lang": lang,
-            "use_doc_orientation_classify": False,
-            "use_doc_unwarping": False,
-            "use_textline_orientation": False,
-        },
-        {
-            "lang": lang,
-            "ocr_version": "PP-OCRv5",
             "use_doc_orientation_classify": False,
             "use_doc_unwarping": False,
             "use_textline_orientation": False,
@@ -83,6 +103,8 @@ def main():
         return 2
 
     lang = os.environ.get("OCR_LANG", "vi")
+    started = time.time()
+    processed_path = preprocess_image(image_path)
     last_error = None
     try:
         from paddleocr import PaddleOCR
@@ -90,10 +112,16 @@ def main():
         for kwargs in get_ocr_attempts(lang):
             try:
                 ocr = PaddleOCR(**kwargs)
-                result = run_ocr(ocr, image_path)
+                result = run_ocr(ocr, processed_path)
                 texts = []
                 collect_text(result, texts)
-                print_json({"success": True, "provider": "paddleocr", "text": "\n".join(texts), "raw": None})
+                print_json({
+                    "success": True,
+                    "provider": "paddleocr",
+                    "text": "\n".join(texts),
+                    "elapsed_ms": int((time.time() - started) * 1000),
+                    "raw": None,
+                })
                 return 0
             except Exception as exc:
                 last_error = exc
@@ -102,6 +130,12 @@ def main():
     except Exception as exc:
         print_json({"success": False, "provider": "paddleocr", "error": str(exc)})
         return 1
+    finally:
+        if processed_path != image_path and os.path.exists(processed_path):
+            try:
+                os.unlink(processed_path)
+            except OSError:
+                pass
 
 
 if __name__ == "__main__":

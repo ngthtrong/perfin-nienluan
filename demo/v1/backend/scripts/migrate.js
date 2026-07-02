@@ -26,8 +26,8 @@ async function runSqlFile(client, filename) {
 }
 
 async function reset(client) {
-  await client.query('DROP TABLE IF EXISTS chat_messages, budget_history, budgets, transactions, wallets, categories, _migrations CASCADE');
-  await client.query('DROP TYPE IF EXISTS transaction_source, transaction_type, currency_code, wallet_type, category_type CASCADE');
+  await client.query('DROP TABLE IF EXISTS recurring_suggestions_dismissed, recurring_bill_payments, recurring_bills, export_history, backup_config, wallet_transfers, investment_pnl, chat_messages, budget_history, budgets, transactions, wallets, categories, _migrations CASCADE');
+  await client.query('DROP TYPE IF EXISTS recurring_status, recurring_frequency, transaction_source, transaction_type, currency_code, wallet_type, category_type CASCADE');
 }
 
 async function main() {

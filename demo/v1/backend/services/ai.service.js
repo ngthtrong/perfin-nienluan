@@ -1,5 +1,5 @@
 const { GoogleGenAI } = require('@google/genai');
-const { getSystemPrompt, getParsePrompt, getChatPrompt } = require('../prompts/transaction.prompt');
+const { getSystemPrompt, getParsePrompt, getChatPrompt, getReceiptPrompt, getVoicePrompt } = require('../prompts/transaction.prompt');
 const { matchCategory, parseLocalTransaction } = require('./parser.service');
 
 const DEFAULT_MODELS = {
@@ -52,21 +52,23 @@ class AIServiceManager {
     this.modelCache = { gemini: null, chatgpt: null };
   }
 
-  async parseWithGemini(text, categories) {
+  async parseWithGemini(text, categories, userPrompt) {
+    const prompt = userPrompt || getParsePrompt(text);
     const response = await this.gemini.models.generateContent({
       model: this.selected.models.gemini,
-      contents: [{ role: 'user', parts: [{ text: `${getSystemPrompt(categories)}\n${getParsePrompt(text)}` }] }],
+      contents: [{ role: 'user', parts: [{ text: `${getSystemPrompt(categories)}\n${prompt}` }] }],
       config: { responseMimeType: 'application/json', temperature: 0.1, maxOutputTokens: 1024 },
     });
     return normalizeAIResponse(JSON.parse(response.text), categories);
   }
 
-  async parseWithChatGPT(text, categories) {
+  async parseWithChatGPT(text, categories, userPrompt) {
+    const prompt = userPrompt || getParsePrompt(text);
     const response = await this.openAIRequest('/chat/completions', {
       model: this.selected.models.chatgpt,
       messages: [
         { role: 'system', content: getSystemPrompt(categories) },
-        { role: 'user', content: getParsePrompt(text) },
+        { role: 'user', content: prompt },
       ],
       response_format: { type: 'json_object' },
       temperature: 0.1,
@@ -76,14 +78,14 @@ class AIServiceManager {
     return normalizeAIResponse(JSON.parse(content), categories);
   }
 
-  async parseTransaction(text, categories) {
+  async parseTransaction(text, categories, userPrompt) {
     const providers = this.getProviderOrder();
     for (const provider of providers) {
       try {
         const started = Date.now();
         const parsed = provider === 'gemini'
-          ? await this.parseWithGemini(text, categories)
-          : await this.parseWithChatGPT(text, categories);
+          ? await this.parseWithGemini(text, categories, userPrompt)
+          : await this.parseWithChatGPT(text, categories, userPrompt);
         console.log(`[AIService] ${provider} parse ok ${Date.now() - started}ms`);
         return { success: true, provider_used: provider, model: this.selected.models[provider], ...parsed };
       } catch (error) {
@@ -91,6 +93,15 @@ class AIServiceManager {
       }
     }
     return { success: true, provider_used: 'local', ...parseLocalTransaction(text, categories) };
+  }
+
+  // Extract a transaction from OCR receipt text or a voice transcript using a specialized
+  // prompt, falling back to the regex parser when no LLM provider is available.
+  async parseFromMedia(text, categories, sourceType = 'receipt') {
+    const cleanText = String(text || '').trim();
+    if (!cleanText) return { success: true, provider_used: 'local', ...parseLocalTransaction('', categories) };
+    const userPrompt = sourceType === 'voice' ? getVoicePrompt(cleanText) : getReceiptPrompt(cleanText);
+    return this.parseTransaction(cleanText, categories, userPrompt);
   }
 
   async chat(text, context = {}) {

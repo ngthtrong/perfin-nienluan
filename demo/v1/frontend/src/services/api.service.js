@@ -228,4 +228,17 @@ export const api = {
   updateBackupConfig: (data) => request('/api/export/backup-config', { method: 'PUT', body: JSON.stringify(data) }),
   exportFromIntent: (format, filters = {}) => request('/api/export/from-intent', { method: 'POST', body: JSON.stringify({ format, filters }) }),
   getDownloadUrl: (historyId) => `${BASE_URL}/api/export/history/${historyId}/download`,
+
+  // ── REQ-08: Recurring Bills & Reminders ──────────────────────────────────────
+  getRecurringBills: () => request('/api/recurring'),
+  getRecurringDue: () => request('/api/recurring/due'),
+  getRecurringSuggestions: () => request('/api/recurring/suggestions'),
+  dismissRecurringSuggestion: (signature) => request('/api/recurring/suggestions/dismiss', { method: 'POST', body: JSON.stringify({ signature }) }),
+  createRecurringBill: (data) => request('/api/recurring', { method: 'POST', body: JSON.stringify(data) }),
+  updateRecurringBill: (id, data) => request(`/api/recurring/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  deleteRecurringBill: (id) => request(`/api/recurring/${id}`, { method: 'DELETE' }),
+  pauseRecurringBill: (id) => request(`/api/recurring/${id}/pause`, { method: 'POST', body: '{}' }),
+  resumeRecurringBill: (id) => request(`/api/recurring/${id}/resume`, { method: 'POST', body: '{}' }),
+  getRecurringPayments: (id) => request(`/api/recurring/${id}/payments`),
+  payRecurringBill: (id, data = {}) => request(`/api/recurring/${id}/pay`, { method: 'POST', body: JSON.stringify(data) }),
 };

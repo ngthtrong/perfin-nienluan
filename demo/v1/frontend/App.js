@@ -7,6 +7,7 @@ import BudgetScreen from './src/screens/BudgetScreen';
 import ReportScreen from './src/screens/ReportScreen';
 import CashflowScreen from './src/screens/CashflowScreen';
 import ExportScreen from './src/screens/ExportScreen';
+import RecurringScreen from './src/screens/RecurringScreen';
 import { AppProvider } from './src/context/AppContext';
 import { COLORS, SHADOWS } from './src/utils/constants';
 import AppIcon from './src/components/AppIcon';
@@ -16,6 +17,7 @@ const TABS = [
   { key: 'chat',         label: 'Chat AI',   icon: 'chat' },
   { key: 'transactions', label: 'Giao dịch', icon: 'format-list-bulleted' },
   { key: 'budgets',      label: 'Ngân sách', icon: 'account-balance-wallet' },
+  { key: 'recurring',    label: 'Cố định',   icon: 'event-repeat' },
   { key: 'cashflow',     label: 'Dòng tiền', icon: 'trending-up' },
   { key: 'reports',      label: 'Báo cáo',   icon: 'bar-chart' },
   { key: 'export',       label: 'Xuất/Lưu',  icon: 'cloud-done' },
@@ -29,6 +31,7 @@ export default function App() {
     chat:         <ChatScreen />,
     transactions: <TransactionScreen />,
     budgets:      <BudgetScreen />,
+    recurring:    <RecurringScreen />,
     cashflow:     <CashflowScreen />,
     reports:      <ReportScreen />,
     export:       <ExportScreen />,

@@ -144,6 +144,7 @@ function parseLocalTransaction(text, categories) {
 module.exports = {
   CATEGORY_ALIASES,
   removeDiacritics,
+  normalizeText,
   normalizeAmount,
   matchCategory,
   validateParsedTransaction,

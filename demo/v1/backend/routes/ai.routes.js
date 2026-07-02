@@ -188,22 +188,32 @@ async function handleOcr(req, res, next) {
   try {
     if (!req.file) return res.status(400).json({ success: false, error: 'Chưa có ảnh' });
     console.log(`[ocr] received ${req.file.originalname || req.file.filename} (${req.file.mimetype}, ${req.file.size} bytes)`);
+    let text = '';
+    let provider = 'mock';
+    let providerError;
     try {
-      const provider = MediaAI.getOcrProvider();
-      if (provider === 'paddleocr') {
+      const ocrProvider = MediaAI.getOcrProvider();
+      if (ocrProvider === 'paddleocr') {
         const result = await MediaAI.runPaddleOcr(req.file.path);
-        res.json({ success: true, text: result.text, provider: result.provider });
+        text = result.text;
+        provider = result.provider;
       } else {
         if (!visionClient) throw new Error('Vision client is not configured');
         const [result] = await visionClient.textDetection(req.file.path);
-        res.json({ success: true, text: result.textAnnotations?.[0]?.description || '', provider: 'google_vision' });
+        text = result.textAnnotations?.[0]?.description || '';
+        provider = 'google_vision';
       }
     } catch (error) {
       console.warn(`[ocr] using mock result: ${error.message}`);
-      res.json({ success: true, text: 'MOCK_OCR_RESULT: Hóa đơn siêu thị - Tổng: 250.000đ', provider: 'mock', provider_error: error.message });
+      text = 'Hóa đơn siêu thị - Tổng: 250.000đ';
+      provider = 'mock';
+      providerError = error.message;
     } finally {
       fs.unlink(req.file.path, () => {});
     }
+
+    const parsed = await extractFromMedia(text, 'receipt');
+    res.json({ success: true, text, provider, provider_error: providerError, parsed });
   } catch (error) {
     next(error);
   }
@@ -213,25 +223,47 @@ async function handleSpeech(req, res, next) {
   try {
     if (!req.file) return res.status(400).json({ success: false, error: 'Chưa có audio' });
     console.log(`[speech] received ${req.file.originalname || req.file.filename} (${req.file.mimetype}, ${req.file.size} bytes)`);
+    let text = '';
+    let provider = 'mock';
+    let providerError;
     try {
-      const provider = MediaAI.getSpeechProvider();
-      if (provider === 'phowhisper') {
+      const speechProvider = MediaAI.getSpeechProvider();
+      if (speechProvider === 'phowhisper') {
         const result = await MediaAI.runPhoWhisper(req.file.path);
-        res.json({ success: true, text: result.text, provider: result.provider });
+        text = result.text;
+        provider = result.provider;
       } else {
         if (!speechClient) throw new Error('Speech client is not configured');
         const audio = { content: fs.readFileSync(req.file.path).toString('base64') };
         const [response] = await speechClient.recognize({ audio, config: { languageCode: 'vi-VN' } });
-        res.json({ success: true, text: response.results.map((r) => r.alternatives[0].transcript).join('\n'), provider: 'google_speech' });
+        text = response.results.map((r) => r.alternatives[0].transcript).join('\n');
+        provider = 'google_speech';
       }
     } catch (error) {
       console.warn(`[speech] using mock result: ${error.message}`);
-      res.json({ success: true, text: 'MOCK_SPEECH_RESULT: Hôm nay uống cà phê hết 50 nghìn', provider: 'mock', provider_error: error.message });
+      text = 'Hôm nay uống cà phê hết 50 nghìn';
+      provider = 'mock';
+      providerError = error.message;
     } finally {
       fs.unlink(req.file.path, () => {});
     }
+
+    const parsed = await extractFromMedia(text, 'voice');
+    res.json({ success: true, text, provider, provider_error: providerError, parsed });
   } catch (error) {
     next(error);
+  }
+}
+
+// Extract a transaction from media text via the AI service; never throws (parsing is best-effort).
+async function extractFromMedia(text, sourceType) {
+  if (!String(text || '').trim()) return null;
+  try {
+    const categories = await CategoryModel.getAll(userId);
+    return await AIService.parseFromMedia(text, categories, sourceType);
+  } catch (error) {
+    console.warn(`[media-parse] failed: ${error.message}`);
+    return null;
   }
 }
 

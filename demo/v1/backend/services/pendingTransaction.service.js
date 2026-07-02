@@ -6,9 +6,9 @@ function isExpired(item) {
 }
 
 module.exports = {
-  set(userId, data) {
+  set(userId, data, kind = 'transaction') {
     const pendingId = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
-    pending.set(userId, { id: pendingId, data, createdAt: Date.now() });
+    pending.set(userId, { id: pendingId, kind, data, createdAt: Date.now() });
     return pendingId;
   },
   get(userId) {

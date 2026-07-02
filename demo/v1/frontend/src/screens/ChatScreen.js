@@ -126,8 +126,16 @@ export default function ChatScreen() {
           text: msg.content,
           transaction: msg.metadata?.transaction,
         }));
-        if (history.length > 0) {
-          setMessages(history);
+        // REQ-08: proactive bill reminders surfaced when opening chat
+        const reminders = (data.reminders || []).map((r, idx) => ({
+          id: `reminder-${idx}-${Date.now()}`,
+          role: 'assistant',
+          type: 'text',
+          text: r.message,
+        }));
+        const combined = [...history, ...reminders];
+        if (combined.length > 0) {
+          setMessages(combined);
           setHistoryLoading(false);
           return;
         }
@@ -188,13 +196,18 @@ export default function ChatScreen() {
     }
   }
 
-  async function handleTranscribedText(text, sourceLabel) {
-    const cleanText = String(text || '').replace(/^MOCK_[A-Z_]+:\s*/i, '').trim();
+  async function handleMediaResult(response, sourceLabel) {
+    const cleanText = String(response?.text || '').replace(/^MOCK_[A-Z_]+:\s*/i, '').trim();
+    if (response?.provider === 'mock') {
+      push({ role: 'system', type: 'text', text: `${sourceLabel}: đang dùng dữ liệu mẫu (provider chưa cấu hình).` });
+    }
     if (!cleanText) {
       push({ role: 'system', type: 'text', text: `${sourceLabel} không có nội dung để xử lý.` });
       return;
     }
     push({ role: 'system', type: 'text', text: `${sourceLabel}: ${cleanText}` });
+    // Backend already extracted a transaction; send the text through chat to create the
+    // confirmable preview (reuses the pending-transaction flow).
     await send(cleanText);
   }
 
@@ -227,7 +240,7 @@ export default function ChatScreen() {
         fileName: 'voice.m4a',
         mimeType: Platform.OS === 'ios' ? 'audio/m4a' : 'audio/mp4',
       });
-      await handleTranscribedText(response.text, 'Giọng nói');
+      await handleMediaResult(response, 'Giọng nói');
     } catch (error) {
       push({ role: 'system', type: 'text', text: error.message });
     } finally {
@@ -262,7 +275,7 @@ export default function ChatScreen() {
         imageUri: asset.uri,
       });
       const response = await api.extractImageText(asset);
-      await handleTranscribedText(response.text, 'Ảnh hóa đơn');
+      await handleMediaResult(response, 'Ảnh hóa đơn');
     } catch (error) {
       push({ role: 'system', type: 'text', text: error.message });
     } finally {

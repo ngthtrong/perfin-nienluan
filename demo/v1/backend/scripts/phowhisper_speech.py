@@ -52,7 +52,21 @@ def transcribe(audio_path):
     if len(getattr(array, "shape", [])) > 1:
         array = array.mean(axis=1)
 
-    result = pipe({"array": array, "sampling_rate": sample_rate}, chunk_length_s=30, return_timestamps=False)
+    generate_kwargs = {"language": "vi", "task": "transcribe", "num_beams": 5}
+    try:
+        result = pipe(
+            {"array": array, "sampling_rate": sample_rate},
+            chunk_length_s=30,
+            return_timestamps=False,
+            generate_kwargs=generate_kwargs,
+        )
+    except (ValueError, TypeError):
+        # Some PhoWhisper checkpoints don't accept language/task forcing; retry plainly.
+        result = pipe(
+            {"array": array, "sampling_rate": sample_rate},
+            chunk_length_s=30,
+            return_timestamps=False,
+        )
     if isinstance(result, dict):
         return str(result.get("text") or "").strip(), result
     return str(result or "").strip(), result
@@ -69,10 +83,17 @@ def main():
         return 2
 
     wav_path = None
+    started = __import__("time").time()
     try:
         wav_path = convert_to_wav(input_path)
         text, raw = transcribe(wav_path)
-        print_json({"success": True, "provider": "phowhisper", "text": text, "raw": raw if isinstance(raw, dict) else None})
+        print_json({
+            "success": True,
+            "provider": "phowhisper",
+            "text": text,
+            "elapsed_ms": int((__import__("time").time() - started) * 1000),
+            "raw": raw if isinstance(raw, dict) else None,
+        })
         return 0
     except subprocess.CalledProcessError as exc:
         stderr = exc.stderr.decode("utf-8", errors="replace") if exc.stderr else str(exc)
