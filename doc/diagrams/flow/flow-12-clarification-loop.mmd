@@ -1,0 +1,54 @@
+---
+title: "Luồng 12 — Clarification Loop (Hỏi lại khi thiếu thông tin)"
+---
+flowchart TD
+    START([User gửi tin nhắn chat]) --> POST[POST /api/chat/message]
+    POST --> GEMINI[AIService.parseTransaction\n→ Gemini API]
+
+    GEMINI --> GEMFAIL{Gemini thành công?}
+    GEMFAIL -->|Có| CHECK_INTENT[Kiểm tra JSON response]
+    GEMFAIL -->|Không — fallback| LOCAL[parseLocalTransaction\nnormalizeAmount]
+
+    subgraph "Cơ chế A — LLM tự phát hiện"
+        CHECK_INTENT --> CL_FLAG{needs_clarification\n= true?}
+        CL_FLAG -->|Có| CLAR_A[type = clarification\nclarification_message từ LLM\nvd: 'ăn phở tốn bao nhiêu?']
+    end
+
+    CL_FLAG -->|Không| AMOUNT_CHECK{transaction.amount\ncó giá trị?}
+
+    subgraph "Cơ chế B — Local parser fallback"
+        LOCAL --> AMT{normalizeAmount\ntìm được số tiền?}
+        AMT -->|Không| CLAR_B[type = clarification\n'Bạn muốn ghi nhận\nbao nhiêu tiền?']
+        AMT -->|Có| LOCALOK[intent = transaction\ntiếp tục luồng 1]
+    end
+
+    AMOUNT_CHECK -->|Có amount| RECURRING{intent là\nrecurring_create?}
+    AMOUNT_CHECK -->|Không có| CLAR_A
+
+    subgraph "Cơ chế C — Recurring thiếu field"
+        RECURRING -->|Có| RECCHECK[handleRecurringCreate\nKiểm tra: name / amount / due_day]
+        RECCHECK --> MISSING{Thiếu field\nbắt buộc?}
+        MISSING -->|Có| CLAR_C[type = clarification\n'Bạn bổ sung giúp mình\nsố tiền / ngày thanh toán...']
+        MISSING -->|Đủ| RECPREVIEW[type = recurring_preview\n→ Xác nhận tạo bill]
+        RECURRING -->|Không| TX[Tạo pending transaction\n→ transaction_preview]
+    end
+
+    CLAR_A --> DISPLAY[Frontend hiển thị\nbubble text hỏi lại]
+    CLAR_B --> DISPLAY
+    CLAR_C --> DISPLAY
+
+    DISPLAY --> WAIT([User trả lời\ncung cấp thêm thông tin])
+    WAIT -->|Gửi message mới| POST
+
+    TX --> PREVIEW[TransactionPreviewCard\nConfirm / Edit / Cancel]
+    RECPREVIEW --> DONE([Xác nhận → lưu DB])
+    LOCALOK --> TX
+
+    note1["📝 Không có state giữa các vòng\nLLM dùng conversation history\nlàm ngữ cảnh để hiểu câu trả lời"]
+
+    style CLAR_A fill:#fff3cd,stroke:#ffc107
+    style CLAR_B fill:#fff3cd,stroke:#ffc107
+    style CLAR_C fill:#fff3cd,stroke:#ffc107
+    style DISPLAY fill:#e2d9f3,stroke:#6f42c1
+    style TX fill:#d4edda,stroke:#28a745
+    style DONE fill:#d4edda,stroke:#28a745

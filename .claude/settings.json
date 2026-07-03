@@ -1,6 +1,6 @@
 {
   "env": {
-    "ANTHROPIC_AUTH_TOKEN": "sk-z83xrymk0OWYuerOuxOGD7oL2KFL56oAmJQf2rkALxQ",
+    "ANTHROPIC_AUTH_TOKEN": "sk-yWoPzHH67m6nEobBSJFesK5ylcCObjSrZyX94X3CKiU",
     "ANTHROPIC_BASE_URL": "https://api.xpiki.com/",
     "ANTHROPIC_DEFAULT_HAIKU_MODEL": "kr/claude-sonnet-4.6",
     "ANTHROPIC_DEFAULT_OPUS_MODEL": "kr/claude-opus-4.7",
@@ -23,8 +23,4 @@
   ],
   "theme": "dark"
 }
-    // sk-z83xrymk0OWYuerOuxOGD7oL2KFL56oAmJQf2rkALxQ
-    // sk-eEVQcjVpPm2Wqvzmi9nmU08vypRY8C7sd5ZgomjnFDA
-    // ###### sk-ZkaRDxXvbCcucJ8ydZCy7dQgqyYWJWhnAHW06ZaqWNc
-    // sk-oOv9B1t1nuViLCFJP8A18G9UxgXh717Hn6kbIcohct0
-    // sk-4vXd6WNbBc4aVFBSJXdeIi5omtqfwuPQ3IH7nopOboQ
+  

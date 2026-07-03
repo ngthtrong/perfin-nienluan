@@ -1,0 +1,33 @@
+---
+title: "Luồng 11 — Xác thực & Khởi tạo phiên (Auth)"
+---
+flowchart TD
+    START([App khởi động]) --> CHECKTOKEN{JWT token\ntrong local storage?}
+
+    CHECKTOKEN -->|Có token| VERIFY[Middleware auth.js\nverify JWT]
+    VERIFY --> VALID{Token hợp lệ?}
+    VALID -->|Có| AUTOLOAD[Tự động đăng nhập\nLoad user profile\nLoad danh mục]
+    VALID -->|Hết hạn / sai| LOGIN_SCREEN
+
+    CHECKTOKEN -->|Không có| LOGIN_SCREEN[Hiển thị màn hình\nđăng nhập]
+
+    LOGIN_SCREEN --> CREDS([User nhập\ncredentials])
+    CREDS --> AUTH_REQ[POST /api/auth/login]
+    AUTH_REQ --> AUTH_CHECK{Credentials\nhợp lệ?}
+    AUTH_CHECK -->|Không| ERR[Thông báo lỗi\nđăng nhập thất bại]
+    ERR --> LOGIN_SCREEN
+    AUTH_CHECK -->|Có| JWT_ISSUE[Backend ký JWT\nvới userId]
+    JWT_ISSUE --> SAVE[Lưu JWT\nvào local storage]
+    SAVE --> AUTOLOAD
+
+    AUTOLOAD --> APP([Vào app\nTất cả API request kèm\nAuthorization: Bearer token])
+
+    APP --> EACH_REQ[Mỗi API request]
+    EACH_REQ --> MIDDLEWARE[auth.js middleware\nverify JWT → extract userId]
+    MIDDLEWARE --> ISOLATE[Query DB với userId\nData cô lập theo user]
+    ISOLATE --> RESP[Trả response]
+
+    style AUTOLOAD fill:#d4edda,stroke:#28a745
+    style APP fill:#cce5ff,stroke:#0056b3
+    style ERR fill:#f8d7da,stroke:#dc3545
+    style ISOLATE fill:#d4edda,stroke:#28a745

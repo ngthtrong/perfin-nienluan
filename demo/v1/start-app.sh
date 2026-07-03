@@ -1,4 +1,14 @@
 #!/usr/bin/env bash
+# PERFIN — Start App Script
+# Khởi chạy đầy đủ: Python AI env + Backend + Localtunnel + Expo (mặc định tunnel cho WSL/iOS)
+#
+# Usage:
+#   ./start-app.sh [lan|tunnel|web] [--migrate] [--no-clear] [--skip-ai-setup] [--download-models]
+#
+# Modes:
+#   tunnel  (Mặc định) Backend + localtunnel + Expo tunnel — dành cho WSL kiểm thử iOS Expo Go
+#   lan     Backend + Expo LAN QR — khi điện thoại cùng mạng Wi-Fi với máy tính
+#   web     Backend + Expo Web tại http://localhost:8081
 
 set -Eeuo pipefail
 
@@ -7,41 +17,54 @@ BACKEND_DIR="$ROOT_DIR/backend"
 FRONTEND_DIR="$ROOT_DIR/frontend"
 BACKEND_PORT="${PORT:-3000}"
 
-MODE="lan"
+MODE="tunnel"   # Mặc định tunnel (phù hợp WSL + iOS testing)
 RUN_MIGRATE=0
 CLEAR_CACHE=1
+SKIP_AI_SETUP=0
+DOWNLOAD_MODELS=0
 
 BACKEND_PID=""
 TUNNEL_PID=""
 BACKEND_LOG=""
 TUNNEL_LOG=""
 
+# ── Help ────────────────────────────────────────────────────────────────────────
 usage() {
   cat <<EOF
 Usage:
-  ./start-app.sh [lan|tunnel|web] [--migrate] [--no-clear]
+  ./start-app.sh [lan|tunnel|web] [OPTIONS]
 
 Modes:
-  lan      Start backend and Expo LAN QR. Good when phone can reach this machine.
-  tunnel   Start backend, backend localtunnel, and Expo tunnel for iOS Expo Go in WSL.
-  web      Start backend and Expo web on http://localhost:8081.
+  tunnel   (Mặc định) Backend + localtunnel + Expo tunnel — WSL/iOS Expo Go.
+  lan      Backend + Expo LAN QR — điện thoại cùng mạng Wi-Fi.
+  web      Backend + Expo web tại http://localhost:8081.
 
 Options:
-  --migrate   Run backend migrations before starting the app.
-  --no-clear  Do not clear Expo bundler cache.
-  -h, --help  Show this help.
+  --migrate          Chạy DB migration trước khi khởi động.
+  --no-clear         Không xóa Expo bundler cache.
+  --skip-ai-setup    Bỏ qua bước setup Python AI venv (khi đã setup rồi).
+  --download-models  Force download lại AI models dù đã cache.
+  -h, --help         Hiển thị help này.
 
 Examples:
-  ./start-app.sh lan
-  ./start-app.sh tunnel --migrate
-  ./start-app.sh web
+  ./start-app.sh                        # tunnel mode (mặc định)
+  ./start-app.sh tunnel --migrate       # tunnel + chạy migration
+  ./start-app.sh lan --skip-ai-setup    # LAN mode, bỏ qua setup Python
+  ./start-app.sh web                    # Web mode
+  ./start-app.sh tunnel --download-models  # Tải lại AI models
 EOF
 }
 
+# ── Logging ────────────────────────────────────────────────────────────────────
 log() {
   printf '[perfin] %s\n' "$*" >&2
 }
 
+log_step() {
+  printf '\n[perfin] ══ %s ══\n' "$*" >&2
+}
+
+# ── Cleanup ────────────────────────────────────────────────────────────────────
 cleanup() {
   local exit_code=$?
 
@@ -63,6 +86,7 @@ cleanup() {
 
 trap cleanup EXIT INT TERM
 
+# ── Argument parsing ───────────────────────────────────────────────────────────
 parse_args() {
   while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -74,6 +98,12 @@ parse_args() {
         ;;
       --no-clear)
         CLEAR_CACHE=0
+        ;;
+      --skip-ai-setup)
+        SKIP_AI_SETUP=1
+        ;;
+      --download-models)
+        DOWNLOAD_MODELS=1
         ;;
       -h|--help)
         usage
@@ -89,13 +119,107 @@ parse_args() {
   done
 }
 
+# ── Dependency checks ──────────────────────────────────────────────────────────
 require_command() {
   if ! command -v "$1" >/dev/null 2>&1; then
-    printf 'Missing required command: %s\n' "$1" >&2
+    printf '[perfin] ERROR: Thiếu lệnh bắt buộc: %s\n' "$1" >&2
+    printf '[perfin]   Cài đặt: %s\n' "${2:-Xem hướng dẫn cài đặt}" >&2
     exit 1
   fi
 }
 
+# ── Python AI Environment Setup ────────────────────────────────────────────────
+setup_python_ai() {
+  if [[ "$SKIP_AI_SETUP" -eq 1 ]]; then
+    log "Bỏ qua setup Python AI (--skip-ai-setup)."
+    return
+  fi
+
+  log_step "Python AI Environment"
+  local venv_dir="$BACKEND_DIR/.venv-ai"
+  local req_file="$BACKEND_DIR/requirements-ai.txt"
+
+  if [[ ! -f "$req_file" ]]; then
+    log "Không tìm thấy requirements-ai.txt — bỏ qua setup AI."
+    return
+  fi
+
+  if [[ ! -d "$venv_dir" ]]; then
+    log "Tạo Python virtual environment cho AI tại .venv-ai/ ..."
+    if ! python3 -m venv "$venv_dir"; then
+      log "WARN: Không tạo được venv. Kiểm tra python3 đã cài chưa."
+      return
+    fi
+
+    log "Cài đặt dependencies AI (có thể mất vài phút lần đầu)..."
+    # PyTorch CPU-only từ custom index
+    "$venv_dir/bin/pip" install --quiet --upgrade pip
+    "$venv_dir/bin/pip" install --quiet \
+      --extra-index-url https://download.pytorch.org/whl/cpu \
+      -r "$req_file"
+    log "Python AI environment đã sẵn sàng."
+  else
+    log "Python AI environment đã tồn tại (.venv-ai/)."
+  fi
+}
+
+# ── Download AI Models (first run) ────────────────────────────────────────────
+download_ai_models() {
+  if [[ "$SKIP_AI_SETUP" -eq 1 ]]; then
+    return
+  fi
+
+  local venv_dir="$BACKEND_DIR/.venv-ai"
+  local cache_dir="$BACKEND_DIR/.cache/media-ai"
+  local python_bin="$venv_dir/bin/python"
+
+  if [[ ! -x "$python_bin" ]]; then
+    log "Python AI venv chưa sẵn sàng — bỏ qua tải model."
+    return
+  fi
+
+  # Kiểm tra SPEECH_PROVIDER
+  local speech_provider
+  speech_provider="$(grep -E '^SPEECH_PROVIDER=' "$BACKEND_DIR/.env" 2>/dev/null | cut -d= -f2 | tr -d '[:space:]')"
+
+  if [[ "$speech_provider" != "phowhisper" ]]; then
+    log "SPEECH_PROVIDER=$speech_provider — không cần download PhoWhisper model."
+    return
+  fi
+
+  # Kiểm tra cache
+  local model_cached=0
+  if [[ -d "$cache_dir" ]] && find "$cache_dir" -name "*.bin" -o -name "*.safetensors" 2>/dev/null | grep -q .; then
+    model_cached=1
+  fi
+
+  if [[ "$model_cached" -eq 1 && "$DOWNLOAD_MODELS" -eq 0 ]]; then
+    log "PhoWhisper model đã có trong cache — bỏ qua download."
+    return
+  fi
+
+  log_step "Tải PhoWhisper model (lần đầu)"
+  log "Đang tải vinai/PhoWhisper-small... (cần internet, có thể mất 5-15 phút)"
+  mkdir -p "$cache_dir"
+
+  # Tạm tắt offline mode để download model lần đầu
+  (
+    cd "$BACKEND_DIR"
+    MEDIA_AI_OFFLINE=0 \
+    HF_HOME="$cache_dir/huggingface" \
+    TRANSFORMERS_CACHE="$cache_dir/huggingface/hub" \
+    "$python_bin" -c "
+from transformers import pipeline
+import os
+model_name = os.environ.get('PHOWHISPER_MODEL', 'vinai/PhoWhisper-small')
+print(f'Tải model: {model_name}')
+pipe = pipeline('automatic-speech-recognition', model=model_name)
+print('Model đã tải xong!')
+"
+  ) && log "PhoWhisper model đã sẵn sàng." || log "WARN: Tải model thất bại — voice sẽ dùng Google Speech hoặc mock fallback."
+}
+
+# ── Backend ────────────────────────────────────────────────────────────────────
 wait_for_backend() {
   local url="http://127.0.0.1:$BACKEND_PORT/"
   local attempt
@@ -107,7 +231,7 @@ wait_for_backend() {
     sleep 1
   done
 
-  printf 'Backend did not become ready at %s\n' "$url" >&2
+  printf '[perfin] Backend không khởi động được tại %s\n' "$url" >&2
   if [[ -n "$BACKEND_LOG" && -f "$BACKEND_LOG" ]]; then
     printf '\nBackend log:\n' >&2
     tail -n 80 "$BACKEND_LOG" >&2 || true
@@ -116,13 +240,15 @@ wait_for_backend() {
 }
 
 start_backend() {
+  log_step "Backend"
+
   if curl -fsS "http://127.0.0.1:$BACKEND_PORT/" >/dev/null 2>&1; then
-    log "Backend already running on port $BACKEND_PORT."
+    log "Backend đang chạy trên port $BACKEND_PORT."
     return
   fi
 
   BACKEND_LOG="$(mktemp -t perfin-backend.XXXXXX.log)"
-  log "Starting backend on port $BACKEND_PORT..."
+  log "Khởi động backend trên port $BACKEND_PORT..."
   (
     cd "$BACKEND_DIR"
     npm start
@@ -130,17 +256,20 @@ start_backend() {
   BACKEND_PID=$!
 
   wait_for_backend
-  log "Backend ready: http://127.0.0.1:$BACKEND_PORT"
+  log "Backend sẵn sàng: http://127.0.0.1:$BACKEND_PORT"
 }
 
 run_migrations() {
-  log "Running backend migrations..."
+  log_step "Database Migration"
+  log "Đang chạy migration..."
   (
     cd "$BACKEND_DIR"
     npm run migrate
   )
+  log "Migration hoàn tất."
 }
 
+# ── Backend Tunnel ─────────────────────────────────────────────────────────────
 wait_for_tunnel_url() {
   local attempt
   local url
@@ -154,7 +283,7 @@ wait_for_tunnel_url() {
     sleep 1
   done
 
-  printf 'Backend tunnel did not print a URL.\n' >&2
+  printf '[perfin] Backend tunnel không in ra URL.\n' >&2
   if [[ -n "$TUNNEL_LOG" && -f "$TUNNEL_LOG" ]]; then
     printf '\nTunnel log:\n' >&2
     tail -n 80 "$TUNNEL_LOG" >&2 || true
@@ -163,8 +292,9 @@ wait_for_tunnel_url() {
 }
 
 start_backend_tunnel() {
+  log_step "Backend Tunnel (localtunnel)"
   TUNNEL_LOG="$(mktemp -t perfin-backend-tunnel.XXXXXX.log)"
-  log "Starting backend tunnel for port $BACKEND_PORT..."
+  log "Mở tunnel cho port $BACKEND_PORT..."
   (
     cd "$BACKEND_DIR"
     npx --yes localtunnel --port "$BACKEND_PORT" --local-host 127.0.0.1
@@ -173,16 +303,17 @@ start_backend_tunnel() {
 
   local tunnel_url
   tunnel_url="$(wait_for_tunnel_url)"
-  log "Backend tunnel ready: $tunnel_url"
+  log "Backend tunnel sẵn sàng: $tunnel_url"
 
-  if ! curl -fsS "$tunnel_url/" >/dev/null; then
-    printf 'Backend tunnel URL is not responding: %s\n' "$tunnel_url" >&2
-    exit 1
+  # Verify tunnel thực sự respond
+  if ! curl -fsS "$tunnel_url/" >/dev/null 2>/dev/null; then
+    log "WARN: Tunnel URL không phản hồi ngay — có thể cần vài giây. Tiếp tục..."
   fi
 
   printf '%s\n' "$tunnel_url"
 }
 
+# ── Frontend (Expo) ────────────────────────────────────────────────────────────
 start_expo() {
   local expo_mode="$1"
   local api_url="${2:-}"
@@ -192,7 +323,8 @@ start_expo() {
     clear_arg=(--clear)
   fi
 
-  log "Starting Expo ($expo_mode). Press Ctrl+C to stop all started services."
+  log_step "Expo Frontend ($expo_mode)"
+  log "Nhấn Ctrl+C để dừng tất cả services."
   cd "$FRONTEND_DIR"
 
   case "$expo_mode" in
@@ -208,20 +340,45 @@ start_expo() {
   esac
 }
 
+# ── Main ───────────────────────────────────────────────────────────────────────
 main() {
   parse_args "$@"
 
-  require_command node
-  require_command npm
-  require_command npx
-  require_command curl
+  log_step "PERFIN — Khởi động ứng dụng (mode: $MODE)"
 
+  # Kiểm tra các lệnh cơ bản
+  require_command node "https://nodejs.org"
+  require_command npm  "https://nodejs.org"
+  require_command npx  "npm install -g npx"
+  require_command curl "sudo apt install curl"
+
+  # Kiểm tra ffmpeg nếu dùng phowhisper
+  local speech_provider
+  speech_provider="$(grep -E '^SPEECH_PROVIDER=' "$BACKEND_DIR/.env" 2>/dev/null | cut -d= -f2 | tr -d '[:space:]' || echo '')"
+  if [[ "$speech_provider" == "phowhisper" ]]; then
+    if ! command -v ffmpeg >/dev/null 2>&1; then
+      log "WARN: ffmpeg chưa được cài — tính năng voice có thể không hoạt động."
+      log "      Cài đặt: sudo apt install ffmpeg"
+    else
+      log "ffmpeg: OK ($(ffmpeg -version 2>&1 | head -1 | cut -d' ' -f3))"
+    fi
+  fi
+
+  # Setup Python AI environment
+  setup_python_ai
+
+  # Download AI models nếu cần
+  download_ai_models
+
+  # Migration
   if [[ "$RUN_MIGRATE" -eq 1 ]]; then
     run_migrations
   fi
 
+  # Start backend
   start_backend
 
+  # Start frontend
   case "$MODE" in
     lan)
       start_expo lan

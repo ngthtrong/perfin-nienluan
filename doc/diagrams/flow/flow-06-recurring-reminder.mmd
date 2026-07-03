@@ -1,0 +1,56 @@
+---
+title: "Luồng 6 — Nhắc nhở chi phí cố định (Recurring Bill Reminder)"
+---
+flowchart TD
+    subgraph TRIGGER["2 nguồn kích hoạt"]
+        TA["Trigger A:\nUser mở chat\nGET /api/chat/messages"]
+        TB["Trigger B:\nCron job hàng ngày\nrecurring.routes.js"]
+    end
+
+    TA --> QUERY
+    TB --> QUERY
+
+    QUERY[RecurringBillModel.getDueBills\nTìm bills có next_due_date\ntrong vòng 3 ngày tới] --> COUNT
+
+    COUNT{Số lượng\nbills đến hạn?}
+
+    COUNT -->|0 bills| NO_REMIND[Không nhắc\ntrả reminders = rỗng]
+
+    COUNT -->|1 bill| SINGLE[Tạo nhắc riêng:\n'Đến hạn đóng 2.500k tiền phòng\n(ví chính). Bạn đã thanh toán chưa?']
+
+    COUNT -->|Nhiều bills| MULTI["Gộp nhắc:\n'Hôm nay có N khoản đến hạn,\ntổng X triệu:\n• Tiền phòng: 2.5tr\n• Tiền điện: 650k\nBạn đã thanh toán khoản nào?'"]
+
+    SINGLE --> CHECK_BAL[Kiểm tra số dư ví liên quan]
+    MULTI --> CHECK_BAL
+
+    CHECK_BAL --> BAL_WARN{Số dư\nkhông đủ?}
+    BAL_WARN -->|Có| ADD_WARN["Thêm cảnh báo:\n'Ví chỉ còn 1.8tr,\ncần chuyển thêm 700k'"]
+    BAL_WARN -->|Đủ| REMIND_MSG
+
+    ADD_WARN --> REMIND_MSG[applyPersona\n→ Format nhắc theo persona]
+
+    REMIND_MSG --> INJECT[Frontend nhận reminders\nhiển thị đầu chat session]
+
+    INJECT --> USER_RESP([User trả lời:\n'đã trả rồi' / 'tạm dừng bill A'])
+
+    USER_RESP --> POST[POST /api/chat/message]
+    POST --> GEMINI[Gemini: intent =\nrecurring_pay / recurring_pause]
+
+    GEMINI --> PAY[handleRecurringPay\n→ Ghi nhận thanh toán\n→ Cập nhật next_due_date]
+    GEMINI --> PAUSE[handleRecurringPause\n→ Tạm dừng bill]
+
+    PAY --> DONE[system_message:\nĐã ghi nhận + số dư ví mới]
+    PAUSE --> DONE2[system_message:\nĐã tạm dừng]
+
+    subgraph AUTO_DETECT["Tự nhận diện recurring — dự kiến"]
+        AD1[Phát hiện pattern:\ncùng tên + cùng tiền + đều đặn hàng tháng]
+        AD2["AI gợi ý qua chat:\n'Mình thấy bạn trả 1.5tr ngày 5\nhàng tháng. Thêm vào nhắc nhở?'"]
+        AD1 --> AD2
+    end
+
+    style SINGLE fill:#fff3cd,stroke:#ffc107
+    style MULTI fill:#fff3cd,stroke:#ffc107
+    style ADD_WARN fill:#f8d7da,stroke:#dc3545
+    style DONE fill:#d4edda,stroke:#28a745
+    style DONE2 fill:#d4edda,stroke:#28a745
+    style AUTO_DETECT stroke-dasharray: 5 5,fill:#f0f0f0

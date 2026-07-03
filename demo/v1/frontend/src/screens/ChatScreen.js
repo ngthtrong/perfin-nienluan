@@ -13,20 +13,18 @@ import AppIcon from '../components/AppIcon';
 
 const FALLBACK_AI_CONFIG = {
   models: {
-    gemini: { status: 'unavailable', selected: 'gemini-2.5-flash', models: ['gemini-2.5-flash'] },
-    chatgpt: { status: 'unavailable', selected: 'gpt-4o-mini', models: ['gpt-4o-mini'] },
+    gemini: { status: 'unavailable', selected: 'gemini-3.1-flash-lite', models: ['gemini-3.1-flash-lite'] },
     local: { status: 'available', selected: 'local', models: ['local'] },
   },
   status: {
-    selected_provider: 'local',
-    selected_models: { gemini: 'gemini-2.5-flash', chatgpt: 'gpt-4o-mini' },
+    selected_provider: 'gemini',
+    selected_models: { gemini: 'gemini-3.1-flash-lite' },
   },
 };
 
 // ── Provider chip labels & icons ─────────────────────────────────────────────
 const PROVIDER_META = {
   gemini:  { label: 'Gemini',  icon: 'auto-awesome' },
-  chatgpt: { label: 'ChatGPT', icon: 'smart-toy' },
   local:   { label: 'Local',   icon: 'memory' },
 };
 
@@ -358,7 +356,7 @@ export default function ChatScreen() {
       {showAiPanel && (
         <View style={styles.aiPanel}>
           <View style={styles.providerRow}>
-            {['gemini', 'chatgpt', 'local'].map((provider) => {
+            {['gemini', 'local'].map((provider) => {
               const info = aiConfig?.models?.[provider];
               const disabled = provider !== 'local' && info?.status !== 'available';
               const active = selectedProvider === provider;

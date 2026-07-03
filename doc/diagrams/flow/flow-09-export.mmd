@@ -1,0 +1,35 @@
+---
+title: "Luồng 9 — Xuất dữ liệu qua Chat (Data Export)"
+---
+flowchart TD
+    START([User: 'xuất giao dịch tháng 6 ra CSV']) --> POST[POST /api/chat/message]
+    POST --> GEMINI[Gemini parse\nintent = export]
+
+    GEMINI --> EXTRACT[Extract params:\n- format: CSV / PDF\n- time range: 'tháng 6'\n- filter: danh mục cụ thể?]
+
+    EXTRACT --> RESOLVE_TIME[Resolve thời gian mờ:\n'mấy tháng gần đây' → 3 tháng\n'năm nay' → Jan-Dec\n'tháng 6' → 2026-06-01 ~ 2026-06-30]
+
+    RESOLVE_TIME --> QUERY[export.service.js\nTruy vấn DB giao dịch\ntheo filter đã resolve]
+
+    QUERY --> FORMAT{Loại file?}
+
+    FORMAT -->|CSV| CSV_GEN[Generate CSV:\n- Headers: date, desc, amount, category\n- Rows: từng giao dịch\n- Encoding: UTF-8 BOM]
+
+    FORMAT -->|PDF| PDF_GEN[Generate PDF:\n- Tiêu đề báo cáo\n- Bảng giao dịch\n- Biểu đồ tổng hợp\n- Nhận xét AI]
+
+    CSV_GEN --> SAVE[Lưu file vào\n/exports/\nvd: export_2026-06.csv]
+    PDF_GEN --> SAVE
+
+    SAVE --> LINK[chat.routes.js\nTrả system_message kèm\ndownload link]
+
+    LINK --> USER_DL([User nhận link\nvà tải file])
+
+    subgraph ALT["Trigger thay thế — Export tab"]
+        T1[User nhấn Export tab] --> T2[Chọn: range / format / filter]
+        T2 --> T3[GET /api/export?...] --> QUERY
+    end
+
+    style CSV_GEN fill:#d4edda,stroke:#28a745
+    style PDF_GEN fill:#cce5ff,stroke:#0056b3
+    style SAVE fill:#e2d9f3,stroke:#6f42c1
+    style LINK fill:#d4edda,stroke:#28a745

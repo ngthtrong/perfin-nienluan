@@ -1,0 +1,55 @@
+---
+title: "Luồng 15 — Các tình huống đặc biệt trong Chat"
+---
+flowchart TD
+    subgraph "15A — Intent Ambiguity (vừa giao dịch vừa câu hỏi)"
+        A1([User nhắn câu chứa 2 intent]) --> A2[POST /api/chat/message]
+        A2 --> A3[Gemini parse → intent = transaction\nCâu hỏi ghi nhận vào context]
+        A3 --> A4[Tạo pending transaction]
+        A4 --> A5[Trả transaction_preview]
+        A5 --> A6{User xác nhận?}
+        A6 -->|Có| A7[POST /api/chat/confirm\n→ Lưu DB]
+        A7 --> A8[Trả system_message kèm\nthông tin số dư tự động]
+        A6 -->|Hủy| A9[pending.clear]
+    end
+
+    subgraph "15B — Override Amount khi xác nhận bill"
+        B1([User: 'đã trả tiền điện 680k']) --> B2[Gemini: intent = recurring_pay\n+ extract amount=680000]
+        B2 --> B3[handleRecurringPay\noverrideAmount = 680000]
+        B3 --> B4{amount != template amount?}
+        B4 -->|Có| B5[Ghi nhận payment\nvới số tiền override]
+        B4 -->|Không| B6[Ghi nhận payment\nvới số tiền cố định]
+        B5 --> B7[Trả system_message\nkèm số dư ví]
+        B6 --> B7
+    end
+
+    subgraph "15C — Hủy giữa chừng → Giao dịch mới"
+        C1([User: 'ăn phở 50k']) --> C2[pending.set → transaction_preview]
+        C2 --> C3([User: 'thôi bỏ đi'])
+        C3 --> C4[POST /api/chat/cancel]
+        C4 --> C5[pending.clear\nLưu 'Đã hủy' vào chat history]
+        C5 --> C6([User: 'cà phê 30k'])
+        C6 --> C7[pending.get = null\n→ Fresh start]
+        C7 --> C8[pending.set mới\n→ transaction_preview mới]
+    end
+
+    subgraph "15D — Edit Loop (chỉnh sửa pending nhiều lần)"
+        D1([User: 'ăn phở 50k']) --> D2[pending.set\ntransaction_preview: phở / Ăn uống / 50k]
+        D2 --> D3{User action?}
+        D3 -->|Sửa field| D4[POST /api/chat/edit\npending.update - merge field mới]
+        D4 --> D5[previewResponse mới\nvới data đã merge]
+        D5 --> D3
+        D3 -->|Xác nhận| D6[POST /api/chat/confirm\n→ Lưu version cuối vào DB]
+        D3 -->|Hủy| D7[pending.clear]
+        D3 -->|TTL 5 phút hết hạn| D8[pending tự xóa\n→ yêu cầu nhập lại]
+    end
+
+    style A7 fill:#d4edda,stroke:#28a745
+    style A9 fill:#f8d7da,stroke:#dc3545
+    style B5 fill:#fff3cd,stroke:#ffc107
+    style B6 fill:#d4edda,stroke:#28a745
+    style C5 fill:#f8d7da,stroke:#dc3545
+    style C8 fill:#d4edda,stroke:#28a745
+    style D6 fill:#d4edda,stroke:#28a745
+    style D7 fill:#f8d7da,stroke:#dc3545
+    style D8 fill:#f8d7da,stroke:#dc3545
