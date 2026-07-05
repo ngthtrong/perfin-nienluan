@@ -1,26 +1,62 @@
 {
   "env": {
-    "ANTHROPIC_AUTH_TOKEN": "sk-yWoPzHH67m6nEobBSJFesK5ylcCObjSrZyX94X3CKiU",
-    "ANTHROPIC_BASE_URL": "https://api.xpiki.com/",
-    "ANTHROPIC_DEFAULT_HAIKU_MODEL": "kr/claude-sonnet-4.6",
-    "ANTHROPIC_DEFAULT_OPUS_MODEL": "kr/claude-opus-4.7",
-    "ANTHROPIC_DEFAULT_SONNET_MODEL": "kr/claude-opus-4.8",
-    "CLAUDE_CODE_ENABLE_TELEMETRY": "0"
+    "ANTHROPIC_AUTH_TOKEN": "sk-13272b9f0f4b0e0d-w65adk-5b272c57",
+    "ANTHROPIC_BASE_URL": "https://rjutth2.abc-tunnel.us/v1",
+    "ANTHROPIC_MODEL": "kr/claude-opus-4.8",
+    "ANTHROPIC_DEFAULT_OPUS_MODEL": "kr/claude-opus-4.8",
+    "ANTHROPIC_DEFAULT_SONNET_MODEL": "kr/claude-sonnet-5",
+    "ANTHROPIC_DEFAULT_HAIKU_MODEL": "kr/claude-opus-4.7",
+    "CLAUDE_CODE_ENABLE_GATEWAY_MODEL_DISCOVERY": "1"
   },
   "permissions": {
-    "defaultMode": "bypassPermissions",
-    "skipDangerousModePermissionPrompt": true
+    "defaultMode": "bypassPermissions"
   },
-  "model": "sonnet",
+  "model": "opus",
   "availableModels": [
     "kr/claude-opus-4.8",
     "kr/claude-opus-4.7",
-    "kr/claude-sonnet-4.6"
+    "kr/claude-sonnet-5"
   ],
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "rtk hook claude"
+          }
+        ]
+      }
+    ]
+  },
+  "enabledPlugins": {
+    "frontend-design@claude-plugins-official": true,
+    "superpowers@claude-plugins-official": true,
+    "code-review@claude-plugins-official": true,
+    "claude-md-management@claude-plugins-official": true,
+    "security-guidance@claude-plugins-official": true,
+    "code-simplifier@claude-plugins-official": true,
+    "feature-dev@claude-plugins-official": true,
+    "commit-commands@claude-plugins-official": true,
+    "skill-creator@claude-plugins-official": true,
+    "ponytail@ponytail": true
+  },
+  "extraKnownMarketplaces": {
+    "ponytail": {
+      "source": {
+        "source": "github",
+        "repo": "DietrichGebert/ponytail"
+      }
+    }
+  },
+  "effortLevel": "xhigh",
+  "ultracode": true,
+  "skipDangerousModePermissionPrompt": true,
+  "theme": "dark",
+  "switchModelsOnFlag": true,
   "fallbackModels": [
-    "kr/claude-opus-4.7",
-    "kr/claude-sonnet-4.6"
-  ],
-  "theme": "dark"
+    "kr/claude-sonnet-5",
+    "kr/claude-opus-4.7"
+  ]
 }
-  
