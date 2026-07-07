@@ -48,4 +48,24 @@ function getVoicePrompt(transcript) {
 Trích xuất giao dịch thu/chi theo schema. Bỏ qua từ đệm, ậm ừ. Nếu nhắc tới ví/nguồn tiền (Momo, tiền mặt, ngân hàng) hãy ghi vào description.`;
 }
 
-module.exports = { getSystemPrompt, getParsePrompt, getChatPrompt, getReceiptPrompt, getVoicePrompt };
+// Turn deterministic analytics facts into a persona-flavored insight message.
+// The facts are pre-computed by the Analytics Engine; the LLM MUST NOT invent numbers,
+// only phrase and prioritize what is given. Returns a natural Vietnamese narration.
+function getInsightPrompt(facts, { stylePrompt = '', periodLabel = 'gần đây' } = {}) {
+  return `${stylePrompt}
+
+Dưới đây là các phát hiện tài chính đã được hệ thống TÍNH SẴN cho người dùng (kỳ ${periodLabel}).
+Nhiệm vụ của bạn: viết một đoạn nhận xét tài chính ngắn gọn, tự nhiên bằng tiếng Việt, theo đúng giọng nhân cách ở trên.
+
+QUY TẮC BẮT BUỘC:
+- CHỈ dùng các con số có trong dữ liệu dưới đây. TUYỆT ĐỐI không bịa thêm số liệu.
+- Nếu một mục là null thì bỏ qua, không nhắc tới.
+- Ưu tiên 2-4 phát hiện quan trọng nhất (cảnh báo dòng tiền cạn, xu hướng leo thang, chi tiêu bất thường).
+- Kết bằng 1 gợi ý hành động cụ thể, khả thi.
+- Định dạng tiền theo kiểu Việt Nam (vd 1.500.000đ hoặc 1,5 triệu).
+
+DỮ LIỆU (JSON):
+${JSON.stringify(facts)}`;
+}
+
+module.exports = { getSystemPrompt, getParsePrompt, getChatPrompt, getReceiptPrompt, getVoicePrompt, getInsightPrompt };

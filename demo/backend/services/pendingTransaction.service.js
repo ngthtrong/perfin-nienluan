@@ -1,32 +1,35 @@
-const pending = new Map();
-const TTL = 5 * 60 * 1000;
+// Pending transaction/recurring-bill state, backed by the unified KV store
+// (Redis when available, in-memory fallback otherwise). TTL is enforced by the
+// store itself, so no manual expiry bookkeeping is needed.
+//
+// NOTE: the API is now async (get/set/update/clear all return promises) because the
+// backing store may be Redis. Call sites must await.
 
-function isExpired(item) {
-  return !item || Date.now() - item.createdAt > TTL;
-}
+const KVStore = require('./store/kv.store');
+
+const TTL_SECONDS = 5 * 60; // 5 minutes, matches the documented pending window
+const keyFor = (userId) => `pending:${userId}`;
 
 module.exports = {
-  set(userId, data, kind = 'transaction') {
+  async set(userId, data, kind = 'transaction') {
     const pendingId = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
-    pending.set(userId, { id: pendingId, kind, data, createdAt: Date.now() });
+    await KVStore.set(keyFor(userId), { id: pendingId, kind, data, createdAt: Date.now() }, TTL_SECONDS);
     return pendingId;
   },
-  get(userId) {
-    const item = pending.get(userId);
-    if (isExpired(item)) {
-      pending.delete(userId);
-      return null;
-    }
-    return item;
+
+  async get(userId) {
+    return KVStore.get(keyFor(userId));
   },
-  update(userId, updates) {
-    const item = this.get(userId);
+
+  async update(userId, updates) {
+    const item = await this.get(userId);
     if (!item) return null;
     item.data = { ...item.data, ...updates };
-    pending.set(userId, item);
+    await KVStore.set(keyFor(userId), item, TTL_SECONDS);
     return item;
   },
-  clear(userId) {
-    pending.delete(userId);
+
+  async clear(userId) {
+    await KVStore.del(keyFor(userId));
   },
 };

@@ -1,5 +1,6 @@
 const { GoogleGenAI } = require('@google/genai');
-const { getSystemPrompt, getParsePrompt, getChatPrompt, getReceiptPrompt, getVoicePrompt } = require('../prompts/transaction.prompt');
+const { getSystemPrompt, getParsePrompt, getChatPrompt, getReceiptPrompt, getVoicePrompt, getInsightPrompt } = require('../prompts/transaction.prompt');
+const { fallbackInsightText } = require('./analytics/narrator.fallback');
 const { matchCategory, parseLocalTransaction } = require('./parser.service');
 
 // Danh sách model Gemini được phép sử dụng
@@ -114,6 +115,27 @@ class AIServiceManager {
       }
     }
     return { success: true, provider_used: 'local', text: 'Mình có thể giúp bạn ghi nhận thu chi, xem số dư, ngân sách và báo cáo tháng này.' };
+  }
+
+  // Narrate pre-computed analytics facts in the given persona voice. Falls back to a
+  // deterministic template when no LLM is available, so insights always render.
+  async narrateInsights(facts, { stylePrompt = '', periodLabel = 'gần đây' } = {}) {
+    const providers = this.getProviderOrder();
+    for (const provider of providers) {
+      try {
+        if (provider === 'gemini') {
+          const response = await this.gemini.models.generateContent({
+            model: this.selected.models.gemini,
+            contents: getInsightPrompt(facts, { stylePrompt, periodLabel }),
+            config: { temperature: 0.4, maxOutputTokens: 1024 },
+          });
+          return { success: true, provider_used: 'gemini', model: this.selected.models.gemini, text: response.text };
+        }
+      } catch (error) {
+        console.warn(`[AIService] ${provider} insight failed: ${error.message}`);
+      }
+    }
+    return { success: true, provider_used: 'local', text: fallbackInsightText(facts) };
   }
 
   getProviderOrder() {

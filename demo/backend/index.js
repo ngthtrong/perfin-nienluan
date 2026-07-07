@@ -15,6 +15,8 @@ const reportRoutes = require('./routes/report.routes');
 const cashflowRoutes = require('./routes/cashflow.routes');
 const exportRoutes = require('./routes/export.routes');
 const recurringRoutes = require('./routes/recurring.routes');
+const personaRoutes = require('./routes/persona.routes');
+const goalRoutes = require('./routes/goal.routes');
 const errorMiddleware = require('./middleware/error.middleware');
 
 const app = express();
@@ -46,6 +48,8 @@ app.use('/api/reports', reportRoutes);
 app.use('/api/cashflow', cashflowRoutes);
 app.use('/api/export', exportRoutes);
 app.use('/api/recurring', recurringRoutes);
+app.use('/api/personas', personaRoutes);
+app.use('/api/goals', goalRoutes);
 
 app.post('/api/chat', async (req, res, next) => {
   req.url = '/message';

@@ -79,7 +79,7 @@ async function handleRecurringCreate(parsed) {
     category_id: matched ? matched.id : null,
     category_name: matched ? matched.name : null,
   };
-  const pendingId = pending.set(userId, draft, 'recurring_bill');
+  const pendingId = await pending.set(userId, draft, 'recurring_bill');
   const freqLabel = { weekly: 'hàng tuần', monthly: 'hàng tháng', quarterly: 'hàng quý', yearly: 'hàng năm' }[draft.frequency];
   return {
     type: 'recurring_preview',
@@ -192,7 +192,7 @@ router.post('/message', async (req, res, next) => {
     } else if (parsed.intent === 'transaction' && parsed.transaction?.amount) {
       const wallet = await AccountModel.ensureDefault(userId);
       const tx = { ...parsed.transaction, wallet_id: wallet.id, source: 'ai_chat', original_text: text };
-      const pendingId = pending.set(userId, tx, 'transaction');
+      const pendingId = await pending.set(userId, tx, 'transaction');
       data = previewResponse(tx, pendingId);
     } else if (parsed.needs_clarification) {
       data = { type: 'clarification', message: parsed.clarification_message || 'Bạn nói rõ hơn giúp mình nhé.' };
@@ -210,7 +210,7 @@ router.post('/message', async (req, res, next) => {
 
 router.post('/confirm', async (req, res, next) => {
   try {
-    const item = pending.get(userId);
+    const item = await pending.get(userId);
     if (!item) return res.status(404).json({ success: false, error: 'Không có mục chờ xác nhận hoặc đã hết hạn' });
 
     let data;
@@ -225,7 +225,7 @@ router.post('/confirm', async (req, res, next) => {
       data = { type: 'system_message', message, transaction: saved, new_balance: Number(saved.wallet_balance) };
     }
 
-    pending.clear(userId);
+    await pending.clear(userId);
     await ChatMessage.create({ userId, role: 'system', content: data.message, metadata: data });
     res.json({ success: true, data });
   } catch (error) {
@@ -235,7 +235,7 @@ router.post('/confirm', async (req, res, next) => {
 
 router.post('/edit', async (req, res, next) => {
   try {
-    const item = pending.update(userId, req.body);
+    const item = await pending.update(userId, req.body);
     if (!item) return res.status(404).json({ success: false, error: 'Không có giao dịch chờ sửa hoặc đã hết hạn' });
     res.json({ success: true, data: previewResponse(item.data, item.id, 'Mình đã cập nhật. Bạn xác nhận nhé:') });
   } catch (error) {
@@ -245,7 +245,7 @@ router.post('/edit', async (req, res, next) => {
 
 router.post('/cancel', async (req, res, next) => {
   try {
-    pending.clear(userId);
+    await pending.clear(userId);
     const data = { type: 'system_message', message: 'Đã hủy' };
     await ChatMessage.create({ userId, role: 'system', content: data.message, metadata: data });
     res.json({ success: true, data });

@@ -1,6 +1,13 @@
 const { query } = require('../config/database');
+const KVStore = require('../services/store/kv.store');
 
 const DEFAULT_USER = 'default_user';
+const CACHE_TTL = 3600; // 1 hour; invalidated explicitly on writes
+const cacheKey = (userId) => `cache:categories:${userId}`;
+
+function invalidate(userId = DEFAULT_USER) {
+  return KVStore.del(cacheKey(userId));
+}
 
 const DEFAULT_CATEGORIES = {
   expense: [
@@ -30,16 +37,20 @@ const CategoryModel = {
   },
 
   async getAll(userId = DEFAULT_USER) {
-    await this.initDefaults(userId);
-    const result = await query(
-      `SELECT id, name, type, icon, is_default, parent_id, sort_order, created_at
-       FROM categories
-       WHERE is_default = true OR user_id = $1
-       ORDER BY type ASC, sort_order ASC, name ASC`,
-      [userId]
-    );
-    return result.rows;
+    return KVStore.remember(cacheKey(userId), CACHE_TTL, async () => {
+      await this.initDefaults(userId);
+      const result = await query(
+        `SELECT id, name, type, icon, is_default, parent_id, sort_order, created_at
+         FROM categories
+         WHERE is_default = true OR user_id = $1
+         ORDER BY type ASC, sort_order ASC, name ASC`,
+        [userId]
+      );
+      return result.rows;
+    });
   },
+
+  invalidateCache: invalidate,
 
   async getById(id) {
     const result = await query('SELECT * FROM categories WHERE id = $1', [id]);
@@ -79,6 +90,7 @@ const CategoryModel = {
        RETURNING *`,
       [name, type, icon, parent_id, userId]
     );
+    await invalidate(userId);
     return result.rows[0];
   },
 
@@ -96,6 +108,7 @@ const CategoryModel = {
        WHERE id = $1 RETURNING *`,
       [id, data.name || null, data.icon || null]
     );
+    await invalidate(category.user_id || DEFAULT_USER);
     return result.rows[0];
   },
 
@@ -114,6 +127,7 @@ const CategoryModel = {
       throw err;
     }
     await query('DELETE FROM categories WHERE id = $1', [id]);
+    await invalidate(category.user_id || DEFAULT_USER);
     return { success: true };
   },
 };
