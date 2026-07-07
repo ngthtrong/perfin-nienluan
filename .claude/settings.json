@@ -1,7 +1,7 @@
 {
   "env": {
-    "ANTHROPIC_AUTH_TOKEN": "sk-13272b9f0f4b0e0d-w65adk-5b272c57",
-    "ANTHROPIC_BASE_URL": "https://rjutth2.abc-tunnel.us/v1",
+    "ANTHROPIC_AUTH_TOKEN": "sk-UMer7x7BTwV4cTK6Jd2xBy4aFYzwVpSEwVdXtnQsuIY",
+    "ANTHROPIC_BASE_URL": "https://api.xpiki.com/v1",
     "ANTHROPIC_MODEL": "kr/claude-opus-4.8",
     "ANTHROPIC_DEFAULT_OPUS_MODEL": "kr/claude-opus-4.8",
     "ANTHROPIC_DEFAULT_SONNET_MODEL": "kr/claude-sonnet-5",

@@ -1,15 +1,17 @@
-import { useEffect, useState, useRef, useCallback } from 'react';
+import { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, FlatList,
   KeyboardAvoidingView, Platform, StyleSheet, ActivityIndicator,
   Alert, ScrollView, Animated,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { RecordingPresets, requestRecordingPermissionsAsync, setAudioModeAsync, useAudioRecorder, useAudioRecorderState } from 'expo-audio';
 import * as ImagePicker from 'expo-image-picker';
 import { api } from '../services/api.service';
-import { COLORS, SHADOWS, RADIUS } from '../utils/constants';
+import { useTheme } from '../theme/ThemeContext';
 import TransactionPreviewCard from '../components/TransactionPreviewCard';
 import AppIcon from '../components/AppIcon';
+import { AppHeader } from '../components/ui';
 
 const FALLBACK_AI_CONFIG = {
   models: {
@@ -22,14 +24,12 @@ const FALLBACK_AI_CONFIG = {
   },
 };
 
-// ── Provider chip labels & icons ─────────────────────────────────────────────
 const PROVIDER_META = {
-  gemini:  { label: 'Gemini',  icon: 'auto-awesome' },
-  local:   { label: 'Local',   icon: 'memory' },
+  gemini: { label: 'Gemini', icon: 'auto-awesome' },
+  local: { label: 'Local', icon: 'memory' },
 };
 
-// ── Typing dots animation ────────────────────────────────────────────────────
-function TypingIndicator() {
+function TypingIndicator({ styles, color }) {
   const dot1 = useRef(new Animated.Value(0)).current;
   const dot2 = useRef(new Animated.Value(0)).current;
   const dot3 = useRef(new Animated.Value(0)).current;
@@ -50,8 +50,7 @@ function TypingIndicator() {
   }, []);
 
   const dotStyle = (dot) => ({
-    width: 7, height: 7, borderRadius: 3.5,
-    backgroundColor: COLORS.muted,
+    width: 7, height: 7, borderRadius: 3.5, backgroundColor: color,
     opacity: dot.interpolate({ inputRange: [0, 1], outputRange: [0.3, 1] }),
     transform: [{ translateY: dot.interpolate({ inputRange: [0, 1], outputRange: [0, -4] }) }],
   });
@@ -65,10 +64,8 @@ function TypingIndicator() {
   );
 }
 
-// ── Recording pulse animation ─────────────────────────────────────────────────
-function RecordingPulse() {
+function RecordingPulse({ styles, color }) {
   const pulse = useRef(new Animated.Value(1)).current;
-
   useEffect(() => {
     Animated.loop(
       Animated.sequence([
@@ -84,13 +81,17 @@ function RecordingPulse() {
       <View style={styles.pulseIcon}>
         <AppIcon name="mic" size={28} color="#fff" />
       </View>
-      <Text style={styles.recordingLabel}>Đang ghi âm...</Text>
+      <Text style={[styles.recordingLabel, { color }]}>Đang ghi âm...</Text>
       <Text style={styles.recordingHint}>Nhấn nút mic để dừng</Text>
     </View>
   );
 }
 
 export default function ChatScreen() {
+  const { theme } = useTheme();
+  const styles = useMemo(() => createStyles(theme), [theme]);
+  const c = theme.colors;
+
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -98,7 +99,7 @@ export default function ChatScreen() {
   const [aiConfig, setAIConfig] = useState(null);
   const [aiLoading, setAILoading] = useState(false);
   const [showAiPanel, setShowAiPanel] = useState(false);
-  const [imageLoading, setImageLoading] = useState(false); // separate image state
+  const [imageLoading, setImageLoading] = useState(false);
   const listRef = useRef(null);
   const recorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
   const recorderState = useAudioRecorderState(recorder);
@@ -124,7 +125,6 @@ export default function ChatScreen() {
           text: msg.content,
           transaction: msg.metadata?.transaction,
         }));
-        // REQ-08: proactive bill reminders surfaced when opening chat
         const reminders = (data.reminders || []).map((r, idx) => ({
           id: `reminder-${idx}-${Date.now()}`,
           role: 'assistant',
@@ -204,8 +204,6 @@ export default function ChatScreen() {
       return;
     }
     push({ role: 'system', type: 'text', text: `${sourceLabel}: ${cleanText}` });
-    // Backend already extracted a transaction; send the text through chat to create the
-    // confirmable preview (reuses the pending-transaction flow).
     await send(cleanText);
   }
 
@@ -265,7 +263,6 @@ export default function ChatScreen() {
 
       setImageLoading(true);
       const asset = result.assets[0];
-      // Show image message in chat
       push({
         role: 'user',
         type: 'image',
@@ -307,7 +304,7 @@ export default function ChatScreen() {
       return (
         <View style={styles.systemMsgWrap}>
           <View style={styles.systemMsg}>
-            <AppIcon name="info-outline" size={12} color={COLORS.warning} />
+            <AppIcon name="info-outline" size={12} color={c.warning} />
             <Text style={styles.systemMsgText}>{item.text}</Text>
           </View>
         </View>
@@ -318,13 +315,13 @@ export default function ChatScreen() {
       <View style={[styles.msgRow, isUser ? styles.msgRowUser : styles.msgRowAI]}>
         {!isUser && (
           <View style={styles.aiAvatar}>
-            <AppIcon name="auto-awesome" size={12} color="#fff" />
+            <AppIcon name="auto-awesome" size={12} color={c.onBrand} />
           </View>
         )}
         <View style={[styles.bubble, isUser ? styles.userBubble : styles.aiBubble]}>
           {item.type === 'image' && (
             <View style={styles.imageTag}>
-              <AppIcon name="image" size={14} color={COLORS.primary} />
+              <AppIcon name="image" size={14} color={c.brandText} />
               <Text style={styles.imageTagText}>Ảnh hóa đơn</Text>
             </View>
           )}
@@ -337,406 +334,252 @@ export default function ChatScreen() {
   const selectedProvider = aiConfig?.status?.selected_provider || 'local';
   const currentModels = aiConfig?.models?.[selectedProvider]?.models || [];
   const selectedModel = aiConfig?.status?.selected_models?.[selectedProvider] || selectedProvider;
-
   const isLoadingAny = loading || imageLoading;
 
   return (
-    <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      {/* AI Model Panel (collapsible) */}
-      <TouchableOpacity style={styles.aiPanelToggle} onPress={() => setShowAiPanel((v) => !v)} activeOpacity={0.8}>
-        <View style={styles.aiPanelToggleLeft}>
-          <View style={[styles.providerDot, { backgroundColor: COLORS.income }]} />
-          <Text style={styles.aiPanelToggleText}>
-            {PROVIDER_META[selectedProvider]?.label} · {selectedModel}
-          </Text>
-        </View>
-        <AppIcon name={showAiPanel ? 'keyboard-arrow-up' : 'keyboard-arrow-down'} size={18} color={COLORS.muted} />
-      </TouchableOpacity>
-
-      {showAiPanel && (
-        <View style={styles.aiPanel}>
-          <View style={styles.providerRow}>
-            {['gemini', 'local'].map((provider) => {
-              const info = aiConfig?.models?.[provider];
-              const disabled = provider !== 'local' && info?.status !== 'available';
-              const active = selectedProvider === provider;
-              const meta = PROVIDER_META[provider];
-              return (
-                <TouchableOpacity
-                  key={provider}
-                  disabled={disabled || aiLoading}
-                  style={[styles.providerChip, active && styles.providerChipActive, disabled && styles.disabled]}
-                  onPress={() => selectAI(provider)}
-                >
-                  <AppIcon name={meta.icon} size={14} color={active ? COLORS.primary : COLORS.muted} />
-                  <Text style={[styles.providerChipText, active && styles.providerChipTextActive]}>
-                    {meta.label}
-                  </Text>
-                  <View style={[styles.statusDot, { backgroundColor: info?.status === 'available' ? COLORS.income : COLORS.muted }]} />
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-          {currentModels.length > 1 && (
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.modelRow}>
-              {currentModels.map((model) => (
-                <TouchableOpacity
-                  key={model}
-                  disabled={aiLoading || selectedProvider === 'local'}
-                  style={[styles.modelChip, selectedModel === model && styles.modelChipActive]}
-                  onPress={() => selectAI(selectedProvider, model)}
-                >
-                  <Text style={[styles.modelChipText, selectedModel === model && styles.modelChipTextActive]} numberOfLines={1}>
-                    {model}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-          )}
-        </View>
-      )}
-
-      {/* Message list */}
-      {historyLoading ? (
-        <View style={styles.historyLoading}>
-          <ActivityIndicator color={COLORS.primary} size="small" />
-          <Text style={styles.historyLoadingText}>Đang tải lịch sử...</Text>
-        </View>
-      ) : (
-        <FlatList
-          ref={listRef}
-          data={messages}
-          keyExtractor={(item) => item.id}
-          renderItem={renderItem}
-          contentContainerStyle={styles.list}
-          onContentSizeChange={scrollToBottom}
-          removeClippedSubviews
-          ListFooterComponent={isLoadingAny ? <TypingIndicator /> : null}
-        />
-      )}
-
-      {/* Recording overlay (full-width banner) */}
-      {isRecording && <RecordingPulse />}
-
-      {/* Image loading banner */}
-      {imageLoading && !isRecording && (
-        <View style={styles.imageBanner}>
-          <ActivityIndicator color={COLORS.primary} size="small" />
-          <Text style={styles.imageBannerText}>Đang phân tích ảnh hóa đơn...</Text>
-        </View>
-      )}
-
-      {/* Input area */}
-      <View style={styles.inputArea}>
-        {/* Action buttons row */}
-        <View style={styles.inputRow}>
-          {/* Voice button */}
-          <TouchableOpacity
-            style={[styles.micBtn, isRecording && styles.micBtnActive]}
-            onPress={isRecording ? stopRecording : startRecording}
-            disabled={isLoadingAny && !isRecording}
-            activeOpacity={0.75}
-          >
-            <AppIcon name={isRecording ? 'stop' : 'mic'} size={20} color={isRecording ? '#fff' : COLORS.primary} />
+    <SafeAreaView style={styles.container} edges={['top']}>
+      <AppHeader
+        subtitle="Trò chuyện & nhập liệu"
+        right={
+          <TouchableOpacity style={styles.aiPill} onPress={() => setShowAiPanel((v) => !v)} activeOpacity={0.8}>
+            <View style={[styles.providerDot, { backgroundColor: c.income }]} />
+            <Text style={styles.aiPillText} numberOfLines={1}>{PROVIDER_META[selectedProvider]?.label}</Text>
+            <AppIcon name={showAiPanel ? 'keyboard-arrow-up' : 'keyboard-arrow-down'} size={16} color={c.textMuted} />
           </TouchableOpacity>
+        }
+      />
 
-          {/* Text input */}
-          <TextInput
-            style={[styles.input, isRecording && styles.inputHidden]}
-            value={input}
-            onChangeText={setInput}
-            placeholder="Nhập giao dịch..."
-            placeholderTextColor={COLORS.muted}
-            onSubmitEditing={send}
-            returnKeyType="send"
-            editable={!isLoadingAny}
-            multiline
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        {showAiPanel && (
+          <View style={styles.aiPanel}>
+            <View style={styles.providerRow}>
+              {['gemini', 'local'].map((provider) => {
+                const info = aiConfig?.models?.[provider];
+                const disabled = provider !== 'local' && info?.status !== 'available';
+                const active = selectedProvider === provider;
+                const meta = PROVIDER_META[provider];
+                return (
+                  <TouchableOpacity
+                    key={provider}
+                    disabled={disabled || aiLoading}
+                    style={[styles.providerChip, active && styles.providerChipActive, (disabled) && styles.disabled]}
+                    onPress={() => selectAI(provider)}
+                  >
+                    <AppIcon name={meta.icon} size={14} color={active ? c.brandText : c.textMuted} />
+                    <Text style={[styles.providerChipText, active && styles.providerChipTextActive]}>{meta.label}</Text>
+                    <View style={[styles.statusDot, { backgroundColor: info?.status === 'available' ? c.income : c.textMuted }]} />
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+            {currentModels.length > 1 && (
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.modelRow}>
+                {currentModels.map((model) => (
+                  <TouchableOpacity
+                    key={model}
+                    disabled={aiLoading || selectedProvider === 'local'}
+                    style={[styles.modelChip, selectedModel === model && styles.modelChipActive]}
+                    onPress={() => selectAI(selectedProvider, model)}
+                  >
+                    <Text style={[styles.modelChipText, selectedModel === model && styles.modelChipTextActive]} numberOfLines={1}>
+                      {model}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            )}
+          </View>
+        )}
+
+        {historyLoading ? (
+          <View style={styles.historyLoading}>
+            <ActivityIndicator color={c.brand} size="small" />
+            <Text style={styles.historyLoadingText}>Đang tải lịch sử...</Text>
+          </View>
+        ) : (
+          <FlatList
+            ref={listRef}
+            data={messages}
+            keyExtractor={(item) => item.id}
+            renderItem={renderItem}
+            contentContainerStyle={styles.list}
+            onContentSizeChange={scrollToBottom}
+            removeClippedSubviews
+            ListFooterComponent={isLoadingAny ? <TypingIndicator styles={styles} color={c.textMuted} /> : null}
           />
+        )}
 
-          {/* Camera & Gallery (shown when not recording, and text is empty) */}
-          {!isRecording && !input.trim() && (
-            <>
-              <TouchableOpacity
-                style={styles.iconBtn}
-                onPress={() => pickImage(true)}
-                disabled={isLoadingAny}
-              >
-                <AppIcon name="photo-camera" size={20} color={imageLoading ? COLORS.muted : COLORS.textSecondary} />
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.iconBtn}
-                onPress={() => pickImage(false)}
-                disabled={isLoadingAny}
-              >
-                <AppIcon name="image" size={20} color={imageLoading ? COLORS.muted : COLORS.textSecondary} />
-              </TouchableOpacity>
-            </>
-          )}
+        {isRecording && <RecordingPulse styles={styles} color={c.expense} />}
 
-          {/* Send button (shown when there is text) */}
-          {!isRecording && input.trim().length > 0 && (
-            <TouchableOpacity style={styles.sendBtn} onPress={() => send()} disabled={isLoadingAny}>
-              <AppIcon name="send" size={18} color="#fff" />
+        {imageLoading && !isRecording && (
+          <View style={styles.imageBanner}>
+            <ActivityIndicator color={c.brand} size="small" />
+            <Text style={styles.imageBannerText}>Đang phân tích ảnh hóa đơn...</Text>
+          </View>
+        )}
+
+        <View style={styles.inputArea}>
+          <View style={styles.inputRow}>
+            <TouchableOpacity
+              style={[styles.micBtn, isRecording && styles.micBtnActive]}
+              onPress={isRecording ? stopRecording : startRecording}
+              disabled={isLoadingAny && !isRecording}
+              activeOpacity={0.75}
+            >
+              <AppIcon name={isRecording ? 'stop' : 'mic'} size={20} color={isRecording ? '#fff' : c.brand} />
             </TouchableOpacity>
-          )}
+
+            <TextInput
+              style={[styles.input, isRecording && styles.inputHidden]}
+              value={input}
+              onChangeText={setInput}
+              placeholder="Nhập giao dịch..."
+              placeholderTextColor={c.textMuted}
+              onSubmitEditing={() => send()}
+              returnKeyType="send"
+              editable={!isLoadingAny}
+              multiline
+            />
+
+            {!isRecording && !input.trim() && (
+              <>
+                <TouchableOpacity style={styles.iconBtn} onPress={() => pickImage(true)} disabled={isLoadingAny}>
+                  <AppIcon name="photo-camera" size={20} color={imageLoading ? c.textMuted : c.textSecondary} />
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.iconBtn} onPress={() => pickImage(false)} disabled={isLoadingAny}>
+                  <AppIcon name="image" size={20} color={imageLoading ? c.textMuted : c.textSecondary} />
+                </TouchableOpacity>
+              </>
+            )}
+
+            {!isRecording && input.trim().length > 0 && (
+              <TouchableOpacity style={styles.sendBtn} onPress={() => send()} disabled={isLoadingAny}>
+                <AppIcon name="send" size={18} color="#fff" />
+              </TouchableOpacity>
+            )}
+          </View>
         </View>
-      </View>
-    </KeyboardAvoidingView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.background },
+const createStyles = (t) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: t.colors.bg },
 
-  // ── AI Panel ────────────────────────────────────────────────────────────────
-  aiPanelToggle: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: COLORS.surface,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
+  aiPill: {
+    flexDirection: 'row', alignItems: 'center', gap: 6,
+    backgroundColor: t.colors.surfaceAlt, paddingHorizontal: 10, paddingVertical: 6, borderRadius: t.radius.pill,
+    borderWidth: 1, borderColor: t.colors.border, maxWidth: 130,
   },
-  aiPanelToggleLeft: { flexDirection: 'row', alignItems: 'center', gap: 7 },
   providerDot: { width: 7, height: 7, borderRadius: 3.5 },
-  aiPanelToggleText: { fontSize: 13, color: COLORS.textSecondary, fontWeight: '600' },
+  aiPillText: { fontSize: 12, color: t.colors.textSecondary, fontWeight: '700' },
 
   aiPanel: {
-    backgroundColor: COLORS.surface,
-    paddingHorizontal: 12,
-    paddingBottom: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
+    backgroundColor: t.colors.surface, paddingHorizontal: 12, paddingBottom: 12, paddingTop: 4,
+    borderBottomWidth: 1, borderBottomColor: t.colors.border,
   },
   providerRow: { flexDirection: 'row', gap: 8, paddingTop: 10 },
   providerChip: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 5,
-    paddingVertical: 8,
-    borderRadius: RADIUS.sm,
-    backgroundColor: COLORS.background,
-    borderWidth: 1.5,
-    borderColor: COLORS.border,
+    flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5,
+    paddingVertical: 8, borderRadius: t.radius.sm, backgroundColor: t.colors.surfaceAlt,
+    borderWidth: 1.5, borderColor: t.colors.border,
   },
-  providerChipActive: { borderColor: COLORS.primary, backgroundColor: COLORS.primaryLight },
-  providerChipText: { fontSize: 12, fontWeight: '700', color: COLORS.muted },
-  providerChipTextActive: { color: COLORS.primary },
+  providerChipActive: { borderColor: t.colors.brand, backgroundColor: t.colors.brandSoft },
+  providerChipText: { fontSize: 12, fontWeight: '700', color: t.colors.textMuted },
+  providerChipTextActive: { color: t.colors.brandText },
   statusDot: { width: 6, height: 6, borderRadius: 3 },
   disabled: { opacity: 0.4 },
   modelRow: { paddingTop: 8, gap: 6 },
   modelChip: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: RADIUS.full,
-    backgroundColor: COLORS.background,
-    borderWidth: 1,
-    borderColor: COLORS.border,
+    paddingHorizontal: 12, paddingVertical: 6, borderRadius: t.radius.pill,
+    backgroundColor: t.colors.surfaceAlt, borderWidth: 1, borderColor: t.colors.border,
   },
-  modelChipActive: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
-  modelChipText: { fontSize: 12, color: COLORS.muted },
+  modelChipActive: { backgroundColor: t.colors.brand, borderColor: t.colors.brand },
+  modelChipText: { fontSize: 12, color: t.colors.textMuted },
   modelChipTextActive: { color: '#fff', fontWeight: '700' },
 
-  // ── Loading ─────────────────────────────────────────────────────────────────
   historyLoading: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 10 },
-  historyLoadingText: { color: COLORS.muted, fontSize: 14 },
+  historyLoadingText: { color: t.colors.textMuted, fontSize: 14 },
 
-  // ── Messages ────────────────────────────────────────────────────────────────
   list: { padding: 16, paddingBottom: 8 },
-
   msgRow: { flexDirection: 'row', alignItems: 'flex-end', marginBottom: 12, gap: 8 },
   msgRowUser: { justifyContent: 'flex-end' },
   msgRowAI: { justifyContent: 'flex-start' },
-
   aiAvatar: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: COLORS.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 2,
-    ...SHADOWS.sm,
+    width: 28, height: 28, borderRadius: 14, backgroundColor: t.colors.brand,
+    alignItems: 'center', justifyContent: 'center', marginBottom: 2, ...t.shadows.sm,
   },
-
-  bubble: {
-    maxWidth: '78%',
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    borderRadius: 18,
-  },
-  userBubble: {
-    backgroundColor: COLORS.primary,
-    borderBottomRightRadius: 4,
-    ...SHADOWS.sm,
-  },
+  bubble: { maxWidth: '78%', paddingVertical: 10, paddingHorizontal: 14, borderRadius: 18 },
+  userBubble: { backgroundColor: t.colors.brand, borderBottomRightRadius: 4, ...t.shadows.sm },
   aiBubble: {
-    backgroundColor: COLORS.surface,
-    borderBottomLeftRadius: 4,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    ...SHADOWS.sm,
+    backgroundColor: t.colors.surface, borderBottomLeftRadius: 4,
+    borderWidth: 1, borderColor: t.colors.border, ...t.shadows.sm,
   },
   userText: { color: '#fff', fontSize: 15, lineHeight: 21 },
-  aiText: { color: COLORS.text, fontSize: 15, lineHeight: 21 },
+  aiText: { color: t.colors.text, fontSize: 15, lineHeight: 21 },
 
-  // Image bubble tag
   imageTag: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    marginBottom: 6,
-    paddingBottom: 6,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
+    flexDirection: 'row', alignItems: 'center', gap: 5, marginBottom: 6, paddingBottom: 6,
+    borderBottomWidth: 1, borderBottomColor: t.colors.border,
   },
-  imageTagText: { fontSize: 12, color: COLORS.primary, fontWeight: '700' },
+  imageTagText: { fontSize: 12, color: t.colors.brandText, fontWeight: '700' },
 
-  // System message
   systemMsgWrap: { alignItems: 'center', marginBottom: 10 },
   systemMsg: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    backgroundColor: COLORS.warningLight,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: RADIUS.full,
+    flexDirection: 'row', alignItems: 'center', gap: 5, maxWidth: '90%',
+    backgroundColor: t.colors.warningSoft, paddingHorizontal: 12, paddingVertical: 6, borderRadius: t.radius.pill,
   },
-  systemMsgText: { color: COLORS.warning, fontSize: 12, fontWeight: '600' },
+  systemMsgText: { color: t.colors.warning, fontSize: 12, fontWeight: '600' },
 
-  // Typing indicator
   typingBubble: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'flex-start',
-    gap: 5,
-    backgroundColor: COLORS.surface,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 18,
-    borderBottomLeftRadius: 4,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    marginLeft: 36,
-    marginBottom: 12,
-    ...SHADOWS.sm,
+    flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start', gap: 5,
+    backgroundColor: t.colors.surface, paddingVertical: 12, paddingHorizontal: 16,
+    borderRadius: 18, borderBottomLeftRadius: 4, borderWidth: 1, borderColor: t.colors.border,
+    marginLeft: 36, marginBottom: 12, ...t.shadows.sm,
   },
 
-  // ── Recording overlay ────────────────────────────────────────────────────────
   recordingOverlay: {
-    alignItems: 'center',
-    paddingVertical: 16,
-    backgroundColor: '#FFF0F3',
-    borderTopWidth: 1,
-    borderTopColor: '#FECDD3',
+    alignItems: 'center', paddingVertical: 16,
+    backgroundColor: t.colors.expenseSoft, borderTopWidth: 1, borderTopColor: t.colors.expenseSoft,
   },
-  pulseBg: {
-    position: 'absolute',
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: COLORS.expense,
-    opacity: 0.15,
-  },
+  pulseBg: { position: 'absolute', width: 64, height: 64, borderRadius: 32, backgroundColor: t.colors.expense, opacity: 0.15 },
   pulseIcon: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: COLORS.expense,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 10,
-    ...SHADOWS.md,
+    width: 56, height: 56, borderRadius: 28, backgroundColor: t.colors.expense,
+    alignItems: 'center', justifyContent: 'center', marginBottom: 10, ...t.shadows.md,
   },
-  recordingLabel: { fontSize: 14, fontWeight: '800', color: COLORS.expense },
-  recordingHint: { fontSize: 12, color: COLORS.muted, marginTop: 2 },
+  recordingLabel: { fontSize: 14, fontWeight: '800' },
+  recordingHint: { fontSize: 12, color: t.colors.textMuted, marginTop: 2 },
 
-  // ── Image loading banner ────────────────────────────────────────────────────
   imageBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    backgroundColor: COLORS.primaryLight,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderTopWidth: 1,
-    borderTopColor: COLORS.border,
+    flexDirection: 'row', alignItems: 'center', gap: 10,
+    backgroundColor: t.colors.brandSoft, paddingHorizontal: 16, paddingVertical: 10,
+    borderTopWidth: 1, borderTopColor: t.colors.border,
   },
-  imageBannerText: { fontSize: 13, color: COLORS.primary, fontWeight: '600' },
+  imageBannerText: { fontSize: 13, color: t.colors.brandText, fontWeight: '600' },
 
-  // ── Input area ──────────────────────────────────────────────────────────────
   inputArea: {
-    backgroundColor: COLORS.surface,
-    borderTopWidth: 1,
-    borderTopColor: COLORS.border,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    ...SHADOWS.sm,
+    backgroundColor: t.colors.surface, borderTopWidth: 1, borderTopColor: t.colors.border,
+    paddingHorizontal: 12, paddingVertical: 10, ...t.shadows.sm,
   },
-  inputRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    gap: 8,
-  },
-
-  // Mic button
+  inputRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 8 },
   micBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: COLORS.primaryLight,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1.5,
-    borderColor: COLORS.primary,
+    width: 44, height: 44, borderRadius: 22, backgroundColor: t.colors.brandSoft,
+    alignItems: 'center', justifyContent: 'center', borderWidth: 1.5, borderColor: t.colors.brand,
   },
-  micBtnActive: {
-    backgroundColor: COLORS.expense,
-    borderColor: COLORS.expense,
-    ...SHADOWS.md,
-  },
-
-  // Text input
+  micBtnActive: { backgroundColor: t.colors.expense, borderColor: t.colors.expense, ...t.shadows.md },
   input: {
-    flex: 1,
-    minHeight: 44,
-    maxHeight: 100,
-    backgroundColor: COLORS.background,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 22,
-    fontSize: 15,
-    color: COLORS.text,
-    borderWidth: 1.5,
-    borderColor: COLORS.border,
+    flex: 1, minHeight: 44, maxHeight: 100, backgroundColor: t.colors.surfaceAlt,
+    paddingHorizontal: 14, paddingVertical: 10, borderRadius: 22, fontSize: 15, color: t.colors.text,
+    borderWidth: 1.5, borderColor: t.colors.border,
   },
   inputHidden: { display: 'none' },
-
-  // Camera / Gallery icon buttons
   iconBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: COLORS.background,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1.5,
-    borderColor: COLORS.border,
+    width: 44, height: 44, borderRadius: 22, backgroundColor: t.colors.surfaceAlt,
+    alignItems: 'center', justifyContent: 'center', borderWidth: 1.5, borderColor: t.colors.border,
   },
-
-  // Send button
   sendBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: COLORS.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-    ...SHADOWS.sm,
+    width: 44, height: 44, borderRadius: 22, backgroundColor: t.colors.brand,
+    alignItems: 'center', justifyContent: 'center', ...t.shadows.sm,
   },
 });

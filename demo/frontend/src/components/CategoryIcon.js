@@ -1,5 +1,4 @@
 import AppIcon from './AppIcon';
-import { COLORS } from '../utils/constants';
 
 const ICON_BY_EMOJI = {
   '🍜': 'restaurant',
@@ -56,6 +55,6 @@ export function getCategoryIconName({ icon, name, type } = {}) {
   return ICON_BY_EMOJI[icon] || ICON_BY_NAME[normalizeName(name)] || (type === 'income' ? 'payments' : 'category');
 }
 
-export default function CategoryIcon({ icon, name, type, size = 20, color = COLORS.text, style }) {
+export default function CategoryIcon({ icon, name, type, size = 20, color, style }) {
   return <AppIcon name={getCategoryIconName({ icon, name, type })} size={size} color={color} style={style} />;
 }

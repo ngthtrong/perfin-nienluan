@@ -11,9 +11,22 @@ function getDevServerHost() {
   return host;
 }
 
+function getWebHost() {
+  if (typeof window === 'undefined') return null;
+  const host = window.location?.hostname;
+  if (!host || host === 'localhost' || host === '127.0.0.1') return null;
+  return host;
+}
+
 function getBaseUrl() {
   const envUrl = process.env.EXPO_PUBLIC_API_URL;
   if (envUrl) return envUrl.replace(/\/$/, '');
+
+  if (Platform.OS === 'web') {
+    const webHost = getWebHost();
+    if (webHost) return `http://${webHost}:3000`;
+    return 'http://localhost:3000';
+  }
 
   if (Platform.OS !== 'web') {
     const devHost = getDevServerHost();
@@ -24,6 +37,9 @@ function getBaseUrl() {
 }
 
 const BASE_URL = getBaseUrl();
+const CONNECTION_HINT = Platform.OS === 'web'
+  ? 'Nếu chạy trong WSL, hãy bật backend trong WSL và mở web bằng cùng host/IP, hoặc đặt EXPO_PUBLIC_API_URL.'
+  : 'Nếu chạy Expo Go từ WSL, dùng ./demo/start-app.sh tunnel hoặc đặt EXPO_PUBLIC_API_URL bằng URL backend tunnel/IP LAN.';
 const TUNNEL_HEADERS = {
   'bypass-tunnel-reminder': 'true',
   'ngrok-skip-browser-warning': 'true',
@@ -110,7 +126,7 @@ async function request(path, options = {}) {
       headers: { ...TUNNEL_HEADERS, 'Content-Type': 'application/json', ...(options.headers || {}) },
     });
   } catch (error) {
-    throw new Error(`Không kết nối được API tại ${BASE_URL}. Kiểm tra backend và cùng mạng Wi-Fi.`);
+    throw new Error(`Không kết nối được API tại ${BASE_URL}. ${CONNECTION_HINT}`);
   }
 
   return unwrapResponse(response);
@@ -172,7 +188,7 @@ async function upload(path, fieldName, asset, fallbackMimeType) {
       body: formData,
     });
   } catch (error) {
-    throw new Error(`Không kết nối được API tại ${BASE_URL}. Kiểm tra backend và cùng mạng Wi-Fi.`);
+    throw new Error(`Không kết nối được API tại ${BASE_URL}. ${CONNECTION_HINT}`);
   }
 
   return unwrapResponse(response);
