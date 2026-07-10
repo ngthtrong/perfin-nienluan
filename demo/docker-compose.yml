@@ -1,0 +1,39 @@
+# PERFIN — Docker Compose
+# Chỉ container hóa Redis; backend + worker chạy trực tiếp trên host (vì PostgreSQL cũng trên host).
+#
+# Usage:
+#   docker compose up -d          # Khởi động Redis
+#   docker compose down            # Dừng Redis
+#   docker compose logs -f redis   # Xem logs
+
+services:
+  redis:
+    image: redis:7.4-alpine
+    container_name: perfin-redis
+    command:
+      - redis-server
+      - --appendonly
+      - "yes"
+      - --maxmemory
+      - 256mb
+      - --maxmemory-policy
+      - noeviction
+      - --save
+      - "60 1000"
+      - --loglevel
+      - notice
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:6379:6379"
+    volumes:
+      - perfin-redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+
+volumes:
+  perfin-redis-data:
+    driver: local

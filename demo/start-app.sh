@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # PERFIN — Start App Script
-# Khởi chạy đầy đủ: Python AI env + Backend + Localtunnel + Expo (mặc định tunnel cho WSL/iOS)
+# Khởi chạy đầy đủ: Docker Redis + Python AI env + Backend + Worker + Tunnel + Expo
 #
 # Usage:
-#   ./start-app.sh [lan|tunnel|web] [--migrate] [--no-clear] [--skip-ai-setup] [--download-models]
+#   ./start-app.sh [lan|tunnel|web] [--migrate] [--no-clear] [--skip-ai-setup] [--download-models] [--no-docker]
 #
 # Modes:
 #   tunnel  (Mặc định) Backend + localtunnel + Expo tunnel — dành cho WSL kiểm thử iOS Expo Go
@@ -22,10 +22,13 @@ RUN_MIGRATE=0
 CLEAR_CACHE=1
 SKIP_AI_SETUP=0
 DOWNLOAD_MODELS=0
+SKIP_DOCKER=0
 
 BACKEND_PID=""
+WORKER_PID=""
 TUNNEL_PID=""
 BACKEND_LOG=""
+WORKER_LOG=""
 TUNNEL_LOG=""
 
 # ── Help ────────────────────────────────────────────────────────────────────────
@@ -44,6 +47,7 @@ Options:
   --no-clear         Không xóa Expo bundler cache.
   --skip-ai-setup    Bỏ qua bước setup Python AI venv (khi đã setup rồi).
   --download-models  Force download lại AI models dù đã cache.
+  --no-docker        Không khởi động Redis container (khi đã chạy Redis thủ công).
   -h, --help         Hiển thị help này.
 
 Examples:
@@ -73,12 +77,18 @@ cleanup() {
     kill "$TUNNEL_PID" 2>/dev/null || true
   fi
 
+  if [[ -n "$WORKER_PID" ]] && kill -0 "$WORKER_PID" 2>/dev/null; then
+    log "Stopping worker..."
+    kill "$WORKER_PID" 2>/dev/null || true
+  fi
+
   if [[ -n "$BACKEND_PID" ]] && kill -0 "$BACKEND_PID" 2>/dev/null; then
     log "Stopping backend..."
     kill "$BACKEND_PID" 2>/dev/null || true
   fi
 
   [[ -n "$BACKEND_LOG" && -f "$BACKEND_LOG" ]] && rm -f "$BACKEND_LOG"
+  [[ -n "$WORKER_LOG" && -f "$WORKER_LOG" ]] && rm -f "$WORKER_LOG"
   [[ -n "$TUNNEL_LOG" && -f "$TUNNEL_LOG" ]] && rm -f "$TUNNEL_LOG"
 
   exit "$exit_code"
@@ -101,6 +111,9 @@ parse_args() {
         ;;
       --skip-ai-setup)
         SKIP_AI_SETUP=1
+        ;;
+      --no-docker)
+        SKIP_DOCKER=1
         ;;
       --download-models)
         DOWNLOAD_MODELS=1
@@ -259,6 +272,92 @@ start_backend() {
   log "Backend sẵn sàng: http://127.0.0.1:$BACKEND_PORT"
 }
 
+# ── Worker (BullMQ) ────────────────────────────────────────────────────────────
+start_worker() {
+  log_step "Worker (BullMQ)"
+  WORKER_LOG="$(mktemp -t perfin-worker.XXXXXX.log)"
+  log "Khởi động BullMQ worker..."
+  (
+    cd "$BACKEND_DIR"
+    npm run worker
+  ) >"$WORKER_LOG" 2>&1 &
+  WORKER_PID=$!
+  sleep 2
+
+  if kill -0 "$WORKER_PID" 2>/dev/null; then
+    log "Worker đang chạy (PID $WORKER_PID)."
+  else
+    log "WARN: Worker có thể đã thoát. Xem log: $WORKER_LOG"
+  fi
+}
+
+# ── Docker Redis ───────────────────────────────────────────────────────────────
+start_docker_redis() {
+  if [[ "$SKIP_DOCKER" -eq 1 ]]; then
+    log "Bỏ qua Docker (--no-docker)."
+    return
+  fi
+
+  # Kiểm tra Redis đã chạy chưa
+  if command -v redis-cli >/dev/null 2>&1 && redis-cli -h 127.0.0.1 -p 6379 ping 2>/dev/null | grep -q PONG; then
+    log "Redis đã chạy trên 127.0.0.1:6379."
+    return
+  fi
+
+  log_step "Docker Redis"
+
+  # Kiểm tra Docker có sẵn không
+  local docker_cmd="docker"
+  if ! docker info >/dev/null 2>&1; then
+    # Thử qua sg docker (khi user chưa trong group docker)
+    if sg docker -c "docker info" >/dev/null 2>&1; then
+      docker_cmd="sg docker -c"
+      log "Dùng 'sg docker' (user chưa trong group docker)."
+      log "Tip: chạy 'sudo usermod -aG docker \$USER && newgrp docker' để fix vĩnh viễn."
+    else
+      log "WARN: Docker không khả dụng. Redis sẽ dùng fallback in-memory."
+      log "      Chạy: ./scripts/setup-docker-wsl.sh để cài Docker."
+      return
+    fi
+  fi
+
+  local compose_file="$ROOT_DIR/docker-compose.yml"
+  if [[ ! -f "$compose_file" ]]; then
+    # Fallback sang compose.redis.yml cũ
+    compose_file="$BACKEND_DIR/compose.redis.yml"
+  fi
+
+  if [[ ! -f "$compose_file" ]]; then
+    log "WARN: Không tìm thấy docker-compose.yml — bỏ qua Docker."
+    return
+  fi
+
+  log "Khởi động Redis container..."
+  if [[ "$docker_cmd" == "sg docker -c" ]]; then
+    sg docker -c "docker compose -f $compose_file up -d" 2>&1 || true
+  else
+    docker compose -f "$compose_file" up -d 2>&1 || true
+  fi
+
+  # Chờ Redis ready
+  local attempt
+  for attempt in $(seq 1 15); do
+    if redis-cli -h 127.0.0.1 -p 6379 ping 2>/dev/null | grep -q PONG 2>/dev/null; then
+      log "Redis sẵn sàng (127.0.0.1:6379)."
+      return
+    fi
+    # Fallback: thử qua docker exec
+    if [[ "$docker_cmd" == "sg docker -c" ]]; then
+      sg docker -c "docker exec perfin-redis redis-cli ping" 2>/dev/null | grep -q PONG && { log "Redis sẵn sàng (container)."; return; }
+    else
+      docker exec perfin-redis redis-cli ping 2>/dev/null | grep -q PONG && { log "Redis sẵn sàng (container)."; return; }
+    fi
+    sleep 1
+  done
+
+  log "WARN: Redis chưa phản hồi PONG. Backend sẽ dùng in-memory fallback."
+}
+
 run_migrations() {
   log_step "Database Migration"
   log "Đang chạy migration..."
@@ -364,6 +463,9 @@ main() {
     fi
   fi
 
+  # Docker Redis
+  start_docker_redis
+
   # Setup Python AI environment
   setup_python_ai
 
@@ -377,6 +479,9 @@ main() {
 
   # Start backend
   start_backend
+
+  # Start worker (BullMQ background jobs)
+  start_worker
 
   # Start frontend
   case "$MODE" in
