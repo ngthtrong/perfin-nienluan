@@ -1,6 +1,30 @@
 const { pool, query } = require('../config/database');
+const KVStore = require('../services/store/kv.store');
 
 const DEFAULT_USER = 'default_user';
+
+async function invalidateFinancialCaches(userId = DEFAULT_USER) {
+  await Promise.all([
+    KVStore.del(`cache:wallets:${userId}`),
+    KVStore.del(`cache:insights:${userId}`),
+  ]);
+}
+
+function validateTransferInput(data = {}) {
+  const amount = Number(data.amount);
+  const type = data.transfer_type || 'transfer';
+  const allowed = new Set(['transfer', 'investment_inflow', 'investment_outflow']);
+  if (!(amount > 0) || !Number.isFinite(amount)) throw Object.assign(new Error('Số tiền chuyển phải lớn hơn 0'), { status: 400 });
+  if (!allowed.has(type)) throw Object.assign(new Error('Loại chuyển tiền không hợp lệ'), { status: 400 });
+  if (!data.from_wallet_id && !data.to_wallet_id) throw Object.assign(new Error('Cần ít nhất một ví nguồn hoặc ví nhận'), { status: 400 });
+  if (type === 'transfer' && (!data.from_wallet_id || !data.to_wallet_id)) {
+    throw Object.assign(new Error('Chuyển giữa ví cần đủ ví nguồn và ví nhận'), { status: 400 });
+  }
+  if (data.from_wallet_id && data.to_wallet_id && Number(data.from_wallet_id) === Number(data.to_wallet_id)) {
+    throw Object.assign(new Error('Ví nguồn và ví nhận phải khác nhau'), { status: 400 });
+  }
+  return { amount, transfer_type: type };
+}
 
 // ─── Wallet Transfers (REQ-06: Transfer / Investment Inflow / Outflow) ──────
 
@@ -10,10 +34,29 @@ const TransferModel = {
    * transfer_type: 'transfer' | 'investment_inflow' | 'investment_outflow'
    */
   async create(data) {
-    const { userId = DEFAULT_USER, from_wallet_id, to_wallet_id, amount, transfer_type = 'transfer', note, transaction_date } = data;
+    const validated = validateTransferInput(data);
+    const { userId = DEFAULT_USER, from_wallet_id, to_wallet_id, note, transaction_date } = data;
+    const { amount, transfer_type } = validated;
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
+
+      const walletIds = [...new Set([from_wallet_id, to_wallet_id].filter(Boolean).map(Number))];
+      const wallets = await client.query(
+        'SELECT id, name, type, balance FROM wallets WHERE user_id = $1 AND id = ANY($2::int[]) FOR UPDATE',
+        [userId, walletIds]
+      );
+      if (wallets.rowCount !== walletIds.length) {
+        const error = new Error('Ví nguồn hoặc ví nhận không tồn tại');
+        error.status = 400;
+        throw error;
+      }
+      const source = wallets.rows.find((wallet) => Number(wallet.id) === Number(from_wallet_id));
+      if (source && source.type !== 'credit_card' && Number(source.balance) < amount) {
+        const error = new Error(`Số dư ví ${source.name} không đủ`);
+        error.status = 409;
+        throw error;
+      }
 
       // Debit source wallet
       if (from_wallet_id) {
@@ -40,6 +83,7 @@ const TransferModel = {
       );
 
       await client.query('COMMIT');
+      await invalidateFinancialCaches(userId);
       return this.getById(result.rows[0].id);
     } catch (err) {
       await client.query('ROLLBACK');
@@ -104,9 +148,26 @@ const TransferModel = {
 const InvestmentPnLModel = {
   async create(data) {
     const { userId = DEFAULT_USER, wallet_id, amount, note, recorded_at } = data;
+    if (!Number.isFinite(Number(amount)) || Number(amount) === 0) {
+      const error = new Error('Giá trị lãi/lỗ phải là số khác 0');
+      error.status = 400;
+      throw error;
+    }
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
+
+      const wallet = await client.query(
+        `SELECT id, type FROM wallets
+         WHERE id = $1 AND user_id = $2 AND type IN ('investment'::wallet_type, 'savings'::wallet_type)
+         FOR UPDATE`,
+        [wallet_id, userId]
+      );
+      if (!wallet.rowCount) {
+        const error = new Error('Ví đầu tư không tồn tại hoặc không thuộc người dùng');
+        error.status = 400;
+        throw error;
+      }
 
       // Adjust investment wallet balance
       await client.query(
@@ -122,6 +183,7 @@ const InvestmentPnLModel = {
       );
 
       await client.query('COMMIT');
+      await invalidateFinancialCaches(userId);
       return result.rows[0];
     } catch (err) {
       await client.query('ROLLBACK');
@@ -151,6 +213,7 @@ const InvestmentPnLModel = {
       );
 
       await client.query('COMMIT');
+      await invalidateFinancialCaches(old.rows[0].user_id || DEFAULT_USER);
       return result.rows[0];
     } catch (err) {
       await client.query('ROLLBACK');
@@ -174,6 +237,7 @@ const InvestmentPnLModel = {
       );
       await client.query('DELETE FROM investment_pnl WHERE id = $1', [id]);
       await client.query('COMMIT');
+      await invalidateFinancialCaches(old.rows[0].user_id || DEFAULT_USER);
       return old.rows[0];
     } catch (err) {
       await client.query('ROLLBACK');
@@ -304,3 +368,4 @@ const CashflowModel = {
 };
 
 module.exports = { TransferModel, InvestmentPnLModel, NetWorthModel, CashflowModel };
+module.exports.validateTransferInput = validateTransferInput;

@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { api } from '../services/api.service';
 import { CATEGORY_COLORS } from '../theme/tokens';
 import { useTheme } from '../theme/ThemeContext';
-import { currentPeriod, formatVND } from '../utils/formatters';
+import { currentPeriod, formatDate, formatVND } from '../utils/formatters';
 import AppIcon from '../components/AppIcon';
 import { AppHeader, StatCard, ProgressBar, ErrorState, Skeleton } from '../components/ui';
 
@@ -20,21 +20,24 @@ export default function ReportScreen() {
   const [summary, setSummary] = useState({});
   const [breakdown, setBreakdown] = useState([]);
   const [trend, setTrend] = useState([]);
+  const [insights, setInsights] = useState(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
 
-  const load = useCallback(async (m, y) => {
+  const load = useCallback(async (m, y, freshInsights = false) => {
     setLoading(true);
     try {
-      const [s, b, t] = await Promise.all([
+      const [s, b, t, i] = await Promise.all([
         api.getReportSummary(m, y),
         api.getCategoryBreakdown(m, y),
         api.getMonthlyTrend(y),
+        api.getReportInsights({ payday: 25, fresh: freshInsights }).catch(() => null),
       ]);
       setSummary(s.data || {});
       setBreakdown(b.data || []);
       setTrend(t.data || []);
+      setInsights(i?.data || null);
       setError(null);
     } catch (err) {
       setError(err.message);
@@ -47,7 +50,7 @@ export default function ReportScreen() {
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    await load(period.month, period.year);
+    await load(period.month, period.year, true);
     setRefreshing(false);
   }, [period.month, period.year, load]);
 
@@ -123,6 +126,100 @@ export default function ReportScreen() {
               </Text>
               <Text style={styles.netSub}>{summary.transaction_count || 0} giao dịch</Text>
             </View>
+          </View>
+        )}
+
+        <Text style={styles.sectionTitle}>Phân tích thông minh</Text>
+        {loading ? (
+          <Skeleton height={144} radius={18} style={{ marginBottom: 12 }} />
+        ) : insights ? (
+          <>
+            <View style={styles.insightCard}>
+              <View style={styles.insightHeader}>
+                <View style={styles.insightIcon}>
+                  <AppIcon name="auto-awesome" size={18} color={c.onBrand} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.insightTitle}>Góc nhìn từ {insights.persona?.name || 'PERFIN'}</Text>
+                  <Text style={styles.insightProvider}>{insights.provider_used || 'Phân tích cục bộ'}</Text>
+                </View>
+              </View>
+              <Text style={styles.insightComment}>{insights.ai_comment}</Text>
+            </View>
+
+            {insights.facts?.runway && (
+              <View style={[styles.analyticsCard, insights.facts.runway.beforePayday && styles.analyticsWarningCard]}>
+                <View style={styles.analyticsHeader}>
+                  <View style={[styles.analyticsIcon, { backgroundColor: insights.facts.runway.beforePayday ? c.warningSoft : c.infoSoft }]}>
+                    <AppIcon name="hourglass-bottom" size={17} color={insights.facts.runway.beforePayday ? c.warning : c.info} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.analyticsTitle}>Đường băng dòng tiền</Text>
+                    <Text style={styles.analyticsSubtitle}>Ước tính từ nhịp chi 14 ngày gần đây</Text>
+                  </View>
+                  <Text style={[styles.runwayDays, { color: insights.facts.runway.beforePayday ? c.warning : c.info }]}>
+                    {insights.facts.runway.daysLeft} ngày
+                  </Text>
+                </View>
+                <View style={styles.runwayStats}>
+                  <View style={styles.runwayStat}>
+                    <Text style={styles.runwayStatLabel}>Số dư</Text>
+                    <Text style={styles.runwayStatValue}>{formatVND(insights.facts.runway.totalBalance)}</Text>
+                  </View>
+                  <View style={styles.runwayStat}>
+                    <Text style={styles.runwayStatLabel}>Chi trung bình/ngày</Text>
+                    <Text style={styles.runwayStatValue}>{formatVND(insights.facts.runway.avgBurn)}</Text>
+                  </View>
+                  <View style={styles.runwayStat}>
+                    <Text style={styles.runwayStatLabel}>Dự kiến cạn</Text>
+                    <Text style={styles.runwayStatValue}>{formatDate(insights.facts.runway.depletionDate)}</Text>
+                  </View>
+                </View>
+                {insights.facts.runway.beforePayday && (
+                  <View style={styles.runwayWarning}>
+                    <AppIcon name="warning-amber" size={15} color={c.warning} />
+                    <Text style={styles.runwayWarningText}>
+                      Có thể cạn trước kỳ lương khoảng {insights.facts.runway.daysBeforePayday} ngày.
+                    </Text>
+                  </View>
+                )}
+              </View>
+            )}
+
+            {insights.facts?.subscriptions?.subscriptions?.length > 0 && (
+              <View style={styles.analyticsCard}>
+                <View style={styles.analyticsHeader}>
+                  <View style={[styles.analyticsIcon, { backgroundColor: c.brandSoft }]}>
+                    <AppIcon name="subscriptions" size={17} color={c.brandText} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.analyticsTitle}>Khoản chi có dấu hiệu đăng ký</Text>
+                    <Text style={styles.analyticsSubtitle}>
+                      Khoảng {formatVND(insights.facts.subscriptions.totalMonthly)}/tháng
+                    </Text>
+                  </View>
+                  <View style={styles.analyticsCount}>
+                    <Text style={styles.analyticsCountText}>{insights.facts.subscriptions.subscriptions.length}</Text>
+                  </View>
+                </View>
+                {insights.facts.subscriptions.subscriptions.slice(0, 5).map((subscription, index) => (
+                  <View key={`${subscription.label}-${index}`} style={[styles.subscriptionRow, index > 0 && styles.subscriptionBorder]}>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.subscriptionName} numberOfLines={1}>{subscription.label}</Text>
+                      <Text style={styles.subscriptionMeta}>
+                        {subscription.occurrences} lần{subscription.cadenceDays ? ` · chu kỳ ~${subscription.cadenceDays} ngày` : ''}
+                      </Text>
+                    </View>
+                    <Text style={styles.subscriptionAmount}>{formatVND(subscription.monthlyEstimate)}/tháng</Text>
+                  </View>
+                ))}
+              </View>
+            )}
+          </>
+        ) : (
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyIcon}>✨</Text>
+            <Text style={styles.emptyMsg}>Chưa đủ dữ liệu để tạo phân tích thông minh</Text>
           </View>
         )}
 
@@ -219,6 +316,49 @@ const createStyles = (t) => StyleSheet.create({
   netSub: { color: t.colors.textMuted, fontSize: 11, marginTop: 2 },
 
   sectionTitle: { fontSize: 16, fontWeight: '800', color: t.colors.text, marginBottom: 12 },
+
+  insightCard: {
+    backgroundColor: t.colors.brandSoft, padding: 16, borderRadius: t.radius.lg,
+    borderWidth: 1.5, borderColor: t.colors.brand, marginBottom: 10,
+  },
+  insightHeader: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 11 },
+  insightIcon: {
+    width: 36, height: 36, borderRadius: 12, backgroundColor: t.colors.brand,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  insightTitle: { color: t.colors.text, fontSize: 14, fontWeight: '900' },
+  insightProvider: { color: t.colors.textMuted, fontSize: 10, fontWeight: '600', marginTop: 2 },
+  insightComment: { color: t.colors.textSecondary, fontSize: 13, lineHeight: 19, fontWeight: '600' },
+
+  analyticsCard: {
+    backgroundColor: t.colors.surface, padding: 15, borderRadius: t.radius.lg,
+    borderWidth: 1, borderColor: t.colors.border, marginBottom: 10, ...t.shadows.sm,
+  },
+  analyticsWarningCard: { borderColor: t.colors.warning },
+  analyticsHeader: { flexDirection: 'row', alignItems: 'center', gap: 9 },
+  analyticsIcon: { width: 34, height: 34, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
+  analyticsTitle: { color: t.colors.text, fontSize: 13, fontWeight: '900' },
+  analyticsSubtitle: { color: t.colors.textMuted, fontSize: 10, fontWeight: '600', marginTop: 2 },
+  analyticsCount: {
+    minWidth: 27, height: 27, paddingHorizontal: 7, borderRadius: 14,
+    backgroundColor: t.colors.brandSoft, alignItems: 'center', justifyContent: 'center',
+  },
+  analyticsCountText: { color: t.colors.brandText, fontSize: 11, fontWeight: '900' },
+  runwayDays: { fontSize: 19, fontWeight: '900' },
+  runwayStats: { flexDirection: 'row', marginTop: 13, gap: 6 },
+  runwayStat: { flex: 1, padding: 8, borderRadius: t.radius.sm, backgroundColor: t.colors.surfaceAlt },
+  runwayStatLabel: { color: t.colors.textMuted, fontSize: 9, fontWeight: '700', marginBottom: 3 },
+  runwayStatValue: { color: t.colors.textSecondary, fontSize: 10, fontWeight: '800' },
+  runwayWarning: {
+    flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 10,
+    padding: 8, borderRadius: t.radius.sm, backgroundColor: t.colors.warningSoft,
+  },
+  runwayWarningText: { flex: 1, color: t.colors.warning, fontSize: 10, fontWeight: '700' },
+  subscriptionRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 10 },
+  subscriptionBorder: { borderTopWidth: 1, borderTopColor: t.colors.border },
+  subscriptionName: { color: t.colors.text, fontSize: 12, fontWeight: '800' },
+  subscriptionMeta: { color: t.colors.textMuted, fontSize: 10, fontWeight: '600', marginTop: 2 },
+  subscriptionAmount: { color: t.colors.expense, fontSize: 10, fontWeight: '800' },
 
   catRow: {
     backgroundColor: t.colors.surface, padding: 14, borderRadius: t.radius.md,

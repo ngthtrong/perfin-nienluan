@@ -6,10 +6,14 @@
   "scripts": {
     "start": "node index.js",
     "dev": "node --watch index.js",
+    "worker": "node scripts/worker.js",
+    "worker:dev": "node --watch scripts/worker.js",
     "migrate": "node scripts/migrate.js",
     "migrate:fresh": "node scripts/migrate.js --fresh",
     "seed": "node scripts/migrate.js --seed-only",
+    "test": "node --test tests/*.test.js",
     "test:ai": "node tests/ai-accuracy-test.js",
+    "test:jobs": "node --test tests/jobs.test.js",
     "seed:demo": "node scripts/seed-demo.js",
     "seed:demo:fresh": "node scripts/seed-demo.js --clear",
     "setup:media-ai": "python3 -m venv .venv-ai && .venv-ai/bin/python -m pip install --upgrade pip && .venv-ai/bin/pip install -r requirements-ai.txt"
@@ -22,6 +26,7 @@
     "@google-cloud/speech": "^7.3.1",
     "@google-cloud/vision": "^5.3.6",
     "@google/genai": "^2.7.0",
+    "bullmq": "^5.80.0",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "dotenv-expand": "^13.0.0",

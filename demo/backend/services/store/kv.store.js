@@ -95,6 +95,34 @@ const KVStore = {
     if (fresh !== null && fresh !== undefined) await this.set(key, fresh, ttlSeconds);
     return fresh;
   },
+
+  // Fixed-window counter used for lightweight API rate limits. Redis executes the
+  // increment/first-expiry atomically; the development fallback keeps the same API.
+  async increment(key, ttlSeconds = 60) {
+    const client = await getClient();
+    if (client) {
+      try {
+        const result = await client.eval(
+          `local value = redis.call('INCR', KEYS[1])
+           if value == 1 then redis.call('EXPIRE', KEYS[1], ARGV[1]) end
+           return {value, redis.call('TTL', KEYS[1])}`,
+          1,
+          key,
+          String(ttlSeconds)
+        );
+        return { value: Number(result[0]), ttl: Number(result[1]) };
+      } catch (err) {
+        console.warn(`[kv] redis increment failed (${err.message}) — falling back`);
+      }
+    }
+    const current = mem.get(key);
+    const now = Date.now();
+    const active = current && (!current.expiresAt || current.expiresAt > now) ? Number(current.value) || 0 : 0;
+    const expiresAt = active > 0 && current.expiresAt ? current.expiresAt : now + ttlSeconds * 1000;
+    const value = active + 1;
+    mem.set(key, { value, expiresAt });
+    return { value, ttl: Math.max(0, Math.ceil((expiresAt - now) / 1000)) };
+  },
 };
 
 module.exports = KVStore;

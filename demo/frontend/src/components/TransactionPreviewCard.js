@@ -1,11 +1,11 @@
-import { useState, useMemo } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
+import { useEffect, useState, useMemo } from 'react';
+import { ActivityIndicator, View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
 import BalanceDisplay from './BalanceDisplay';
 import AppIcon from './AppIcon';
 import { useTheme } from '../theme/ThemeContext';
 import { formatDate } from '../utils/formatters';
 
-export default function TransactionPreviewCard({ transaction, onConfirm, onCancel, onEdit }) {
+export default function TransactionPreviewCard({ transaction, onConfirm, onCancel, onEdit, busy = false, resolved = false }) {
   const { theme } = useTheme();
   const styles = useMemo(() => createStyles(theme), [theme]);
   const c = theme.colors;
@@ -13,6 +13,17 @@ export default function TransactionPreviewCard({ transaction, onConfirm, onCance
   const [editing, setEditing] = useState(false);
   const [amount, setAmount] = useState(String(transaction.amount || ''));
   const [description, setDescription] = useState(transaction.description || '');
+
+  useEffect(() => {
+    setAmount(String(transaction.amount || ''));
+    setDescription(transaction.description || '');
+  }, [transaction.amount, transaction.description]);
+
+  async function saveEdit() {
+    if (!description.trim() || !(Number(amount) > 0)) return;
+    const updated = await onEdit?.({ description: description.trim(), amount: Number(amount) });
+    if (updated !== false) setEditing(false);
+  }
 
   const signed = transaction.type === 'income' ? Number(transaction.amount) : -Number(transaction.amount);
   const isIncome = transaction.type === 'income';
@@ -53,9 +64,12 @@ export default function TransactionPreviewCard({ transaction, onConfirm, onCance
             />
             <TouchableOpacity
               style={styles.saveBtn}
-              onPress={() => { onEdit({ description, amount: Number(amount) }); setEditing(false); }}
+              onPress={saveEdit}
+              disabled={busy}
             >
-              <AppIcon name="check-circle" size={16} color={c.onBrand} />
+              {busy
+                ? <ActivityIndicator size="small" color={c.onBrand} />
+                : <AppIcon name="check-circle" size={16} color={c.onBrand} />}
               <Text style={styles.saveBtnText}>Lưu thay đổi</Text>
             </TouchableOpacity>
           </View>
@@ -72,19 +86,27 @@ export default function TransactionPreviewCard({ transaction, onConfirm, onCance
           </View>
         )}
 
-        {!editing && (
+        {!editing && !resolved && (
           <View style={styles.actions}>
-            <TouchableOpacity style={styles.confirmBtn} onPress={onConfirm}>
-              <AppIcon name="check" size={16} color={c.onBrand} />
+            <TouchableOpacity style={styles.confirmBtn} onPress={onConfirm} disabled={busy}>
+              {busy
+                ? <ActivityIndicator size="small" color={c.onBrand} />
+                : <AppIcon name="check" size={16} color={c.onBrand} />}
               <Text style={styles.confirmText}>Xác nhận</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.editBtn} onPress={() => setEditing(true)}>
+            <TouchableOpacity style={styles.editBtn} onPress={() => setEditing(true)} disabled={busy}>
               <AppIcon name="edit" size={16} color={c.brand} />
               <Text style={styles.editText}>Sửa</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.cancelBtn} onPress={onCancel}>
+            <TouchableOpacity style={styles.cancelBtn} onPress={onCancel} disabled={busy}>
               <AppIcon name="close" size={16} color={c.textMuted} />
             </TouchableOpacity>
+          </View>
+        )}
+        {resolved && (
+          <View style={styles.resolvedBar}>
+            <AppIcon name="check-circle" size={16} color={c.income} />
+            <Text style={styles.resolvedText}>Đã xử lý bản xem trước này</Text>
           </View>
         )}
       </View>
@@ -158,4 +180,9 @@ const createStyles = (t) => StyleSheet.create({
     width: 42, alignItems: 'center', justifyContent: 'center', borderRadius: t.radius.md,
     borderWidth: 1.5, borderColor: t.colors.border, backgroundColor: t.colors.surfaceAlt,
   },
+  resolvedBar: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
+    padding: 12, borderTopWidth: 1, borderTopColor: t.colors.border, backgroundColor: t.colors.incomeSoft,
+  },
+  resolvedText: { color: t.colors.income, fontSize: 12, fontWeight: '800' },
 });

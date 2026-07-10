@@ -18,9 +18,12 @@ const recurringRoutes = require('./routes/recurring.routes');
 const personaRoutes = require('./routes/persona.routes');
 const goalRoutes = require('./routes/goal.routes');
 const errorMiddleware = require('./middleware/error.middleware');
+const { rateLimit } = require('./middleware/rateLimit.middleware');
 
 const app = express();
 const port = process.env.PORT || 3000;
+const aiLimiter = rateLimit({ prefix: 'ai', limit: 30, windowSeconds: 60 });
+const chatLimiter = rateLimit({ prefix: 'chat', limit: 60, windowSeconds: 60 });
 
 app.use(cors());
 app.use(express.json({ limit: '15mb' }));
@@ -38,8 +41,8 @@ app.get('/api/test-db', async (req, res, next) => {
   }
 });
 
-app.use('/api/ai', aiRoutes);
-app.use('/api/chat', chatRoutes);
+app.use('/api/ai', aiLimiter, aiRoutes);
+app.use('/api/chat', chatLimiter, chatRoutes);
 app.use('/api/transactions', transactionRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/budgets', budgetRoutes);
@@ -51,16 +54,16 @@ app.use('/api/recurring', recurringRoutes);
 app.use('/api/personas', personaRoutes);
 app.use('/api/goals', goalRoutes);
 
-app.post('/api/chat', async (req, res, next) => {
+app.post('/api/chat', chatLimiter, async (req, res, next) => {
   req.url = '/message';
   req.body.text = req.body.text || req.body.prompt;
   chatRoutes(req, res, next);
 });
-app.post('/api/ocr', (req, res, next) => {
+app.post('/api/ocr', aiLimiter, (req, res, next) => {
   req.url = '/ocr';
   aiRoutes(req, res, next);
 });
-app.post('/api/speech', (req, res, next) => {
+app.post('/api/speech', aiLimiter, (req, res, next) => {
   req.url = '/speech';
   aiRoutes(req, res, next);
 });
@@ -82,8 +85,18 @@ async function bootstrap() {
   }
 }
 
-bootstrap().finally(() => {
-  app.listen(port, '0.0.0.0', () => {
+async function start() {
+  await bootstrap();
+  return app.listen(port, '0.0.0.0', () => {
     console.log(`PERFIN MVP API listening on port ${port}`);
   });
-});
+}
+
+if (require.main === module) {
+  start().catch((error) => {
+    console.error(error);
+    process.exitCode = 1;
+  });
+}
+
+module.exports = { app, start, bootstrap };

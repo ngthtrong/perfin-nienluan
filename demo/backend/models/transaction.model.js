@@ -1,9 +1,17 @@
 const { pool, query } = require('../config/database');
+const KVStore = require('../services/store/kv.store');
 
 const DEFAULT_USER = 'default_user';
 
 function balanceDelta(type, amount) {
   return type === 'income' ? Number(amount) : -Number(amount);
+}
+
+async function invalidateFinancialCaches(userId = DEFAULT_USER) {
+  await Promise.all([
+    KVStore.del(`cache:wallets:${userId}`),
+    KVStore.del(`cache:insights:${userId}`),
+  ]);
 }
 
 async function getJoinedById(id, includeDeleted = false) {
@@ -30,9 +38,58 @@ const TransactionModel = {
         [data.userId || DEFAULT_USER, data.description, data.amount, data.type, data.category_id, data.wallet_id, data.transaction_date || null, data.source || 'manual', data.note || null, data.original_text || null, data.ai_parsed ? JSON.stringify(data.ai_parsed) : null]
       );
       const tx = result.rows[0];
-      const wallet = await client.query('UPDATE wallets SET balance = balance + $1, updated_at = NOW() WHERE id = $2 RETURNING balance', [balanceDelta(tx.type, tx.amount), tx.wallet_id]);
+      const wallet = await client.query(
+        'UPDATE wallets SET balance = balance + $1, updated_at = NOW() WHERE id = $2 AND user_id = $3 RETURNING balance',
+        [balanceDelta(tx.type, tx.amount), tx.wallet_id, data.userId || DEFAULT_USER]
+      );
+      if (!wallet.rowCount) {
+        const error = new Error('Ví giao dịch không tồn tại hoặc không thuộc người dùng');
+        error.status = 400;
+        throw error;
+      }
       await client.query('COMMIT');
+      await invalidateFinancialCaches(data.userId || DEFAULT_USER);
       return { ...(await getJoinedById(tx.id)), wallet_balance: Number(wallet.rows[0].balance) };
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    } finally {
+      client.release();
+    }
+  },
+
+  // Atomically create all transactions from a multi-transaction preview. If any
+  // row is invalid, none of the wallet balances or transactions are committed.
+  async createMany(items, userId = DEFAULT_USER) {
+    if (!Array.isArray(items) || !items.length) return [];
+    const client = await pool.connect();
+    const ids = [];
+    try {
+      await client.query('BEGIN');
+      for (const data of items) {
+        const result = await client.query(
+          `INSERT INTO transactions (user_id, description, amount, type, category_id, wallet_id, transaction_date, source, note, original_text, ai_parsed)
+           VALUES ($1, $2, $3, $4::transaction_type, $5, $6, COALESCE($7, CURRENT_DATE), COALESCE($8, 'manual')::transaction_source, $9, $10, COALESCE($11::jsonb, '{}'::jsonb))
+           RETURNING id, type, amount, wallet_id`,
+          [userId, data.description, data.amount, data.type, data.category_id, data.wallet_id,
+            data.transaction_date || null, data.source || 'manual', data.note || null,
+            data.original_text || null, data.ai_parsed ? JSON.stringify(data.ai_parsed) : null]
+        );
+        const tx = result.rows[0];
+        const walletUpdate = await client.query(
+          'UPDATE wallets SET balance = balance + $1, updated_at = NOW() WHERE id = $2 AND user_id = $3',
+          [balanceDelta(tx.type, tx.amount), tx.wallet_id, userId]
+        );
+        if (!walletUpdate.rowCount) {
+          const error = new Error('Ví giao dịch không tồn tại hoặc không thuộc người dùng');
+          error.status = 400;
+          throw error;
+        }
+        ids.push(tx.id);
+      }
+      await client.query('COMMIT');
+      await invalidateFinancialCaches(userId);
+      return Promise.all(ids.map((id) => getJoinedById(id)));
     } catch (error) {
       await client.query('ROLLBACK');
       throw error;
@@ -92,6 +149,7 @@ const TransactionModel = {
       );
       await client.query('UPDATE wallets SET balance = balance + $1, updated_at = NOW() WHERE id = $2', [balanceDelta(next.type, next.amount), old.wallet_id]);
       await client.query('COMMIT');
+      await invalidateFinancialCaches(old.user_id || DEFAULT_USER);
       return getJoinedById(updated.rows[0].id);
     } catch (error) {
       await client.query('ROLLBACK');
@@ -116,6 +174,7 @@ const TransactionModel = {
       throw err;
     }
     await query('UPDATE transactions SET category_id = $2, updated_at = NOW() WHERE id = $1', [id, categoryId]);
+    await invalidateFinancialCaches(tx.user_id || DEFAULT_USER);
     return getJoinedById(id);
   },
 
@@ -128,6 +187,7 @@ const TransactionModel = {
       if (!tx) return null;
       await client.query('UPDATE wallets SET balance = balance - $1, updated_at = NOW() WHERE id = $2', [balanceDelta(tx.type, tx.amount), tx.wallet_id]);
       await client.query('COMMIT');
+      await invalidateFinancialCaches(tx.user_id || DEFAULT_USER);
       const deletedAt = new Date(tx.deleted_at);
       return { success: true, deleted_at: tx.deleted_at, restore_deadline: new Date(deletedAt.getTime() + 30000).toISOString() };
     } catch (error) {
@@ -156,6 +216,7 @@ const TransactionModel = {
       }
       await client.query('UPDATE wallets SET balance = balance + $1, updated_at = NOW() WHERE id = $2', [balanceDelta(tx.type, tx.amount), tx.wallet_id]);
       await client.query('COMMIT');
+      await invalidateFinancialCaches(tx.user_id || DEFAULT_USER);
       return getJoinedById(id);
     } catch (error) {
       await client.query('ROLLBACK');

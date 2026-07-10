@@ -1,9 +1,49 @@
 const express = require('express');
 const BudgetModel = require('../models/budget.model');
+const BudgetRecommendationService = require('../services/budgets');
+const { forecastBudgets } = require('../services/budgets/forecast');
 const { validateBudget } = require('../middleware/validation.middleware');
 
 const router = express.Router();
 const userId = 'default_user';
+
+router.get('/recommendations', async (req, res, next) => {
+  try {
+    const data = await BudgetRecommendationService.recommend(userId, {
+      strategy: req.query.strategy || 'hybrid',
+      historyMonths: Number(req.query.history_months || 6),
+      monthlyIncome: req.query.monthly_income ? Number(req.query.monthly_income) : undefined,
+    });
+    res.json({ success: true, data });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post('/recommendations/apply', async (req, res, next) => {
+  try {
+    if (req.body.confirmed !== true) {
+      return res.status(400).json({ success: false, error: 'Cần confirmed=true trước khi áp dụng ngân sách' });
+    }
+    const data = await BudgetModel.upsertRecommendations(req.body.recommendations, {
+      userId,
+      month: req.body.month,
+      year: req.body.year,
+    });
+    res.status(201).json({ success: true, data });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get('/forecast', async (req, res, next) => {
+  try {
+    const progress = await BudgetModel.getProgress(userId, req.query.month, req.query.year);
+    res.json({ success: true, data: forecastBudgets(progress, { month: Number(req.query.month) || undefined, year: Number(req.query.year) || undefined }) });
+  } catch (error) {
+    next(error);
+  }
+});
 
 router.get('/progress', async (req, res, next) => {
   try {

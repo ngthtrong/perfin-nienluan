@@ -6,6 +6,7 @@ const TOOLS = [
   { route: 'Transactions', icon: 'format-list-bulleted', title: 'Giao dịch', subtitle: 'Xem và quản lý mọi khoản thu chi', color: '#6366F1', bg: '#EEEDFF' },
   { route: 'Cashflow', icon: 'trending-up', title: 'Dòng tiền & Tài sản', subtitle: 'Chuyển ví, đầu tư, tài sản ròng', color: '#0EA5C6', bg: '#DEF4FA' },
   { route: 'Recurring', icon: 'event-repeat', title: 'Chi phí cố định', subtitle: 'Hóa đơn định kỳ và nhắc nhở', color: '#8B5CF6', bg: '#F1ECFE' },
+  { route: 'Goals', icon: 'flag', title: 'Mục tiêu tài chính', subtitle: 'Lập kế hoạch và theo dõi tiến độ', color: '#F59E0B', bg: '#FEF3D6' },
   { route: 'Export', icon: 'cloud-done', title: 'Xuất & Sao lưu', subtitle: 'CSV, PDF, sao lưu dữ liệu', color: '#0FA968', bg: '#DFF6EC' },
 ];
 

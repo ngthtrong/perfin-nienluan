@@ -177,7 +177,8 @@ const RecurringBillModel = {
   async getDueBills(userId = DEFAULT_USER, today = new Date()) {
     const todayISO = toISODate(new Date(today));
     const result = await query(
-      `SELECT b.*, c.name AS category_name, c.icon AS category_icon, w.name AS wallet_name
+      `SELECT b.*, c.name AS category_name, c.icon AS category_icon,
+              w.name AS wallet_name, w.balance AS wallet_balance
        FROM recurring_bills b
        LEFT JOIN categories c ON c.id = b.category_id
        LEFT JOIN wallets w ON w.id = b.wallet_id

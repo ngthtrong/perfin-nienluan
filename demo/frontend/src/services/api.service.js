@@ -66,6 +66,7 @@ function getMimeType(asset, fallbackMimeType) {
     mp4: 'audio/mp4',
     aac: 'audio/aac',
     wav: 'audio/wav',
+    webm: 'audio/webm',
   };
 
   return mimeByExtension[extension] || fallbackMimeType;
@@ -85,6 +86,7 @@ function getUploadName(fieldName, asset, mimeType) {
     'video/mp4': 'mp4',
     'audio/aac': 'aac',
     'audio/wav': 'wav',
+    'audio/webm': 'webm',
   };
   const extension = extensionByMime[mimeType] || (fieldName === 'image' ? 'jpg' : 'm4a');
   return `${fieldName}-${Date.now()}.${extension}`;
@@ -174,11 +176,16 @@ async function upload(path, fieldName, asset, fallbackMimeType) {
     }
   }
 
-  formData.append(fieldName, {
-    uri: asset.uri,
-    name,
-    type: mimeType,
-  });
+  if (Platform.OS === 'web') {
+    const file = asset.file || await (await fetch(asset.uri)).blob();
+    formData.append(fieldName, file, name);
+  } else {
+    formData.append(fieldName, {
+      uri: asset.uri,
+      name,
+      type: mimeType,
+    });
+  }
 
   let response;
   try {
@@ -200,11 +207,23 @@ export const api = {
   getCategories: (type) => request(`/api/categories${type ? `?type=${type}` : ''}`),
   getTransactions: (query = '') => request(`/api/transactions${query}`),
   createTransaction: (data) => request('/api/transactions', { method: 'POST', body: JSON.stringify(data) }),
+  updateTransactionCategory: (id, categoryId) => request(`/api/transactions/${id}/category`, {
+    method: 'PUT',
+    body: JSON.stringify({ category_id: categoryId }),
+  }),
   deleteTransaction: (id) => request(`/api/transactions/${id}`, { method: 'DELETE' }),
   getSummary: (month, year) => request(`/api/transactions/summary?month=${month}&year=${year}`),
   sendChat: (text) => request('/api/chat/message', { method: 'POST', body: JSON.stringify({ text }) }),
   transcribeAudio: (asset) => upload('/api/speech', 'audio', asset, 'audio/m4a'),
   extractImageText: (asset) => upload('/api/ocr', 'image', asset, 'image/jpeg'),
+  confirmSpeechTranscript: (transcript) => request('/api/ai/speech/confirm', {
+    method: 'POST',
+    body: JSON.stringify({ transcript }),
+  }),
+  confirmReceiptText: (text, mode) => request('/api/ai/ocr/confirm', {
+    method: 'POST',
+    body: JSON.stringify({ text, mode }),
+  }),
   confirmChat: () => request('/api/chat/confirm', { method: 'POST', body: '{}' }),
   cancelChat: () => request('/api/chat/cancel', { method: 'POST', body: '{}' }),
   editChat: (data) => request('/api/chat/edit', { method: 'POST', body: JSON.stringify(data) }),
@@ -212,11 +231,36 @@ export const api = {
   getBudgetProgress: (month, year) => request(`/api/budgets/progress?month=${month}&year=${year}`),
   createBudget: (data) => request('/api/budgets', { method: 'POST', body: JSON.stringify(data) }),
   deleteBudget: (id) => request(`/api/budgets/${id}`, { method: 'DELETE' }),
+  getBudgetRecommendations: (strategy = 'hybrid') => request(`/api/budgets/recommendations?strategy=${strategy}`),
+  applyBudgetRecommendations: (recommendations, month, year) => request('/api/budgets/recommendations/apply', {
+    method: 'POST',
+    body: JSON.stringify({ recommendations, month, year, confirmed: true }),
+  }),
+  getBudgetForecast: (month, year) => request(`/api/budgets/forecast?month=${month}&year=${year}`),
   getReportSummary: (month, year) => request(`/api/reports/summary?month=${month}&year=${year}`),
   getCategoryBreakdown: (month, year) => request(`/api/reports/category-breakdown?month=${month}&year=${year}`),
   getMonthlyTrend: (year) => request(`/api/reports/monthly-trend?year=${year}`),
+  getReportInsights: ({ payday = 25, fresh = false } = {}) => request(
+    `/api/reports/insights?payday=${payday}${fresh ? '&fresh=1' : ''}`
+  ),
   getAIModels: () => request('/api/ai/models'),
   setAISelection: (data) => request('/api/ai/selection', { method: 'POST', body: JSON.stringify(data) }),
+
+  // ── Personalized assistant ────────────────────────────────────────────
+  getPersonas: () => request('/api/personas'),
+  setActivePersona: (personaId) => request('/api/personas/active', {
+    method: 'POST',
+    body: JSON.stringify({ persona_id: personaId }),
+  }),
+
+  // ── Financial goals ────────────────────────────────────────────────
+  getGoals: () => request('/api/goals'),
+  getGoal: (id) => request(`/api/goals/${id}`),
+  getGoalSurplus: () => request('/api/goals/surplus'),
+  planGoal: (data) => request('/api/goals/plan', { method: 'POST', body: JSON.stringify(data) }),
+  createGoal: (data) => request('/api/goals', { method: 'POST', body: JSON.stringify(data) }),
+  updateGoal: (id, data) => request(`/api/goals/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  deleteGoal: (id) => request(`/api/goals/${id}`, { method: 'DELETE' }),
 
   // ── REQ-06: Cashflow & Asset Management ──────────────────────────────────────
   getNetWorth: () => request('/api/cashflow/net-worth'),

@@ -3,6 +3,7 @@ const ReportService = require('../services/report.service');
 const AnalyticsEngine = require('../services/analytics');
 const AIService = require('../services/ai.service');
 const Persona = require('../services/persona.service');
+const { resolveUserPayday } = require('../services/jobs/userScope');
 
 const router = express.Router();
 const userId = 'default_user';
@@ -42,7 +43,7 @@ router.get('/top-categories', async (req, res, next) => {
 // Raw analytics facts (deterministic) — useful for the frontend to render badges/charts.
 router.get('/insights/facts', async (req, res, next) => {
   try {
-    const payday = req.query.payday ? Number(req.query.payday) : null;
+    const payday = await resolveUserPayday(userId, req.query.payday ? Number(req.query.payday) : null);
     const facts = await AnalyticsEngine.buildInsightFacts(userId, { payday, useCache: req.query.fresh !== '1' });
     res.json({ success: true, data: facts });
   } catch (error) {
@@ -53,7 +54,7 @@ router.get('/insights/facts', async (req, res, next) => {
 // Personalized insight (Luồng 7): analytics facts narrated by the active persona.
 router.get('/insights', async (req, res, next) => {
   try {
-    const payday = req.query.payday ? Number(req.query.payday) : null;
+    const payday = await resolveUserPayday(userId, req.query.payday ? Number(req.query.payday) : null);
     const [facts, persona] = await Promise.all([
       AnalyticsEngine.buildInsightFacts(userId, { payday, useCache: req.query.fresh !== '1' }),
       Persona.getActivePersona(userId),

@@ -1,9 +1,49 @@
 const express = require('express');
 const CategoryModel = require('../models/category.model');
+const { CategoryRetagService } = require('../services/feedback');
 const { validateCategory } = require('../middleware/validation.middleware');
 
 const router = express.Router();
 const userId = 'default_user';
+
+router.get('/suggestions', async (req, res, next) => {
+  try {
+    const data = await CategoryRetagService.discover(userId, {
+      type: req.query.type || 'expense',
+      months: Number(req.query.months || 6),
+      minimumOccurrences: Number(req.query.minimum_occurrences || 3),
+    });
+    res.json({ success: true, data });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post('/suggestions/plan', async (req, res, next) => {
+  try {
+    const data = await CategoryRetagService.preparePlan(userId, req.body || {});
+    res.status(201).json({ success: true, data });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post('/suggestions/:planId/confirm', async (req, res, next) => {
+  try {
+    const data = await CategoryRetagService.confirmPlan(userId, req.params.planId, req.body.confirmed === true);
+    res.json({ success: true, data });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.delete('/suggestions/:planId', async (req, res, next) => {
+  try {
+    res.json({ success: true, data: await CategoryRetagService.cancelPlan(userId, req.params.planId) });
+  } catch (error) {
+    next(error);
+  }
+});
 
 router.get('/', async (req, res, next) => {
   try {

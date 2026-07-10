@@ -1,9 +1,14 @@
 const express = require('express');
 const GoalModel = require('../models/goal.model');
 const GoalService = require('../services/goals');
+const { validateGoalPayload, parseGoalId } = require('../services/goals/validation');
 
 const router = express.Router();
 const userId = 'default_user';
+
+function validationError(res, errors) {
+  return res.status(400).json({ success: false, error: errors[0], details: errors });
+}
 
 // List goals, each enriched with a fresh plan.
 router.get('/', async (req, res, next) => {
@@ -28,9 +33,9 @@ router.get('/surplus', async (req, res, next) => {
 // Preview a plan WITHOUT saving — for "what if I set this goal?" exploration.
 router.post('/plan', async (req, res, next) => {
   try {
-    const draft = req.body || {};
-    if (!draft.target_amount) return res.status(400).json({ success: false, error: 'Thiếu target_amount' });
-    res.json({ success: true, data: await GoalService.buildPlan(draft, userId) });
+    const validation = validateGoalPayload(req.body, { mode: 'plan' });
+    if (validation.errors.length) return validationError(res, validation.errors);
+    res.json({ success: true, data: await GoalService.buildPlan(validation.value, userId) });
   } catch (error) {
     next(error);
   }
@@ -38,10 +43,9 @@ router.post('/plan', async (req, res, next) => {
 
 router.post('/', async (req, res, next) => {
   try {
-    if (!req.body.name || !req.body.target_amount) {
-      return res.status(400).json({ success: false, error: 'Thiếu tên hoặc số tiền mục tiêu' });
-    }
-    const goal = await GoalModel.create(req.body, userId);
+    const validation = validateGoalPayload(req.body, { mode: 'create' });
+    if (validation.errors.length) return validationError(res, validation.errors);
+    const goal = await GoalModel.create(validation.value, userId);
     const plan = await GoalService.buildPlan(goal, userId);
     res.status(201).json({ success: true, data: { ...goal, ...plan } });
   } catch (error) {
@@ -51,7 +55,9 @@ router.post('/', async (req, res, next) => {
 
 router.get('/:id', async (req, res, next) => {
   try {
-    const goal = await GoalModel.getById(req.params.id, userId);
+    const id = parseGoalId(req.params.id);
+    if (!id) return validationError(res, ['id mục tiêu không hợp lệ']);
+    const goal = await GoalModel.getById(id, userId);
     if (!goal) return res.status(404).json({ success: false, error: 'Không tìm thấy mục tiêu' });
     res.json({ success: true, data: { ...goal, ...(await GoalService.buildPlan(goal, userId)) } });
   } catch (error) {
@@ -61,8 +67,14 @@ router.get('/:id', async (req, res, next) => {
 
 router.put('/:id', async (req, res, next) => {
   try {
-    const goal = await GoalModel.update(req.params.id, req.body, userId);
-    if (!goal) return res.status(404).json({ success: false, error: 'Không tìm thấy mục tiêu' });
+    const id = parseGoalId(req.params.id);
+    if (!id) return validationError(res, ['id mục tiêu không hợp lệ']);
+    const existing = await GoalModel.getById(id, userId);
+    if (!existing) return res.status(404).json({ success: false, error: 'Không tìm thấy mục tiêu' });
+
+    const validation = validateGoalPayload(req.body, { mode: 'update', existing });
+    if (validation.errors.length) return validationError(res, validation.errors);
+    const goal = await GoalModel.update(id, validation.value, userId);
     res.json({ success: true, data: { ...goal, ...(await GoalService.buildPlan(goal, userId)) } });
   } catch (error) {
     next(error);
@@ -71,7 +83,11 @@ router.put('/:id', async (req, res, next) => {
 
 router.delete('/:id', async (req, res, next) => {
   try {
-    res.json({ success: true, data: await GoalModel.remove(req.params.id, userId) });
+    const id = parseGoalId(req.params.id);
+    if (!id) return validationError(res, ['id mục tiêu không hợp lệ']);
+    const result = await GoalModel.remove(id, userId);
+    if (!result.success) return res.status(404).json({ success: false, error: 'Không tìm thấy mục tiêu' });
+    res.json({ success: true, data: result });
   } catch (error) {
     next(error);
   }

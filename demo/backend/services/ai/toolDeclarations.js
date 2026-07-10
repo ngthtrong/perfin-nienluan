@@ -1,0 +1,179 @@
+// Gemini function declarations used by PERFIN's intent router.
+//
+// The model only selects and fills a typed command here. Actual side effects remain in
+// the chat orchestration layer, after validation and (where appropriate) user
+// confirmation. This separation makes tool-use safe and keeps the local fallback usable.
+
+const FINANCIAL_TOOL_DECLARATIONS = [
+  {
+    name: 'record_transactions',
+    description: 'Extract one or more income/expense transactions for preview. Never saves them directly.',
+    parametersJsonSchema: {
+      type: 'object',
+      properties: {
+        transactions: {
+          type: 'array',
+          minItems: 1,
+          items: {
+            type: 'object',
+            properties: {
+              description: { type: 'string' },
+              amount: { type: 'number', exclusiveMinimum: 0 },
+              type: { type: 'string', enum: ['income', 'expense'] },
+              category_name: { type: 'string' },
+              transaction_date: { type: ['string', 'null'], description: 'YYYY-MM-DD when known' },
+              confidence: { type: 'number', minimum: 0, maximum: 1 },
+            },
+            required: ['description', 'amount', 'type', 'category_name'],
+          },
+        },
+      },
+      required: ['transactions'],
+    },
+  },
+  {
+    name: 'manage_recurring_bill',
+    description: 'Create, list, pay, pause, or inspect the history of a recurring bill.',
+    parametersJsonSchema: {
+      type: 'object',
+      properties: {
+        action: { type: 'string', enum: ['create', 'list', 'pay', 'pause', 'history'] },
+        name: { type: ['string', 'null'] },
+        amount: { type: ['number', 'null'] },
+        frequency: { type: ['string', 'null'], enum: ['weekly', 'monthly', 'quarterly', 'yearly', null] },
+        due_day: { type: ['number', 'null'], minimum: 1, maximum: 31 },
+        wallet_name: { type: ['string', 'null'] },
+      },
+      required: ['action'],
+    },
+  },
+  {
+    name: 'create_financial_goal',
+    description: 'Preview a saving, purchase, or debt-payoff goal and its deterministic plan.',
+    parametersJsonSchema: {
+      type: 'object',
+      properties: {
+        name: { type: 'string' },
+        goal_type: { type: 'string', enum: ['saving', 'purchase', 'debt_payoff'] },
+        target_amount: { type: 'number', exclusiveMinimum: 0 },
+        current_amount: { type: 'number', minimum: 0 },
+        target_date: { type: ['string', 'null'], description: 'YYYY-MM-DD when specified' },
+        monthly_contribution: { type: ['number', 'null'], minimum: 0 },
+        annual_interest_rate: { type: ['number', 'null'], minimum: 0 },
+      },
+      required: ['name', 'goal_type', 'target_amount'],
+    },
+  },
+  {
+    name: 'query_financial_data',
+    description: 'Request exact computed financial data instead of guessing numbers.',
+    parametersJsonSchema: {
+      type: 'object',
+      properties: {
+        query: {
+          type: 'string',
+          enum: ['summary', 'insights', 'runway', 'subscriptions', 'goals', 'budgets', 'category_suggestions'],
+        },
+        month: { type: ['number', 'null'], minimum: 1, maximum: 12 },
+        year: { type: ['number', 'null'], minimum: 2020, maximum: 2100 },
+      },
+      required: ['query'],
+    },
+  },
+  {
+    name: 'suggest_budget',
+    description: 'Calculate category budget recommendations from historical spending.',
+    parametersJsonSchema: {
+      type: 'object',
+      properties: {
+        strategy: { type: 'string', enum: ['historical', 'balanced', '50_30_20'] },
+        month: { type: ['number', 'null'], minimum: 1, maximum: 12 },
+        year: { type: ['number', 'null'], minimum: 2020, maximum: 2100 },
+      },
+    },
+  },
+  {
+    name: 'export_financial_data',
+    description: 'Prepare a CSV or PDF export and return a download URL.',
+    parametersJsonSchema: {
+      type: 'object',
+      properties: {
+        format: { type: 'string', enum: ['csv', 'pdf'] },
+        from: { type: ['string', 'null'] },
+        to: { type: ['string', 'null'] },
+      },
+      required: ['format'],
+    },
+  },
+  {
+    name: 'transfer_money',
+    description: 'Preview a transfer between two wallets. Never executes without confirmation.',
+    parametersJsonSchema: {
+      type: 'object',
+      properties: {
+        from_wallet_name: { type: 'string' },
+        to_wallet_name: { type: 'string' },
+        amount: { type: 'number', exclusiveMinimum: 0 },
+        note: { type: ['string', 'null'] },
+        transaction_date: { type: ['string', 'null'] },
+      },
+      required: ['from_wallet_name', 'to_wallet_name', 'amount'],
+    },
+  },
+  {
+    name: 'record_investment_pnl',
+    description: 'Preview an investment profit or loss entry.',
+    parametersJsonSchema: {
+      type: 'object',
+      properties: {
+        wallet_name: { type: 'string' },
+        amount: { type: 'number', description: 'Positive for profit, negative for loss' },
+        note: { type: ['string', 'null'] },
+        recorded_at: { type: ['string', 'null'] },
+      },
+      required: ['wallet_name', 'amount'],
+    },
+  },
+];
+
+function toolCallToIntent(call) {
+  const args = call?.args || call?.arguments || {};
+  switch (call?.name) {
+    case 'record_transactions': {
+      const transactions = Array.isArray(args.transactions) ? args.transactions : [];
+      return {
+        intent: transactions.length > 1 ? 'transactions' : 'transaction',
+        transactions,
+        transaction: transactions[0] || null,
+        needs_clarification: transactions.length === 0,
+      };
+    }
+    case 'manage_recurring_bill':
+      return {
+        intent: `recurring_${args.action}`,
+        recurring: {
+          name: args.name || null,
+          amount: args.amount || null,
+          frequency: args.frequency || null,
+          due_day: args.due_day || null,
+          wallet_name: args.wallet_name || null,
+        },
+      };
+    case 'create_financial_goal':
+      return { intent: 'goal_create', goal: args };
+    case 'query_financial_data':
+      return { intent: `query_${args.query}`, query: args };
+    case 'suggest_budget':
+      return { intent: 'budget_suggest', budget: args };
+    case 'export_financial_data':
+      return { intent: 'export', export: args };
+    case 'transfer_money':
+      return { intent: 'transfer', transfer: args };
+    case 'record_investment_pnl':
+      return { intent: 'investment_pnl', investment: args };
+    default:
+      return null;
+  }
+}
+
+module.exports = { FINANCIAL_TOOL_DECLARATIONS, toolCallToIntent };

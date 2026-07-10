@@ -27,22 +27,26 @@ export default function BudgetScreen() {
 
   const [progress, setProgress] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [recommendation, setRecommendation] = useState(null);
   const [amount, setAmount] = useState('');
   const [categoryId, setCategoryId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [applyingRecommendation, setApplyingRecommendation] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
   const [showForm, setShowForm] = useState(false);
 
   const load = useCallback(async () => {
     try {
-      const [items, cats] = await Promise.all([
+      const [items, cats, suggested] = await Promise.all([
         api.getBudgetProgress(period.month, period.year),
         api.getCategories('expense'),
+        api.getBudgetRecommendations('hybrid').catch(() => null),
       ]);
       setProgress(items.data || []);
       setCategories(cats.data || []);
+      setRecommendation(suggested?.data || null);
       setCategoryId((prev) => prev || cats.data?.[0]?.id || null);
       setError(null);
     } catch (err) {
@@ -76,6 +80,36 @@ export default function BudgetScreen() {
     } finally {
       setSaving(false);
     }
+  }
+
+  function applyRecommendation() {
+    if (!recommendation?.categories?.length) return;
+    Alert.alert(
+      'Áp dụng ngân sách đề xuất?',
+      `PERFIN sẽ tạo hoặc cập nhật ${recommendation.categories.length} ngân sách cho tháng ${period.month}/${period.year}.`,
+      [
+        { text: 'Để sau', style: 'cancel' },
+        {
+          text: 'Áp dụng',
+          onPress: async () => {
+            setApplyingRecommendation(true);
+            try {
+              const rows = recommendation.categories.map((item) => ({
+                category_id: item.category_id,
+                amount_limit: item.recommended_limit,
+              }));
+              await api.applyBudgetRecommendations(rows, period.month, period.year);
+              await load();
+              Alert.alert('Đã áp dụng', 'Ngân sách đề xuất đã được cập nhật.');
+            } catch (err) {
+              Alert.alert('Không thể áp dụng', err.message);
+            } finally {
+              setApplyingRecommendation(false);
+            }
+          },
+        },
+      ]
+    );
   }
 
   const totalBudget = progress.reduce((s, i) => s + Number(i.amount_limit), 0);
@@ -128,6 +162,67 @@ export default function BudgetScreen() {
                 <Text style={styles.pctLabel}>đã dùng</Text>
               </View>
             </View>
+
+            {recommendation && (
+              <View style={styles.recommendationCard}>
+                <View style={styles.recommendationHeader}>
+                  <View style={styles.recommendationIcon}>
+                    <AppIcon name="auto-awesome" size={18} color={c.onBrand} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.recommendationTitle}>Ngân sách PERFIN đề xuất</Text>
+                    <Text style={styles.recommendationSub}>
+                      {recommendation.history_months || 0} tháng dữ liệu · chiến lược cân bằng
+                    </Text>
+                  </View>
+                  <Text style={styles.recommendationTotal}>{formatVND(recommendation.total_recommended)}</Text>
+                </View>
+
+                {recommendation.categories?.length > 0 ? (
+                  <>
+                    <View style={styles.recommendationList}>
+                      {recommendation.categories.slice(0, 4).map((item, index) => (
+                        <View key={item.category_id} style={[styles.recommendationRow, index > 0 && styles.recommendationBorder]}>
+                          <View style={{ flex: 1 }}>
+                            <Text style={styles.recommendationName}>{item.category_name}</Text>
+                            <Text style={styles.recommendationReason} numberOfLines={1}>{item.rationale}</Text>
+                          </View>
+                          <View style={{ alignItems: 'flex-end' }}>
+                            <Text style={styles.recommendationAmount}>{formatVND(item.recommended_limit)}</Text>
+                            <Text style={styles.recommendationConfidence}>
+                              {item.confidence === 'high' ? 'Tin cậy cao' : item.confidence === 'medium' ? 'Tin cậy vừa' : 'Khởi điểm'}
+                            </Text>
+                          </View>
+                        </View>
+                      ))}
+                      {recommendation.categories.length > 4 && (
+                        <Text style={styles.recommendationMore}>+{recommendation.categories.length - 4} danh mục khác</Text>
+                      )}
+                    </View>
+
+                    {recommendation.warnings?.map((warning, index) => (
+                      <View key={`${warning}-${index}`} style={styles.recommendationWarning}>
+                        <AppIcon name="info-outline" size={14} color={c.warning} />
+                        <Text style={styles.recommendationWarningText}>{warning}</Text>
+                      </View>
+                    ))}
+
+                    <Button
+                      label="Áp dụng đề xuất"
+                      icon="playlist-add-check"
+                      size="sm"
+                      onPress={applyRecommendation}
+                      loading={applyingRecommendation}
+                      style={{ marginTop: 11 }}
+                    />
+                  </>
+                ) : (
+                  <Text style={styles.recommendationEmpty}>
+                    Hãy ghi thêm giao dịch để PERFIN có đủ dữ liệu đề xuất hạn mức theo danh mục.
+                  </Text>
+                )}
+              </View>
+            )}
 
             <Button
               label={showForm ? 'Đóng' : 'Thêm ngân sách mới'}
@@ -243,6 +338,34 @@ const createStyles = (t) => StyleSheet.create({
   pctCircle: { width: 70, height: 70, borderRadius: 35, alignItems: 'center', justifyContent: 'center', borderWidth: 3 },
   pctText: { fontSize: 18, fontWeight: '900' },
   pctLabel: { fontSize: 9, color: t.colors.textMuted, fontWeight: '600' },
+
+  recommendationCard: {
+    backgroundColor: t.colors.surface, padding: 15, borderRadius: t.radius.lg,
+    borderWidth: 1.5, borderColor: t.colors.brand, marginBottom: 12, ...t.shadows.sm,
+  },
+  recommendationHeader: { flexDirection: 'row', alignItems: 'center', gap: 9 },
+  recommendationIcon: {
+    width: 36, height: 36, borderRadius: 12, backgroundColor: t.colors.brand,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  recommendationTitle: { color: t.colors.text, fontSize: 13, fontWeight: '900' },
+  recommendationSub: { color: t.colors.textMuted, fontSize: 10, fontWeight: '600', marginTop: 2 },
+  recommendationTotal: { color: t.colors.brandText, fontSize: 13, fontWeight: '900', maxWidth: '30%' },
+  recommendationList: {
+    marginTop: 12, borderTopWidth: 1, borderBottomWidth: 1, borderColor: t.colors.border,
+  },
+  recommendationRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 9 },
+  recommendationBorder: { borderTopWidth: 1, borderTopColor: t.colors.border },
+  recommendationName: { color: t.colors.text, fontSize: 12, fontWeight: '800' },
+  recommendationReason: { color: t.colors.textMuted, fontSize: 9, fontWeight: '600', marginTop: 2 },
+  recommendationAmount: { color: t.colors.textSecondary, fontSize: 11, fontWeight: '900' },
+  recommendationConfidence: { color: t.colors.income, fontSize: 9, fontWeight: '700', marginTop: 2 },
+  recommendationMore: { color: t.colors.brandText, fontSize: 10, fontWeight: '700', paddingBottom: 8 },
+  recommendationWarning: {
+    flexDirection: 'row', alignItems: 'flex-start', gap: 5, paddingTop: 8,
+  },
+  recommendationWarningText: { flex: 1, color: t.colors.warning, fontSize: 10, lineHeight: 14, fontWeight: '700' },
+  recommendationEmpty: { color: t.colors.textMuted, fontSize: 12, lineHeight: 18, fontWeight: '600', marginTop: 12 },
 
   form: {
     backgroundColor: t.colors.surface, padding: 16, borderRadius: t.radius.lg,

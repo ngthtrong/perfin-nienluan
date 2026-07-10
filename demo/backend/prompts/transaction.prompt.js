@@ -5,19 +5,13 @@ function categoryList(categories, type) {
 function getSystemPrompt(categories, today = new Date()) {
   return `Bạn là PERFIN AI, trợ lý tài chính cá nhân tiếng Việt.
 Hôm nay là ${today.toISOString().slice(0, 10)}.
-Hãy phân tích câu người dùng và chỉ trả JSON hợp lệ.
+Hãy chọn function phù hợp và điền đúng tham số. Function chỉ tạo bản xem trước;
+không khẳng định đã lưu hoặc đã chuyển tiền. Nếu chỉ là trò chuyện thông thường,
+trả lời ngắn gọn bằng tiếng Việt và không bịa dữ liệu tài chính.
 Danh mục chi tiêu: ${categoryList(categories, 'expense')}.
 Danh mục thu nhập: ${categoryList(categories, 'income')}.
-Các intent:
-- "transaction": ghi nhận một khoản thu/chi cụ thể.
-- "recurring_create": tạo nhắc nhở/chi phí cố định lặp lại (vd "nhắc tiền phòng trọ 1.5tr mỗi tháng ngày 5").
-- "recurring_list": liệt kê các khoản chi cố định.
-- "recurring_pay": xác nhận đã thanh toán một khoản chi cố định (vd "đã đóng tiền trọ rồi", "xong rồi").
-- "recurring_pause": tạm dừng một khoản chi cố định.
-- "recurring_history": xem lịch sử thanh toán một khoản chi cố định.
-- "question": câu hỏi về dữ liệu tài chính.
-- "greeting"/"unclear": chào hỏi hoặc không rõ.
-Schema: {"intent":"transaction|recurring_create|recurring_list|recurring_pay|recurring_pause|recurring_history|question|greeting|unclear","transaction":{"description":"string","amount":number,"type":"income|expense","category_name":"string","date":"YYYY-MM-DD","confidence":number},"recurring":{"name":"string","amount":number|null,"frequency":"weekly|monthly|quarterly|yearly|null","due_day":number|null,"wallet_name":"string|null"},"needs_clarification":boolean,"clarification_message":string|null,"chat_response":string|null}.`;
+Một câu có thể chứa nhiều giao dịch; khi đó gọi record_transactions một lần với đầy đủ mảng.
+Khi người dùng hỏi số liệu, luôn gọi query_financial_data thay vì tự suy đoán.`;
 }
 
 function getParsePrompt(userText) {
@@ -25,7 +19,12 @@ function getParsePrompt(userText) {
 }
 
 function getChatPrompt(userText, context = {}) {
-  return `Câu hỏi: "${userText}". Context tài chính: ${JSON.stringify(context)}`;
+  const style = context.persona_style || '';
+  const safeContext = { ...context };
+  delete safeContext.persona_style;
+  return `${style}\nBạn là PERFIN AI. Trả lời câu hỏi: "${userText}".
+Context có cấu trúc do hệ thống cung cấp: ${JSON.stringify(safeContext)}
+Chỉ dùng số liệu trong context. Nếu context không đủ, nói rõ cần truy vấn thêm; không tự bịa số.`;
 }
 
 // Specialized prompt to extract a transaction from messy OCR receipt text. Prioritizes the
@@ -35,11 +34,13 @@ function getReceiptPrompt(ocrText) {
 """
 ${String(ocrText).slice(0, 2000)}
 """
-Nhiệm vụ: trích xuất MỘT giao dịch chi tiêu.
+Nhiệm vụ: trích xuất hóa đơn thành giao dịch chi tiêu.
 - amount: lấy TỔNG TIỀN cuối cùng phải trả (ưu tiên dòng "Tổng cộng", "Thành tiền", "Tổng thanh toán", "Total"). Bỏ qua tiền thừa/tiền khách đưa.
 - description: tên cửa hàng/đơn vị bán nếu có, nếu không thì mô tả ngắn gọn.
 - date: ngày trên hóa đơn (YYYY-MM-DD) nếu có, nếu không để null.
-Trả về intent "transaction" theo schema đã cho. type luôn là "expense".`;
+- Nếu OCR thể hiện rõ nhiều mặt hàng, đưa từng mặt hàng vào record_transactions và thêm một
+  giao dịch tổng có description bắt đầu bằng "Tổng hóa đơn:" ở cuối. Client sẽ cho người dùng
+  chọn lưu tổng hoặc lưu từng mặt hàng. type luôn là "expense".`;
 }
 
 // Specialized prompt for voice transcripts (natural speech, may include filler words).
@@ -63,6 +64,13 @@ QUY TẮC BẮT BUỘC:
 - Ưu tiên 2-4 phát hiện quan trọng nhất (cảnh báo dòng tiền cạn, xu hướng leo thang, chi tiêu bất thường).
 - Kết bằng 1 gợi ý hành động cụ thể, khả thi.
 - Định dạng tiền theo kiểu Việt Nam (vd 1.500.000đ hoặc 1,5 triệu).
+
+Ý NGHĨA FIELD (không được đổi đơn vị):
+- runway.avgBurn: mức chi tiêu trung bình MỖI NGÀY, không phải mỗi tháng.
+- runway.daysLeft: số ngày số dư còn duy trì được.
+- runway.daysBeforePayday: số ngày bị cạn tiền trước kỳ lương.
+- subscriptions.totalMonthly: tổng phí MỖI THÁNG.
+- trend.avgPctChange: phần trăm thay đổi MỖI THÁNG.
 
 DỮ LIỆU (JSON):
 ${JSON.stringify(facts)}`;

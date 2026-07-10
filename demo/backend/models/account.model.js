@@ -1,6 +1,9 @@
 const { query } = require('../config/database');
+const KVStore = require('../services/store/kv.store');
 
 const DEFAULT_USER = 'default_user';
+const CACHE_TTL = 300;
+const cacheKey = (userId) => `cache:wallets:${userId}`;
 
 const AccountModel = {
   async ensureDefault(userId = DEFAULT_USER) {
@@ -23,8 +26,14 @@ const AccountModel = {
 
   async getAll(userId = DEFAULT_USER) {
     await this.ensureDefault(userId);
-    const result = await query('SELECT * FROM wallets WHERE user_id = $1 ORDER BY is_default DESC, id ASC', [userId]);
-    return result.rows;
+    return KVStore.remember(cacheKey(userId), CACHE_TTL, async () => {
+      const result = await query('SELECT * FROM wallets WHERE user_id = $1 ORDER BY is_default DESC, id ASC', [userId]);
+      return result.rows;
+    });
+  },
+
+  invalidateCache(userId = DEFAULT_USER) {
+    return KVStore.del(cacheKey(userId));
   },
 
   async getById(id) {
@@ -40,7 +49,9 @@ const AccountModel = {
   async updateBalance(id, amount, operation = 'add') {
     const delta = operation === 'subtract' ? -Math.abs(amount) : Math.abs(amount);
     const result = await query('UPDATE wallets SET balance = balance + $1, updated_at = NOW() WHERE id = $2 RETURNING *', [delta, id]);
-    return result.rows[0] || null;
+    const wallet = result.rows[0] || null;
+    if (wallet) await this.invalidateCache(wallet.user_id || DEFAULT_USER);
+    return wallet;
   },
 
   async create({ name, type = 'cash', balance = 0, is_default = false, userId = DEFAULT_USER }) {
@@ -49,12 +60,15 @@ const AccountModel = {
        VALUES ($1, $2, $3, $4, $5) RETURNING *`,
       [userId, name, type, balance, is_default]
     );
+    await this.invalidateCache(userId);
     return result.rows[0];
   },
 
   async update(id, { name }) {
     const result = await query('UPDATE wallets SET name = COALESCE($2, name), updated_at = NOW() WHERE id = $1 RETURNING *', [id, name || null]);
-    return result.rows[0] || null;
+    const wallet = result.rows[0] || null;
+    if (wallet) await this.invalidateCache(wallet.user_id || DEFAULT_USER);
+    return wallet;
   },
 };
 

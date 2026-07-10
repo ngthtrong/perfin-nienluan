@@ -4,7 +4,9 @@
 // runnable with zero infra while upgrading to real Redis the moment it is available.
 
 let clientPromise = null;
-let disabled = false;
+let activeClient = null;
+let retryAfter = 0;
+let warnedUnavailable = false;
 
 function isEnabled() {
   const flag = String(process.env.REDIS_ENABLED || '').trim().toLowerCase();
@@ -21,13 +23,15 @@ function loadIoredis() {
 }
 
 async function getClient() {
-  if (disabled || !isEnabled()) return null;
+  if (!isEnabled()) return null;
+  if (activeClient?.status === 'ready') return activeClient;
   if (clientPromise) return clientPromise;
+  if (Date.now() < retryAfter) return null;
 
   const Redis = loadIoredis();
   if (!Redis) {
-    disabled = true;
-    console.warn('[redis] ioredis not installed — using in-memory store fallback');
+    if (!warnedUnavailable) console.warn('[redis] ioredis not installed — using in-memory store fallback');
+    warnedUnavailable = true;
     return null;
   }
 
@@ -39,20 +43,29 @@ async function getClient() {
       enableOfflineQueue: false,
       retryStrategy: () => null, // do not spam reconnects; degrade instead
     });
+    const markDisconnected = () => {
+      if (activeClient === client) activeClient = null;
+      clientPromise = null;
+      retryAfter = Date.now() + Number(process.env.REDIS_RETRY_COOLDOWN_MS || 5000);
+    };
     client.on('error', (err) => {
-      if (!disabled) {
-        disabled = true;
-        console.warn(`[redis] unavailable (${err.code || err.message}) — using in-memory fallback`);
-      }
+      if (!warnedUnavailable) console.warn(`[redis] unavailable (${err.code || err.message}) — using in-memory fallback`);
+      warnedUnavailable = true;
     });
+    client.on('close', markDisconnected);
+    client.on('end', markDisconnected);
     client.connect()
       .then(() => {
+        activeClient = client;
+        warnedUnavailable = false;
+        retryAfter = 0;
         console.log('[redis] connected');
         resolve(client);
       })
       .catch((err) => {
-        disabled = true;
-        console.warn(`[redis] connect failed (${err.code || err.message}) — using in-memory fallback`);
+        markDisconnected();
+        if (!warnedUnavailable) console.warn(`[redis] connect failed (${err.code || err.message}) — using in-memory fallback`);
+        warnedUnavailable = true;
         resolve(null);
       });
   });
@@ -65,4 +78,12 @@ async function isAvailable() {
   return Boolean(client);
 }
 
-module.exports = { getClient, isAvailable };
+async function close() {
+  const client = activeClient;
+  activeClient = null;
+  clientPromise = null;
+  retryAfter = 0;
+  if (client && client.status !== 'end') client.disconnect();
+}
+
+module.exports = { getClient, isAvailable, close };

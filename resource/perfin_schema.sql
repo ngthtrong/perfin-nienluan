@@ -3,6 +3,14 @@
 -- Database Schema Design
 -- -----------------------------------------------------------------------------
 
+-- RUNTIME NOTE (2026-07-10)
+-- File này giữ mô hình đích dùng trong tài liệu niên luận. Schema runtime chính
+-- thức được quản lý bởi demo/backend/migrations/*.sql. Vì Luồng 11 (JWT/Auth)
+-- chưa được chọn, runtime dùng users.user_key VARCHAR để tương thích default_user,
+-- nhưng đã có đầy đủ FK, user_traits và compatibility views cho các tên bảng
+-- investment_pl_records/export_histories/backup_configs.
+-- Xem resource/IMPLEMENTATION_STATUS_v2.md.
+
 -- 1. ENUMS
 CREATE TYPE transaction_type AS ENUM ('Expense', 'Income', 'Transfer', 'Investment', 'Special');
 CREATE TYPE special_transaction_type AS ENUM ('Quản lý món nợ', 'Cho vay', 'Vay mượn', 'Tiết kiệm', 'Ngân sách', 'Đầu tư', 'Chuyển tiền đi đầu tư');

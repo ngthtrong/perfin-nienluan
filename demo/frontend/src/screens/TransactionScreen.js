@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, FlatList,
-  StyleSheet, RefreshControl, Alert,
+  StyleSheet, RefreshControl, Alert, ScrollView,
 } from 'react-native';
 import { api } from '../services/api.service';
 import { useTheme } from '../theme/ThemeContext';
@@ -27,6 +27,8 @@ export default function TransactionScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [categoryEditingId, setCategoryEditingId] = useState(null);
+  const [categorySavingId, setCategorySavingId] = useState(null);
   const [filter, setFilter] = useState(null);
   const [search, setSearch] = useState('');
   const [form, setForm] = useState({ description: '', amount: '', type: 'expense', category_id: null });
@@ -95,6 +97,26 @@ export default function TransactionScreen() {
         },
       },
     ]);
+  }
+
+  async function changeCategory(transaction, categoryId) {
+    if (categorySavingId) return;
+    if (Number(categoryId) === Number(transaction.category_id)) {
+      setCategoryEditingId(null);
+      return;
+    }
+    setCategorySavingId(transaction.id);
+    try {
+      const response = await api.updateTransactionCategory(transaction.id, categoryId);
+      setTransactions((items) => items.map((item) => (
+        item.id === transaction.id ? { ...item, ...(response.data || {}) } : item
+      )));
+      setCategoryEditingId(null);
+    } catch (err) {
+      Alert.alert('Không thể đổi danh mục', err.message);
+    } finally {
+      setCategorySavingId(null);
+    }
   }
 
   const formCategories = categories.filter((x) => x.type === form.type);
@@ -215,7 +237,43 @@ export default function TransactionScreen() {
       contentContainerStyle={styles.content}
       data={transactions}
       keyExtractor={(item) => String(item.id)}
-      renderItem={({ item }) => <TransactionCard transaction={item} onLongPress={() => deleteTransaction(item.id)} />}
+      renderItem={({ item }) => (
+        <View>
+          <TransactionCard
+            transaction={item}
+            onPress={() => setCategoryEditingId((current) => current === item.id ? null : item.id)}
+            onLongPress={() => deleteTransaction(item.id)}
+          />
+          {categoryEditingId === item.id && (
+            <View style={styles.categoryEditor}>
+              <View style={styles.categoryEditorHeader}>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.categoryEditorTitle}>Đổi danh mục</Text>
+                  <Text style={styles.categoryEditorHint}>
+                    {item.source === 'manual'
+                      ? 'Chọn danh mục phù hợp cho giao dịch.'
+                      : 'Lựa chọn này giúp PERFIN học cách phân loại của bạn.'}
+                  </Text>
+                </View>
+                <TouchableOpacity onPress={() => setCategoryEditingId(null)}>
+                  <AppIcon name="close" size={18} color={c.textMuted} />
+                </TouchableOpacity>
+              </View>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoryEditorList}>
+                {categories.filter((category) => category.type === item.type).map((category) => (
+                  <Chip
+                    key={category.id}
+                    label={category.name}
+                    active={Number(item.category_id) === Number(category.id)}
+                    onPress={() => changeCategory(item, category.id)}
+                    style={{ marginRight: 7, opacity: categorySavingId === item.id ? 0.55 : 1 }}
+                  />
+                ))}
+              </ScrollView>
+            </View>
+          )}
+        </View>
+      )}
       ListHeaderComponent={ListHeader}
       ListEmptyComponent={<EmptyState emoji="📭" title="Chưa có giao dịch nào" message="Hãy thêm giao dịch đầu tiên!" />}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={c.brand} />}
@@ -261,4 +319,12 @@ const createStyles = (t) => StyleSheet.create({
   },
   searchInput: { flex: 1, fontSize: 14, color: t.colors.text },
   resultCount: { color: t.colors.textMuted, fontSize: 12, fontWeight: '600', marginBottom: 10 },
+  categoryEditor: {
+    backgroundColor: t.colors.surface, borderWidth: 1.5, borderColor: t.colors.brand,
+    borderRadius: t.radius.md, padding: 12, marginTop: -3, marginBottom: 10,
+  },
+  categoryEditorHeader: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, marginBottom: 10 },
+  categoryEditorTitle: { color: t.colors.text, fontSize: 13, fontWeight: '900' },
+  categoryEditorHint: { color: t.colors.textMuted, fontSize: 10, lineHeight: 14, fontWeight: '600', marginTop: 2 },
+  categoryEditorList: { paddingRight: 4 },
 });

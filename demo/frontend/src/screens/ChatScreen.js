@@ -10,6 +10,8 @@ import * as ImagePicker from 'expo-image-picker';
 import { api } from '../services/api.service';
 import { useTheme } from '../theme/ThemeContext';
 import TransactionPreviewCard from '../components/TransactionPreviewCard';
+import MultiTransactionPreviewCard from '../components/MultiTransactionPreviewCard';
+import MediaConfirmationCard from '../components/MediaConfirmationCard';
 import AppIcon from '../components/AppIcon';
 import { AppHeader } from '../components/ui';
 
@@ -100,6 +102,7 @@ export default function ChatScreen() {
   const [aiLoading, setAILoading] = useState(false);
   const [showAiPanel, setShowAiPanel] = useState(false);
   const [imageLoading, setImageLoading] = useState(false);
+  const [pendingActionId, setPendingActionId] = useState(null);
   const listRef = useRef(null);
   const recorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
   const recorderState = useAudioRecorderState(recorder);
@@ -121,9 +124,9 @@ export default function ChatScreen() {
         const history = (data.data || []).reverse().map((msg) => ({
           id: msg.id,
           role: msg.role,
+          ...(msg.metadata || {}),
           type: msg.metadata?.type || 'text',
-          text: msg.content,
-          transaction: msg.metadata?.transaction,
+          text: msg.content || msg.metadata?.message || '',
         }));
         const reminders = (data.reminders || []).map((r, idx) => ({
           id: `reminder-${idx}-${Date.now()}`,
@@ -149,7 +152,15 @@ export default function ChatScreen() {
   }
 
   function push(message) {
-    setMessages((prev) => [...prev, { id: `${Date.now()}-${Math.random()}`, ...message }]);
+    const id = `${Date.now()}-${Math.random()}`;
+    setMessages((prev) => [...prev, { id, ...message }]);
+    return id;
+  }
+
+  function updateMessage(id, updates) {
+    setMessages((prev) => prev.map((message) => (
+      message.id === id ? { ...message, ...updates } : message
+    )));
   }
 
   async function loadAIModels() {
@@ -177,34 +188,21 @@ export default function ChatScreen() {
     }
   }
 
-  async function send(textOverride) {
+  async function send(textOverride, { pushUser = true } = {}) {
     const text = (textOverride || input).trim();
     if (!text || (loading && !textOverride)) return;
     if (!textOverride) setInput('');
-    push({ role: 'user', type: 'text', text });
+    if (pushUser) push({ role: 'user', type: 'text', text });
     setLoading(true);
     try {
       const response = await api.sendChat(text);
-      const data = response.data;
-      push({ role: 'assistant', type: data.type, text: data.message, transaction: data.transaction });
+      const data = response.data || {};
+      push({ role: 'assistant', ...data, type: data.type || 'text', text: data.message || '' });
     } catch (error) {
       push({ role: 'system', type: 'text', text: error.message });
     } finally {
       setLoading(false);
     }
-  }
-
-  async function handleMediaResult(response, sourceLabel) {
-    const cleanText = String(response?.text || '').replace(/^MOCK_[A-Z_]+:\s*/i, '').trim();
-    if (response?.provider === 'mock') {
-      push({ role: 'system', type: 'text', text: `${sourceLabel}: đang dùng dữ liệu mẫu (provider chưa cấu hình).` });
-    }
-    if (!cleanText) {
-      push({ role: 'system', type: 'text', text: `${sourceLabel} không có nội dung để xử lý.` });
-      return;
-    }
-    push({ role: 'system', type: 'text', text: `${sourceLabel}: ${cleanText}` });
-    await send(cleanText);
   }
 
   async function startRecording() {
@@ -233,10 +231,23 @@ export default function ChatScreen() {
       if (!uri) throw new Error('Không lấy được file ghi âm');
       const response = await api.transcribeAudio({
         uri,
-        fileName: 'voice.m4a',
-        mimeType: Platform.OS === 'ios' ? 'audio/m4a' : 'audio/mp4',
+        fileName: Platform.OS === 'web' ? 'voice.webm' : 'voice.m4a',
+        mimeType: Platform.OS === 'web' ? 'audio/webm' : Platform.OS === 'ios' ? 'audio/m4a' : 'audio/mp4',
       });
-      await handleMediaResult(response, 'Giọng nói');
+      const transcript = String(response.transcript || response.text || '').trim();
+      if (!transcript) throw new Error('Giọng nói không có nội dung để xác nhận');
+      if (response.requires_confirmation !== false) {
+        push({
+          role: 'assistant',
+          type: 'voice_confirmation',
+          text: transcript,
+          transcript,
+          provider: response.provider,
+        });
+      } else {
+        push({ role: 'system', type: 'text', text: `Giọng nói: ${transcript}` });
+        await send(transcript, { pushUser: false });
+      }
     } catch (error) {
       push({ role: 'system', type: 'text', text: error.message });
     } finally {
@@ -270,7 +281,28 @@ export default function ChatScreen() {
         imageUri: asset.uri,
       });
       const response = await api.extractImageText(asset);
-      await handleMediaResult(response, 'Ảnh hóa đơn');
+      const extractedText = String(response.text || '').trim();
+      if (!extractedText) throw new Error('Ảnh hóa đơn không có nội dung để xử lý');
+      if (response.receipt_options) {
+        push({
+          role: 'assistant',
+          type: 'receipt_confirmation',
+          text: extractedText,
+          receiptOptions: response.receipt_options,
+          provider: response.provider,
+        });
+      } else if (response.data) {
+        const data = response.data;
+        push({
+          role: 'assistant',
+          ...data,
+          type: data.type || 'clarification',
+          text: data.message || 'Không trích xuất được giao dịch từ hóa đơn.',
+        });
+      } else {
+        push({ role: 'system', type: 'text', text: 'Đã đọc nội dung hóa đơn. Mình đang tạo bản xem trước.' });
+        await send(extractedText, { pushUser: false });
+      }
     } catch (error) {
       push({ role: 'system', type: 'text', text: error.message });
     } finally {
@@ -278,24 +310,145 @@ export default function ChatScreen() {
     }
   }
 
-  async function confirm() {
-    const response = await api.confirmChat();
-    push({ role: 'system', type: 'text', text: response.data.message });
+  async function confirm(messageId) {
+    if (pendingActionId) return;
+    setPendingActionId(messageId);
+    try {
+      const response = await api.confirmChat();
+      updateMessage(messageId, { resolved: true });
+      const data = response.data || {};
+      push({ role: 'system', ...data, type: data.type || 'text', text: data.message || 'Đã xác nhận' });
+    } catch (error) {
+      push({ role: 'system', type: 'text', text: error.message });
+    } finally {
+      setPendingActionId(null);
+    }
   }
 
-  async function cancel() {
-    const response = await api.cancelChat();
-    push({ role: 'system', type: 'text', text: response.data.message });
+  async function cancel(messageId) {
+    if (pendingActionId) return;
+    setPendingActionId(messageId);
+    try {
+      const response = await api.cancelChat();
+      updateMessage(messageId, { resolved: true });
+      push({ role: 'system', type: 'text', text: response.data?.message || 'Đã hủy' });
+    } catch (error) {
+      push({ role: 'system', type: 'text', text: error.message });
+    } finally {
+      setPendingActionId(null);
+    }
   }
 
-  async function edit(data) {
-    const response = await api.editChat(data);
-    push({ role: 'assistant', type: response.data.type, text: response.data.message, transaction: response.data.transaction });
+  async function edit(messageId, data) {
+    if (pendingActionId) return false;
+    setPendingActionId(messageId);
+    try {
+      const response = await api.editChat(data);
+      const updated = response.data || {};
+      updateMessage(messageId, { ...updated, text: updated.message || '' });
+      return true;
+    } catch (error) {
+      push({ role: 'system', type: 'text', text: error.message });
+      return false;
+    } finally {
+      setPendingActionId(null);
+    }
+  }
+
+  async function confirmVoice(messageId, transcript) {
+    if (pendingActionId || !transcript) return;
+    setPendingActionId(messageId);
+    try {
+      const response = await api.confirmSpeechTranscript(transcript);
+      updateMessage(messageId, { text: response.transcript || transcript, resolved: true });
+      const data = response.data || {};
+      push({
+        role: 'assistant',
+        ...data,
+        type: data.type || 'clarification',
+        text: data.message || 'Không trích xuất được giao dịch từ transcript đã xác nhận.',
+      });
+    } catch (error) {
+      push({ role: 'system', type: 'text', text: error.message });
+    } finally {
+      setPendingActionId(null);
+    }
+  }
+
+  async function confirmReceipt(messageId, text, mode) {
+    if (pendingActionId) return;
+    setPendingActionId(messageId);
+    try {
+      const response = await api.confirmReceiptText(text, mode);
+      updateMessage(messageId, { resolved: true, selectedMode: mode });
+      const data = response.data || {};
+      push({
+        role: 'assistant',
+        ...data,
+        type: data.type || 'clarification',
+        text: data.message || 'Không trích xuất được giao dịch từ hóa đơn đã xác nhận.',
+      });
+    } catch (error) {
+      push({ role: 'system', type: 'text', text: error.message });
+    } finally {
+      setPendingActionId(null);
+    }
+  }
+
+  function dismissMedia(messageId) {
+    updateMessage(messageId, { resolved: true, dismissed: true });
+    push({ role: 'system', type: 'text', text: 'Đã bỏ qua nội dung nhận dạng.' });
   }
 
   const renderItem = ({ item }) => {
     if (item.type === 'transaction_preview') {
-      return <TransactionPreviewCard transaction={item.transaction} onConfirm={confirm} onCancel={cancel} onEdit={edit} />;
+      return (
+        <TransactionPreviewCard
+          transaction={item.transaction}
+          onConfirm={() => confirm(item.id)}
+          onCancel={() => cancel(item.id)}
+          onEdit={(updates) => edit(item.id, updates)}
+          busy={pendingActionId === item.id}
+          resolved={item.resolved}
+        />
+      );
+    }
+    if (item.type === 'transactions_preview') {
+      return (
+        <MultiTransactionPreviewCard
+          transactions={item.transactions}
+          onConfirm={() => confirm(item.id)}
+          onCancel={() => cancel(item.id)}
+          onEdit={(index, updates) => edit(item.id, { index, transaction: updates })}
+          busy={pendingActionId === item.id}
+          resolved={item.resolved}
+        />
+      );
+    }
+    if (item.type === 'voice_confirmation') {
+      return (
+        <MediaConfirmationCard
+          kind="voice"
+          text={item.transcript || item.text}
+          onConfirm={(transcript) => confirmVoice(item.id, transcript)}
+          onCancel={() => dismissMedia(item.id)}
+          busy={pendingActionId === item.id}
+          resolved={item.resolved}
+        />
+      );
+    }
+    if (item.type === 'receipt_confirmation') {
+      return (
+        <MediaConfirmationCard
+          kind="receipt"
+          text={item.text}
+          receiptOptions={item.receiptOptions}
+          onConfirm={(mode) => confirmReceipt(item.id, item.text, mode)}
+          onCancel={() => dismissMedia(item.id)}
+          busy={pendingActionId === item.id}
+          resolved={item.resolved}
+        />
+      );
     }
     const isUser = item.role === 'user';
     const isSystem = item.role === 'system';
@@ -334,7 +487,7 @@ export default function ChatScreen() {
   const selectedProvider = aiConfig?.status?.selected_provider || 'local';
   const currentModels = aiConfig?.models?.[selectedProvider]?.models || [];
   const selectedModel = aiConfig?.status?.selected_models?.[selectedProvider] || selectedProvider;
-  const isLoadingAny = loading || imageLoading;
+  const isLoadingAny = loading || imageLoading || Boolean(pendingActionId);
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>

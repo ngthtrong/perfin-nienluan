@@ -7,6 +7,9 @@ const speech = require('@google-cloud/speech');
 const AIService = require('../services/ai.service');
 const MediaAI = require('../services/media-ai.service');
 const CategoryModel = require('../models/category.model');
+const AccountModel = require('../models/account.model');
+const pending = require('../services/pendingTransaction.service');
+const { FeedbackService } = require('../services/feedback');
 
 const router = express.Router();
 const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
@@ -167,7 +170,11 @@ router.post('/parse-transaction', async (req, res, next) => {
   try {
     if (!req.body.text || req.body.text.length > 500) return res.status(400).json({ success: false, error: 'Nội dung không hợp lệ' });
     const categories = await CategoryModel.getAll(userId);
-    const data = await AIService.parseTransaction(req.body.text, categories);
+    const examples = await FeedbackService.getFewShotExamples(userId, req.body.text, { limit: 5 }).catch(() => []);
+    const prompt = examples.length
+      ? `Phân tích yêu cầu: "${req.body.text}". Các sửa danh mục trước đây của người dùng:\n${examples.map((example) => `- "${example.input}" -> ${example.corrected_category?.category_name || example.corrected_category?.category_id}`).join('\n')}`
+      : undefined;
+    const data = await AIService.parseTransaction(req.body.text, categories, prompt);
     res.json({ success: true, data });
   } catch (error) {
     next(error);
@@ -189,7 +196,7 @@ async function handleOcr(req, res, next) {
     if (!req.file) return res.status(400).json({ success: false, error: 'Chưa có ảnh' });
     console.log(`[ocr] received ${req.file.originalname || req.file.filename} (${req.file.mimetype}, ${req.file.size} bytes)`);
     let text = '';
-    let provider = 'mock';
+    let provider = 'unavailable';
     let providerError;
     try {
       const ocrProvider = MediaAI.getOcrProvider();
@@ -204,16 +211,26 @@ async function handleOcr(req, res, next) {
         provider = 'google_vision';
       }
     } catch (error) {
-      console.warn(`[ocr] using mock result: ${error.message}`);
-      text = 'Hóa đơn siêu thị - Tổng: 250.000đ';
-      provider = 'mock';
+      console.warn(`[ocr] provider failed: ${error.message}`);
       providerError = error.message;
     } finally {
       fs.unlink(req.file.path, () => {});
     }
 
+    if (!text.trim()) {
+      return res.status(503).json({
+        success: false,
+        error: 'OCR hiện không khả dụng; hệ thống không tạo dữ liệu giả để tránh ghi sai giao dịch.',
+        code: 'OCR_UNAVAILABLE',
+        provider,
+        provider_error: providerError,
+      });
+    }
+
     const parsed = await extractFromMedia(text, 'receipt');
-    res.json({ success: true, text, provider, provider_error: providerError, parsed });
+    const receiptOptions = buildReceiptOptions(parsed);
+    const data = receiptOptions ? null : await createMediaPendingPreview(parsed, text, 'ocr');
+    res.json({ success: true, text, provider, parsed, receipt_options: receiptOptions, data });
   } catch (error) {
     next(error);
   }
@@ -224,7 +241,7 @@ async function handleSpeech(req, res, next) {
     if (!req.file) return res.status(400).json({ success: false, error: 'Chưa có audio' });
     console.log(`[speech] received ${req.file.originalname || req.file.filename} (${req.file.mimetype}, ${req.file.size} bytes)`);
     let text = '';
-    let provider = 'mock';
+    let provider = 'unavailable';
     let providerError;
     try {
       const speechProvider = MediaAI.getSpeechProvider();
@@ -240,16 +257,33 @@ async function handleSpeech(req, res, next) {
         provider = 'google_speech';
       }
     } catch (error) {
-      console.warn(`[speech] using mock result: ${error.message}`);
-      text = 'Hôm nay uống cà phê hết 50 nghìn';
-      provider = 'mock';
+      console.warn(`[speech] provider failed: ${error.message}`);
       providerError = error.message;
     } finally {
       fs.unlink(req.file.path, () => {});
     }
 
-    const parsed = await extractFromMedia(text, 'voice');
-    res.json({ success: true, text, provider, provider_error: providerError, parsed });
+    if (!text.trim()) {
+      return res.status(503).json({
+        success: false,
+        error: 'Nhận dạng giọng nói hiện không khả dụng; hệ thống không tạo transcript giả.',
+        code: 'SPEECH_UNAVAILABLE',
+        provider,
+        provider_error: providerError,
+      });
+    }
+
+    // Flow 2: transcript must be shown and confirmed before it is parsed into a
+    // transaction. `auto_parse=1` is kept as an explicit compatibility escape hatch.
+    const parsed = req.query.auto_parse === '1' ? await extractFromMedia(text, 'voice') : null;
+    res.json({
+      success: true,
+      text,
+      transcript: text,
+      provider,
+      requires_confirmation: req.query.auto_parse !== '1',
+      parsed,
+    });
   } catch (error) {
     next(error);
   }
@@ -260,14 +294,113 @@ async function extractFromMedia(text, sourceType) {
   if (!String(text || '').trim()) return null;
   try {
     const categories = await CategoryModel.getAll(userId);
-    return await AIService.parseFromMedia(text, categories, sourceType);
+    const parsed = await AIService.parseFromMedia(text, categories, sourceType);
+    const source = sourceType === 'voice' ? 'voice' : 'ocr';
+    const transactions = parsed.transactions || (parsed.transaction ? [parsed.transaction] : []);
+    for (const transaction of transactions) {
+      transaction.source = source;
+      transaction.original_text = text;
+    }
+    if (transactions.length) {
+      parsed.transaction = transactions[0];
+      parsed.transactions = transactions;
+    }
+    return parsed;
   } catch (error) {
     console.warn(`[media-parse] failed: ${error.message}`);
     return null;
   }
 }
 
+function buildReceiptOptions(parsed) {
+  const transactions = parsed?.transactions || (parsed?.transaction ? [parsed.transaction] : []);
+  if (transactions.length <= 1) return null;
+  const totalIndex = transactions.findIndex((tx) => /^tổng hóa đơn:/i.test(String(tx.description || '')));
+  const total = totalIndex >= 0 ? transactions[totalIndex] : null;
+  const items = transactions.filter((_, index) => index !== totalIndex);
+  if (!items.length) return null;
+  return {
+    mode: 'choose_total_or_items',
+    total,
+    items,
+    suggested: total ? 'total' : 'items',
+  };
+}
+
+router.post('/speech/confirm', async (req, res, next) => {
+  try {
+    const transcript = String(req.body.transcript || req.body.text || '').trim();
+    if (!transcript || transcript.length > 2000) {
+      return res.status(400).json({ success: false, error: 'Transcript không hợp lệ' });
+    }
+    const parsed = await extractFromMedia(transcript, 'voice');
+    const data = await createMediaPendingPreview(parsed, transcript, 'voice');
+    res.json({ success: true, transcript, confirmed: true, parsed, data });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post('/ocr/confirm', async (req, res, next) => {
+  try {
+    const text = String(req.body.text || '').trim();
+    const mode = req.body.mode === 'items' ? 'items' : 'total';
+    if (!text || text.length > 10000) return res.status(400).json({ success: false, error: 'Văn bản OCR không hợp lệ' });
+    const parsed = await extractFromMedia(text, 'receipt');
+    const options = buildReceiptOptions(parsed);
+    let selected = parsed?.transactions || (parsed?.transaction ? [parsed.transaction] : []);
+    if (options) selected = mode === 'items' ? options.items : (options.total ? [options.total] : options.items);
+    const selectedParsed = {
+      ...parsed,
+      intent: selected.length > 1 ? 'transactions' : 'transaction',
+      transaction: selected[0] || null,
+      transactions: selected,
+    };
+    const data = await createMediaPendingPreview(selectedParsed, text, 'ocr');
+    res.json({
+      success: true,
+      confirmed: true,
+      mode,
+      parsed: selectedParsed,
+      data,
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+async function createMediaPendingPreview(parsed, originalText, source) {
+  const transactions = parsed?.transactions || (parsed?.transaction ? [parsed.transaction] : []);
+  if (!transactions.length) {
+    return { type: 'clarification', message: 'Không trích xuất được giao dịch từ nội dung đã xác nhận.' };
+  }
+  const wallet = await AccountModel.ensureDefault(userId);
+  const drafts = transactions.map((transaction) => ({
+    ...transaction,
+    wallet_id: transaction.wallet_id || wallet.id,
+    source,
+    original_text: originalText,
+  }));
+  const kind = drafts.length > 1 ? 'transactions' : 'transaction';
+  const pendingId = await pending.set(userId, drafts.length > 1 ? drafts : drafts[0], kind);
+  return drafts.length > 1
+    ? {
+      type: 'transactions_preview',
+      message: `Mình tìm thấy ${drafts.length} giao dịch từ ${source === 'voice' ? 'giọng nói' : 'hóa đơn'}. Bạn xác nhận tất cả nhé.`,
+      transactions: drafts,
+      pending_id: pendingId,
+    }
+    : {
+      type: 'transaction_preview',
+      message: `Mình đã tạo bản xem trước từ ${source === 'voice' ? 'giọng nói' : 'hóa đơn'}:`,
+      transaction: drafts[0],
+      pending_id: pendingId,
+    };
+}
+
 router.post('/ocr', acceptUpload('image', handleOcr));
 router.post('/speech', acceptUpload('audio', handleSpeech));
 
 module.exports = router;
+module.exports.buildReceiptOptions = buildReceiptOptions;
+module.exports.createMediaPendingPreview = createMediaPendingPreview;

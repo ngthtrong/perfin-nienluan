@@ -11,9 +11,9 @@ const TTL_SECONDS = 5 * 60; // 5 minutes, matches the documented pending window
 const keyFor = (userId) => `pending:${userId}`;
 
 module.exports = {
-  async set(userId, data, kind = 'transaction') {
+  async set(userId, data, kind = 'transaction', metadata = {}) {
     const pendingId = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
-    await KVStore.set(keyFor(userId), { id: pendingId, kind, data, createdAt: Date.now() }, TTL_SECONDS);
+    await KVStore.set(keyFor(userId), { id: pendingId, kind, data, metadata, createdAt: Date.now() }, TTL_SECONDS);
     return pendingId;
   },
 

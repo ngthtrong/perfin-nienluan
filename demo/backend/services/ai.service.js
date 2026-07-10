@@ -1,7 +1,11 @@
-const { GoogleGenAI } = require('@google/genai');
+const crypto = require('crypto');
+const { GoogleGenAI, FunctionCallingConfigMode } = require('@google/genai');
 const { getSystemPrompt, getParsePrompt, getChatPrompt, getReceiptPrompt, getVoicePrompt, getInsightPrompt } = require('../prompts/transaction.prompt');
 const { fallbackInsightText } = require('./analytics/narrator.fallback');
-const { matchCategory, parseLocalTransaction } = require('./parser.service');
+const { matchCategory, normalizeText } = require('./parser.service');
+const { routeLocalIntent } = require('./ai/localIntentRouter');
+const { FINANCIAL_TOOL_DECLARATIONS, toolCallToIntent } = require('./ai/toolDeclarations');
+const KVStore = require('./store/kv.store');
 
 // Danh sách model Gemini được phép sử dụng
 const ALLOWED_GEMINI_MODELS = [
@@ -35,23 +39,52 @@ function withTimeout(promise, label) {
   return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
 }
 
-function normalizeAIResponse(parsed, categories) {
-  if (parsed.intent !== 'transaction' || !parsed.transaction) return parsed;
-  const tx = parsed.transaction;
+function normalizeTransaction(tx, categories) {
   const category = matchCategory(tx.category_name, categories, tx.type || 'expense');
   return {
-    ...parsed,
-    transaction: {
-      description: tx.description,
-      amount: Number(tx.amount),
-      type: tx.type || 'expense',
-      category_id: category ? category.id : tx.category_id,
-      category_name: category ? category.name : tx.category_name,
-      category_icon: category ? category.icon : '📦',
-      transaction_date: tx.transaction_date || tx.date || new Date().toISOString().slice(0, 10),
-      confidence: Number(tx.confidence || 0.7),
-    },
+    description: String(tx.description || '').trim(),
+    amount: Number(tx.amount),
+    type: tx.type || 'expense',
+    category_id: category ? category.id : tx.category_id,
+    category_name: category ? category.name : tx.category_name,
+    category_icon: category ? category.icon : '📦',
+    transaction_date: tx.transaction_date || tx.date || new Date().toISOString().slice(0, 10),
+    confidence: Number(tx.confidence || 0.7),
   };
+}
+
+function normalizeAIResponse(parsed, categories) {
+  if (!parsed) return parsed;
+  const input = Array.isArray(parsed.transactions)
+    ? parsed.transactions
+    : parsed.transaction ? [parsed.transaction] : [];
+  if (!input.length) return parsed;
+  const transactions = input.map((tx) => normalizeTransaction(tx, categories));
+  return {
+    ...parsed,
+    intent: transactions.length > 1 ? 'transactions' : 'transaction',
+    transaction: transactions[0],
+    transactions,
+    needs_clarification: transactions.some((tx) => !tx.description || !(tx.amount > 0)),
+  };
+}
+
+function parseCacheKey(text, categories, userPrompt) {
+  const categoryVersion = categories.map((cat) => `${cat.id}:${cat.name}:${cat.type}`).join('|');
+  const digest = crypto.createHash('sha256')
+    .update(`${normalizeText(text)}\n${userPrompt || ''}\n${categoryVersion}`)
+    .digest('hex');
+  return `cache:ai-parse:${digest}`;
+}
+
+function enforceInsightUnits(text, facts) {
+  let safe = String(text || '');
+  if (facts?.runway?.avgBurn) {
+    safe = safe
+      .replace(/(mức chi tiêu trung bình)\s+(?:hàng|mỗi)\s+tháng/gi, '$1 mỗi ngày')
+      .replace(/(chi tiêu trung bình[^\n.]{0,40})\/tháng/gi, '$1/ngày');
+  }
+  return safe;
 }
 
 class AIServiceManager {
@@ -70,24 +103,47 @@ class AIServiceManager {
     const response = await this.gemini.models.generateContent({
       model: this.selected.models.gemini,
       contents: [{ role: 'user', parts: [{ text: `${getSystemPrompt(categories)}\n${prompt}` }] }],
-      config: { responseMimeType: 'application/json', temperature: 0.1, maxOutputTokens: 1024 },
+      config: {
+        temperature: 0.1,
+        maxOutputTokens: 1536,
+        tools: [{ functionDeclarations: FINANCIAL_TOOL_DECLARATIONS }],
+        toolConfig: { functionCallingConfig: { mode: FunctionCallingConfigMode.AUTO } },
+      },
     });
-    return normalizeAIResponse(JSON.parse(response.text), categories);
+    const calls = response.functionCalls || [];
+    if (calls.length) {
+      const commands = calls.map(toolCallToIntent).filter(Boolean);
+      if (commands.length) {
+        return normalizeAIResponse({ ...commands[0], follow_up: commands.slice(1) }, categories);
+      }
+    }
+    return {
+      intent: 'question',
+      needs_clarification: false,
+      chat_response: String(response.text || '').trim() || null,
+    };
   }
 
   async parseTransaction(text, categories, userPrompt) {
+    const cacheKey = parseCacheKey(text, categories, userPrompt);
+    const cached = await KVStore.get(cacheKey);
+    if (cached) return { ...cached, cache_hit: true };
     const providers = this.getProviderOrder();
     for (const provider of providers) {
       try {
         const started = Date.now();
         const parsed = await this.parseWithGemini(text, categories, userPrompt);
         console.log(`[AIService] ${provider} parse ok ${Date.now() - started}ms`);
-        return { success: true, provider_used: provider, model: this.selected.models[provider], ...parsed };
+        const result = { success: true, provider_used: provider, model: this.selected.models[provider], ...parsed };
+        await KVStore.set(cacheKey, result, 180);
+        return result;
       } catch (error) {
         console.warn(`[AIService] ${provider} parse failed: ${error.message}`);
       }
     }
-    return { success: true, provider_used: 'local', ...parseLocalTransaction(text, categories) };
+    const result = { success: true, provider_used: 'local', ...routeLocalIntent(text, categories) };
+    await KVStore.set(cacheKey, result, 60);
+    return result;
   }
 
   // Extract a transaction from OCR receipt text or a voice transcript using a specialized
@@ -120,6 +176,12 @@ class AIServiceManager {
   // Narrate pre-computed analytics facts in the given persona voice. Falls back to a
   // deterministic template when no LLM is available, so insights always render.
   async narrateInsights(facts, { stylePrompt = '', periodLabel = 'gần đây' } = {}) {
+    const digest = crypto.createHash('sha256')
+      .update(JSON.stringify({ version: 2, facts, stylePrompt, periodLabel }))
+      .digest('hex');
+    const cacheKey = `cache:ai-insight:${digest}`;
+    const cached = await KVStore.get(cacheKey);
+    if (cached) return { ...cached, cache_hit: true };
     const providers = this.getProviderOrder();
     for (const provider of providers) {
       try {
@@ -129,13 +191,17 @@ class AIServiceManager {
             contents: getInsightPrompt(facts, { stylePrompt, periodLabel }),
             config: { temperature: 0.4, maxOutputTokens: 1024 },
           });
-          return { success: true, provider_used: 'gemini', model: this.selected.models.gemini, text: response.text };
+          const result = { success: true, provider_used: 'gemini', model: this.selected.models.gemini, text: enforceInsightUnits(response.text, facts) };
+          await KVStore.set(cacheKey, result, 300);
+          return result;
         }
       } catch (error) {
         console.warn(`[AIService] ${provider} insight failed: ${error.message}`);
       }
     }
-    return { success: true, provider_used: 'local', text: fallbackInsightText(facts) };
+    const result = { success: true, provider_used: 'local', text: fallbackInsightText(facts) };
+    await KVStore.set(cacheKey, result, 120);
+    return result;
   }
 
   getProviderOrder() {
@@ -209,3 +275,5 @@ class AIServiceManager {
 }
 
 module.exports = new AIServiceManager();
+module.exports.normalizeAIResponse = normalizeAIResponse;
+module.exports.enforceInsightUnits = enforceInsightUnits;

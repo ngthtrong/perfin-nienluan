@@ -1,0 +1,18 @@
+services:
+  redis:
+    image: redis:7.4-alpine
+    container_name: perfin-redis
+    command: ["redis-server", "--appendonly", "yes", "--maxmemory-policy", "noeviction"]
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - perfin-redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  perfin-redis-data:

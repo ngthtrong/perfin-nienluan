@@ -1,3 +1,5 @@
+const { inferCategoryFromText, findSafeCategoryMatch } = require('./feedback/categoryMatcher');
+
 const CATEGORY_ALIASES = {
   'Ăn uống': ['đồ ăn', 'ăn', 'an', 'thức ăn', 'cơm', 'phở', 'bún', 'cà phê', 'trà sữa', 'food'],
   'Di chuyển': ['đi lại', 'xe', 'xăng', 'grab', 'taxi', 'uber', 'xe buýt', 'gửi xe', 'transport'],
@@ -6,7 +8,7 @@ const CATEGORY_ALIASES = {
   'Sức khỏe': ['y tế', 'thuốc', 'bệnh viện', 'khám bệnh', 'health'],
   'Giáo dục': ['học', 'sách', 'khóa học', 'học phí', 'education'],
   'Nhà cửa': ['nhà', 'phòng trọ', 'thuê nhà', 'tiền trọ', 'rent', 'housing'],
-  'Hóa đơn & Dịch vụ': ['hóa đơn', 'bill', 'dịch vụ', 'tiền điện', 'tiền nước', 'internet', 'điện thoại'],
+  'Hóa đơn & Dịch vụ': ['hóa đơn', 'bill', 'dịch vụ', 'tiền điện', 'tiền nước', 'tiền điện thoại', 'internet', 'điện thoại'],
   'Tạp hóa': ['siêu thị', 'chợ', 'grocery', 'đi chợ'],
   'Điện tử': ['công nghệ', 'tech', 'điện thoại', 'laptop', 'iphone', 'electronics'],
   'Thể thao': ['gym', 'fitness', 'sport', 'tập'],
@@ -15,6 +17,8 @@ const CATEGORY_ALIASES = {
   Thưởng: ['bonus', 'thưởng tết', 'thưởng cuối năm', 'thưởng dự án'],
   'Đầu tư': ['investment', 'lãi', 'cổ tức', 'dividend'],
 };
+
+const INCOME_CATEGORIES = new Set(['Lương', 'Thưởng', 'Đầu tư']);
 
 function removeDiacritics(str = '') {
   return String(str).normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'D');
@@ -60,12 +64,16 @@ function inferType(text) {
 }
 
 function inferCategoryName(text, type) {
-  const normalized = normalizeText(text);
-  for (const [name, aliases] of Object.entries(CATEGORY_ALIASES)) {
-    if (aliases.some((alias) => normalized.includes(normalizeText(alias)))) return name;
-  }
-  if (type === 'income') return 'Khác';
-  return 'Khác';
+  return inferCategoryWithMeta(text, type).categoryName;
+}
+
+function inferCategoryWithMeta(text, type) {
+  const scopedAliases = Object.fromEntries(
+    Object.entries(CATEGORY_ALIASES).filter(([name]) => (
+      type === 'income' ? INCOME_CATEGORIES.has(name) : !INCOME_CATEGORIES.has(name)
+    ))
+  );
+  return inferCategoryFromText(text, scopedAliases);
 }
 
 function inferDate(text, today = new Date()) {
@@ -82,19 +90,15 @@ function inferDate(text, today = new Date()) {
 }
 
 function matchCategory(categoryName, categories, type = 'expense') {
-  const scoped = categories.filter((cat) => cat.type === type);
-  const wanted = normalizeText(categoryName);
-  let found = scoped.find((cat) => normalizeText(cat.name) === wanted);
-  if (found) return found;
-  found = scoped.find((cat) => normalizeText(cat.name).includes(wanted) || wanted.includes(normalizeText(cat.name)));
-  if (found) return found;
-  for (const [name, aliases] of Object.entries(CATEGORY_ALIASES)) {
-    if (normalizeText(name) === wanted || aliases.some((alias) => normalizeText(alias) === wanted || wanted.includes(normalizeText(alias)))) {
-      found = scoped.find((cat) => normalizeText(cat.name) === normalizeText(name));
-      if (found) return found;
-    }
-  }
-  return scoped.find((cat) => cat.name === 'Khác') || scoped[0] || null;
+  return matchCategoryWithMeta(categoryName, categories, type).category;
+}
+
+function matchCategoryWithMeta(categoryName, categories, type = 'expense') {
+  return findSafeCategoryMatch(categoryName, categories, {
+    type,
+    aliases: CATEGORY_ALIASES,
+    fallbackName: 'Khác',
+  });
 }
 
 function validateParsedTransaction(data) {
@@ -109,16 +113,30 @@ function validateParsedTransaction(data) {
 function parseLocalTransaction(text, categories) {
   const amount = normalizeAmount(text);
   const type = inferType(text);
-  const categoryName = inferCategoryName(text, type);
-  const category = matchCategory(categoryName, categories, type);
+  const inferredCategory = inferCategoryWithMeta(text, type);
+  const categoryName = inferredCategory.categoryName;
+  const categoryMatch = matchCategoryWithMeta(categoryName, categories, type);
+  const category = categoryMatch.category;
   const description = String(text)
-    .replace(/\d+(?:[.,]\d+)?\s*(k|nghìn|ngàn|triệu|tr|củ|tỷ)?/gi, '')
+    .replace(/\d+(?:[.,]\d+)?\s*(k|nghìn|ngàn|triệu|tr|củ|tỷ|vnd|đ|₫)?/gi, '')
     .replace(/\b(hôm nay|hôm qua|hôm kia)\b/gi, '')
     .trim() || (category ? category.name : 'Giao dịch');
 
   if (!amount) {
     return {
       intent: 'unclear',
+      transaction: {
+        description,
+        amount: null,
+        type,
+        category_id: category ? category.id : null,
+        category_name: category ? category.name : categoryName,
+        category_icon: category ? category.icon : '📦',
+        transaction_date: inferDate(text),
+        confidence: 0.5,
+        category_confidence: Math.min(categoryMatch.confidence, inferredCategory.confidence || 0),
+        category_match_kind: inferredCategory.matchKind,
+      },
       needs_clarification: true,
       clarification_message: 'Bạn muốn ghi nhận bao nhiêu tiền?',
     };
@@ -135,6 +153,10 @@ function parseLocalTransaction(text, categories) {
       category_icon: category ? category.icon : '📦',
       transaction_date: inferDate(text),
       confidence: 0.8,
+      category_confidence: Math.min(categoryMatch.confidence, inferredCategory.confidence || 0),
+      category_match_kind: inferredCategory.matchKind === 'alias_phrase'
+        ? categoryMatch.matchKind
+        : inferredCategory.matchKind,
     },
     needs_clarification: false,
     chat_response: null,
@@ -146,7 +168,10 @@ module.exports = {
   removeDiacritics,
   normalizeText,
   normalizeAmount,
+  inferCategoryName,
+  inferCategoryWithMeta,
   matchCategory,
+  matchCategoryWithMeta,
   validateParsedTransaction,
   parseLocalTransaction,
 };
