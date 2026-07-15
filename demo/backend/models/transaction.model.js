@@ -26,9 +26,41 @@ async function getJoinedById(id, includeDeleted = false) {
   return result.rows[0] || null;
 }
 
+async function rollbackAfterFailure(client, error) {
+  try {
+    await client.query('ROLLBACK');
+  } catch (rollbackError) {
+    // Preserve the error that caused the transaction to fail while retaining the
+    // rollback failure for diagnostics.
+    error.rollbackError = rollbackError;
+  }
+}
+
+async function invalidateAfterCommit(userId) {
+  try {
+    await invalidateFinancialCaches(userId);
+  } catch (error) {
+    // The database change is already durable. Reporting the whole request as
+    // failed would encourage a retry and can duplicate a create operation.
+    console.warn(`[transaction] post-commit cache invalidation failed: ${error.message}`);
+  }
+}
+
+async function hydrateAfterCommit(id, fallback, includeDeleted = false) {
+  try {
+    return (await getJoinedById(id, includeDeleted)) || fallback;
+  } catch (error) {
+    console.warn(`[transaction] post-commit hydration failed: ${error.message}`);
+    return fallback;
+  }
+}
+
 const TransactionModel = {
   async create(data) {
     const client = await pool.connect();
+    let transactionClosed = false;
+    let tx;
+    let walletBalance;
     try {
       await client.query('BEGIN');
       const result = await client.query(
@@ -37,7 +69,7 @@ const TransactionModel = {
          RETURNING *`,
         [data.userId || DEFAULT_USER, data.description, data.amount, data.type, data.category_id, data.wallet_id, data.transaction_date || null, data.source || 'manual', data.note || null, data.original_text || null, data.ai_parsed ? JSON.stringify(data.ai_parsed) : null]
       );
-      const tx = result.rows[0];
+      tx = result.rows[0];
       const wallet = await client.query(
         'UPDATE wallets SET balance = balance + $1, updated_at = NOW() WHERE id = $2 AND user_id = $3 RETURNING balance',
         [balanceDelta(tx.type, tx.amount), tx.wallet_id, data.userId || DEFAULT_USER]
@@ -48,14 +80,19 @@ const TransactionModel = {
         throw error;
       }
       await client.query('COMMIT');
-      await invalidateFinancialCaches(data.userId || DEFAULT_USER);
-      return { ...(await getJoinedById(tx.id)), wallet_balance: Number(wallet.rows[0].balance) };
+      transactionClosed = true;
+      walletBalance = Number(wallet.rows[0].balance);
     } catch (error) {
-      await client.query('ROLLBACK');
+      if (!transactionClosed) await rollbackAfterFailure(client, error);
       throw error;
     } finally {
       client.release();
     }
+
+    // Post-commit work is best-effort: a durable create must still be reported as
+    // successful even if Redis or response hydration is temporarily unavailable.
+    await invalidateAfterCommit(data.userId || DEFAULT_USER);
+    return { ...(await hydrateAfterCommit(tx.id, tx)), wallet_balance: walletBalance };
   },
 
   // Atomically create all transactions from a multi-transaction preview. If any
@@ -64,13 +101,15 @@ const TransactionModel = {
     if (!Array.isArray(items) || !items.length) return [];
     const client = await pool.connect();
     const ids = [];
+    const createdRows = [];
+    let transactionClosed = false;
     try {
       await client.query('BEGIN');
       for (const data of items) {
         const result = await client.query(
           `INSERT INTO transactions (user_id, description, amount, type, category_id, wallet_id, transaction_date, source, note, original_text, ai_parsed)
            VALUES ($1, $2, $3, $4::transaction_type, $5, $6, COALESCE($7, CURRENT_DATE), COALESCE($8, 'manual')::transaction_source, $9, $10, COALESCE($11::jsonb, '{}'::jsonb))
-           RETURNING id, type, amount, wallet_id`,
+           RETURNING *`,
           [userId, data.description, data.amount, data.type, data.category_id, data.wallet_id,
             data.transaction_date || null, data.source || 'manual', data.note || null,
             data.original_text || null, data.ai_parsed ? JSON.stringify(data.ai_parsed) : null]
@@ -86,16 +125,19 @@ const TransactionModel = {
           throw error;
         }
         ids.push(tx.id);
+        createdRows.push(tx);
       }
       await client.query('COMMIT');
-      await invalidateFinancialCaches(userId);
-      return Promise.all(ids.map((id) => getJoinedById(id)));
+      transactionClosed = true;
     } catch (error) {
-      await client.query('ROLLBACK');
+      if (!transactionClosed) await rollbackAfterFailure(client, error);
       throw error;
     } finally {
       client.release();
     }
+
+    await invalidateAfterCommit(userId);
+    return Promise.all(ids.map((id, index) => hydrateAfterCommit(id, createdRows[index])));
   },
 
   async getAll(userId = DEFAULT_USER, filters = {}) {
@@ -135,11 +177,19 @@ const TransactionModel = {
 
   async update(id, data) {
     const client = await pool.connect();
+    let transactionClosed = false;
+    let updatedId;
+    let updatedRow;
+    let ownerId = DEFAULT_USER;
     try {
       await client.query('BEGIN');
       const oldResult = await client.query('SELECT * FROM transactions WHERE id = $1 AND deleted_at IS NULL FOR UPDATE', [id]);
       const old = oldResult.rows[0];
-      if (!old) return null;
+      if (!old) {
+        await client.query('ROLLBACK');
+        transactionClosed = true;
+        return null;
+      }
       const next = { ...old, ...data };
       await client.query('UPDATE wallets SET balance = balance - $1 WHERE id = $2', [balanceDelta(old.type, old.amount), old.wallet_id]);
       const updated = await client.query(
@@ -149,14 +199,19 @@ const TransactionModel = {
       );
       await client.query('UPDATE wallets SET balance = balance + $1, updated_at = NOW() WHERE id = $2', [balanceDelta(next.type, next.amount), old.wallet_id]);
       await client.query('COMMIT');
-      await invalidateFinancialCaches(old.user_id || DEFAULT_USER);
-      return getJoinedById(updated.rows[0].id);
+      transactionClosed = true;
+      updatedId = updated.rows[0].id;
+      updatedRow = updated.rows[0];
+      ownerId = old.user_id || DEFAULT_USER;
     } catch (error) {
-      await client.query('ROLLBACK');
+      if (!transactionClosed) await rollbackAfterFailure(client, error);
       throw error;
     } finally {
       client.release();
     }
+
+    await invalidateAfterCommit(ownerId);
+    return hydrateAfterCommit(updatedId, updatedRow);
   },
 
   async updateCategory(id, categoryId) {
@@ -174,32 +229,42 @@ const TransactionModel = {
       throw err;
     }
     await query('UPDATE transactions SET category_id = $2, updated_at = NOW() WHERE id = $1', [id, categoryId]);
-    await invalidateFinancialCaches(tx.user_id || DEFAULT_USER);
-    return getJoinedById(id);
+    await invalidateAfterCommit(tx.user_id || DEFAULT_USER);
+    return hydrateAfterCommit(id, { ...tx, category_id: categoryId, category_name: category.rows[0].name, category_icon: category.rows[0].icon });
   },
 
   async softDelete(id) {
     const client = await pool.connect();
+    let transactionClosed = false;
+    let tx;
     try {
       await client.query('BEGIN');
       const old = await client.query('UPDATE transactions SET deleted_at = NOW(), updated_at = NOW() WHERE id = $1 AND deleted_at IS NULL RETURNING *', [id]);
-      const tx = old.rows[0];
-      if (!tx) return null;
+      tx = old.rows[0];
+      if (!tx) {
+        await client.query('ROLLBACK');
+        transactionClosed = true;
+        return null;
+      }
       await client.query('UPDATE wallets SET balance = balance - $1, updated_at = NOW() WHERE id = $2', [balanceDelta(tx.type, tx.amount), tx.wallet_id]);
       await client.query('COMMIT');
-      await invalidateFinancialCaches(tx.user_id || DEFAULT_USER);
-      const deletedAt = new Date(tx.deleted_at);
-      return { success: true, deleted_at: tx.deleted_at, restore_deadline: new Date(deletedAt.getTime() + 30000).toISOString() };
+      transactionClosed = true;
     } catch (error) {
-      await client.query('ROLLBACK');
+      if (!transactionClosed) await rollbackAfterFailure(client, error);
       throw error;
     } finally {
       client.release();
     }
+
+    await invalidateAfterCommit(tx.user_id || DEFAULT_USER);
+    const deletedAt = new Date(tx.deleted_at);
+    return { success: true, deleted_at: tx.deleted_at, restore_deadline: new Date(deletedAt.getTime() + 30000).toISOString() };
   },
 
   async restore(id) {
     const client = await pool.connect();
+    let transactionClosed = false;
+    let tx;
     try {
       await client.query('BEGIN');
       const old = await client.query(
@@ -208,7 +273,7 @@ const TransactionModel = {
          RETURNING *`,
         [id]
       );
-      const tx = old.rows[0];
+      tx = old.rows[0];
       if (!tx) {
         const err = new Error('Đã quá thời hạn khôi phục (30 giây)');
         err.status = 410;
@@ -216,14 +281,16 @@ const TransactionModel = {
       }
       await client.query('UPDATE wallets SET balance = balance + $1, updated_at = NOW() WHERE id = $2', [balanceDelta(tx.type, tx.amount), tx.wallet_id]);
       await client.query('COMMIT');
-      await invalidateFinancialCaches(tx.user_id || DEFAULT_USER);
-      return getJoinedById(id);
+      transactionClosed = true;
     } catch (error) {
-      await client.query('ROLLBACK');
+      if (!transactionClosed) await rollbackAfterFailure(client, error);
       throw error;
     } finally {
       client.release();
     }
+
+    await invalidateAfterCommit(tx.user_id || DEFAULT_USER);
+    return hydrateAfterCommit(id, tx);
   },
 
   async getMonthlySummary(userId = DEFAULT_USER, month, year) {

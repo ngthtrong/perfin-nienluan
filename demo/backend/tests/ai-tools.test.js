@@ -3,7 +3,7 @@ const assert = require('node:assert/strict');
 
 const { toolCallToIntent, FINANCIAL_TOOL_DECLARATIONS } = require('../services/ai/toolDeclarations');
 const { routeLocalIntent, extractAllAmounts } = require('../services/ai/localIntentRouter');
-const { enforceInsightUnits } = require('../services/ai.service');
+const { enforceInsightUnits, AIServiceManager } = require('../services/ai.service');
 
 const categories = [
   { id: 1, name: 'Ăn uống', type: 'expense', icon: '🍜' },
@@ -58,4 +58,27 @@ test('insight narration cannot relabel daily runway burn as monthly', () => {
   );
   assert.match(text, /trung bình mỗi ngày/i);
   assert.doesNotMatch(text, /trung bình hàng tháng/i);
+});
+
+test('provider order follows the current selection instead of startup mode', async () => {
+  const manager = new AIServiceManager();
+  manager.gemini = {};
+  manager.getGeminiModels = async () => ['gemini-2.5-flash'];
+
+  await manager.setSelection({ provider: 'gemini', model: 'gemini-2.5-flash' });
+  assert.deepEqual(manager.getProviderOrder(), ['gemini']);
+
+  await manager.setSelection({ provider: 'local' });
+  assert.deepEqual(manager.getProviderOrder(), []);
+});
+
+test('empty OCR or voice text falls back without throwing', async () => {
+  const manager = new AIServiceManager();
+  const result = await manager.parseFromMedia('', categories, 'receipt');
+
+  assert.equal(result.success, true);
+  assert.equal(result.provider_used, 'local');
+  assert.equal(result.intent, 'unclear');
+  assert.equal(result.transaction.amount, null);
+  assert.equal(result.needs_clarification, true);
 });

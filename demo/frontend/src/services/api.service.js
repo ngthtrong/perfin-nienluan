@@ -224,8 +224,14 @@ export const api = {
     method: 'POST',
     body: JSON.stringify({ text, mode }),
   }),
-  confirmChat: () => request('/api/chat/confirm', { method: 'POST', body: '{}' }),
-  cancelChat: () => request('/api/chat/cancel', { method: 'POST', body: '{}' }),
+  confirmChat: (pendingId) => request('/api/chat/confirm', {
+    method: 'POST',
+    body: JSON.stringify(pendingId ? { pending_id: pendingId } : {}),
+  }),
+  cancelChat: (pendingId) => request('/api/chat/cancel', {
+    method: 'POST',
+    body: JSON.stringify(pendingId ? { pending_id: pendingId } : {}),
+  }),
   editChat: (data) => request('/api/chat/edit', { method: 'POST', body: JSON.stringify(data) }),
   getBudgets: (month, year) => request(`/api/budgets?month=${month}&year=${year}`),
   getBudgetProgress: (month, year) => request(`/api/budgets/progress?month=${month}&year=${year}`),

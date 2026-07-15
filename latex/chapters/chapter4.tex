@@ -1,0 +1,64 @@
+\chapter{Kết luận}
+\label{chap:conclusion}
+
+\section{Kết quả đạt được}
+
+Ở mức thiết kế và hiện thực nguyên mẫu, PERFIN đã hình thành kiến trúc tách dữ liệu, giải thuật và lớp LLM; có migration cho 18 bảng vật lý; có các module analytics, feedback, budget, goal, state và worker; đồng thời có bộ test tự động chạy được. Đóng góp quan trọng nhất của báo cáo là làm rõ vai trò LLM: mô hình không thay SQL hoặc giải thuật thống kê, mà chuyển ngôn ngữ tự nhiên thành lệnh có kiểu và chuyển facts thành lời giải thích.
+
+\begin{table}[H]
+  \centering
+  \caption{Đối chiếu mục tiêu với bằng chứng}
+  \label{tab:objective-evidence}
+  \begin{tabularx}{\textwidth}{@{}L{3.6cm}Y Y@{}}
+    \toprule
+    \textbf{Mục tiêu} & \textbf{Bằng chứng hiện có} & \textbf{Kết luận thận trọng} \\
+    \midrule
+    O1 --- Mô hình dữ liệu & Migration, model, validation và luồng transaction. & Đã hiện thực ở mức prototype; cần fault-injection trên DB thật. \\
+    O2 --- Pipeline đa phương thức & Tool schema, parser, media adapter, preview/state. & Có luồng mã nguồn; chưa có accuracy khóa phiên bản. \\
+    O3 --- Giải thuật phân tích & Hàm analytics, goal, budget, feedback và test tự động. & 18/18 tệp test pass; đã zero-fill trục lịch, vẫn cần dataset rộng. \\
+    O4 --- Ranh giới LLM & Tool declarations, facts--narrator flow và fallback. & Thiết kế rõ; numeric faithfulness chưa được đo hệ thống. \\
+    O5 --- Đánh giá vận hành & Backend test, parser harness và Expo export đã chạy. & Chưa đủ kết luận về DB, media, LLM, hiệu năng hoặc UAT. \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+Baseline trước sửa ghi nhận 13/13 tệp backend đạt và local parser đạt 27/31 ca strict. Sau ổn định hóa, backend đạt 18/18 tệp, local-parser quality gate đạt 31/31 strict, Expo web export xử lý 652 module và tạo bundle khoảng 1,49~MB. Các số này không được dùng để tuyên bố hệ thống đã sẵn sàng production.
+
+\section{Tác động của LLM}
+
+LLM tạo giá trị ở ba điểm. Thứ nhất, mô hình giảm ma sát nhập liệu bằng cách hiểu nhiều cách diễn đạt, ngày tương đối và câu có nhiều ý định. Thứ hai, function calling biến câu tự nhiên thành typed command, giúp form và chat dùng chung service nghiệp vụ. Thứ ba, grounded narration diễn giải facts theo ngữ cảnh và persona, giúp kết quả thuật toán dễ tiếp cận hơn.
+
+Tác động này chỉ tích cực khi có bốn hàng rào: schema, validation, bước xem trước/xác nhận và facts grounding. Nếu bỏ các hàng rào, LLM làm tăng rủi ro dữ liệu sai; nếu giao toàn bộ tính toán cho mô hình, kết quả mất tính tái lập. Vì vậy, lợi ích LLM cần được đo khi so sánh với parser và form: F1 thực thể, tỷ lệ hoàn tất, số thao tác, độ trễ, chi phí và unsupported-number rate.
+
+\section{Hạn chế}
+
+\begin{enumerate}
+  \item Runtime dùng \code{default_user}; chưa có xác thực và phân quyền production.
+  \item Chất lượng trích xuất phụ thuộc provider, cách nói đời thường và chất lượng ảnh/audio; chưa có benchmark gán nhãn.
+  \item Các ngưỡng anomaly, fuzzy, recurring và correlation là cấu hình khởi đầu, chưa tối ưu trên dữ liệu đại diện.
+  \item Runway và trend đã zero-fill ngày/tháng nhưng vẫn là ngoại suy đơn giản, chưa mô hình hóa mùa vụ, sự kiện tương lai hoặc thu nhập bất thường.
+  \item Persona có thể làm phản hồi dễ đọc hơn nhưng hiệu quả hành vi chưa được chứng minh bằng UAT.
+  \item Một số chức năng hỗ trợ demo chưa hoàn chỉnh: tạo ví, PDF thật, backup định kỳ, restore và push notification.
+  \item Bộ test hiện có chưa thay thế kiểm thử end-to-end với PostgreSQL, Redis và provider thật.
+  \item ERD có user scope nhưng một số thao tác theo ID chưa luôn kèm điều kiện user, tạo rủi ro khi nâng cấp multi-user.
+\end{enumerate}
+
+\section{Hướng phát triển}
+
+Thứ tự phát triển phải giữ trọng tâm dữ liệu và giải thuật:
+
+\begin{enumerate}
+  \item \textbf{Kiểm chứng tích hợp lõi:} transaction, pending claim, recurring period và validation đã có unit regression; bước kế tiếp là PostgreSQL/Redis integration test và user scope.
+  \item \textbf{Mở rộng baseline ngôn ngữ:} quality gate 31 câu đã đạt; cần tách tập đánh giá độc lập, thêm typo, câu đa ý định và báo macro-F1.
+  \item \textbf{Kiểm chứng giải thuật:} trục thời gian, zero-spend days và mẫu số đã sửa; cần khóa dataset tổng hợp lớn hơn, backtest và expected tính tay.
+  \item \textbf{Đo tác động LLM:} xây tập tiếng Việt gán nhãn, ablation parser--LLM và numeric grounding checker.
+  \item \textbf{Kiểm chứng media:} thu tập ảnh/audio ẩn danh, đo CER/WER và transaction-field accuracy, test lỗi provider.
+  \item \textbf{Hoàn thiện tính năng hỗ trợ:} tạo ví, PDF đúng định dạng, backup/restore an toàn và worker định kỳ; chỉ làm sau khi lõi ổn định.
+  \item \textbf{Chuẩn bị triển khai thật:} authentication, authorization, audit log, quản lý khóa và chính sách lưu/xóa media.
+\end{enumerate}
+
+Bank sync, shared wallet và high availability chỉ nên xem xét ở giai đoạn sau. Mở rộng tính năng trước khi tính đúng dữ liệu và bằng chứng thực nghiệm ổn định sẽ làm lệch trọng tâm của niên luận cơ sở ngành.
+
+\section{Kết luận chung}
+
+PERFIN có ý nghĩa học thuật khi được trình bày như một hệ thống xử lý dữ liệu tài chính có lớp giao tiếp LLM, không phải một chatbot biết tính tiền. Cấu trúc phù hợp là: dữ liệu quan hệ làm nguồn chuẩn, giải thuật xác định tạo facts, LLM hỗ trợ hiểu và diễn giải, còn người dùng giữ quyền xác nhận mọi thay đổi. Bản báo cáo này đồng thời chỉ ra phần đã hiện thực, kết quả đã đo và khoảng trống phải sửa; đó là cơ sở để tiếp tục phát triển mà không đánh đổi tính trung thực của kết quả.

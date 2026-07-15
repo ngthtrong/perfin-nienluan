@@ -2,7 +2,7 @@ const crypto = require('crypto');
 const { GoogleGenAI, FunctionCallingConfigMode } = require('@google/genai');
 const { getSystemPrompt, getParsePrompt, getChatPrompt, getReceiptPrompt, getVoicePrompt, getInsightPrompt } = require('../prompts/transaction.prompt');
 const { fallbackInsightText } = require('./analytics/narrator.fallback');
-const { matchCategory, normalizeText } = require('./parser.service');
+const { matchCategory, normalizeText, parseLocalTransaction } = require('./parser.service');
 const { routeLocalIntent } = require('./ai/localIntentRouter');
 const { FINANCIAL_TOOL_DECLARATIONS, toolCallToIntent } = require('./ai/toolDeclarations');
 const KVStore = require('./store/kv.store');
@@ -205,8 +205,8 @@ class AIServiceManager {
   }
 
   getProviderOrder() {
-    if (this.provider === 'local') return [];
-    if (this.gemini) return ['gemini'];
+    if (this.selected.provider === 'local') return [];
+    if (this.selected.provider === 'gemini' && this.gemini) return ['gemini'];
     return [];
   }
 
@@ -275,5 +275,6 @@ class AIServiceManager {
 }
 
 module.exports = new AIServiceManager();
+module.exports.AIServiceManager = AIServiceManager;
 module.exports.normalizeAIResponse = normalizeAIResponse;
 module.exports.enforceInsightUnits = enforceInsightUnits;

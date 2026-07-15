@@ -114,7 +114,7 @@ export default function RecurringScreen() {
 
   async function pay(bill) {
     try {
-      await api.payRecurringBill(bill.id);
+      await api.payRecurringBill(bill.id, { period_due_date: bill.next_due_date });
       await load();
       Alert.alert('Đã ghi nhận', `Đã thanh toán ${formatVND(bill.amount)} cho ${bill.name}.`);
     } catch (err) { Alert.alert('Lỗi', err.message); }

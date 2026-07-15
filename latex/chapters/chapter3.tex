@@ -1,0 +1,379 @@
+\chapter{Kết quả ứng dụng}
+\label{chap:results}
+
+\section{Đặc tả yêu cầu phần mềm}
+
+\subsection{Mô tả tổng quan}
+
+PERFIN là nguyên mẫu một người dùng phục vụ nhập, chuẩn hóa, quản lý và phân tích dữ liệu tài chính cá nhân. Đặc tả sử dụng yêu cầu có mã, điều kiện chấp nhận và khả năng truy vết theo tinh thần IEEE~830 \cite{ieee830}. Giao diện chat là một cổng vào bổ sung cho form; dữ liệu và phép tính vẫn thuộc backend. Hệ thống ưu tiên khả năng giải thích, xác nhận thay đổi và fallback khi dịch vụ AI không sẵn sàng.
+
+\begin{table}[H]
+  \centering
+  \caption{Tác nhân của hệ thống}
+  \label{tab:actors}
+  \begin{tabularx}{\textwidth}{@{}L{3.5cm}Y Y@{}}
+    \toprule
+    \textbf{Tác nhân} & \textbf{Vai trò} & \textbf{Giới hạn} \\
+    \midrule
+    Người dùng & Nhập dữ liệu, sửa/xác nhận/hủy, xem báo cáo và mục tiêu. & Chịu trách nhiệm xác nhận dữ liệu trước khi lưu. \\
+    Ứng dụng di động & Thu text/ảnh/audio, hiển thị preview và kết quả. & Không truy cập DB hoặc giữ API key AI. \\
+    Dịch vụ AI bên ngoài & Trả tool call, raw OCR hoặc transcript. & Không tự thực thi nghiệp vụ. \\
+    Worker nền & Chạy reminder, insight, scan và cleanup theo lịch. & Phải idempotent và giới hạn theo user scope. \\
+    Quản trị phát triển & Cấu hình provider, migration và dữ liệu demo. & Không phải actor người dùng trong sản phẩm. \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+\subsection{Phân nhóm chức năng}
+
+\begin{table}[H]
+  \centering
+  \caption{Phân nhóm chức năng theo mức ưu tiên học thuật}
+  \label{tab:function-groups}
+  \begin{tabularx}{\textwidth}{@{}L{3.4cm}Y Y@{}}
+    \toprule
+    \textbf{Nhóm} & \textbf{Chức năng} & \textbf{Vai trò trong niên luận} \\
+    \midrule
+    Lõi dữ liệu & Giao dịch, ví, danh mục, ngân sách, recurring và mục tiêu. & Đối tượng nghiên cứu chính. \\
+    Lõi giải thuật & Parsing, matching, feedback, analytics, budget/goal planner. & Đóng góp chính cần mô tả và kiểm thử. \\
+    Lớp LLM & Tool routing, extraction, clarification, narration và persona. & Thành phần hỗ trợ có ranh giới. \\
+    Hỗ trợ demo & Dashboard, màn hình quản lý, export và backup. & Chứng minh sử dụng; không thay trọng tâm học thuật. \\
+    Ngoài phạm vi & Auth production, bank sync, shared wallet và high availability. & Hướng phát triển, không phải điều kiện hoàn thành niên luận. \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+\subsection{Yêu cầu chức năng}
+
+\begin{longtable}{@{}L{1.3cm}L{4.3cm}L{8.2cm}@{}}
+  \caption{Yêu cầu chức năng}\label{tab:functional-requirements}\\
+  \toprule
+  \textbf{Mã} & \textbf{Yêu cầu} & \textbf{Điều kiện chấp nhận cấp cao} \\
+  \midrule
+  \endfirsthead
+  \toprule
+  \textbf{Mã} & \textbf{Yêu cầu} & \textbf{Điều kiện chấp nhận cấp cao} \\
+  \midrule
+  \endhead
+  FR-01 & Nhập văn bản tự nhiên & Trích xuất một hoặc nhiều giao dịch; trường bắt buộc đúng schema. \\
+  FR-02 & Nhập ảnh và giọng nói & Hiển thị raw text/transcript; không tạo mock khi provider lỗi. \\
+  FR-03 & Hỏi lại và giao dịch chờ & State có TTL; merge câu trả lời; cho phép sửa, xác nhận và hủy. \\
+  FR-04 & Phân loại và phản hồi & Match exact/alias/fuzzy; lưu correction; xử lý lịch sử xung đột. \\
+  FR-05 & Quản lý dữ liệu tài chính & CRUD có validation, soft delete; số dư thay đổi đúng theo loại. \\
+  FR-06 & Chuyển ví nguyên tử & Debit, credit và history trong một transaction; net worth không đổi. \\
+  FR-07 & Phân tích dữ liệu & Tạo facts trend, anomaly, runway, recurring, correlation bằng giải thuật xác định. \\
+  FR-08 & Insight có căn cứ & Persona không đổi số, quyền hoặc quyết định; response truy vết được facts. \\
+  FR-09 & Ngân sách và dự báo & Theo dõi tiến độ, dự báo vượt; đề xuất chỉ áp dụng sau xác nhận. \\
+  FR-10 & Mục tiêu tài chính & Tính kế hoạch tiết kiệm, mua sắm, trả nợ và what-if. \\
+  FR-11 & Tác vụ chủ động & Worker chạy theo lịch, retry an toàn và không tạo thông báo trùng. \\
+  FR-12 & Xuất dữ liệu & CSV/PDF đúng định dạng, lọc kỳ, dọn file theo TTL và lưu lịch sử. \\
+  \bottomrule
+\end{longtable}
+
+\subsection{Yêu cầu phi chức năng}
+
+\begin{longtable}{@{}L{1.2cm}L{2.8cm}L{3.5cm}L{5.2cm}@{}}
+  \caption{Yêu cầu phi chức năng và cách đo}\label{tab:nfr}\\
+  \toprule
+  \textbf{Mã} & \textbf{Yêu cầu} & \textbf{Mục tiêu} & \textbf{Cách đo} \\
+  \midrule
+  \endfirsthead
+  \toprule
+  \textbf{Mã} & \textbf{Yêu cầu} & \textbf{Mục tiêu} & \textbf{Cách đo} \\
+  \midrule
+  \endhead
+  NFR-01 & Tính đúng dữ liệu & Không partial write ở luồng nguyên tử. & Fault injection và so DB trước/sau. \\
+  NFR-02 & Chính xác trích xuất & Ngưỡng khóa trước trên tập gán nhãn. & Precision, recall, F1 theo field và exact match. \\
+  NFR-03 & Trung thực số liệu & LLM không thêm/đổi số ngoài facts. & Numeric faithfulness và unsupported-number rate. \\
+  NFR-04 & Hiệu năng & Text p95 mục tiêu $\leq3$ giây; media $\leq8$ giây trong môi trường công bố. & Tối thiểu 30 lượt/luồng, ghi provider và cache. \\
+  NFR-05 & Phục hồi & Provider lỗi không tạo dữ liệu giả. & Test timeout, Redis/LLM/OCR/STT unavailable. \\
+  NFR-06 & Riêng tư & Không ghi credential; traits cần consent. & Kiểm tra log/config và test consent. \\
+  NFR-07 & Khả năng kiểm thử & Giải thuật thuần tách DB/LLM. & Unit test trường hợp thường và biên. \\
+  NFR-08 & Nhất quán tác vụ & Retry không tạo hiệu ứng lặp. & Chạy cùng event/job nhiều lần và so DB. \\
+  NFR-09 & Truy vết & Insight có facts, kỳ và phương pháp. & Kiểm tra metadata phản hồi. \\
+  NFR-10 & Bảo trì & Module route--service--model; provider adapter. & Review phụ thuộc và test thay provider. \\
+  \bottomrule
+\end{longtable}
+
+\subsection{Quy ước trạng thái}
+
+Trong chương này, \statusimplemented{} nghĩa là thành phần có trong mã nguồn, migration hoặc test nhưng chưa tự động chứng minh chất lượng. \statusmeasured{} chỉ dùng khi có lệnh và kết quả tái lập. \statustarget{} là ngưỡng mong muốn hoặc hành vi sau sửa lỗi. \statusmissing{} chỉ ra bằng chứng chưa có; không được chuyển thành kết quả trong tóm tắt hoặc kết luận.
+
+\section{Thiết kế phần mềm}
+
+\subsection{Kiến trúc ứng dụng}
+
+PERFIN dùng modular monolith thay vì microservice. API Express chứa các module nghiệp vụ độc lập ở mức mã nguồn nhưng cùng tiến trình triển khai. Worker là tiến trình riêng cho job nền. Cấu trúc này phù hợp quy mô niên luận, giảm chi phí vận hành nhưng vẫn giữ ranh giới module.
+
+\widereportfigure{02-runtime-architecture.pdf}{Kiến trúc vận hành của PERFIN. Lõi xác định tạo và lưu facts; AI Orchestrator chỉ điều phối ngữ nghĩa.}{fig:runtime-architecture}
+
+Hình~\ref{fig:runtime-architecture} thể hiện đường đi chuẩn: mobile gọi route, route chuyển cho service, service dùng model truy cập PostgreSQL. Analytics Engine, Budget Engine và Goal Planner tính kết quả xác định. Redis phục vụ cache/state/queue; worker xử lý tác vụ định kỳ; provider AI nằm ngoài biên tin cậy dữ liệu.
+
+\begin{table}[H]
+  \centering
+  \caption{Thành phần kiến trúc và trách nhiệm}
+  \label{tab:components}
+  \begin{tabularx}{\textwidth}{@{}L{3.4cm}Y Y@{}}
+    \toprule
+    \textbf{Thành phần} & \textbf{Trách nhiệm chính} & \textbf{Không chịu trách nhiệm} \\
+    \midrule
+    Mobile App & Thu input, preview, hiển thị và xác nhận. & Tính insight hoặc giữ bí mật provider. \\
+    Express Routes & HTTP contract, validation đầu vào, mapping response. & Chứa công thức phân tích. \\
+    Core Services & Luật nghiệp vụ, transaction và xác nhận. & Sinh câu trả lời tùy ý. \\
+    AI Orchestrator & Tool routing, extraction và fallback. & Truy cập DB không qua tool. \\
+    Analytics Engine & Tính facts thống kê. & Viết lời khuyên cá nhân hóa. \\
+    Persona/Narrator & Diễn đạt facts theo giọng điệu. & Thay số hoặc quyết định. \\
+    PostgreSQL Models & Truy vấn, constraint và transaction. & Lưu state hội thoại tạm. \\
+    Redis/KV & TTL state, cache và rate count. & Làm nguồn dữ liệu tài chính chuẩn. \\
+    BullMQ Worker & Job định kỳ, retry và dedup. & Xử lý request tương tác trực tiếp. \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+\widereportfigure{03-deployment.pdf}{Sơ đồ triển khai nguyên mẫu. Frontend, API, worker, PostgreSQL và Redis thuộc môi trường demo; provider AI được gọi qua mạng.}{fig:deployment}
+
+Hình~\ref{fig:deployment} là \textbf{thiết kế triển khai nguyên mẫu}, không mô tả cụm production hay cam kết sẵn sàng cao. Docker Compose hiện chỉ hỗ trợ Redis; API, worker và PostgreSQL cần được khởi chạy/cấu hình riêng. Readiness phải tách khỏi liveness để backend không được coi là sẵn sàng khi bootstrap DB thất bại.
+
+\subsection{Thiết kế dữ liệu}
+
+\subsubsection{Mô hình miền}
+
+\widereportfigure{04-domain-class.pdf}{Sơ đồ lớp miền nghiệp vụ. Entity tài chính tách khỏi service phân tích và lớp persona.}{fig:domain-class}
+
+Hình~\ref{fig:domain-class} nhấn mạnh quan hệ khái niệm: người dùng sở hữu ví, giao dịch, ngân sách, khoản định kỳ, mục tiêu và lịch sử chat; danh mục có phân cấp. Analytics Service chỉ đọc dữ liệu để tạo facts. Persona chỉ định dạng phản hồi và không sở hữu entity tài chính.
+
+\subsubsection{Mô hình vật lý}
+
+\widereportfigure{05-physical-erd.pdf}{Sơ đồ quan hệ thực thể vật lý được đối chiếu với chuỗi migration runtime.}{fig:physical-erd}
+
+ERD ở Hình~\ref{fig:physical-erd} gồm 18 bảng vật lý: \code{users}, \code{ai_personalities}, \code{user_traits}, \code{categories}, \code{wallets}, \code{transactions}, \code{budgets}, \code{budget_history}, \code{chat_messages}, \code{investment_pnl}, \code{wallet_transfers}, \code{export_history}, \code{backup_config}, ba bảng recurring, \code{financial_goals} và \code{ai_feedback_logs}. Ba compatibility view không được đếm như bảng. Khóa \code{users.user_key} là cầu nối với \code{default_user}, không phải bằng chứng đã có authentication.
+
+\begin{table}[H]
+  \centering
+  \caption{Nhóm thực thể dữ liệu chính}
+  \label{tab:data-entities}
+  \begin{tabularx}{\textwidth}{@{}L{3.8cm}Y Y@{}}
+    \toprule
+    \textbf{Nhóm} & \textbf{Bảng/thực thể} & \textbf{Ý nghĩa} \\
+    \midrule
+    Người dùng và cá nhân hóa & \code{users}, \code{ai_personalities}, \code{user_traits} & Hồ sơ demo, persona, consent và traits. \\
+    Sổ cái cá nhân & \code{wallets}, \code{categories}, \code{transactions} & Nguồn thu--chi cốt lõi. \\
+    Ngân sách & \code{budgets}, \code{budget_history} & Hạn mức và lịch sử thay đổi. \\
+    Chi định kỳ & Ba bảng recurring & Lịch, thanh toán và gợi ý bị bỏ qua. \\
+    Phản hồi AI & \code{ai_feedback_logs} & Kết quả ban đầu và sửa của người dùng. \\
+    Mục tiêu & \code{financial_goals} & Tiết kiệm, mua sắm, trả nợ và tiến độ. \\
+    Dòng tiền đặc biệt & \code{wallet_transfers}, \code{investment_pnl} & Chuyển ví và lãi/lỗ đầu tư. \\
+    Vận hành & \code{chat_messages}, \code{export_history}, \code{backup_config} & Chat, export và cấu hình sao lưu. \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+\subsubsection{Quy tắc dữ liệu quan trọng}
+
+\begin{itemize}
+  \item Tiền dùng \code{DECIMAL(15,2)}; service phải chuyển đổi rõ kiểu khi tính trong JavaScript.
+  \item Soft delete giữ khả năng phục hồi; truy vấn báo cáo mặc định loại bản ghi đã xóa.
+  \item Xóa danh mục có giao dịch phải bị chặn hoặc re-tag có kiểm soát, không cascade làm mất lịch sử.
+  \item Pending/clarification nằm trong Redis với schema và TTL riêng, không thuộc ERD bền vững.
+  \item Mọi truy vấn theo ID trong thiết kế đích phải kèm \code{user_id/user_key} để ngăn truy cập chéo khi bổ sung xác thực.
+\end{itemize}
+
+\subsection{Thiết kế chi tiết}
+
+\subsubsection{Ranh giới LLM trong kiến trúc}
+
+\reportfigure[0.88\linewidth]{06-llm-boundary.pdf}{Ranh giới trách nhiệm của LLM: dữ liệu và facts được tạo ở lõi xác định; LLM chỉ chuyển đổi ngữ nghĩa và diễn giải.}{fig:llm-boundary}
+
+Hình~\ref{fig:llm-boundary} là sơ đồ quan trọng nhất để giải thích tác dụng LLM. Đầu vào tự nhiên được biến thành typed command; service kiểm tra và tạo preview. Với câu hỏi phân tích, SQL và giải thuật tạo facts trước khi narrator nhận dữ liệu. LLM không có kết nối trực tiếp PostgreSQL và không tự thực thi tool. Lợi ích của LLM được đánh giá bằng độ chính xác thực thể, tỷ lệ hỏi lại, số thao tác tiết kiệm và chất lượng diễn giải, không bằng việc thay thế công thức.
+
+\subsubsection{Máy trạng thái hội thoại}
+
+\reportfigure[0.86\linewidth]{07-conversation-state.pdf}{Máy trạng thái hội thoại và giao dịch chờ xác nhận.}{fig:conversation-state}
+
+Các trạng thái chính ở Hình~\ref{fig:conversation-state} gồm idle, collecting/awaiting choice, preview, confirmed, cancelled và expired. Redis giữ intent, trường đang chờ, dữ liệu đã thu và candidates trong một TTL giới hạn. Nhánh ghi dữ liệu bắt buộc đi qua preview rồi confirmed. Thiết kế đích dùng thao tác claim nguyên tử khi xác nhận để hai request đồng thời không cùng tạo giao dịch.
+
+\subsubsection{Nhập giao dịch bằng văn bản}
+
+\widereportfigure{08-text-sequence.pdf}{Sơ đồ tuần tự nhập giao dịch bằng văn bản. LLM nằm ngoài transaction ghi dữ liệu.}{fig:text-sequence}
+
+Trình tự Hình~\ref{fig:text-sequence} gồm nhận text, lấy categories/wallets và corrections, gọi LLM tool hoặc local parser, chuẩn hóa, validation, hỏi lại nếu thiếu, tạo preview, sửa/xác nhận và ghi DB trong transaction. Kiểm tra ngân sách diễn ra sau khi số dư và giao dịch đã nhất quán. Nếu commit lỗi, không được trả thông báo thành công.
+
+\subsubsection{Đầu vào đa phương thức}
+
+\reportfigure[0.84\linewidth]{09-multimodal-flow.pdf}{Luồng xử lý đầu vào đa phương thức. Voice và ảnh hội tụ vào pipeline text chung sau bước xác nhận.}{fig:multimodal-flow}
+
+Voice đi qua STT và bước xác nhận transcript. Ảnh đi qua preprocessing/OCR rồi cho phép chọn tổng hóa đơn hoặc từng mặt hàng. Hai nhánh hội tụ tại pipeline text. Lỗi provider phải được biểu diễn là lỗi hoặc yêu cầu nhập tay; không dùng raw text giả. Báo cáo hiện chưa có ground truth media nên Hình~\ref{fig:multimodal-flow} mô tả \textbf{thiết kế đích}, không phải bằng chứng accuracy OCR/STT.
+
+\subsubsection{Phân loại và vòng phản hồi}
+
+\reportfigure[0.84\linewidth]{10-feedback-flow.pdf}{Luồng phản hồi và cá nhân hóa phân loại bằng correction retrieval, không phải fine-tuning.}{fig:feedback-flow}
+
+Khi người dùng sửa category, hệ thống lưu cặp kết quả AI--kết quả đúng. Lần sau, correction exact/fuzzy được xét trước, sau đó mới đến matcher/LLM. Giao dịch lặp trong ``Khác'' có thể được gom cụm để đề xuất category; tạo category và re-tag luôn là kế hoạch chờ xác nhận. Lịch sử mâu thuẫn phải hạ confidence thay vì học theo correction gần nhất.
+
+\subsubsection{Sinh insight có căn cứ}
+
+\widereportfigure{11-insight-sequence.pdf}{Sơ đồ tuần tự sinh insight có căn cứ. Response trả cả thông điệp và facts để truy vết.}{fig:insight-sequence}
+
+Trong Hình~\ref{fig:insight-sequence}, model SQL truy xuất dữ liệu; Analytics Engine tính facts và metadata; guard kiểm tra đơn vị cùng số quan sát. Chỉ sau đó narrator mới diễn giải theo persona. Khi LLM lỗi, narrator template dùng chính facts. Thiết kế đích bổ sung numeric checker trước khi trả response để phát hiện số không được hỗ trợ.
+
+\subsubsection{Lập kế hoạch mục tiêu}
+
+\reportfigure[0.86\linewidth]{12-goal-flow.pdf}{Luồng lập kế hoạch mục tiêu và mô phỏng what-if.}{fig:goal-flow}
+
+LLM trong Hình~\ref{fig:goal-flow} chỉ trích xuất mục tiêu, số tiền, hạn chót, mức góp và lãi suất. Goal Planner kiểm tra miền dữ liệu, tính surplus, thời hạn, mức góp và cảnh báo. What-if tạo kịch bản mới mà không sửa kế hoạch gốc. Chỉ xác nhận mới lưu \code{financial_goals}.
+
+\subsubsection{Tác vụ chủ động}
+
+\widereportfigure{13-worker-sequence.pdf}{Sơ đồ tuần tự tác vụ chủ động và cơ chế chống hiệu ứng lặp khi retry.}{fig:worker-sequence}
+
+Scheduler tạo job có định danh; worker lấy đúng user scope, gọi handler, tính facts và ghi internal message hoặc export. Retry dùng cùng fingerprint; unique event key và thao tác idempotent loại thông báo trùng. Tính năng hiện tại tạo thông báo trong \code{chat_messages}, không phải push notification. Auto-backup theo lịch chưa có worker tương ứng nên không được mô tả là đã hoạt động.
+
+\subsubsection{Kiểm soát thao tác do LLM khởi tạo}
+
+\begin{longtable}{@{}L{3.0cm}L{5.0cm}L{1.5cm}L{3.2cm}@{}}
+  \caption{Điều kiện kiểm soát thao tác do LLM khởi tạo}\label{tab:llm-actions}\\
+  \toprule
+  \textbf{Thao tác} & \textbf{Validation bắt buộc} & \textbf{Xác nhận} & \textbf{Nguyên tử/idempotent} \\
+  \midrule
+  \endfirsthead
+  \toprule
+  \textbf{Thao tác} & \textbf{Validation bắt buộc} & \textbf{Xác nhận} & \textbf{Nguyên tử/idempotent} \\
+  \midrule
+  \endhead
+  Tạo một/nhiều giao dịch & amount $>0$, type/category/wallet hợp lệ & Có & Batch và số dư cùng transaction. \\
+  Chuyển ví & Hai ví khác nhau, đủ số dư & Có & Debit, credit, history cùng transaction. \\
+  Tạo recurring bill & Tên, số tiền, chu kỳ và ngày hợp lệ & Có & Không tạo trùng cùng kế hoạch. \\
+  Áp dụng ngân sách & Lịch sử và tổng hạn mức hợp lệ & Có & Upsert theo user/category/kỳ. \\
+  Tạo mục tiêu & Type, target, date, interest phù hợp & Có & Lưu sau preview. \\
+  Tạo category và re-tag & Tên không generic, ID thuộc user & Có & Tạo/reuse, retag và feedback cùng kế hoạch. \\
+  Truy vấn/insight & Khoảng dữ liệu hợp lệ & Không & Facts truy vết được. \\
+  Export & Định dạng và khoảng ngày hợp lệ & Có từ chat & Cleanup có fingerprint. \\
+  \bottomrule
+\end{longtable}
+
+\subsection{Bảo mật, riêng tư và đạo đức}
+
+Nguyên mẫu chưa có authentication production; vì vậy không được tuyên bố đã cô lập nhiều người dùng. Các route dùng \code{default_user} và một số thao tác theo ID chưa kèm user scope. Trước triển khai thật cần bổ sung xác thực, authorization ở mọi truy vấn và test truy cập chéo.
+
+Credential AI, service account và chuỗi kết nối không được ghi vào Git hoặc chat log. Ảnh/audio cần chính sách xóa sau xử lý. \code{user_traits} chỉ được dùng khi consent bật. Persona không được gây áp lực, miệt thị hoặc biến gợi ý thành tư vấn đầu tư chắc chắn. Backup không được dùng khóa AES đóng gói sẵn trong client; khóa phải đến từ cơ chế quản lý bí mật bên ngoài ứng dụng.
+
+\section{Kiểm thử}
+
+\subsection{Kế hoạch kiểm thử}
+
+\subsubsection{Ma trận kiểm thử}
+
+\begin{longtable}{@{}L{2.1cm}L{3.5cm}L{3.5cm}L{3.5cm}@{}}
+  \caption{Ma trận kiểm thử}\label{tab:test-matrix}\\
+  \toprule
+  \textbf{Cấp} & \textbf{Đối tượng} & \textbf{Kỹ thuật} & \textbf{Bằng chứng} \\
+  \midrule
+  \endfirsthead
+  \toprule
+  \textbf{Cấp} & \textbf{Đối tượng} & \textbf{Kỹ thuật} & \textbf{Bằng chứng} \\
+  \midrule
+  \endhead
+  Unit & Analytics, matching, budget, goal, validation & Dữ liệu thường, biên, invariant & \code{node:test}, expected tính tay. \\
+  Integration & Route--service--model, Redis, PostgreSQL & DB test, rollback và TTL & Log chạy và snapshot DB. \\
+  Contract AI & Tool schema và parser & Tập câu gán nhãn, provider/fallback & JSON từng case. \\
+  Media & OCR/STT adapter & Ảnh/audio thật có ground truth & CER/WER và field accuracy. \\
+  Grounding & Narrator/persona & So số response với facts & Numeric faithfulness. \\
+  Worker & Retry, chống trùng và lịch chạy & Chạy lặp cùng event, giả lập lỗi & Số hiệu ứng trước--sau. \\
+  System & Text/voice/image tới DB & End-to-end trên thiết bị & Video/log và DB assertion. \\
+  UAT & Người dùng mục tiêu & Nhiệm vụ có thời gian/số bước & Tỷ lệ hoàn thành, SUS. \\
+  \bottomrule
+\end{longtable}
+
+\subsubsection{Thiết kế dữ liệu kiểm thử}
+
+Bộ dữ liệu văn bản phải tách tập phát triển và đánh giá, bao phủ các đơn vị \texttt{k}, \texttt{nghìn}, \texttt{ngàn}, \texttt{tr}, \texttt{triệu}, số bằng chữ, phép nhân, ngày tương đối, thu--chi--chuyển--đầu tư, nhiều giao dịch, typo, Việt--Anh, trường hợp thiếu/mơ hồ và correction xung đột. Tập media phải lưu ảnh/audio gốc cùng transcript hoặc bảng hóa đơn chuẩn. Dữ liệu analytics nên là dữ liệu tổng hợp/ẩn danh có slope, outlier, cadence và correlation biết trước để đối chiếu công thức.
+
+\subsubsection{Bộ chỉ số}
+
+\begin{table}[H]
+  \centering
+  \caption{Bộ chỉ số đánh giá}
+  \label{tab:metrics}
+  \begin{tabularx}{\textwidth}{@{}L{3.2cm}L{5.2cm}Y@{}}
+    \toprule
+    \textbf{Nhóm} & \textbf{Chỉ số} & \textbf{Cách diễn giải} \\
+    \midrule
+    Extraction & Precision, recall, F1 theo field, exact match & So amount/type/date/category/wallet với nhãn. \\
+    Classification & Accuracy, macro-F1, confusion matrix & Không để danh mục nhiều mẫu che danh mục ít mẫu. \\
+    Clarification & Completion rate, số lượt hỏi & Chỉ tính case ban đầu thiếu/mơ hồ. \\
+    OCR/STT & CER/WER và transaction-field accuracy & Tách chất lượng raw và tác động nghiệp vụ. \\
+    Grounding & Numeric faithfulness, unsupported-number rate & Mọi số phải map về facts. \\
+    Analytics & Sai số so expected & Test công thức và điều kiện biên. \\
+    Hiệu năng & p50, p95, error rate & Tách cache hit/miss và provider. \\
+    Worker & Duplicate-effect rate, retry success & Lặp cùng fingerprint. \\
+    Trải nghiệm & Hoàn thành, thời gian, số thao tác & So chat với form cùng nhiệm vụ. \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+\subsection{Kết quả và phân tích}
+
+\subsubsection{Kết quả đã đo}
+
+Ngày 15/07/2026, ba phép kiểm tra nền được chạy trong workspace. Kết quả được trình bày đúng phạm vi bằng chứng, không mở rộng thành kết luận về provider hoặc cơ sở dữ liệu thật.
+
+\begin{longtable}{@{}L{3.3cm}L{4.2cm}L{1.8cm}L{3.4cm}@{}}
+  \caption{Kết quả đã đo và phép đo còn thiếu}\label{tab:measured-results}\\
+  \toprule
+  \textbf{Hạng mục} & \textbf{Kết quả} & \textbf{Phân loại} & \textbf{Phạm vi kết luận} \\
+  \midrule
+  \endfirsthead
+  \toprule
+  \textbf{Hạng mục} & \textbf{Kết quả} & \textbf{Phân loại} & \textbf{Phạm vi kết luận} \\
+  \midrule
+  \endhead
+  Backend \code{npm test} sau sửa & 18/18 tệp kiểm thử đạt, 0 tệp thất bại; khoảng 1,028 giây & \statusmeasured & Unit/service với mock; gồm transaction, concurrency, recurring và time-series. \\
+  Local parser quality gate & 31/31 strict pass; 0 partial; 0 fail & \statusmeasured & Cục bộ, không dùng Gemini; strict exit code, 31 ca hard-coded. \\
+  Baseline trước sửa & 13/13 tệp test; parser 27/31 strict & \statusmeasured & Giữ để phân tích lỗi và chứng minh tác động bản sửa. \\
+  Expo web export & Đóng gói 652 module; bundle khoảng 1,49 MB & \statusmeasured & Chứng minh frontend đóng gói được; không phải hiệu năng runtime. \\
+  LLM trên tập gán nhãn & Chưa công bố & \statusmissing & Cần khóa dataset, model, prompt và cấu hình provider. \\
+  OCR/STT accuracy & Chưa công bố & \statusmissing & Cần ảnh/audio cùng ground truth. \\
+  Tích hợp PostgreSQL và Redis đang chạy & Chưa xác nhận trong đợt đo & \statusmissing & Unit pass không thay thế kiểm thử DB/queue đang chạy. \\
+  Numeric grounding, p50/p95, UAT & Chưa công bố & \statusmissing & Cần checker, môi trường và kịch bản khóa phiên bản. \\
+  \bottomrule
+\end{longtable}
+
+Baseline parser có hai lỗi amount: ``1 triệu 5'' và phép nhân ``3 cái áo, mỗi cái 200k''; hai ca partial liên quan ``quần jeans'' và ``đi ăn''. Sau sửa, cả bốn ca có regression test và harness đạt 31/31 strict, đồng thời trả mã thoát khác 0 khi bất kỳ ca nào không đạt. Tỷ lệ 100\% chỉ áp dụng cho tập cố định này, chưa phải benchmark Gemini hoặc tập gán nhãn độc lập.
+
+Không có tuyên bố nào trong Bảng~\ref{tab:measured-results} chứng minh Gemini, OCR, STT hoặc luồng HTTP--PostgreSQL đã hoạt động end-to-end. Đây là ranh giới bằng chứng bắt buộc của báo cáo.
+
+\subsubsection{Trạng thái chức năng trọng yếu}
+
+\begin{longtable}{@{}L{3.2cm}L{2.5cm}L{3.5cm}L{3.5cm}@{}}
+  \caption{Trạng thái và hành vi đích của chức năng trọng yếu}\label{tab:feature-status}\\
+  \toprule
+  \textbf{Chức năng} & \textbf{Hiện trạng} & \textbf{Khoảng trống chính} & \textbf{Điều kiện hoàn tất} \\
+  \midrule
+  \endfirsthead
+  \toprule
+  \textbf{Chức năng} & \textbf{Hiện trạng} & \textbf{Khoảng trống chính} & \textbf{Điều kiện hoàn tất} \\
+  \midrule
+  \endhead
+  Giao dịch và analytics & \statusmeasured & Transaction, post-commit và zero-fill đã có hồi quy; chưa test DB thật. & Integration DB và dataset thuật toán rộng hơn. \\
+  Chat preview/confirm & \statusmeasured & Claim một lần, stale ID, edit/cancel race và thứ tự history đã sửa. & Bổ sung HTTP--DB E2E và đo TTL thực với Redis. \\
+  Local parser & \statusmeasured & Đạt 31/31 strict trên quality gate cố định. & Tách tập độc lập, tăng biến thể và báo macro-F1. \\
+  LLM tool routing & \statusimplemented & Provider selection/media fallback đã sửa; chưa benchmark. & Contract test trên provider thật và tập gán nhãn. \\
+  OCR/STT & \statusimplemented & Chưa có ground truth và kiểm thử tích hợp. & Adapter failure test, CER/WER và field accuracy. \\
+  Ví/chuyển ví & Hiện thực một phần & Thiếu route/UI tạo ví trên fresh install; chưa có integration test transfer. & CRUD tối thiểu và kiểm thử toàn vẹn số dư. \\
+  Recurring và worker & \statusmeasured & Payment đã khóa hàng, nguyên tử, có kỳ dự kiến và chat preview; notification vẫn là chat nội bộ. & Live DB test và kênh nhắc ngoài ứng dụng nếu mở rộng. \\
+  Export/backup & Chưa đúng tên gọi & Mẫu số/escaping đã sửa; ``PDF'' vẫn là HTML, backup còn thiếu. & PDF thật hoặc đổi nhãn; backup/restore an toàn. \\
+  Auth/multi-user & Ngoài phạm vi hiện tại & \code{default_user}, ID chưa luôn scoped. & Không demo như đã có; thêm trước production. \\
+  \bottomrule
+\end{longtable}
+
+\subsubsection{Thí nghiệm cần thực hiện}
+
+Ba thí nghiệm có giá trị cao nhất cho bản hoàn thiện là:
+
+\begin{enumerate}
+  \item \textbf{Ablation LLM so với parser cục bộ:} cùng tập câu, so field F1, clarification rate, latency và chi phí.
+  \item \textbf{Feedback before/after:} phát lại nhóm câu sau corrections, đo category accuracy và kiểm tra không suy giảm nhóm khác.
+  \item \textbf{Grounded narration:} cấp cùng facts cho nhiều persona, kiểm tra số liệu giữ nguyên trong khi giọng điệu thay đổi.
+\end{enumerate}
+
+Kết quả chỉ được chuyển vào tóm tắt và kết luận sau khi có log, cấu hình và dữ liệu khóa phiên bản.

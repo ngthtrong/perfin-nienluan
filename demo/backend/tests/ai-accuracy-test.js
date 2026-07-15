@@ -5,12 +5,27 @@
  *   node tests/ai-accuracy-test.js
  *   npm run test:ai
  *
- * Output: kết quả từng câu test + tổng accuracy %
+ * Output: kết quả từng câu test + tổng accuracy %.
+ * Exit code khác 0 nếu có bất kỳ sai khác nghiêm ngặt nào.
  */
-require('dotenv').config({ path: require('path').join(__dirname, '../.env') });
+process.env.AI_PROVIDER = 'local';
 const AIService = require('../services/ai.service');
-const CategoryModel = require('../models/category.model');
-const { pool } = require('../config/database');
+
+// Keep the quality gate independent from PostgreSQL and external LLM services.
+const TEST_CATEGORIES = [
+  { id: 1, name: 'Ăn uống', type: 'expense', icon: '🍜' },
+  { id: 2, name: 'Di chuyển', type: 'expense', icon: '🚗' },
+  { id: 3, name: 'Mua sắm', type: 'expense', icon: '🛒' },
+  { id: 4, name: 'Giải trí', type: 'expense', icon: '🎬' },
+  { id: 5, name: 'Nhà cửa', type: 'expense', icon: '🏠' },
+  { id: 6, name: 'Hóa đơn & Dịch vụ', type: 'expense', icon: '🧾' },
+  { id: 7, name: 'Sức khỏe', type: 'expense', icon: '⚕️' },
+  { id: 8, name: 'Khác', type: 'expense', icon: '📦' },
+  { id: 9, name: 'Lương', type: 'income', icon: '💰' },
+  { id: 10, name: 'Thưởng', type: 'income', icon: '🎁' },
+  { id: 11, name: 'Đầu tư', type: 'income', icon: '📈' },
+  { id: 12, name: 'Khác', type: 'income', icon: '📦' },
+];
 
 /* ────────── bộ test cases ────────── */
 const TEST_CASES = [
@@ -87,13 +102,8 @@ async function run() {
   console.log('  PERFIN AI Accuracy Test — ' + new Date().toLocaleString('vi-VN'));
   console.log('='.repeat(60));
 
-  let categories = [];
-  try {
-    categories = await CategoryModel.getAll();
-    console.log(`📦 Loaded ${categories.length} categories from DB\n`);
-  } catch (err) {
-    console.warn(`⚠️  Không kết nối được DB: ${err.message}. Chạy với categories rỗng.\n`);
-  }
+  const categories = TEST_CATEGORIES;
+  console.log(`📦 Loaded ${categories.length} deterministic test categories\n`);
 
   const results = [];
   let pass = 0;
@@ -145,7 +155,7 @@ async function run() {
   console.log(`  ⚠️  PARTIAL : ${partial}/${total}`);
   console.log(`  ❌ FAIL    : ${fail}/${total}`);
   console.log(`  Accuracy  : ${accuracy}% (strict) | ${accuracyWithPartial}% (partial credit)`);
-  console.log(`  Target    : > 80% — ${accuracy >= 80 ? '✅ ĐẠT' : '❌ CHƯA ĐẠT'}`);
+  console.log(`  Gate      : ${total}/${total} strict PASS — ${pass === total ? '✅ ĐẠT' : '❌ CHƯA ĐẠT'}`);
   console.log('='.repeat(60));
 
   if (fail > 0) {
@@ -161,8 +171,9 @@ async function run() {
       console.log(`  - "${r.input}" → expected ${r.expected.category}, got ${r.actual?.category_name || 'null'}`);
     });
   }
+
+  if (pass !== total) process.exitCode = 1;
 }
 
 run()
-  .catch((err) => { console.error('Test runner error:', err); process.exit(1); })
-  .finally(() => pool.end().catch(() => {}));
+  .catch((err) => { console.error('Test runner error:', err); process.exitCode = 1; });

@@ -154,18 +154,34 @@ async function handleRecurringPay(parsed) {
   if (parsed.recurring?.bill_id) target = await RecurringBillModel.getById(parsed.recurring.bill_id);
   if (!target) return { type: 'chat_response', message: await applyPersona('Mình chưa thấy khoản chi cố định nào đến hạn để ghi nhận. Bạn nói rõ tên khoản chi nhé.') };
 
-  // Use overridden amount if AI extracted one (FR-08-04: "đã đóng nhưng tháng này 1.6tr")
-  const overrideAmount = parsed.recurring?.amount || parsed.transaction?.amount;
-  const result = await RecurringBillModel.recordPayment(target.id, { amount: overrideAmount });
-  const tx = result.transaction;
-  const proactive_job = await enqueueJob(JOB_NAMES.RUNWAY_SCAN, { userId, trigger: 'recurring_payment' });
-  return {
-    type: 'system_message',
-    message: await applyPersona(`Đã ghi nhận thanh toán ${formatVND(tx.amount)} ${target.name}. Số dư ví ${tx.wallet_name} còn ${formatVND(tx.wallet_balance)}.`),
-    transaction: tx,
-    new_balance: Number(tx.wallet_balance),
-    proactive_job,
+  // Use an overridden amount if AI extracted one (FR-08-04: "đã đóng nhưng
+  // tháng này 1.6tr"), but keep the same preview/confirm boundary as every other
+  // money-changing chat action. The due date is an optimistic-concurrency token:
+  // a delayed or repeated confirmation cannot pay the newly advanced period.
+  const overrideAmount = parsed.recurring?.amount ?? parsed.transaction?.amount;
+  const amount = Number(overrideAmount ?? target.amount);
+  if (!Number.isFinite(amount) || amount <= 0) {
+    return { type: 'clarification', message: await applyPersona('Số tiền thanh toán phải là số dương. Bạn nhập lại giúp mình nhé.') };
+  }
+  const draft = {
+    bill_id: target.id,
+    bill_name: target.name,
+    description: target.name,
+    amount,
+    type: 'expense',
+    category_id: target.category_id,
+    category_name: target.category_name || 'Chi phí cố định',
+    category_icon: target.category_icon || '🧾',
+    wallet_id: target.wallet_id,
+    transaction_date: RecurringBillModel.formatDateOnly(new Date()),
+    period_due_date: RecurringBillModel.formatDateOnly(target.next_due_date),
   };
+  const pendingId = await pending.set(userId, draft, 'recurring_payment');
+  return previewResponse(
+    draft,
+    pendingId,
+    await applyPersona(`Mình sẽ ghi nhận thanh toán ${formatVND(amount)} cho "${target.name}" ở kỳ ${draft.period_due_date}. Bạn xác nhận nhé?`)
+  );
 }
 
 async function handleRecurringPause(parsed) {
@@ -502,6 +518,29 @@ async function commitPendingItem(item) {
       message: await applyPersona(`Đã tạo nhắc nhở "${bill.name}" ${formatVND(bill.amount)}. Kỳ thanh toán tới: ${bill.next_due_date}.`),
       bill,
     };
+  } else if (item.kind === 'recurring_payment') {
+    const result = await RecurringBillModel.recordPayment(item.data.bill_id, {
+      amount: item.data.amount,
+      walletId: item.data.wallet_id,
+      categoryId: item.data.category_id,
+      paidDate: item.data.transaction_date,
+      periodDueDate: item.data.period_due_date,
+    });
+    if (!result) {
+      const error = new Error('Khoản chi cố định không còn tồn tại');
+      error.status = 404;
+      throw error;
+    }
+    const tx = result.transaction;
+    const proactive_job = await enqueueJob(JOB_NAMES.RUNWAY_SCAN, { userId, trigger: 'recurring_payment' });
+    data = {
+      type: 'system_message',
+      message: await applyPersona(`Đã ghi nhận thanh toán ${formatVND(tx.amount)} ${item.data.bill_name}. Số dư ví ${tx.wallet_name || ''} còn ${formatVND(tx.wallet_balance)}.`),
+      transaction: tx,
+      new_balance: Number(tx.wallet_balance),
+      period_due_date: result.period_due_date,
+      proactive_job,
+    };
   } else if (item.kind === 'transactions') {
     const transactions = await TransactionModel.createMany(item.data, userId);
     const proactive_job = await enqueueJob(JOB_NAMES.RUNWAY_SCAN, { userId, trigger: 'transactions_created' });
@@ -569,16 +608,50 @@ async function commitPendingItem(item) {
     data.follow_up = followUpResponses;
     data.message = `${data.message}\n\n${followUpResponses.map((response) => response.message).join('\n\n')}`;
   }
-  await pending.clear(userId);
   return data;
 }
 
-async function cancelPendingWork() {
-  const item = await pending.get(userId);
+function pendingIdFromBody(body = {}) {
+  const value = body.pending_id ?? body.pendingId;
+  if (value === null || value === undefined || value === '') return null;
+  return String(value);
+}
+
+async function claimPendingRequest(expectedId = null) {
+  const item = await pending.claim(userId, expectedId);
+  if (item) return { item };
+
+  // A mismatching id must not consume a newer preview. Distinguish that conflict
+  // from an expired/already-claimed item for clients that send pending_id.
+  const current = await pending.get(userId);
+  if (current) {
+    return {
+      status: 409,
+      error: 'Mục chờ xác nhận đã thay đổi hoặc đang được chỉnh sửa; vui lòng kiểm tra bản xem trước mới nhất',
+    };
+  }
+  return {
+    status: 404,
+    error: 'Không có mục chờ xác nhận, mục đã hết hạn hoặc đã được xử lý',
+  };
+}
+
+async function cancelPendingWork(expectedId = null) {
+  const item = await pending.claim(userId, expectedId);
+  if (!item && expectedId) {
+    const current = await pending.get(userId);
+    if (current) {
+      return {
+        status: 409,
+        error: 'Mục chờ đã thay đổi; bản xem trước mới nhất không bị hủy',
+      };
+    }
+  }
   if (item?.kind === 'category_retag' && item.data?.plan_id) {
     await CategoryRetagService.cancelPlan(userId, item.data.plan_id).catch(() => {});
   }
-  await Promise.all([pending.clear(userId), ConversationState.clear(userId)]);
+  await ConversationState.clear(userId);
+  return { item };
 }
 
 router.post('/message', async (req, res, next) => {
@@ -591,19 +664,18 @@ router.post('/message', async (req, res, next) => {
     const normalized = normalizeText(text);
 
     if (/^(huy|bo qua|khong luu|cancel)(?:\s|$)/.test(normalized)) {
-      await cancelPendingWork();
+      await cancelPendingWork(pendingIdFromBody(req.body));
       const data = { type: 'system_message', message: await applyPersona('Đã hủy thao tác đang chờ.') };
       await ChatMessage.create({ userId, role: 'system', content: data.message, metadata: data });
       return res.json({ success: true, data });
     }
 
     if (/^(xac nhan|dong y|luu|ok|okay)(?:\s|$)/.test(normalized)) {
-      const item = await pending.get(userId);
-      if (item) {
-        const data = await commitPendingItem(item);
-        await ChatMessage.create({ userId, role: 'system', content: data.message, metadata: data });
-        return res.json({ success: true, data });
-      }
+      const claimed = await claimPendingRequest(pendingIdFromBody(req.body));
+      if (!claimed.item) return res.status(claimed.status).json({ success: false, error: claimed.error });
+      const data = await commitPendingItem(claimed.item);
+      await ChatMessage.create({ userId, role: 'system', content: data.message, metadata: data });
+      return res.json({ success: true, data });
     }
 
     const conversation = await ConversationState.get(userId);
@@ -682,10 +754,10 @@ router.post('/message', async (req, res, next) => {
 
 router.post('/confirm', async (req, res, next) => {
   try {
-    const item = await pending.get(userId);
-    if (!item) return res.status(404).json({ success: false, error: 'Không có mục chờ xác nhận hoặc đã hết hạn' });
+    const claimed = await claimPendingRequest(pendingIdFromBody(req.body));
+    if (!claimed.item) return res.status(claimed.status).json({ success: false, error: claimed.error });
 
-    const data = await commitPendingItem(item);
+    const data = await commitPendingItem(claimed.item);
     await ChatMessage.create({ userId, role: 'system', content: data.message, metadata: data });
     res.json({ success: true, data });
   } catch (error) {
@@ -696,19 +768,30 @@ router.post('/confirm', async (req, res, next) => {
 router.post('/edit', async (req, res, next) => {
   try {
     const current = await pending.get(userId);
+    const expectedId = pendingIdFromBody(req.body) || current?.id || null;
     let item;
     if (current?.kind === 'transactions' && Number.isInteger(Number(req.body.index))) {
       const index = Number(req.body.index);
-      if (!current.data[index]) return res.status(400).json({ success: false, error: 'Vị trí giao dịch không hợp lệ' });
-      const next = [...current.data];
-      next[index] = { ...next[index], ...(req.body.transaction || req.body.updates || {}) };
-      await pending.clear(userId);
-      await pending.set(userId, next, 'transactions', current.metadata || {});
-      item = await pending.get(userId);
+      item = await pending.updateAt(userId, index, req.body.transaction || req.body.updates || {}, expectedId);
     } else {
-      item = await pending.update(userId, req.body);
+      const {
+        pending_id: _pendingId,
+        pendingId: _pendingIdAlias,
+        index: _index,
+        transaction,
+        updates,
+        ...directUpdates
+      } = req.body;
+      item = await pending.update(userId, transaction || updates || directUpdates, expectedId);
     }
-    if (!item) return res.status(404).json({ success: false, error: 'Không có giao dịch chờ sửa hoặc đã hết hạn' });
+    if (!item) {
+      const latest = await pending.get(userId);
+      const status = latest ? 409 : 404;
+      const error = latest
+        ? 'Mục chờ đã thay đổi; vui lòng tải lại bản xem trước trước khi sửa'
+        : 'Không có giao dịch chờ sửa, mục đã hết hạn hoặc đang được xử lý';
+      return res.status(status).json({ success: false, error });
+    }
     const data = item.kind === 'transactions'
       ? { type: 'transactions_preview', message: 'Mình đã cập nhật. Bạn xác nhận tất cả nhé:', transactions: item.data, pending_id: item.id }
       : previewResponse(item.data, item.id, 'Mình đã cập nhật. Bạn xác nhận nhé:');
@@ -720,7 +803,8 @@ router.post('/edit', async (req, res, next) => {
 
 router.post('/cancel', async (req, res, next) => {
   try {
-    await cancelPendingWork();
+    const cancelled = await cancelPendingWork(pendingIdFromBody(req.body));
+    if (cancelled.error) return res.status(cancelled.status).json({ success: false, error: cancelled.error });
     const data = { type: 'system_message', message: await applyPersona('Đã hủy') };
     await ChatMessage.create({ userId, role: 'system', content: data.message, metadata: data });
     res.json({ success: true, data });

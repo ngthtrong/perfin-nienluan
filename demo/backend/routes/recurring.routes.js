@@ -7,12 +7,24 @@ const { matchCategory } = require('../services/parser.service');
 const router = express.Router();
 const userId = 'default_user';
 
-function validateBillInput(body) {
+function validateBillInput(body, { mode = 'create', existing = null } = {}) {
   const errors = [];
-  if (!body.name || !String(body.name).trim()) errors.push('Thiếu tên khoản chi');
-  if (!Number(body.amount) || Number(body.amount) <= 0) errors.push('Số tiền phải là số dương hợp lệ');
-  if (body.frequency && !['weekly', 'monthly', 'quarterly', 'yearly'].includes(body.frequency)) errors.push('Chu kỳ không hợp lệ');
-  if (body.due_day == null) errors.push('Thiếu ngày thanh toán');
+  const isCreate = mode === 'create';
+  if ((isCreate || Object.hasOwn(body, 'name')) && (!body.name || !String(body.name).trim())) {
+    errors.push('Thiếu tên khoản chi');
+  }
+  if ((isCreate || Object.hasOwn(body, 'amount')) && (!Number(body.amount) || Number(body.amount) <= 0)) {
+    errors.push('Số tiền phải là số dương hợp lệ');
+  }
+  if (isCreate && body.due_day == null) errors.push('Thiếu ngày thanh toán');
+
+  if (body.due_day != null || body.frequency != null || existing) {
+    const schedule = RecurringBillModel.validateRecurringSchedule(
+      body.frequency ?? existing?.frequency ?? 'monthly',
+      body.due_day ?? existing?.due_day
+    );
+    errors.push(...schedule.errors);
+  }
   return errors;
 }
 
@@ -82,6 +94,10 @@ router.get('/:id', async (req, res, next) => {
 
 router.put('/:id', async (req, res, next) => {
   try {
+    const existing = await RecurringBillModel.getById(req.params.id);
+    if (!existing) return res.status(404).json({ success: false, error: 'Không tìm thấy chi phí cố định' });
+    const errors = validateBillInput(req.body, { mode: 'update', existing });
+    if (errors.length) return res.status(400).json({ success: false, error: errors.join('; ') });
     const data = await RecurringBillModel.update(req.params.id, req.body);
     if (!data) return res.status(404).json({ success: false, error: 'Không tìm thấy chi phí cố định' });
     res.json({ success: true, data });
@@ -130,11 +146,20 @@ router.get('/:id/payments', async (req, res, next) => {
 
 router.post('/:id/pay', async (req, res, next) => {
   try {
+    const body = req.body || {};
+    const expectedPeriod = body.periodDueDate ?? body.period_due_date;
+    if (!expectedPeriod) {
+      return res.status(400).json({
+        success: false,
+        error: 'Thiếu kỳ thanh toán dự kiến; vui lòng tải lại danh sách trước khi thanh toán',
+      });
+    }
     const result = await RecurringBillModel.recordPayment(req.params.id, {
-      amount: req.body.amount,
-      walletId: req.body.wallet_id,
-      paidDate: req.body.paid_date,
-      categoryId: req.body.category_id,
+      amount: body.amount,
+      walletId: body.wallet_id,
+      paidDate: body.paid_date,
+      categoryId: body.category_id,
+      periodDueDate: expectedPeriod,
     });
     if (!result) return res.status(404).json({ success: false, error: 'Không tìm thấy chi phí cố định' });
     res.json({ success: true, data: result });

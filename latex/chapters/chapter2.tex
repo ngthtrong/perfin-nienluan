@@ -1,0 +1,200 @@
+\chapter{Cơ sở lý thuyết}
+\label{chap:theory}
+
+\section{Dữ liệu tài chính cá nhân}
+
+\subsection{Giao dịch và dòng tiền}
+
+Một giao dịch tối thiểu gồm mô tả, số tiền dương, loại, thời điểm, danh mục và ví. Giao dịch \code{income} làm tăng tài sản; \code{expense} làm giảm tài sản; \code{transfer} chỉ thay đổi cơ cấu giữa hai ví; các loại đầu tư mô tả dòng tiền vào, dòng tiền ra và lãi/lỗ. Việc phân biệt đúng loại giao dịch ngăn chuyển ví bị tính hai lần thành thu nhập và chi phí.
+
+Số dư ví không nên được cập nhật bằng các lệnh độc lập ngoài transaction. Với một lần chuyển khoản, debit, credit và lịch sử chuyển phải nằm trong cùng khối \code{BEGIN/COMMIT}; khi một bước lỗi, \code{ROLLBACK} phục hồi toàn bộ trạng thái. Đây là tính chất all-or-nothing của transaction cơ sở dữ liệu \cite{postgresql2026}.
+
+\subsection{Toàn vẹn và vòng đời dữ liệu}
+
+PERFIN áp dụng bốn lớp bảo vệ dữ liệu:
+
+\begin{enumerate}
+  \item \textbf{Ràng buộc miền:} số tiền, hạn mức và mức góp phải dương; ngày đến hạn nằm trong miền hợp lệ.
+  \item \textbf{Toàn vẹn tham chiếu:} giao dịch tham chiếu người dùng, danh mục và ví bằng khóa ngoại.
+  \item \textbf{Toàn vẹn nghiệp vụ:} không chuyển giữa cùng một ví, không ghi giao dịch thiếu số tiền, soft delete vẫn cho phép phục hồi có kiểm soát.
+  \item \textbf{Tính nguyên tử:} thay đổi nhiều bảng được bọc trong một transaction và chỉ commit sau khi tất cả điều kiện thỏa mãn.
+\end{enumerate}
+
+PostgreSQL giữ dữ liệu nghiệp vụ cần kiểm toán. Redis giữ trạng thái ngắn hạn như giao dịch chờ xác nhận, trường đang hỏi lại, cache danh mục/ví và rate limit. TTL tự động làm hết hạn trạng thái hội thoại \cite{redisexpire}. Fallback bộ nhớ tiến trình chỉ phục vụ phát triển; nó mất dữ liệu khi tiến trình khởi động lại và không phải cấu hình production.
+
+\section{Mô hình ngôn ngữ lớn trong PERFIN}
+
+\subsection{Transformer và khả năng hiểu ngữ cảnh}
+
+Transformer dùng attention để mô hình hóa quan hệ giữa token và là nền tảng của nhiều LLM hiện đại \cite{vaswani2017}. Khả năng làm theo chỉ dẫn, few-shot và xử lý ngữ cảnh phù hợp với câu tài chính tự nhiên có nhiều cách diễn đạt. Mô hình đa phương thức có thể hỗ trợ khai thác nội dung ảnh \cite{gemini2023}. Tuy nhiên, khả năng sinh ngôn ngữ không bảo đảm tính đúng số học, nguồn dữ liệu hay quyền thực thi hành động.
+
+\subsection{Function calling và structured output}
+
+PERFIN khai báo công cụ bằng schema chặt chẽ, gồm các nhóm ghi giao dịch, truy vấn dữ liệu, đề xuất ngân sách, lập mục tiêu, chuyển ví và xuất dữ liệu. LLM chọn công cụ và tạo đối số; mã ứng dụng mới kiểm tra đối số, truy vấn dữ liệu và thực thi. Cách tiếp cận này đúng với nguyên tắc function calling: mô hình đề xuất lời gọi, ứng dụng chịu trách nhiệm chạy hàm và trả kết quả \cite{geminifunctioncalling}.
+
+Structured output giới hạn kiểu, enum, trường bắt buộc và hình dạng JSON nhưng không thay thế validation nghiệp vụ. Một lời gọi chuyển ví đúng schema vẫn phải bị từ chối nếu hai ví trùng nhau hoặc số dư nguồn không đủ.
+
+\subsection{Ranh giới trách nhiệm}
+
+\begin{table}[H]
+  \centering
+  \caption{Ranh giới trách nhiệm giữa giải thuật và LLM}
+  \label{tab:llm-responsibility}
+  \begin{tabularx}{\textwidth}{@{}Y L{4.2cm}Y@{}}
+    \toprule
+    \textbf{Nhiệm vụ} & \textbf{Thành phần chịu trách nhiệm} & \textbf{Lý do} \\
+    \midrule
+    Tổng thu--chi, số dư, hạn mức & SQL và service nghiệp vụ & Cần chính xác và lặp lại được. \\
+    Trend, anomaly, runway, correlation & Giải thuật thống kê & Có công thức và test độc lập. \\
+    Kế hoạch tiết kiệm/trả nợ & Goal planner & Có ràng buộc và mô phỏng xác định. \\
+    Hiểu ngày tương đối, đơn vị tiền, nhiều ý định & LLM hoặc parser cục bộ & Bài toán ngôn ngữ và ngữ cảnh. \\
+    Chọn tool và điền tham số & LLM, sau đó validation & Cầu nối từ câu nói sang API. \\
+    Phân loại ngữ cảnh & Feedback, matcher và LLM & Kết hợp lịch sử cá nhân với ngữ nghĩa. \\
+    Viết lời giải thích/persona & LLM hoặc template fallback & Ngôn ngữ tự nhiên, không thay facts. \\
+    Ghi, xóa hoặc re-tag dữ liệu & Service sau xác nhận & Cần kiểm soát tác động và audit. \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+Do đó, mô tả LLM là ``bộ não tài chính'' sẽ làm sai kiến trúc. Vai trò chính xác là \textbf{bộ chuyển đổi ngữ nghĩa và lớp diễn giải}: chuyển lời nói thành lệnh có kiểu, rồi chuyển facts đã tính thành lời giải thích dễ hiểu.
+
+\subsection{Grounding và kiểm soát hallucination}
+
+Đối với insight, LLM nhận đối tượng facts gồm tên chỉ số, giá trị, đơn vị, khoảng thời gian, số quan sát và cảnh báo dữ liệu thiếu. Persona có thể thay đổi giọng điệu theo tinh thần thiết kế hành vi \cite{thaler2009}, nhưng không được thay đổi nội dung định lượng. Guard cần kiểm tra mọi số trong phản hồi có ánh xạ tới facts, đơn vị không bị đổi, giới hạn dữ liệu được nêu và fallback không sinh số mock.
+
+\section{Xử lý đa phương thức}
+
+\subsection{OCR hóa đơn}
+
+OCR chuyển vùng ảnh chứa ký tự thành văn bản máy có thể xử lý. Quy trình gồm chuẩn hóa ảnh, phát hiện vùng chữ, nhận dạng và hậu xử lý \cite{smith2007}. Trong PERFIN, provider cục bộ hoặc cloud tạo raw text; parser/LLM tiếp tục tách cửa hàng, mặt hàng, tổng tiền và ngày. Người dùng chọn lưu tổng hóa đơn hoặc nhiều giao dịch chi tiết. Tổng mặt hàng phải được đối chiếu với tổng hóa đơn trong sai số có giải thích trước khi tạo preview.
+
+\subsection{Speech-to-Text}
+
+STT chuyển âm thanh thành transcript. Các mô hình đa ngôn ngữ như Whisper cho thấy khả năng học từ dữ liệu tiếng nói quy mô lớn \cite{radford2022}. Provider STT trong PERFIN chỉ tạo transcript. Transcript được hiển thị để xác nhận trước khi phân tích giao dịch; từ đệm hoặc lỗi nhận dạng không được âm thầm biến thành số tiền.
+
+\subsection{Nguyên tắc không phụ thuộc provider}
+
+Media pipeline dùng giao diện chung trả về văn bản, provider, confidence/error và metadata. Khi provider lỗi, hệ thống trả trạng thái lỗi hoặc cho phép nhập tay, không sinh dữ liệu mẫu như kết quả thật. Ranh giới adapter cho phép so sánh PaddleOCR với Cloud Vision hoặc PhoWhisper với dịch vụ cloud mà không thay transaction service.
+
+\section{Các giải thuật phân tích}
+
+\begin{table}[H]
+  \centering
+  \caption{Các giải thuật phân tích dữ liệu chính}
+  \label{tab:algorithms}
+  \begin{tabularx}{\textwidth}{@{}L{3.1cm}Y Y@{}}
+    \toprule
+    \textbf{Giải thuật} & \textbf{Đầu vào và đầu ra} & \textbf{Điều kiện thận trọng} \\
+    \midrule
+    Hồi quy tuyến tính & Chuỗi chi theo kỳ; trả slope, intercept, $R^2$ và dự báo. & Cần ít nhất hai kỳ; không diễn giải mạnh khi $R^2$ thấp. \\
+    Z-score và IQR & Chi tiêu ngày/khoản; trả điểm và cờ bất thường. & Cần ít nhất bốn điểm; chỉ là dấu hiệu, không kết luận gian lận. \\
+    Cashflow runway & Số dư và chi gần đây; trả burn rate, số ngày còn lại. & Không dự báo khi burn rate bằng 0; công bố cửa sổ quan sát. \\
+    Subscription miner & Mô tả, số tiền, ngày; trả cụm và cadence. & Ngưỡng số lần, sai số tiền và chu kỳ phải cấu hình được. \\
+    Pearson correlation & Hai chuỗi theo tuần; trả hệ số $r$. & Không suy ra quan hệ nhân quả; cần đủ kỳ. \\
+    Budget recommender & Lịch sử và thu nhập; trả hạn mức cùng confidence. & Dưới ba tháng phải cảnh báo mức tin cậy thấp. \\
+    Goal planner & Mục tiêu, mức góp, ngày và lãi suất; trả kế hoạch/what-if. & Kiểm tra ngày, số âm và negative amortization. \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+\subsection{Hồi quy tuyến tính và dự báo xu hướng}
+
+Với chuỗi $y_i$ theo các kỳ $x_i=i$, hệ số dốc và hệ số chặn là:
+
+\begin{equation}
+  b=\frac{\sum_i(x_i-\bar{x})(y_i-\bar{y})}{\sum_i(x_i-\bar{x})^2},
+  \qquad a=\bar{y}-b\bar{x}.
+\end{equation}
+
+Giá trị dự báo kỳ tiếp theo là $\hat{y}_{n}=\max(0,a+bn)$. $R^2$ mô tả mức phù hợp của đường thẳng. LLM chỉ được phát biểu ``tăng đều'' khi service cung cấp slope dương, đủ số kỳ và mức phù hợp đạt quy tắc cấu hình. Một giới hạn hiện trạng cần sửa là chuỗi tháng thiếu không được phép bị nén thành các kỳ liên tiếp vì sẽ làm sai trục thời gian.
+
+\subsection{Phát hiện bất thường bằng z-score và IQR}
+
+Z-score của điểm $x$ là $z=(x-\mu)/s$. Phương pháp IQR đánh dấu điểm lớn hơn $Q_3+k(Q_3-Q_1)$. Cấu hình khởi đầu dùng $z\geq2{,}5$ hoặc $k=1{,}5$. IQR là kỹ thuật thăm dò dữ liệu bền vững trước ngoại lệ \cite{tukey1977}. Kết quả chỉ là dấu hiệu cần chú ý, không phải kết luận giao dịch gian lận.
+
+\subsection{Ước lượng thời gian cạn dòng tiền}
+
+Gọi $B$ là số dư khả dụng và $\bar{e}$ là chi tiêu trung bình ngày trong cửa sổ quan sát. Số ngày còn lại:
+
+\begin{equation}
+  d=\left\lfloor\frac{B}{\bar{e}}\right\rfloor.
+\end{equation}
+
+Ngày cạn dự kiến bằng ngày hiện tại cộng $d$. Nếu sớm hơn ngày lương tiếp theo, hệ thống tạo cảnh báo. Hiện trạng chỉ lấy các ngày có chi làm mẫu số có thể đánh giá burn rate quá cao; thiết kế đích phải thêm các ngày chi bằng 0 hoặc công bố rõ định nghĩa này.
+
+\subsection{Khai phá khoản chi định kỳ}
+
+Mô tả được bỏ dấu, chuyển chữ thường, loại số và ký tự đặc biệt rồi gom cụm. Một cụm là ứng viên subscription khi số tiền nằm trong sai số tương đối, xuất hiện đủ số lần và khoảng cách gần chu kỳ tháng. Nguyên mẫu dùng cadence 20--40 ngày và sai số tiền 15\% làm giá trị khởi đầu. Matching exact trên mô tả chuẩn hóa có độ chính xác cao khi chuỗi ổn định nhưng bỏ sót biến thể; vì vậy cần đo precision/recall trước khi nới fuzzy threshold.
+
+\subsection{Tương quan liên danh mục}
+
+Với hai chuỗi chi tiêu tuần $X,Y$, hệ số Pearson là:
+
+\begin{equation}
+  r=\frac{\sum_i(x_i-\bar{x})(y_i-\bar{y})}
+  {\sqrt{\sum_i(x_i-\bar{x})^2\sum_i(y_i-\bar{y})^2}}.
+\end{equation}
+
+Hệ thống chỉ hiển thị liên hệ khi đủ số kỳ và $|r|$ vượt ngưỡng. Câu trả lời phải dùng ``đồng biến/nghịch biến trong dữ liệu quan sát'', không diễn giải thành nguyên nhân. Phiên bản hoàn thiện cần kèm số quan sát và kiểm tra ý nghĩa thống kê hoặc ít nhất cảnh báo khi mẫu nhỏ.
+
+\subsection{Đề xuất ngân sách}
+
+Ba chiến lược được xem xét: trung bình lịch sử có buffer, khung 50/30/20 và hybrid. Với hybrid, tổng nhóm nhu cầu/mong muốn được giới hạn theo tỷ lệ thu nhập rồi phân bổ theo tỷ trọng lịch sử. Dữ liệu phải chuẩn hóa theo toàn bộ số tháng quan sát, kể cả tháng không phát sinh; nếu chỉ lấy tháng có giao dịch thì trung bình bị lệch lên. Dưới ba tháng dữ liệu phải nhận confidence thấp.
+
+\subsection{Lập kế hoạch mục tiêu}
+
+Với mục tiêu tiết kiệm, số tiền còn thiếu $R=T-C$ và số tháng cần là $\lceil R/M\rceil$, trong đó $M$ là mức góp tháng. Nếu có hạn chót gồm $n_D$ tháng, mức góp yêu cầu là $\lceil R/n_D\rceil$. What-if chạy lại cùng hàm với khoản tiền giải phóng từ một nhóm chi, không sửa kế hoạch gốc.
+
+Với trả nợ, gọi $L$ là dư nợ, $r$ là lãi suất tháng và $n$ là số tháng. Khoản trả cố định:
+
+\begin{equation}
+  P=\frac{Lr}{1-(1+r)^{-n}}.
+\end{equation}
+
+Mô phỏng từng tháng cộng lãi rồi trừ khoản trả, ghi tổng lãi và phát hiện negative amortization khi khoản trả không đủ bù lãi tháng đầu.
+
+\section{Phân loại và học từ phản hồi}
+
+Chuỗi được bỏ dấu, hạ chữ thường và thu gọn khoảng trắng. Độ tương đồng kết hợp Levenshtein chuẩn hóa, Dice token và containment:
+
+\begin{equation}
+  s=\max(s_{edit},\,0{,}92s_{dice},\,s_{containment}).
+\end{equation}
+
+Matcher ưu tiên exact, alias exact rồi fuzzy. Input ngắn dùng ngưỡng cao hơn; ứng viên tốt nhất phải vượt ngưỡng và cách ứng viên thứ hai một margin an toàn. Feedback của người dùng được lưu thành correction, truy xuất làm few-shot hoặc quy tắc; đây là retrieval và thích nghi bằng luật, \textbf{không phải fine-tuning mô hình}. Lịch sử mâu thuẫn phải bị từ chối hoặc chuyển sang yêu cầu xác nhận.
+
+\section{Hạ tầng trạng thái và tác vụ nền}
+
+Redis cung cấp KV, TTL, cache-aside và bộ đếm rate limit. BullMQ dùng Redis để lập lịch reminder, runway scan, subscription scan, báo cáo cuối tháng và dọn export. Job cần nhỏ, nguyên tử và idempotent để retry không tạo hiệu ứng trùng \cite{bullmq2026}. PostgreSQL vẫn là nguồn dữ liệu bền vững; Redis không thay sổ cái tài chính.
+
+\section{Công nghệ và lý do lựa chọn}
+
+\begin{itemize}
+  \item \textbf{React Native và Expo:} giao diện đa nền tảng để thu text, ảnh và audio; không phải đóng góp thuật toán chính.
+  \item \textbf{Node.js và Express:} phù hợp API hướng I/O, dùng chung JavaScript cho service và test; tổ chức theo modular monolith.
+  \item \textbf{PostgreSQL:} hỗ trợ quan hệ, constraint, chỉ mục và transaction tài chính \cite{postgresql2026}.
+  \item \textbf{Redis và BullMQ:} quản lý state ngắn hạn, cache, queue, retry và lịch chạy \cite{redisexpire,bullmq2026}.
+  \item \textbf{Gemini hoặc parser cục bộ:} LLM dùng khi có cấu hình; parser làm baseline/fallback cho luồng phổ biến.
+  \item \textbf{PaddleOCR, PhoWhisper hoặc cloud adapter:} provider media có thể thay để so sánh thực nghiệm mà không sửa nghiệp vụ.
+\end{itemize}
+
+\section{Nghiên cứu và ứng dụng liên quan}
+
+Ứng dụng tài chính phổ biến thường mạnh ở dashboard, ngân sách và đồng bộ dữ liệu. Trợ lý hội thoại tạo trải nghiệm tự nhiên nhưng có thể che nguồn số liệu nếu phản hồi không truy vết được. PERFIN không đặt mục tiêu cạnh tranh về độ đầy đủ tính năng. Khoảng trống nghiên cứu được chọn là cách kết hợp dữ liệu quan hệ, giải thuật có thể kiểm thử và LLM có ranh giới.
+
+\begin{table}[H]
+  \centering
+  \caption{Khoảng trống và hướng giải quyết của PERFIN}
+  \label{tab:gaps}
+  \begin{tabularx}{\textwidth}{@{}Y Y Y@{}}
+    \toprule
+    \textbf{Khoảng trống} & \textbf{Rủi ro} & \textbf{Hướng giải quyết} \\
+    \midrule
+    Nhập tự nhiên nhưng dễ ghi sai & Dữ liệu bẩn lan sang báo cáo & Schema, validation, preview và confirm. \\
+    Chatbot trả số không rõ nguồn & Hallucination, khó kiểm toán & Tool truy vấn, facts JSON và numeric guard. \\
+    Dashboard thiếu diễn giải & Khó nhận ra pattern & Analytics xác định rồi LLM diễn giải. \\
+    Phân loại không thích nghi & Lặp lại cùng lỗi & Feedback log, fuzzy match và corrections. \\
+    Reminder trùng khi retry & Trải nghiệm và dữ liệu sai & Job fingerprint, unique key và handler idempotent. \\
+    \bottomrule
+  \end{tabularx}
+\end{table}

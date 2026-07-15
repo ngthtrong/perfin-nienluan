@@ -1,9 +1,9 @@
 const { inferCategoryFromText, findSafeCategoryMatch } = require('./feedback/categoryMatcher');
 
 const CATEGORY_ALIASES = {
-  'Ăn uống': ['đồ ăn', 'ăn', 'an', 'thức ăn', 'cơm', 'phở', 'bún', 'cà phê', 'trà sữa', 'food'],
+  'Ăn uống': ['đồ ăn', 'đi ăn', 'ăn', 'an', 'thức ăn', 'cơm', 'phở', 'bún', 'cà phê', 'trà sữa', 'food'],
   'Di chuyển': ['đi lại', 'xe', 'xăng', 'grab', 'taxi', 'uber', 'xe buýt', 'gửi xe', 'transport'],
-  'Mua sắm': ['mua đồ', 'shopping', 'mua hàng', 'shop', 'áo', 'giày'],
+  'Mua sắm': ['mua đồ', 'shopping', 'mua hàng', 'shop', 'áo', 'quần', 'jeans', 'giày'],
   'Giải trí': ['vui chơi', 'phim', 'game', 'karaoke', 'entertainment'],
   'Sức khỏe': ['y tế', 'thuốc', 'bệnh viện', 'khám bệnh', 'health'],
   'Giáo dục': ['học', 'sách', 'khóa học', 'học phí', 'education'],
@@ -39,8 +39,25 @@ function normalizeAmount(input) {
     return base ? base * Number(multiply[3]) : null;
   }
 
+  // Vietnamese itemized phrasing: "3 cái áo mỗi cái 200k".
+  const perItem = text.match(
+    /\b(\d+)\s*(?:cai|chiec|mon|ly|phan|suat|ve|bo|goi|chai|hop)\b.*?\bmoi\s+(?:cai|chiec|mon|ly|phan|suat|ve|bo|goi|chai|hop)\s+(.+)/
+  );
+  if (perItem) {
+    const unitPrice = normalizeAmount(perItem[2]);
+    return unitPrice ? Number(perItem[1]) * unitPrice : null;
+  }
+
   const trDecimal = text.match(/(\d+)\s*tr\s*(\d+)/);
   if (trDecimal) return Number(trDecimal[1]) * 1000000 + Number(trDecimal[2].padEnd(3, '0')) * 1000;
+
+  // Spoken shorthand such as "1 triệu 5" means 1.5 million. This must be
+  // checked before the generic million matcher, which would stop at 1 million.
+  const millionWithFraction = text.match(/(\d+)\s*(?:trieu|cu)\s*(\d{1,3})(?!\d)/);
+  if (millionWithFraction) {
+    const fraction = Number(millionWithFraction[2].padEnd(3, '0')) * 1000;
+    return Number(millionWithFraction[1]) * 1000000 + fraction;
+  }
 
   const millionWords = text.match(/(\d+(?:\.\d+)?)\s*(trieu|tr|cu)/);
   if (millionWords) return Math.round(Number(millionWords[1]) * 1000000);
@@ -86,7 +103,12 @@ function inferDate(text, today = new Date()) {
     const year = short[3] ? Number(short[3].length === 2 ? `20${short[3]}` : short[3]) : date.getFullYear();
     return `${year}-${String(short[2]).padStart(2, '0')}-${String(short[1]).padStart(2, '0')}`;
   }
-  return date.toISOString().slice(0, 10);
+  // A transaction date is a local calendar date, not a UTC instant. Around
+  // midnight in Viet Nam, toISOString() would otherwise save the previous day.
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 }
 
 function matchCategory(categoryName, categories, type = 'expense') {
@@ -168,6 +190,7 @@ module.exports = {
   removeDiacritics,
   normalizeText,
   normalizeAmount,
+  inferDate,
   inferCategoryName,
   inferCategoryWithMeta,
   matchCategory,

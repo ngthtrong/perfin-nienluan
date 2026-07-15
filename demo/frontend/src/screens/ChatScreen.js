@@ -121,7 +121,7 @@ export default function ChatScreen() {
       const historyRes = await fetch(`${api.getBaseUrl()}/api/chat/messages?limit=20`);
       if (historyRes.ok) {
         const data = await historyRes.json();
-        const history = (data.data || []).reverse().map((msg) => ({
+        const history = (data.data || []).map((msg) => ({
           id: msg.id,
           role: msg.role,
           ...(msg.metadata || {}),
@@ -310,11 +310,11 @@ export default function ChatScreen() {
     }
   }
 
-  async function confirm(messageId) {
+  async function confirm(messageId, pendingId) {
     if (pendingActionId) return;
     setPendingActionId(messageId);
     try {
-      const response = await api.confirmChat();
+      const response = await api.confirmChat(pendingId);
       updateMessage(messageId, { resolved: true });
       const data = response.data || {};
       push({ role: 'system', ...data, type: data.type || 'text', text: data.message || 'Đã xác nhận' });
@@ -325,11 +325,11 @@ export default function ChatScreen() {
     }
   }
 
-  async function cancel(messageId) {
+  async function cancel(messageId, pendingId) {
     if (pendingActionId) return;
     setPendingActionId(messageId);
     try {
-      const response = await api.cancelChat();
+      const response = await api.cancelChat(pendingId);
       updateMessage(messageId, { resolved: true });
       push({ role: 'system', type: 'text', text: response.data?.message || 'Đã hủy' });
     } catch (error) {
@@ -339,11 +339,11 @@ export default function ChatScreen() {
     }
   }
 
-  async function edit(messageId, data) {
+  async function edit(messageId, data, pendingId) {
     if (pendingActionId) return false;
     setPendingActionId(messageId);
     try {
-      const response = await api.editChat(data);
+      const response = await api.editChat({ ...data, ...(pendingId ? { pending_id: pendingId } : {}) });
       const updated = response.data || {};
       updateMessage(messageId, { ...updated, text: updated.message || '' });
       return true;
@@ -405,9 +405,9 @@ export default function ChatScreen() {
       return (
         <TransactionPreviewCard
           transaction={item.transaction}
-          onConfirm={() => confirm(item.id)}
-          onCancel={() => cancel(item.id)}
-          onEdit={(updates) => edit(item.id, updates)}
+          onConfirm={() => confirm(item.id, item.pending_id)}
+          onCancel={() => cancel(item.id, item.pending_id)}
+          onEdit={(updates) => edit(item.id, updates, item.pending_id)}
           busy={pendingActionId === item.id}
           resolved={item.resolved}
         />
@@ -417,9 +417,9 @@ export default function ChatScreen() {
       return (
         <MultiTransactionPreviewCard
           transactions={item.transactions}
-          onConfirm={() => confirm(item.id)}
-          onCancel={() => cancel(item.id)}
-          onEdit={(index, updates) => edit(item.id, { index, transaction: updates })}
+          onConfirm={() => confirm(item.id, item.pending_id)}
+          onCancel={() => cancel(item.id, item.pending_id)}
+          onEdit={(index, updates) => edit(item.id, { index, transaction: updates }, item.pending_id)}
           busy={pendingActionId === item.id}
           resolved={item.resolved}
         />

@@ -2,6 +2,8 @@
 // math on plain arrays so they are unit-testable in isolation. The engine feeds these
 // with data from analytics.model.js and hands the numeric results to the LLM to phrase.
 
+const { localDayKey } = require('./timeSeries');
+
 // ── Basic stats ────────────────────────────────────────────────────────────────
 function mean(xs) {
   if (!xs.length) return 0;
@@ -111,7 +113,13 @@ function detectAnomalies(points, { zThreshold = 2.5, iqrK = 1.5 } = {}) {
 // Given current balance and recent daily burn rate, estimate the calendar date the
 // balance hits zero. `dailySpends` = numbers for the last N days (expense only).
 function cashflowRunway(balance, dailySpends, { today = new Date(), payday = null } = {}) {
-  const avgBurn = mean(dailySpends.filter((v) => v > 0));
+  // Each slot represents one calendar day. Preserve zero-spend days in the
+  // denominator; dropping them systematically overstates the daily burn rate.
+  const calendarSpends = Array.from(Array.isArray(dailySpends) ? dailySpends : [], (value) => {
+    const amount = Number(value);
+    return Number.isFinite(amount) && amount > 0 ? amount : 0;
+  });
+  const avgBurn = mean(calendarSpends);
   if (avgBurn <= 0) return { avgBurn: 0, daysLeft: null, depletionDate: null, beforePayday: false };
   const daysLeft = Math.floor(balance / avgBurn);
   const depletion = new Date(today);
@@ -131,7 +139,7 @@ function cashflowRunway(balance, dailySpends, { today = new Date(), payday = nul
   return {
     avgBurn: Math.round(avgBurn),
     daysLeft,
-    depletionDate: depletion.toISOString().slice(0, 10),
+    depletionDate: localDayKey(depletion),
     beforePayday,
     daysBeforePayday,
   };

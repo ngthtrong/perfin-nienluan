@@ -33,6 +33,15 @@ function formatDate(d) {
   return `${String(dt.getDate()).padStart(2, '0')}/${String(dt.getMonth() + 1).padStart(2, '0')}/${dt.getFullYear()}`;
 }
 
+function escapeHTML(value) {
+  return String(value == null ? '' : value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 // ─── Export History Model ──────────────────────────────────────────────────────
 
 const ExportHistoryModel = {
@@ -213,6 +222,25 @@ async function exportCSV(userId = DEFAULT_USER, filters = {}) {
 
 // ─── PDF Export (REQ-07-02) ────────────────────────────────────────────────────
 
+const EXPENSE_BREAKDOWN_SQL = `SELECT c.name AS category_name, c.icon, SUM(t.amount) AS total,
+       ROUND(100.0 * SUM(t.amount) / NULLIF((
+         SELECT SUM(total_tx.amount)
+         FROM transactions total_tx
+         WHERE total_tx.deleted_at IS NULL
+           AND total_tx.user_id = $1
+           AND total_tx.type = 'expense'
+           AND ($2::date IS NULL OR total_tx.transaction_date >= $2::date)
+           AND ($3::date IS NULL OR total_tx.transaction_date <= $3::date)
+       ), 0), 1) AS percentage
+FROM transactions t
+JOIN categories c ON c.id = t.category_id
+WHERE t.deleted_at IS NULL AND t.user_id = $1 AND t.type = 'expense'
+  AND ($2::date IS NULL OR t.transaction_date >= $2::date)
+  AND ($3::date IS NULL OR t.transaction_date <= $3::date)
+GROUP BY c.id, c.name, c.icon
+ORDER BY total DESC
+LIMIT 10`;
+
 async function exportPDF(userId = DEFAULT_USER, filters = {}) {
   const { from, to } = filters;
 
@@ -229,19 +257,7 @@ async function exportPDF(userId = DEFAULT_USER, filters = {}) {
     [userId, from || null, to || null]
   );
 
-  const breakdownResult = await query(
-    `SELECT c.name AS category_name, c.icon, SUM(t.amount) AS total,
-            ROUND(100.0 * SUM(t.amount) / NULLIF((SELECT SUM(amount) FROM transactions WHERE deleted_at IS NULL AND user_id = $1 AND type='expense'), 0), 1) AS percentage
-     FROM transactions t
-     JOIN categories c ON c.id = t.category_id
-     WHERE t.deleted_at IS NULL AND t.user_id = $1 AND t.type = 'expense'
-       AND ($2::date IS NULL OR t.transaction_date >= $2::date)
-       AND ($3::date IS NULL OR t.transaction_date <= $3::date)
-     GROUP BY c.id, c.name, c.icon
-     ORDER BY total DESC
-     LIMIT 10`,
-    [userId, from || null, to || null]
-  );
+  const breakdownResult = await query(EXPENSE_BREAKDOWN_SQL, [userId, from || null, to || null]);
 
   const txResult = await query(
     `SELECT t.transaction_date, t.description, t.amount, t.type, c.name AS category_name, w.name AS wallet_name
@@ -299,7 +315,7 @@ function buildReportHTML({ label, summary, breakdown, transactions }) {
 
   const breakdownRows = breakdown.map((b) =>
     `<tr>
-      <td>${b.icon || ''} ${b.category_name}</td>
+      <td>${escapeHTML(b.icon)} ${escapeHTML(b.category_name)}</td>
       <td style="text-align:right">${Number(b.percentage || 0).toFixed(1)}%</td>
       <td style="text-align:right;color:#F43F5E">${formatVND(b.total)}</td>
     </tr>`
@@ -310,9 +326,9 @@ function buildReportHTML({ label, summary, breakdown, transactions }) {
     const color = t.type === 'income' ? '#10B981' : '#F43F5E';
     return `<tr>
       <td>${formatDate(t.transaction_date)}</td>
-      <td>${t.description}</td>
-      <td>${t.category_name}</td>
-      <td>${t.wallet_name}</td>
+      <td>${escapeHTML(t.description)}</td>
+      <td>${escapeHTML(t.category_name)}</td>
+      <td>${escapeHTML(t.wallet_name)}</td>
       <td style="text-align:right;color:${color};font-weight:700">${sign}${formatVND(t.amount)}</td>
     </tr>`;
   }).join('');
@@ -321,7 +337,7 @@ function buildReportHTML({ label, summary, breakdown, transactions }) {
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
-  <title>PERFIN Báo cáo tài chính – ${label}</title>
+  <title>PERFIN Báo cáo tài chính – ${escapeHTML(label)}</title>
   <style>
     body { font-family: -apple-system, sans-serif; margin: 0; padding: 24px; color: #0F0F23; background: #F4F5FB; }
     .header { background: #5B5FEF; color: #fff; padding: 24px; border-radius: 12px; margin-bottom: 24px; }
@@ -344,7 +360,7 @@ function buildReportHTML({ label, summary, breakdown, transactions }) {
 <body>
   <div class="header">
     <h1>📊 PERFIN – Báo cáo tài chính</h1>
-    <p>${label} · Xuất ngày ${formatDate(new Date())}</p>
+    <p>${escapeHTML(label)} · Xuất ngày ${formatDate(new Date())}</p>
   </div>
 
   <div class="summary">
@@ -362,7 +378,7 @@ function buildReportHTML({ label, summary, breakdown, transactions }) {
     </div>
     <div class="card">
       <div class="label">🔢 Giao dịch</div>
-      <div class="value">${summary.transaction_count}</div>
+      <div class="value">${Number(summary.transaction_count || 0)}</div>
     </div>
   </div>
 
@@ -575,4 +591,8 @@ module.exports = {
   createBackup,
   restoreBackup,
   EXPORTS_DIR,
+  EXPENSE_BREAKDOWN_SQL,
+  buildLabel,
+  buildReportHTML,
+  escapeHTML,
 };

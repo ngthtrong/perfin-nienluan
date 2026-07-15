@@ -24,6 +24,26 @@ function memSet(key, value, ttlSeconds) {
   mem.set(key, { value, expiresAt: ttlSeconds ? Date.now() + ttlSeconds * 1000 : null });
 }
 
+// Set only when no active value exists. The check and write are synchronous in
+// the single-process fallback, matching Redis SET NX semantics.
+function memSetIfAbsent(key, value, ttlSeconds) {
+  if (memGet(key) !== null) return false;
+  memSet(key, value, ttlSeconds);
+  return true;
+}
+
+// Read-and-delete without yielding between the comparison and deletion. This is
+// atomic within the single Node.js process used by the development fallback.
+function memTake(key, expectedId = null) {
+  const value = memGet(key);
+  if (value === null || value === undefined) return null;
+  if (expectedId !== null && expectedId !== undefined) {
+    if (!value || String(value.id) !== String(expectedId)) return null;
+  }
+  mem.delete(key);
+  return value;
+}
+
 // Periodic sweep so the fallback map does not grow unbounded in long-running dev servers.
 const SWEEP_MS = 60 * 1000;
 const sweeper = setInterval(() => {
@@ -65,6 +85,25 @@ const KVStore = {
     return true;
   },
 
+  // Atomically set a value only when the key does not already exist. Pending
+  // editors use this after claiming an item so they cannot overwrite a newer
+  // preview that arrived while the edit was being validated.
+  async setIfAbsent(key, value, ttlSeconds = null) {
+    const client = await getClient();
+    if (client) {
+      try {
+        const raw = JSON.stringify(value);
+        const result = ttlSeconds
+          ? await client.set(key, raw, 'EX', ttlSeconds, 'NX')
+          : await client.set(key, raw, 'NX');
+        return result === 'OK';
+      } catch (err) {
+        console.warn(`[kv] redis setIfAbsent failed (${err.message}) — falling back`);
+      }
+    }
+    return memSetIfAbsent(key, value, ttlSeconds);
+  },
+
   async del(key) {
     const client = await getClient();
     if (client) {
@@ -76,6 +115,39 @@ const KVStore = {
     }
     mem.delete(key);
     return true;
+  },
+
+  // Atomically return and remove a value. When expectedId is supplied, deletion
+  // occurs only if the stored JSON object's id matches. Pending confirmations use
+  // this as a claim operation so two concurrent requests cannot execute the same
+  // side effect.
+  async take(key, expectedId = null) {
+    const client = await getClient();
+    if (client) {
+      try {
+        const compareId = expectedId !== null && expectedId !== undefined;
+        const raw = await client.eval(
+          `local raw = redis.call('GET', KEYS[1])
+           if not raw then return nil end
+           if ARGV[1] == '1' then
+             local ok, value = pcall(cjson.decode, raw)
+             if not ok or type(value) ~= 'table' or tostring(value.id) ~= ARGV[2] then
+               return nil
+             end
+           end
+           redis.call('DEL', KEYS[1])
+           return raw`,
+          1,
+          key,
+          compareId ? '1' : '0',
+          compareId ? String(expectedId) : ''
+        );
+        return raw ? JSON.parse(raw) : null;
+      } catch (err) {
+        console.warn(`[kv] redis take failed (${err.message}) — falling back`);
+      }
+    }
+    return memTake(key, expectedId);
   },
 
   // Merge a partial object into an existing stored object, preserving remaining TTL
