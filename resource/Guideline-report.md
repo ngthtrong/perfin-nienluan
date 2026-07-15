@@ -1,4 +1,5 @@
-REGULATIONS ON THE FORMAT AND CONTENT 
+REGULATIONS ON THE FORMAT AND CONTENT
+
 # Regulations on the Format and Content of the Report
 
 The report must follow the regulations below.
@@ -18,6 +19,7 @@ The report must follow the regulations below.
 ## 2. Layout and Content of the Report
 
 ### 2.1 Cover Page
+
 Present the cover page formally and include:
 
 - Name of the university (with logo).
@@ -113,8 +115,5 @@ Note: Accompany each diagram with a short explanation and document key algorithm
 
 ---
 
-If you want, I can also:
 
-- Generate a Word/LibreOffice template with the required paragraph styles.
-- Convert this Markdown to a printable PDF template.
-
+ **Lưu ý** từ giảng viên: Đây Niên luận cơ sở ngành, các em sẽ tập trung vào dữ liệu, giải thuật (khác với Niên luận chuyên ngành: phát triển một ứng dụng web/mobile/desktop với đầy đủ chức năng cho nhiều nhóm người dùng).
