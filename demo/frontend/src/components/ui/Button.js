@@ -35,6 +35,8 @@ export default function Button({
 
   return (
     <TouchableOpacity
+      accessibilityRole="button"
+      accessibilityLabel={label}
       onPress={onPress}
       disabled={isDisabled}
       activeOpacity={0.8}
@@ -61,7 +63,14 @@ export default function Button({
       ) : (
         <>
           {icon && <MaterialIcons name={icon} size={iconSize} color={palette.fg} />}
-          <Text style={{ color: palette.fg, fontWeight: '800', fontSize }}>{label}</Text>
+          <Text
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={0.82}
+            style={{ color: palette.fg, fontWeight: '800', fontSize, flexShrink: 1 }}
+          >
+            {label}
+          </Text>
           {trailingIcon && <MaterialIcons name={trailingIcon} size={iconSize} color={palette.fg} />}
         </>
       )}

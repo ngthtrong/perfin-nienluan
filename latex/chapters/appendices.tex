@@ -46,19 +46,22 @@ EXPO_PUBLIC_API_URL=http://127.0.0.1:3000 \
 
 Để kiểm thử tích hợp, cần một PostgreSQL test riêng và Redis đang chạy. Migration phải được chạy trên database test; sau mỗi nhóm test phải kiểm tra rollback và dọn dữ liệu bằng fixture. Không dùng database phát triển cá nhân làm môi trường tự động.
 
-\chapter{Biên bản kết quả ngày 15/07/2026}
+\chapter{Biên bản kết quả ngày 16/07/2026}
 
 \begin{longtable}{@{}L{4.0cm}L{10.5cm}@{}}
   \toprule
   \textbf{Trường} & \textbf{Giá trị đã ghi nhận} \\
   \midrule
-  Commit & Không được khóa trong đợt audit; cần bổ sung khi chốt bản nộp. \\
-  Thời gian chạy & Ngày 15/07/2026, workspace phát triển. \\
-  Backend test sau sửa & 18/18 tệp pass, 0 fail; khoảng 1,028 giây. \\
+  Commit nền & \code{8bebe83}; các thay đổi phiên ổn định hóa chưa commit. \\
+  Thời gian chạy & Ngày 16/07/2026, workspace phát triển. \\
+  Runtime & Node.js 24.16.0; PostgreSQL 16.14; Chromium 150.0.7871.46. \\
+  Backend test sau sửa & 100/100 test pass, 0 fail. \\
   Local parser sau sửa & 31/31 strict pass, 0 partial, 0 fail; provider local. \\
   Baseline trước sửa & 13/13 tệp backend; parser 27/31 strict, 2 partial, 2 fail. \\
-  Frontend export & Thành công 652 module, bundle JavaScript khoảng 1,49 MB. \\
-  PostgreSQL/Redis live & Không được xác nhận trong đợt đo; không suy diễn từ unit test. \\
+  API/DB/media smoke & 23/23 pass; PostgreSQL, chat preview/edit/cancel, OCR 2 ảnh và STT 1 M4A. \\
+  Frontend export/UI & Web 653 module; Android 960 module; mobile smoke 4/4 cổng đạt. \\
+  Dữ liệu live & 5.265 giao dịch, 0 reject, 420 thu/4.845 chi, net 594.000 VND. \\
+  PostgreSQL/Redis & PostgreSQL live đã đối soát; Redis không khả dụng, worker tắt có kiểm soát và readiness degraded. \\
   OCR/STT ground truth & Chưa có phép đo được công bố. \\
   LLM model/prompt benchmark & Chưa có phép đo được công bố. \\
   Hồi quy parser & ``1 triệu 5'', phép nhân số lượng--đơn giá, quần jeans và đi ăn đều đã đạt. \\

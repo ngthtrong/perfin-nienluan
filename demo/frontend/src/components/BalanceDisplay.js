@@ -7,5 +7,9 @@ export default function BalanceDisplay({ amount, size = 20, showSign = false, st
   const c = theme.colors;
   const value = Number(amount || 0);
   const color = value > 0 ? c.income : value < 0 ? c.expense : c.textMuted;
-  return <Text style={[{ fontSize: size, fontWeight: '700', color }, style]}>{formatVND(value, showSign)}</Text>;
+  return (
+    <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.68} style={[{ fontSize: size, fontWeight: '800', color }, style]}>
+      {formatVND(value, showSign)}
+    </Text>
+  );
 }

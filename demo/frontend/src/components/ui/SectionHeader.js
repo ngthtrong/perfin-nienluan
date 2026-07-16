@@ -14,10 +14,10 @@ export default function SectionHeader({ title, actionLabel, onAction, style }) {
         style,
       ]}
     >
-      <Text style={{ ...theme.typo.heading, color: c.text }}>{title}</Text>
+      <Text numberOfLines={2} style={{ ...theme.typo.heading, color: c.text, flex: 1, minWidth: 0 }}>{title}</Text>
       {actionLabel && onAction && (
-        <TouchableOpacity onPress={onAction} style={{ flexDirection: 'row', alignItems: 'center', gap: 2 }}>
-          <Text style={{ color: c.brandText, fontWeight: '700', fontSize: 13 }}>{actionLabel}</Text>
+        <TouchableOpacity accessibilityRole="button" onPress={onAction} style={{ flexShrink: 0, flexDirection: 'row', alignItems: 'center', gap: 2 }}>
+          <Text numberOfLines={1} style={{ color: c.brandText, fontWeight: '700', fontSize: 13 }}>{actionLabel}</Text>
           <MaterialIcons name="chevron-right" size={16} color={c.brandText} />
         </TouchableOpacity>
       )}

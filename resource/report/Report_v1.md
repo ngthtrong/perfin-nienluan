@@ -23,7 +23,7 @@
 
 # TÓM TẮT
 
-PERFIN là nguyên mẫu quản lý tài chính cá nhân tập trung vào chất lượng dữ liệu và giải thuật phân tích, thay vì độ đầy đủ tính năng của một sản phẩm thương mại. Hệ thống nhận giao dịch từ văn bản, giọng nói hoặc ảnh hóa đơn, chuẩn hóa đầu vào, trích xuất bản ghi có cấu trúc và yêu cầu xác nhận trước khi ghi PostgreSQL. Các phép tính số dư, ngân sách, xu hướng, bất thường, dòng tiền, khoản định kỳ và mục tiêu do SQL cùng giải thuật xác định thực hiện. LLM chỉ hiểu ý định, chọn công cụ, điền tham số, hỏi lại khi mơ hồ và diễn giải facts đã tính; mô hình không phải nguồn số liệu tài chính. Redis quản lý trạng thái hội thoại và cache; BullMQ điều phối tác vụ định kỳ. Báo cáo trình bày mô hình dữ liệu, ranh giới LLM, luồng then chốt và giao thức đánh giá độ chính xác, tính trung thực số liệu, độ trễ, khả năng phục hồi. Sau ổn định hóa, 18/18 tệp kiểm thử backend đạt, local-parser quality gate đạt 31/31 strict và Expo web đóng gói 652 module; các số này không được suy diễn thành độ chính xác Gemini/OCR/STT hoặc tích hợp cơ sở dữ liệu thật. Chỉ phép đo có log tái lập mới được công bố là kết quả.
+PERFIN là nguyên mẫu quản lý tài chính cá nhân tập trung vào chất lượng dữ liệu và giải thuật phân tích, thay vì độ đầy đủ tính năng của một sản phẩm thương mại. Hệ thống nhận giao dịch từ văn bản, giọng nói hoặc ảnh hóa đơn, chuẩn hóa đầu vào, trích xuất bản ghi có cấu trúc và yêu cầu xác nhận trước khi ghi PostgreSQL. Các phép tính số dư, ngân sách, xu hướng, bất thường, dòng tiền, khoản định kỳ và mục tiêu do SQL cùng giải thuật xác định thực hiện. LLM chỉ hiểu ý định, chọn công cụ, điền tham số, hỏi lại khi mơ hồ và diễn giải facts đã tính; mô hình không phải nguồn số liệu tài chính. Redis quản lý trạng thái hội thoại và cache; BullMQ điều phối tác vụ định kỳ. Báo cáo trình bày mô hình dữ liệu, ranh giới LLM, luồng then chốt và giao thức đánh giá độ chính xác, tính trung thực số liệu, độ trễ, khả năng phục hồi. Sau ổn định hóa, backend đạt 100/100 test, local-parser quality gate đạt 31/31 strict, full smoke API--PostgreSQL--media đạt 23/23; Expo đóng gói web 653 module và Android 960 module. PostgreSQL demo đã được thay bằng 5.265 giao dịch có provenance từ 01/01/2022 đến 15/07/2026. Các số này không được suy diễn thành độ chính xác Gemini/OCR/STT hoặc mức sẵn sàng production; chỉ phép đo có log tái lập mới được công bố là kết quả.
 
 **Từ khóa:** quản lý tài chính cá nhân, LLM, phân tích dữ liệu, trích xuất thực thể, PostgreSQL, Redis, hệ thống có kiểm chứng.
 
@@ -646,27 +646,34 @@ Tập media cần lưu ảnh/audio gốc, transcript hoặc bảng hóa đơn ch
 
 #### 3.3.2.1. Kết quả đã đo
 
-Ngày 15/07/2026, tại workspace phát triển, ba phép kiểm tra nền được chạy. Bộ test backend và harness local parser chạy từ `demo/backend`; phép đóng gói web chạy từ `demo/frontend`:
+Ngày 16/07/2026, tại workspace phát triển, các phép kiểm tra từ unit đến runtime được chạy. Bộ test, parser harness, API smoke và media smoke chạy từ `demo/backend`; phép đóng gói và mobile-web smoke chạy từ `demo/frontend`:
 
 ```bash
 npm test
 npm run test:ai
+npm run smoke:full
 EXPO_PUBLIC_API_URL=http://127.0.0.1:3000 npx expo export \
-  --platform web --output-dir /tmp/perfin-web-final
+  --platform web --output-dir /tmp/perfin-expo-web-final
+EXPO_PUBLIC_API_URL=http://10.0.2.2:3000 npx expo export \
+  --platform android --output-dir /tmp/perfin-expo-android-final
+npm run ui:smoke -- --output-dir /home/ngthtrong/perfin-ui-smoke-start-app
 ```
 
-Baseline trước sửa lỗi có **13/13 tệp kiểm thử đạt** và local parser đạt **27/31 strict**, 2 partial, 2 fail. Hai lỗi amount là “1 triệu 5” và phép nhân “3 cái áo, mỗi cái 200k”; hai ca partial là ánh xạ `quần jeans` và `đi ăn`. Sau ổn định hóa, Node test runner báo **18/18 tệp đạt, 0 thất bại, 0 bỏ qua**, thời gian khoảng **1,028 giây**. Harness local parser đạt **31/31 strict (100%)**, 0 partial, 0 fail và trả exit code khác 0 nếu không đạt. Expo đóng gói web thành công **652 module**, bundle JavaScript khoảng **1,49 MB**.
+Baseline trước sửa lỗi có **13/13 tệp kiểm thử đạt** và local parser đạt **27/31 strict**, 2 partial, 2 fail. Hai lỗi amount là “1 triệu 5” và phép nhân “3 cái áo, mỗi cái 200k”; hai ca partial là ánh xạ `quần jeans` và `đi ăn`. Sau ổn định hóa, Node test runner báo **100/100 test đạt**, 0 thất bại; harness local parser đạt **31/31 strict (100%)**, 0 partial, 0 fail. Full smoke qua REST API, PostgreSQL và provider media thật đạt **23/23**. Expo đóng gói web thành công **653 module** và Android **960 module**. UI smoke ở viewport 390×844 xác nhận Dashboard, Report và Chat không tràn ngang; ảnh 1184×2560 hiển thị trực tiếp trong bubble chat.
 
-Các test mới khóa các lỗi transaction/post-commit, pending race, recurring period, ngày local, parser, export và time-series zero-fill. Kết quả xác nhận test tự động, local baseline và khả năng build giao diện tại đúng cấu hình đã ghi nhận. Chúng **không** phải benchmark Gemini, không chứng minh độ chính xác OCR/STT, không đo API p95 và không thay thế kiểm thử tích hợp với PostgreSQL/Redis đang chạy. Tỷ lệ 100% chỉ áp dụng cho 31 ca hard-coded của quality gate, chưa phải kết quả khái quát hóa trên tập gán nhãn độc lập.
+Các test mới khóa các lỗi transaction/post-commit, pending race, recurring period, ngày local, parser, export và time-series zero-fill. Live smoke đã chứng minh luồng HTTP--PostgreSQL, chat preview/edit/cancel, OCR 2 ảnh và STT 1 tệp M4A hoạt động trong môi trường ghi nhận. Chúng **không** phải benchmark Gemini, không chứng minh độ chính xác OCR/STT, không đo API p95 và chưa kiểm chứng worker định kỳ với Redis thật. Tỷ lệ 100% của parser chỉ áp dụng cho 31 ca hard-coded, chưa phải kết quả khái quát hóa trên tập gán nhãn độc lập.
 
 **Bảng 16. Kết quả đã đo và các phép đo còn thiếu**
 
 | Hạng mục | Kết quả | Phân loại | Ghi chú |
 |---|---|---|---|
-| `npm test` sau ổn định hóa | 18 tệp pass, 0 fail, 0 skip; ~1,028 s | **Đã đo** | Unit/service với mock/fallback; gồm transaction, concurrency, recurring và time-series |
+| `npm test` sau ổn định hóa | 100/100 test pass; 0 fail | **Đã đo** | Unit/service; gồm transaction, concurrency, recurring, health, importer và time-series |
 | Local parser trên harness cố định | 31/31 strict; 0 partial; 0 fail | **Đã đo sau sửa** | Không dùng Gemini; strict gate có exit code, nhưng 31 ca hard-coded chưa phải tập độc lập |
 | Baseline trước sửa | 13/13 tệp test; parser 27/31 strict | **Đã đo baseline** | Giữ để phân tích lỗi và chứng minh tác động của bản sửa |
-| Expo web export | 652 module; bundle ~1,49 MB; hoàn tất | **Đã đo** | Chứng minh frontend đóng gói được, không phải chỉ số hiệu năng runtime |
+| Full API/DB/media smoke | 23/23 pass | **Đã đo** | PostgreSQL live, preview/edit/cancel, OCR 2 ảnh, STT 1 M4A; Redis worker không nằm trong kết quả này |
+| Mobile-web UI smoke | 4/4 cổng pass ở 390×844 | **Đã đo** | Ba màn hình không overflow; ảnh tải lên hiển thị thật; Chromium, chưa phải thiết bị vật lý |
+| Expo web/Android export | 653 / 960 module; hoàn tất | **Đã đo** | Chứng minh frontend đóng gói được, không phải chỉ số hiệu năng runtime |
+| Import `dataFinance.csv` | 5.265 dòng, 0 reject, provenance đầy đủ | **Đã đo** | Đã chạy hai lần trên clone và đối soát live sau backup |
 | Độ chính xác text với LLM trên tập gán nhãn | Chưa công bố | **Chưa đo trong báo cáo** | Cần khóa dataset, model, prompt và cấu hình provider |
 | OCR field accuracy | Chưa công bố | **Chưa đo trong báo cáo** | Cần tập ảnh và ground truth |
 | STT WER/field accuracy | Chưa công bố | **Chưa đo trong báo cáo** | Cần tập audio và transcript chuẩn |
@@ -710,9 +717,9 @@ Kết quả chỉ được đưa vào abstract và kết luận sau khi thí ngh
 | O2 — Pipeline đa phương thức | Tool schema, parser, media adapter, preview/state | Đã hiện thực luồng; chưa có số đo accuracy khóa phiên bản |
 | O3 — Giải thuật phân tích | Hàm thuần và test analytics/goal/budget/feedback | Có bằng chứng test tự động; cần dataset đánh giá rộng hơn |
 | O4 — Ranh giới LLM | Tool declarations, facts–narrator flow, fallback | Thiết kế rõ; numeric faithfulness chưa được đo hệ thống |
-| O5 — Đánh giá vận hành | `npm test`, local-parser harness và Expo web export đã chạy | Chưa đủ kết luận tích hợp DB, hiệu năng, LLM/media accuracy hoặc UAT |
+| O5 — Đánh giá vận hành | Regression, parser, full API/DB/media smoke, mobile UI smoke và Expo web/Android export đã chạy | Lõi demo có bằng chứng runtime; chưa đủ kết luận Redis worker, hiệu năng, LLM/media accuracy hoặc UAT |
 
-Sau đợt ổn định hóa, các luồng tiền quan trọng đã có hàng rào rõ hơn: pending được claim một lần; recurring khóa hàng, dùng kỳ dự kiến và preview trước commit; lỗi cache/hydration sau commit không tạo phản hồi thất bại giả; runway/OLS dùng đủ trục lịch. Do chưa có đầy đủ integration test, benchmark AI/media/grounding và UAT, báo cáo vẫn không khẳng định nguyên mẫu đã đạt các ngưỡng NFR production.
+Sau đợt ổn định hóa, các luồng tiền quan trọng đã có hàng rào rõ hơn: pending được claim một lần; recurring khóa hàng, dùng kỳ dự kiến và preview trước commit; lỗi cache/hydration sau commit không tạo phản hồi thất bại giả; runway/OLS dùng đủ trục lịch. Dữ liệu tổng hợp cũ đã được thay bằng 5.265 giao dịch gần bốn năm qua pipeline nguyên tử. Do chưa có Redis worker live, benchmark AI/media/grounding, đo tải và UAT, báo cáo vẫn không khẳng định nguyên mẫu đã đạt các ngưỡng NFR production.
 
 ## 4.2. HẠN CHẾ
 
@@ -721,8 +728,8 @@ Sau đợt ổn định hóa, các luồng tiền quan trọng đã có hàng r�
 3. Các ngưỡng anomaly, fuzzy, recurring và correlation hiện là cấu hình khởi đầu, chưa được tối ưu trên tập dữ liệu đại diện.
 4. Runway và trend đã dùng ngày/tháng zero-fill nhưng vẫn là ngoại suy đơn giản, không mô hình hóa sự kiện tương lai, mùa vụ hoặc thu nhập bất thường.
 5. Persona có thể làm phản hồi hấp dẫn hơn nhưng hiệu quả hành vi chưa được chứng minh bằng UAT.
-6. Dữ liệu demo ngắn hạn có thể làm các insight về tương quan và recurring thiếu ổn định.
-7. Bộ test hiện có chưa thay thế kiểm thử end-to-end với PostgreSQL, Redis và provider thật.
+6. Dataset đã dài hơn về thời gian nhưng taxonomy ánh xạ mất mát, có khoảng trống đầu chuỗi và năm 2026 chưa đầy đủ.
+7. Luồng API--PostgreSQL và provider media đã smoke test; Redis worker, retry/idempotency live và nhiều thiết bị mobile vẫn chưa được kiểm chứng.
 
 ## 4.3. HƯỚNG PHÁT TRIỂN
 

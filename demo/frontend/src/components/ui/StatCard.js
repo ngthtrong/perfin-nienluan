@@ -44,8 +44,13 @@ export default function StatCard({ label, value, icon, tone = 'neutral', style }
           <MaterialIcons name={icon} size={18} color={toneMap.fg} />
         </View>
       )}
-      <Text style={{ ...theme.typo.caption, color: c.textMuted, marginBottom: 3 }}>{label}</Text>
-      <Text style={{ fontSize: 18, fontWeight: '900', color: tone === 'neutral' ? c.text : toneMap.fg }}>
+      <Text numberOfLines={1} style={{ ...theme.typo.caption, color: c.textMuted, marginBottom: 3 }}>{label}</Text>
+      <Text
+        numberOfLines={1}
+        adjustsFontSizeToFit
+        minimumFontScale={0.68}
+        style={{ fontSize: 18, fontWeight: '900', color: tone === 'neutral' ? c.text : toneMap.fg }}
+      >
         {value}
       </Text>
     </View>

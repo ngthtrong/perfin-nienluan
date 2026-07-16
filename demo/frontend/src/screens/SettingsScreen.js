@@ -148,7 +148,7 @@ export default function SettingsScreen() {
         </View>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
           <Text style={{ ...theme.typo.body, color: c.textSecondary }}>Máy chủ</Text>
-          <Text style={{ ...theme.typo.caption, color: c.textMuted }} numberOfLines={1}>{api.getBaseUrl()}</Text>
+          <Text style={{ ...theme.typo.caption, color: c.textMuted, flex: 1, minWidth: 0, marginLeft: 16, textAlign: 'right' }} numberOfLines={1}>{api.getBaseUrl()}</Text>
         </View>
       </Card>
     </Screen>

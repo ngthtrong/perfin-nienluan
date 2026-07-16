@@ -12,6 +12,7 @@ import { useTheme } from '../theme/ThemeContext';
 import TransactionPreviewCard from '../components/TransactionPreviewCard';
 import MultiTransactionPreviewCard from '../components/MultiTransactionPreviewCard';
 import MediaConfirmationCard from '../components/MediaConfirmationCard';
+import ChatImagePreview from '../components/ChatImagePreview';
 import AppIcon from '../components/AppIcon';
 import { AppHeader } from '../components/ui';
 
@@ -118,28 +119,32 @@ export default function ChatScreen() {
   async function loadHistory() {
     setHistoryLoading(true);
     try {
-      const historyRes = await fetch(`${api.getBaseUrl()}/api/chat/messages?limit=20`);
-      if (historyRes.ok) {
-        const data = await historyRes.json();
-        const history = (data.data || []).map((msg) => ({
+      const data = await api.getChatMessages(20);
+      const history = (data.data || []).map((msg) => {
+        const metadata = msg.metadata && typeof msg.metadata === 'object' && !Array.isArray(msg.metadata)
+          ? msg.metadata
+          : {};
+        return {
+          ...msg,
+          ...metadata,
+          metadata,
           id: msg.id,
           role: msg.role,
-          ...(msg.metadata || {}),
-          type: msg.metadata?.type || 'text',
-          text: msg.content || msg.metadata?.message || '',
-        }));
-        const reminders = (data.reminders || []).map((r, idx) => ({
-          id: `reminder-${idx}-${Date.now()}`,
-          role: 'assistant',
-          type: 'text',
-          text: r.message,
-        }));
-        const combined = [...history, ...reminders];
-        if (combined.length > 0) {
-          setMessages(combined);
-          setHistoryLoading(false);
-          return;
-        }
+          type: metadata.type || msg.type || 'text',
+          text: msg.content || metadata.message || msg.text || '',
+        };
+      });
+      const reminders = (data.reminders || []).map((r, idx) => ({
+        id: `reminder-${idx}-${Date.now()}`,
+        role: 'assistant',
+        type: 'text',
+        text: r.message,
+      }));
+      const combined = [...history, ...reminders];
+      if (combined.length > 0) {
+        setMessages(combined);
+        setHistoryLoading(false);
+        return;
       }
     } catch (_) {}
     setMessages([{
@@ -257,6 +262,8 @@ export default function ChatScreen() {
 
   async function pickImage(useCamera) {
     if (loading) return;
+    let imageMessageId = null;
+    let imageAnalyzed = false;
     try {
       const permission = useCamera
         ? await ImagePicker.requestCameraPermissionsAsync()
@@ -274,15 +281,27 @@ export default function ChatScreen() {
 
       setImageLoading(true);
       const asset = result.assets[0];
-      push({
+      const image = {
+        uri: asset.uri,
+        width: asset.width,
+        height: asset.height,
+        mimeType: asset.mimeType || null,
+        fileName: asset.fileName || null,
+        ...(asset.base64 ? { base64: asset.base64 } : {}),
+      };
+      imageMessageId = push({
         role: 'user',
         type: 'image',
         text: useCamera ? '📸 Đã chụp ảnh hóa đơn' : '🖼️ Đã chọn ảnh hóa đơn',
         imageUri: asset.uri,
+        image,
+        mediaStatus: 'analyzing',
       });
       const response = await api.extractImageText(asset);
       const extractedText = String(response.text || '').trim();
       if (!extractedText) throw new Error('Ảnh hóa đơn không có nội dung để xử lý');
+      imageAnalyzed = true;
+      updateMessage(imageMessageId, { mediaStatus: 'analyzed' });
       if (response.receipt_options) {
         push({
           role: 'assistant',
@@ -304,6 +323,7 @@ export default function ChatScreen() {
         await send(extractedText, { pushUser: false });
       }
     } catch (error) {
+      if (imageMessageId && !imageAnalyzed) updateMessage(imageMessageId, { mediaStatus: 'failed' });
       push({ role: 'system', type: 'text', text: error.message });
     } finally {
       setImageLoading(false);
@@ -471,14 +491,14 @@ export default function ChatScreen() {
             <AppIcon name="auto-awesome" size={12} color={c.onBrand} />
           </View>
         )}
-        <View style={[styles.bubble, isUser ? styles.userBubble : styles.aiBubble]}>
-          {item.type === 'image' && (
-            <View style={styles.imageTag}>
-              <AppIcon name="image" size={14} color={c.brandText} />
-              <Text style={styles.imageTagText}>Ảnh hóa đơn</Text>
-            </View>
-          )}
-          <Text style={isUser ? styles.userText : styles.aiText}>{item.text}</Text>
+        <View style={[
+          styles.bubble,
+          isUser ? styles.userBubble : styles.aiBubble,
+          item.type === 'image' && styles.imageBubble,
+        ]}>
+          {item.type === 'image'
+            ? <ChatImagePreview message={item} isUser={isUser} />
+            : <Text style={isUser ? styles.userText : styles.aiText}>{item.text}</Text>}
         </View>
       </View>
     );
@@ -553,7 +573,7 @@ export default function ChatScreen() {
           <FlatList
             ref={listRef}
             data={messages}
-            keyExtractor={(item) => item.id}
+            keyExtractor={(item) => String(item.id)}
             renderItem={renderItem}
             contentContainerStyle={styles.list}
             onContentSizeChange={scrollToBottom}
@@ -578,6 +598,8 @@ export default function ChatScreen() {
               onPress={isRecording ? stopRecording : startRecording}
               disabled={isLoadingAny && !isRecording}
               activeOpacity={0.75}
+              accessibilityRole="button"
+              accessibilityLabel={isRecording ? 'Dừng ghi âm' : 'Ghi âm giao dịch'}
             >
               <AppIcon name={isRecording ? 'stop' : 'mic'} size={20} color={isRecording ? '#fff' : c.brand} />
             </TouchableOpacity>
@@ -596,17 +618,35 @@ export default function ChatScreen() {
 
             {!isRecording && !input.trim() && (
               <>
-                <TouchableOpacity style={styles.iconBtn} onPress={() => pickImage(true)} disabled={isLoadingAny}>
+                <TouchableOpacity
+                  style={styles.iconBtn}
+                  onPress={() => pickImage(true)}
+                  disabled={isLoadingAny}
+                  accessibilityRole="button"
+                  accessibilityLabel="Chụp ảnh hóa đơn"
+                >
                   <AppIcon name="photo-camera" size={20} color={imageLoading ? c.textMuted : c.textSecondary} />
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.iconBtn} onPress={() => pickImage(false)} disabled={isLoadingAny}>
+                <TouchableOpacity
+                  style={styles.iconBtn}
+                  onPress={() => pickImage(false)}
+                  disabled={isLoadingAny}
+                  accessibilityRole="button"
+                  accessibilityLabel="Chọn ảnh hóa đơn"
+                >
                   <AppIcon name="image" size={20} color={imageLoading ? c.textMuted : c.textSecondary} />
                 </TouchableOpacity>
               </>
             )}
 
             {!isRecording && input.trim().length > 0 && (
-              <TouchableOpacity style={styles.sendBtn} onPress={() => send()} disabled={isLoadingAny}>
+              <TouchableOpacity
+                style={styles.sendBtn}
+                onPress={() => send()}
+                disabled={isLoadingAny}
+                accessibilityRole="button"
+                accessibilityLabel="Gửi tin nhắn"
+              >
                 <AppIcon name="send" size={18} color="#fff" />
               </TouchableOpacity>
             )}
@@ -629,6 +669,7 @@ const createStyles = (t) => StyleSheet.create({
   aiPillText: { fontSize: 12, color: t.colors.textSecondary, fontWeight: '700' },
 
   aiPanel: {
+    width: '100%', maxWidth: 720, alignSelf: 'center',
     backgroundColor: t.colors.surface, paddingHorizontal: 12, paddingBottom: 12, paddingTop: 4,
     borderBottomWidth: 1, borderBottomColor: t.colors.border,
   },
@@ -655,7 +696,7 @@ const createStyles = (t) => StyleSheet.create({
   historyLoading: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 10 },
   historyLoadingText: { color: t.colors.textMuted, fontSize: 14 },
 
-  list: { padding: 16, paddingBottom: 8 },
+  list: { width: '100%', maxWidth: 720, alignSelf: 'center', padding: 16, paddingBottom: 8 },
   msgRow: { flexDirection: 'row', alignItems: 'flex-end', marginBottom: 12, gap: 8 },
   msgRowUser: { justifyContent: 'flex-end' },
   msgRowAI: { justifyContent: 'flex-start' },
@@ -664,6 +705,7 @@ const createStyles = (t) => StyleSheet.create({
     alignItems: 'center', justifyContent: 'center', marginBottom: 2, ...t.shadows.sm,
   },
   bubble: { maxWidth: '78%', paddingVertical: 10, paddingHorizontal: 14, borderRadius: 18 },
+  imageBubble: { width: '78%', maxWidth: 280, padding: 4, overflow: 'hidden' },
   userBubble: { backgroundColor: t.colors.brand, borderBottomRightRadius: 4, ...t.shadows.sm },
   aiBubble: {
     backgroundColor: t.colors.surface, borderBottomLeftRadius: 4,
@@ -671,12 +713,6 @@ const createStyles = (t) => StyleSheet.create({
   },
   userText: { color: '#fff', fontSize: 15, lineHeight: 21 },
   aiText: { color: t.colors.text, fontSize: 15, lineHeight: 21 },
-
-  imageTag: {
-    flexDirection: 'row', alignItems: 'center', gap: 5, marginBottom: 6, paddingBottom: 6,
-    borderBottomWidth: 1, borderBottomColor: t.colors.border,
-  },
-  imageTagText: { fontSize: 12, color: t.colors.brandText, fontWeight: '700' },
 
   systemMsgWrap: { alignItems: 'center', marginBottom: 10 },
   systemMsg: {
@@ -715,7 +751,7 @@ const createStyles = (t) => StyleSheet.create({
     backgroundColor: t.colors.surface, borderTopWidth: 1, borderTopColor: t.colors.border,
     paddingHorizontal: 12, paddingVertical: 10, ...t.shadows.sm,
   },
-  inputRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 8 },
+  inputRow: { width: '100%', maxWidth: 720, alignSelf: 'center', flexDirection: 'row', alignItems: 'flex-end', gap: 8 },
   micBtn: {
     width: 44, height: 44, borderRadius: 22, backgroundColor: t.colors.brandSoft,
     alignItems: 'center', justifyContent: 'center', borderWidth: 1.5, borderColor: t.colors.brand,

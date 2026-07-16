@@ -154,7 +154,7 @@ export default function MultiTransactionPreviewCard({
                       <Text style={styles.category}>{transaction.category_name || 'Chưa phân loại'}</Text>
                     </View>
                     <View style={styles.amountColumn}>
-                      <Text style={[styles.amount, { color: income ? c.income : c.expense }]}>
+                      <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.68} style={[styles.amount, { color: income ? c.income : c.expense }]}>
                         {income ? '+' : '-'}{formatVND(transaction.amount)}
                       </Text>
                       {!resolved && (
@@ -172,8 +172,8 @@ export default function MultiTransactionPreviewCard({
         </View>
 
         <View style={styles.totalRow}>
-          {expenseTotal > 0 && <Text style={styles.totalExpense}>Chi {formatVND(expenseTotal)}</Text>}
-          {incomeTotal > 0 && <Text style={styles.totalIncome}>Thu {formatVND(incomeTotal)}</Text>}
+          {expenseTotal > 0 && <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.72} style={styles.totalExpense}>Chi {formatVND(expenseTotal)}</Text>}
+          {incomeTotal > 0 && <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.72} style={styles.totalIncome}>Thu {formatVND(incomeTotal)}</Text>}
         </View>
 
         {resolved ? (
@@ -226,7 +226,7 @@ const createStyles = (t) => StyleSheet.create({
   typeIcon: { width: 30, height: 30, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
   description: { color: t.colors.text, fontSize: 13, lineHeight: 18, fontWeight: '700' },
   category: { color: t.colors.textMuted, fontSize: 11, fontWeight: '600', marginTop: 2 },
-  amountColumn: { alignItems: 'flex-end', maxWidth: '38%' },
+  amountColumn: { flexShrink: 1, alignItems: 'flex-end', maxWidth: '40%' },
   amount: { fontSize: 12, fontWeight: '900' },
   editIcon: { flexDirection: 'row', alignItems: 'center', gap: 3, paddingTop: 5, paddingLeft: 8 },
   editLabel: { color: t.colors.brandText, fontSize: 10, fontWeight: '700' },
@@ -256,7 +256,7 @@ const createStyles = (t) => StyleSheet.create({
   },
   closeEditText: { color: t.colors.textMuted, fontSize: 12, fontWeight: '700' },
   totalRow: {
-    flexDirection: 'row', justifyContent: 'flex-end', gap: 12, paddingHorizontal: 14, paddingVertical: 10,
+    flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'flex-end', gap: 8, paddingHorizontal: 14, paddingVertical: 10,
     borderTopWidth: 1, borderTopColor: t.colors.border, backgroundColor: t.colors.surfaceAlt,
   },
   totalExpense: { color: t.colors.expense, fontSize: 12, fontWeight: '800' },

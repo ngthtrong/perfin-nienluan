@@ -1,0 +1,213 @@
+{
+  "surface": "report",
+  "manifest": {
+    "version": 1,
+    "surface": "report",
+    "title": "Báo cáo kiểm chứng demo PerFin — 16/07/2026",
+    "description": "Kết quả ổn định hóa giao diện, dữ liệu, API và các luồng đa phương thức trọng yếu của nguyên mẫu niên luận.",
+    "generatedAt": "2026-07-16T01:39:04+07:00",
+    "charts": [
+      {
+        "id": "year_coverage_chart",
+        "title": "Số giao dịch theo năm trong dữ liệu đã import",
+        "subtitle": "2022–2026; năm 2026 chỉ gồm dữ liệu đến 15/07 và không thể so như một năm đầy đủ.",
+        "type": "bar",
+        "dataset": "year_coverage",
+        "sourceId": "year_coverage_sql",
+        "valueFormat": "number",
+        "encodings": {
+          "x": {
+            "field": "year",
+            "type": "nominal",
+            "label": "Năm"
+          },
+          "y": {
+            "field": "record_count",
+            "type": "quantitative",
+            "label": "Số giao dịch"
+          },
+          "tooltip": [
+            {
+              "field": "period_status",
+              "type": "nominal",
+              "label": "Độ đầy đủ kỳ"
+            },
+            {
+              "field": "share_total",
+              "type": "quantitative",
+              "label": "Tỷ trọng tổng số dòng",
+              "format": "percent"
+            }
+          ]
+        }
+      }
+    ],
+    "sources": [
+      {
+        "id": "verification_evidence",
+        "label": "Nhật ký kiểm chứng demo ngày 16/07/2026",
+        "path": "resource/report/evidence/Demo_Verification_2026-07-16.md"
+      },
+      {
+        "id": "data_quality_report",
+        "label": "Báo cáo chất lượng và pipeline dữ liệu demo",
+        "path": "demo/data/DATA_QUALITY_REPORT.md"
+      },
+      {
+        "id": "year_coverage_sql",
+        "label": "Truy vấn độ phủ giao dịch theo năm"
+      },
+      {
+        "id": "system_report",
+        "label": "Báo cáo kỹ thuật PerFin v1",
+        "path": "resource/report/Report_v1.md"
+      }
+    ],
+    "blocks": [
+      {
+        "id": "title",
+        "type": "markdown",
+        "body": "# Báo cáo kiểm chứng demo PerFin — 16/07/2026"
+      },
+      {
+        "id": "technical_summary",
+        "type": "markdown",
+        "sourceId": "verification_evidence",
+        "body": "## Kết luận kỹ thuật\n\n- **Demo cốt lõi đã hoạt động bình thường trong môi trường kiểm tra.** Backend đạt 100/100 test; full smoke đạt 23/23; UI mobile-web không tràn ngang ở Dashboard, Report và Chat; ảnh tải lên hiển thị trực tiếp trong hội thoại.\n- **Dữ liệu demo đã được thay thật, không còn là kế hoạch.** PostgreSQL hiện chứa 5.265 giao dịch từ 01/01/2022 đến 15/07/2026, có provenance đầy đủ và đã đối soát tổng thu, tổng chi, net cùng số dư ví.\n- **LLM có vai trò hỗ trợ ngôn ngữ, không thay giải thuật tài chính.** Số liệu vẫn do SQL và các service xác định tính; Gemini chỉ cấu trúc đầu vào và diễn giải facts trong luồng có preview/xác nhận.\n- **Một giới hạn hạ tầng còn minh bạch:** Redis không có trong WSL hiện tại nên worker định kỳ bị tắt có kiểm soát; API cốt lõi tiếp tục chạy bằng fallback bộ nhớ và readiness báo `degraded`, không giả vờ `ready` hoàn toàn."
+      },
+      {
+        "id": "key_findings",
+        "type": "markdown",
+        "sourceId": "verification_evidence",
+        "body": "## Luồng cốt lõi đã đi hết từ giao diện đến dữ liệu\n\nLuồng văn bản và media đều đi qua API thật: tạo preview, sửa hoặc hủy pending transaction, OCR hai ảnh, nhận dạng một tệp M4A và đọc lại lịch sử chat. UI smoke tiếp tục kiểm tra ở viewport 390×844 sau khi ứng dụng được khởi động bằng script chính. Vì vậy bằng chứng không chỉ là unit test hay bundle build; nó bao phủ cả runtime trình duyệt, REST API và PostgreSQL đang chạy.\n\nĐiểm cần diễn giải đúng là mỗi cổng chỉ chứng minh phạm vi ghi trong bảng. Ví dụ Android export chứng minh bundle tạo được nhưng chưa chứng minh trải nghiệm trên thiết bị vật lý; 31/31 parser là baseline xác định, không phải độ chính xác của Gemini.\n\n| Hạng mục | Kết quả | Phạm vi chứng minh |\n|---|---:|---|\n| Backend regression | 100/100 PASS | Service/model/router có test |\n| Local parser | 31/31 strict PASS | Baseline cục bộ, không phải Gemini |\n| API + DB + media | 23/23 PASS | PostgreSQL, chat preview/edit/cancel, OCR và STT |\n| Mobile-web UI | 4/4 cổng PASS | Không overflow ở 3 màn hình; ảnh hiển thị thật |\n| Expo web export | PASS — 653 module | Khả năng đóng gói web |\n| Expo Android export | PASS — 960 module | Khả năng đóng gói Android |\n| Startup script | PASS | Backend + Expo; graceful degradation khi thiếu Redis |"
+      },
+      {
+        "id": "data_finding",
+        "type": "markdown",
+        "sourceId": "data_quality_report",
+        "body": "## Dataset gần bốn năm đã thay thế dữ liệu tổng hợp và đối soát được\n\nPipeline import kiểm tra checksum, schema, ngày, tiền, dấu thu/chi và taxonomy trước khi ghi. Khi apply, toàn bộ thao tác nằm trong một database transaction, khóa theo user/ví, trừ contribution dữ liệu cũ, batch insert dữ liệu mới và chỉ commit nếu số dòng cùng các tổng khớp. Chạy hai lần trên database clone giữ nguyên kết quả, sau đó live import tạo đúng 5.265 giao dịch.\n\n24 dòng exact-match được giữ vì CSV không có transaction ID hoặc thời điểm để chứng minh đó là bản sao. 621 giá trị vượt ngưỡng IQR cũng chỉ được gắn cờ: phân bố chi tiêu lệch phải và có khoản lớn hợp lệ, nên tự động xóa sẽ làm sai dữ liệu nghiên cứu.\n\n| Chỉ số đối soát live | Kết quả |\n|---|---:|\n| Giao dịch active | 5.265 |\n| Thu / chi | 420 / 4.845 |\n| Khoảng ngày | 01/01/2022 – 15/07/2026 |\n| Tổng thu | 393.770.659 VND |\n| Tổng chi | 393.176.659 VND |\n| Net / số dư ví Tiền mặt | 594.000 VND |\n| Dòng có provenance | 5.265 / 5.265 |\n| Dòng bị reject | 0 |"
+      },
+      {
+        "id": "year_coverage_interpretation",
+        "type": "markdown",
+        "sourceId": "data_quality_report",
+        "body": "### Độ phủ dữ liệu tập trung ở 2023–2024, không thể suy diễn 2026 là giảm cả năm\n\nBiểu đồ cột dùng năm như các kỳ rời rạc để cho thấy độ phủ mẫu: 2023 có 1.567 giao dịch và 2024 có 1.525, cao hơn các năm còn lại. Năm 2022 có khoảng trống từ tháng 02 đến tháng 08; năm 2026 chỉ quan sát đến 15/07. Vì vậy biểu đồ hỗ trợ đánh giá độ phủ dữ liệu, không phải bằng chứng về xu hướng hành vi chi tiêu."
+      },
+      {
+        "id": "year_coverage_visual",
+        "type": "chart",
+        "chartId": "year_coverage_chart"
+      },
+      {
+        "id": "scope_definitions",
+        "type": "markdown",
+        "sourceId": "system_report",
+        "body": "## Phạm vi niên luận: dữ liệu và giải thuật là trọng tâm\n\n**Đơn vị quan sát dữ liệu** là một giao dịch thu hoặc chi đã xác nhận. **Nguồn chuẩn** là PostgreSQL; Redis chỉ giữ state ngắn hạn/cache và BullMQ dùng Redis cho job chủ động. **Giải thuật xác định** chịu trách nhiệm số dư, tổng hợp, ngân sách, xu hướng, bất thường, dòng tiền, khoản định kỳ và mục tiêu. **LLM** hiểu ý định, điền tham số, hỏi lại và diễn giải kết quả đã tính.\n\nRanh giới này giúp đánh giá đúng đề tài cơ sở ngành: chất lượng dữ liệu, tính đúng của biến đổi, thuật toán và khả năng kiểm chứng được ưu tiên hơn việc mô phỏng đầy đủ mọi chức năng của một sản phẩm thương mại. Mọi thao tác ghi do chat/media khởi tạo vẫn phải qua preview và xác nhận."
+      },
+      {
+        "id": "methodology",
+        "type": "markdown",
+        "sourceId": "verification_evidence",
+        "body": "## Phương pháp kiểm chứng giảm rủi ro theo từng lớp\n\n1. Chạy regression và quality gate cục bộ để khóa công thức, parser và các lỗi concurrency/transaction đã sửa.\n2. Dry-run CSV, kiểm tra mapping/checksum; chạy replace hai lần trên clone để chứng minh tính tái lập.\n3. Backup PostgreSQL, import live và truy vấn đối soát row count, loại, thời gian, tổng tiền, provenance và số dư ví.\n4. Chạy full API smoke với database và provider media thật.\n5. Khởi động qua `start-app.sh`, chạy Chromium mobile smoke, kiểm tra overflow và ảnh thực trong chat.\n6. Export cả web/Android, kiểm tra dependency Expo và vệ sinh diff.\n\nCác bước này cho bằng chứng theo lớp và giúp định vị lỗi: test xác định, dữ liệu, tích hợp API/provider, giao diện runtime, rồi khả năng đóng gói."
+      },
+      {
+        "id": "limitations",
+        "type": "markdown",
+        "sourceId": "verification_evidence",
+        "body": "## Kết luận chưa bao phủ Redis worker, độ chính xác mô hình và production\n\n- Redis/Docker không khả dụng trong WSL nên scheduled/proactive jobs chưa được chạy live; hệ thống chủ động báo degraded và tắt worker thay vì lặp lỗi.\n- OCR 2/2 ảnh và STT 1/1 audio chỉ chứng minh khả dụng. Không có ground truth đủ để công bố accuracy, CER hoặc WER; thời gian một lần chạy cũng không phải p50/p95.\n- UI smoke chỉ bao phủ Chromium 390×844; chưa chứng nhận thiết bị vật lý, nhiều engine, accessibility toàn diện hay pixel parity.\n- Audit production dependencies còn 12 cảnh báo moderate, 0 high và 0 critical. Bản sửa đề xuất yêu cầu nâng major Expo nên cần một nhánh migration riêng.\n- Taxonomy CSV bị gộp mất mát và media fixture có PII/EXIF; chúng phù hợp demo nội bộ nhưng chưa phù hợp công bố nguyên trạng."
+      },
+      {
+        "id": "next_steps",
+        "type": "markdown",
+        "body": "## Bước tiếp theo nên ưu tiên khả năng đánh giá, không mở rộng tính năng dàn trải\n\n1. Bật Redis trong môi trường có Docker/WSL integration, chạy lại worker jobs và kiểm tra idempotency/retry.\n2. Tạo bộ dữ liệu gán nhãn, ẩn danh cho text/OCR/STT để đo precision, recall, field accuracy, CER/WER và numeric faithfulness của narrator.\n3. Redact hai ảnh, xóa EXIF/GPS và bổ sung transcript chuẩn cho audio.\n4. Tách taxonomy `Vay/Cho vay`, `Gia đình`, `Bán tài sản` nếu đây là biến nghiên cứu quan trọng.\n5. Thực hiện migration Expo 57 riêng, chạy lại export, UI smoke và audit trước khi nhận breaking changes.\n6. Chuyển bản backup ra khỏi `/tmp` nếu cần giữ làm điểm phục hồi dài hạn."
+      },
+      {
+        "id": "further_questions",
+        "type": "markdown",
+        "body": "## Các câu hỏi còn mở cho phần đánh giá niên luận\n\n- Bộ test độc lập cần bao nhiêu biến thể ngôn ngữ và category để phản ánh đủ dữ liệu tiếng Việt thực tế?\n- Ground truth nào được dùng khi một giao dịch có thể hợp lý ở nhiều category?\n- Mức cải thiện nào của LLM so với form/parser cục bộ đủ để biện minh chi phí, độ trễ và rủi ro?\n- Ngưỡng anomaly nên được cá nhân hóa theo category/tháng thế nào để không đánh dấu quá nhiều khoản lớn hợp lệ?\n- Những chỉ số nào cần đo lại khi Redis worker và thiết bị mobile thật được bổ sung?"
+      }
+    ]
+  },
+  "snapshot": {
+    "version": 1,
+    "generatedAt": "2026-07-16T01:39:04+07:00",
+    "status": "ready",
+    "datasets": {
+      "year_coverage": [
+        {
+          "year": "2022",
+          "record_count": 540,
+          "period_status": "Thiếu tháng 02–08",
+          "share_total": 0.1025641026
+        },
+        {
+          "year": "2023",
+          "record_count": 1567,
+          "period_status": "Đủ năm",
+          "share_total": 0.2976258309
+        },
+        {
+          "year": "2024",
+          "record_count": 1525,
+          "period_status": "Đủ năm",
+          "share_total": 0.2896486229
+        },
+        {
+          "year": "2025",
+          "record_count": 1050,
+          "period_status": "Đủ năm",
+          "share_total": 0.1994301994
+        },
+        {
+          "year": "2026",
+          "record_count": 583,
+          "period_status": "Đến 15/07",
+          "share_total": 0.1107312441
+        }
+      ]
+    },
+    "accessIssues": []
+  },
+  "sources": [
+    {
+      "id": "verification_evidence",
+      "label": "Nhật ký kiểm chứng demo ngày 16/07/2026",
+      "path": "resource/report/evidence/Demo_Verification_2026-07-16.md",
+      "description": "Kết quả lệnh kiểm thử, build, smoke, môi trường và giới hạn diễn giải được ghi lại trong phiên làm việc."
+    },
+    {
+      "id": "data_quality_report",
+      "label": "Báo cáo chất lượng và pipeline dữ liệu demo",
+      "path": "demo/data/DATA_QUALITY_REPORT.md",
+      "description": "Hồ sơ CSV, mapping taxonomy, cơ chế import nguyên tử và đối soát PostgreSQL live."
+    },
+    {
+      "id": "year_coverage_sql",
+      "label": "Truy vấn độ phủ giao dịch theo năm",
+      "description": "Đếm số giao dịch đã import theo năm lịch cho default_user.",
+      "query": {
+        "engine": "postgresql",
+        "language": "sql",
+        "sql": "SELECT EXTRACT(YEAR FROM transaction_date)::int AS year, COUNT(*)::int AS record_count FROM transactions WHERE user_id = $1 AND ai_parsed->'import'->>'dataset' = $2 GROUP BY 1 ORDER BY 1",
+        "description": "Đếm số giao dịch dataFinance.csv của user demo theo năm lịch.",
+        "executed_at": "2026-07-16T01:43:00+07:00",
+        "tables_used": [
+          "public.transactions"
+        ],
+        "filters": [
+          "user_id = default_user",
+          "ai_parsed.import.dataset = dataFinance.csv"
+        ],
+        "metric_definitions": {
+          "record_count": "COUNT(*) theo năm của transaction_date, chỉ gồm giao dịch live có provenance dataFinance.csv của default_user."
+        }
+      }
+    },
+    {
+      "id": "system_report",
+      "label": "Báo cáo kỹ thuật PerFin v1",
+      "path": "resource/report/Report_v1.md",
+      "description": "Phạm vi niên luận, kiến trúc, ranh giới LLM–giải thuật và thiết kế đích của hệ thống."
+    }
+  ]
+}

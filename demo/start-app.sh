@@ -286,8 +286,16 @@ start_worker() {
 
   if kill -0 "$WORKER_PID" 2>/dev/null; then
     log "Worker đang chạy (PID $WORKER_PID)."
+  elif grep -q 'not started (redis_unavailable)' "$WORKER_LOG" 2>/dev/null; then
+    log "Worker chủ động tắt vì Redis không khả dụng; API và bộ nhớ fallback vẫn hoạt động."
+    WORKER_PID=""
+  elif grep -q 'not started (jobs_disabled)' "$WORKER_LOG" 2>/dev/null; then
+    log "Worker đã tắt theo cấu hình JOBS_ENABLED."
+    WORKER_PID=""
   else
-    log "WARN: Worker có thể đã thoát. Xem log: $WORKER_LOG"
+    log "WARN: Worker thoát ngoài dự kiến. Log gần nhất:"
+    tail -n 20 "$WORKER_LOG" >&2 || true
+    WORKER_PID=""
   fi
 }
 

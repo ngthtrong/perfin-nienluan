@@ -10,7 +10,7 @@ import AppIcon from '../components/AppIcon';
 
 function DashboardSkeleton({ styles }) {
   return (
-    <View style={{ padding: 16 }}>
+    <View style={styles.skeletonContent}>
       <View style={[styles.balanceCard, { marginBottom: 14 }]}>
         <Skeleton height={12} width="35%" />
         <Skeleton height={40} style={{ marginTop: 12 }} />
@@ -100,12 +100,12 @@ export default function DashboardScreen({ navigation }) {
           <View style={styles.balanceHeader}>
             <View style={styles.walletChip}>
               <AppIcon name="account-balance-wallet" size={13} color={c.brandText} />
-              <Text style={styles.walletLabel}>Số dư khả dụng</Text>
+              <Text numberOfLines={1} style={styles.walletLabel}>Số dư khả dụng</Text>
             </View>
-            <Text style={styles.periodLabel}>Tháng {period.month}/{period.year}</Text>
+            <Text numberOfLines={1} style={styles.periodLabel}>Tháng {period.month}/{period.year}</Text>
           </View>
 
-          <Text style={styles.balanceAmount}>{formatVND(state.balance)}</Text>
+          <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.66} style={styles.balanceAmount}>{formatVND(state.balance)}</Text>
 
           <View style={[styles.netBadge, { backgroundColor: netPositive ? c.incomeSoft : c.expenseSoft }]}>
             <AppIcon name={netPositive ? 'arrow-upward' : 'arrow-downward'} size={13} color={netPositive ? c.income : c.expense} />
@@ -144,7 +144,7 @@ export default function DashboardScreen({ navigation }) {
               <View style={[styles.navIcon, { backgroundColor: item.bg }]}>
                 <AppIcon name={item.icon} size={20} color={item.tone} />
               </View>
-              <Text style={styles.navLabel}>{item.label}</Text>
+              <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={styles.navLabel}>{item.label}</Text>
             </TouchableOpacity>
           ))}
         </View>
@@ -170,7 +170,8 @@ export default function DashboardScreen({ navigation }) {
 
 const createStyles = (t) => StyleSheet.create({
   safe: { flex: 1, backgroundColor: t.colors.bg },
-  content: { padding: 16, paddingBottom: 32 },
+  content: { width: '100%', maxWidth: 720, alignSelf: 'center', padding: 16, paddingBottom: 32 },
+  skeletonContent: { width: '100%', maxWidth: 720, alignSelf: 'center', padding: 16 },
 
   balanceCard: {
     backgroundColor: t.colors.surface,
@@ -181,13 +182,14 @@ const createStyles = (t) => StyleSheet.create({
     marginBottom: 14,
     ...t.shadows.sm,
   },
-  balanceHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 },
+  balanceHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 12 },
   walletChip: {
     flexDirection: 'row', alignItems: 'center', gap: 5,
     backgroundColor: t.colors.brandSoft, paddingHorizontal: 10, paddingVertical: 5, borderRadius: t.radius.pill,
+    flexShrink: 1, minWidth: 0,
   },
   walletLabel: { color: t.colors.brandText, fontWeight: '700', fontSize: 12 },
-  periodLabel: { fontSize: 12, color: t.colors.textMuted, fontWeight: '600' },
+  periodLabel: { flexShrink: 0, fontSize: 12, color: t.colors.textMuted, fontWeight: '600' },
   balanceAmount: { fontSize: 34, fontWeight: '900', color: t.colors.text, marginBottom: 12 },
 
   netBadge: {

@@ -48,10 +48,10 @@ export default function ListRow({
           <MaterialIcons name={icon} size={20} color={iconColor || c.brand} />
         </View>
       )}
-      <View style={{ flex: 1 }}>
-        <Text style={{ ...theme.typo.bodyStrong, color: c.text }}>{title}</Text>
+      <View style={{ flex: 1, minWidth: 0 }}>
+        <Text numberOfLines={1} style={{ ...theme.typo.bodyStrong, color: c.text }}>{title}</Text>
         {subtitle && (
-          <Text style={{ ...theme.typo.caption, color: c.textMuted, marginTop: 2 }}>{subtitle}</Text>
+          <Text numberOfLines={2} style={{ ...theme.typo.caption, color: c.textMuted, marginTop: 2 }}>{subtitle}</Text>
         )}
       </View>
       {trailing}
@@ -61,7 +61,7 @@ export default function ListRow({
 
   if (onPress) {
     return (
-      <TouchableOpacity onPress={onPress} activeOpacity={0.75}>
+      <TouchableOpacity accessibilityRole="button" onPress={onPress} activeOpacity={0.75}>
         {content}
       </TouchableOpacity>
     );

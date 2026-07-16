@@ -11,8 +11,8 @@ function ReceiptOption({ active, icon, label, detail, onPress, styles, colors })
         <AppIcon name={icon} size={17} color={active ? colors.onBrand : colors.brandText} />
       </View>
       <View style={{ flex: 1 }}>
-        <Text style={[styles.optionLabel, active && styles.optionLabelActive]}>{label}</Text>
-        <Text style={styles.optionDetail}>{detail}</Text>
+        <Text numberOfLines={2} style={[styles.optionLabel, active && styles.optionLabelActive]}>{label}</Text>
+        <Text numberOfLines={3} style={styles.optionDetail}>{detail}</Text>
       </View>
       <AppIcon name={active ? 'radio-button-checked' : 'radio-button-unchecked'} size={18} color={active ? colors.brand : colors.textMuted} />
     </TouchableOpacity>
@@ -91,7 +91,7 @@ export default function MediaConfirmationCard({
                   {items.slice(0, 4).map((item, index) => (
                     <View key={`${index}-${item.description}`} style={styles.itemRow}>
                       <Text style={styles.itemName} numberOfLines={1}>{item.description || `Mặt hàng ${index + 1}`}</Text>
-                      <Text style={styles.itemAmount}>{formatVND(item.amount)}</Text>
+                      <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.72} style={styles.itemAmount}>{formatVND(item.amount)}</Text>
                     </View>
                   ))}
                   {items.length > 4 && <Text style={styles.moreItems}>+{items.length - 4} mặt hàng khác</Text>}

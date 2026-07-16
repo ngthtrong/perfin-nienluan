@@ -6,6 +6,7 @@ import {
 import { api } from '../services/api.service';
 import { useTheme } from '../theme/ThemeContext';
 import AppIcon from '../components/AppIcon';
+import { EmptyState, ErrorState, Skeleton } from '../components/ui';
 
 function ExportHistoryItem({ item, onDelete, onDownload, styles, c }) {
   const typeMeta = {
@@ -30,8 +31,8 @@ function ExportHistoryItem({ item, onDelete, onDownload, styles, c }) {
           {item.is_auto && <View style={styles.autoBadge}><Text style={styles.autoBadgeText}>Tự động</Text></View>}
           {item.status === 'failed' && <View style={[styles.autoBadge, { backgroundColor: c.expenseSoft }]}><Text style={[styles.autoBadgeText, { color: c.expense }]}>Lỗi</Text></View>}
         </View>
-        {item.label && <Text style={styles.historyLabel}>{item.label}</Text>}
-        <Text style={styles.historyMeta}>{dateStr} {timeStr} · {size}</Text>
+        {item.label && <Text numberOfLines={1} style={styles.historyLabel}>{item.label}</Text>}
+        <Text numberOfLines={1} style={styles.historyMeta}>{dateStr} {timeStr} · {size}</Text>
       </View>
       <View style={styles.historyActions}>
         {item.file_available && (
@@ -61,6 +62,7 @@ export default function ExportScreen() {
   const [history, setHistory] = useState([]);
   const [config, setConfig] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
   const [exporting, setExporting] = useState(null);
 
@@ -69,8 +71,9 @@ export default function ExportScreen() {
       const [hist, cfg] = await Promise.all([api.getExportHistory(), api.getBackupConfig()]);
       setHistory(hist.data || []);
       setConfig(cfg.data);
+      setError(null);
     } catch (err) {
-      Alert.alert('Lỗi', err.message);
+      setError(err.message || 'Không thể tải lịch sử xuất.');
     } finally {
       setLoading(false);
     }
@@ -132,7 +135,21 @@ export default function ExportScreen() {
   }
 
   if (loading) {
-    return <View style={styles.centered}><ActivityIndicator color={c.brand} size="large" /></View>;
+    return (
+      <View style={styles.loadingScreen}>
+        <Skeleton height={128} radius={20} style={{ marginBottom: 16 }} />
+        <Skeleton height={112} radius={18} style={{ marginBottom: 16 }} />
+        <Skeleton height={72} radius={16} />
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={styles.container}>
+        <ErrorState message={error} onRetry={() => { setLoading(true); setError(null); load(); }} />
+      </View>
+    );
   }
 
   const EXPORT_CARDS = [
@@ -219,10 +236,7 @@ export default function ExportScreen() {
 
       <Text style={styles.sectionTitle}>Lịch sử xuất & sao lưu ({history.length})</Text>
       {history.length === 0 ? (
-        <View style={styles.emptyState}>
-          <Text style={styles.emptyIcon}>📁</Text>
-          <Text style={styles.emptyMsg}>Chưa có lịch sử xuất nào</Text>
-        </View>
+        <EmptyState emoji="📁" title="Chưa có lịch sử xuất" message="Các file dữ liệu và bản sao lưu sẽ xuất hiện tại đây." />
       ) : (
         history.map((item) => (
           <ExportHistoryItem key={item.id} item={item} onDelete={handleDelete} onDownload={handleDownload} styles={styles} c={c} />
@@ -234,15 +248,16 @@ export default function ExportScreen() {
 
 const createStyles = (t) => StyleSheet.create({
   container: { flex: 1, backgroundColor: t.colors.bg },
-  content: { padding: 16, paddingBottom: 40 },
+  content: { width: '100%', maxWidth: 720, alignSelf: 'center', padding: 16, paddingBottom: 40 },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: t.colors.bg },
+  loadingScreen: { flex: 1, width: '100%', maxWidth: 720, alignSelf: 'center', padding: 16, backgroundColor: t.colors.bg },
 
   sectionTitle: { fontSize: 15, fontWeight: '800', color: t.colors.text, marginBottom: 12 },
 
-  exportGrid: { flexDirection: 'row', gap: 10, marginBottom: 20 },
+  exportGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 20 },
   exportCard: {
-    flex: 1, alignItems: 'center', gap: 8,
-    backgroundColor: t.colors.surface, padding: 16, borderRadius: t.radius.lg, borderWidth: 1.5,
+    flexGrow: 1, flexBasis: 112, alignItems: 'center', gap: 8,
+    backgroundColor: t.colors.surface, padding: 14, borderRadius: t.radius.lg, borderWidth: 1.5,
     ...t.shadows.sm, minHeight: 120, justifyContent: 'center',
   },
   exportCardTitle: { fontSize: 13, fontWeight: '800' },
@@ -256,9 +271,9 @@ const createStyles = (t) => StyleSheet.create({
   configLeft: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   configLabel: { fontSize: 14, fontWeight: '700', color: t.colors.text },
   divider: { height: 1, backgroundColor: t.colors.border, marginVertical: 12 },
-  freqRow: { flexDirection: 'row', gap: 8 },
+  freqRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   freqChip: {
-    flex: 1, paddingVertical: 9, borderRadius: t.radius.pill,
+    flexGrow: 1, flexBasis: 92, paddingVertical: 9, borderRadius: t.radius.pill,
     backgroundColor: t.colors.surfaceAlt, borderWidth: 1.5, borderColor: t.colors.border, alignItems: 'center',
   },
   freqChipActive: { backgroundColor: t.colors.brand, borderColor: t.colors.brand },
@@ -277,8 +292,8 @@ const createStyles = (t) => StyleSheet.create({
     padding: 13, borderRadius: t.radius.md, marginBottom: 8, borderWidth: 1, borderColor: t.colors.border, ...t.shadows.sm,
   },
   historyIcon: { width: 42, height: 42, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
-  historyInfo: { flex: 1 },
-  historyTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 2 },
+  historyInfo: { flex: 1, minWidth: 0 },
+  historyTitleRow: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 6, marginBottom: 2 },
   historyType: { fontWeight: '800', fontSize: 14, color: t.colors.text },
   autoBadge: { backgroundColor: t.colors.brandSoft, paddingHorizontal: 6, paddingVertical: 2, borderRadius: t.radius.pill },
   autoBadgeText: { color: t.colors.brandText, fontSize: 10, fontWeight: '700' },

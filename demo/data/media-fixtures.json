@@ -1,0 +1,65 @@
+{
+  "version": 1,
+  "purpose": "Nhãn kỳ vọng tối thiểu cho smoke test OCR/STT; không lưu lại giá trị PII nhìn thấy trong ảnh.",
+  "fixtures": [
+    {
+      "file": "img/chuyen-khoan.jpg",
+      "media_type": "image/jpeg",
+      "sha256": "146881fe4e2640be0ada4247834eff593af756fc2c1171b2dfa2aed68a958bfb",
+      "expected": {
+        "amount": 90000,
+        "type": "income",
+        "transaction_date": "2026-04-10"
+      },
+      "smoke_test": {
+        "status": "PASS",
+        "pipeline": "OCR service",
+        "accuracy_claim": false
+      },
+      "privacy": {
+        "contains_pii": true,
+        "safe_for_public_distribution": false,
+        "reason": "Ảnh hiển thị tên và thông tin tài khoản ngân hàng."
+      }
+    },
+    {
+      "file": "img/hoa-don.jpg",
+      "media_type": "image/jpeg",
+      "sha256": "f821c791275f0def6685338614fb84de506b2e3512b57f5f5fb6b075e37dbd9b",
+      "expected": {
+        "amount": 80000,
+        "type": "expense",
+        "transaction_date": "2026-06-15",
+        "category": "Ăn uống"
+      },
+      "smoke_test": {
+        "status": "PASS",
+        "pipeline": "OCR service",
+        "accuracy_claim": false
+      },
+      "privacy": {
+        "contains_pii": true,
+        "safe_for_public_distribution": false,
+        "reason": "Ảnh hiển thị địa chỉ, số điện thoại, mật khẩu Wi-Fi và còn metadata EXIF/GPS."
+      }
+    },
+    {
+      "file": "audio/recording.m4a",
+      "media_type": "audio/mp4",
+      "sha256": "d82eda5899e237ee9fa6cfb3c7d2dcf9e4ebf6b02647a98d7a608b7290de248b",
+      "expected": null,
+      "smoke_test": {
+        "status": "PASS",
+        "pipeline": "PhoWhisper local",
+        "transcript_length": 53,
+        "ground_truth_available": false,
+        "accuracy_claim": false
+      },
+      "privacy": {
+        "contains_pii": "unknown",
+        "safe_for_public_distribution": false,
+        "reason": "Chưa có transcript/nhãn chuẩn và chưa hoàn tất rà soát nội dung lời nói."
+      }
+    }
+  ]
+}

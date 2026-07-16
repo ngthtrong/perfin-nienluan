@@ -315,7 +315,7 @@ Bộ dữ liệu văn bản phải tách tập phát triển và đánh giá, ba
 
 \subsubsection{Kết quả đã đo}
 
-Ngày 15/07/2026, ba phép kiểm tra nền được chạy trong workspace. Kết quả được trình bày đúng phạm vi bằng chứng, không mở rộng thành kết luận về provider hoặc cơ sở dữ liệu thật.
+Ngày 16/07/2026, các phép kiểm tra từ unit đến runtime được chạy trong workspace. Kết quả được trình bày đúng phạm vi bằng chứng, không mở rộng thành kết luận về độ chính xác mô hình hoặc mức sẵn sàng production.
 
 \begin{longtable}{@{}L{3.3cm}L{4.2cm}L{1.8cm}L{3.4cm}@{}}
   \caption{Kết quả đã đo và phép đo còn thiếu}\label{tab:measured-results}\\
@@ -327,20 +327,23 @@ Ngày 15/07/2026, ba phép kiểm tra nền được chạy trong workspace. K�
   \textbf{Hạng mục} & \textbf{Kết quả} & \textbf{Phân loại} & \textbf{Phạm vi kết luận} \\
   \midrule
   \endhead
-  Backend \code{npm test} sau sửa & 18/18 tệp kiểm thử đạt, 0 tệp thất bại; khoảng 1,028 giây & \statusmeasured & Unit/service với mock; gồm transaction, concurrency, recurring và time-series. \\
+  Backend \code{npm test} sau sửa & 100/100 test đạt, 0 thất bại & \statusmeasured & Unit/service; gồm transaction, concurrency, recurring, health, importer và time-series. \\
   Local parser quality gate & 31/31 strict pass; 0 partial; 0 fail & \statusmeasured & Cục bộ, không dùng Gemini; strict exit code, 31 ca hard-coded. \\
   Baseline trước sửa & 13/13 tệp test; parser 27/31 strict & \statusmeasured & Giữ để phân tích lỗi và chứng minh tác động bản sửa. \\
-  Expo web export & Đóng gói 652 module; bundle khoảng 1,49 MB & \statusmeasured & Chứng minh frontend đóng gói được; không phải hiệu năng runtime. \\
+  Full API/DB/media smoke & 23/23 kiểm tra đạt & \statusmeasured & PostgreSQL live, preview, sửa, hủy, OCR 2 ảnh và STT 1 M4A; không gồm Redis worker. \\
+  Mobile-web UI smoke & 4/4 cổng đạt tại 390$\times$844 & \statusmeasured & Ba màn hình không overflow; ảnh tải lên hiển thị thật; Chromium. \\
+  Expo web/Android export & Đóng gói 653/960 module & \statusmeasured & Chứng minh frontend đóng gói được; không phải hiệu năng runtime. \\
+  Import CSV tài chính & 5.265 dòng, 0 reject, provenance đầy đủ & \statusmeasured & Đã chạy hai lần trên clone và đối soát PostgreSQL live sau backup. \\
   LLM trên tập gán nhãn & Chưa công bố & \statusmissing & Cần khóa dataset, model, prompt và cấu hình provider. \\
   OCR/STT accuracy & Chưa công bố & \statusmissing & Cần ảnh/audio cùng ground truth. \\
-  Tích hợp PostgreSQL và Redis đang chạy & Chưa xác nhận trong đợt đo & \statusmissing & Unit pass không thay thế kiểm thử DB/queue đang chạy. \\
+  Redis worker đang chạy & Chưa xác nhận trong đợt đo & \statusmissing & WSL không có Redis/Docker; API fallback và readiness degraded đã được kiểm tra. \\
   Numeric grounding, p50/p95, UAT & Chưa công bố & \statusmissing & Cần checker, môi trường và kịch bản khóa phiên bản. \\
   \bottomrule
 \end{longtable}
 
 Baseline parser có hai lỗi amount: ``1 triệu 5'' và phép nhân ``3 cái áo, mỗi cái 200k''; hai ca partial liên quan ``quần jeans'' và ``đi ăn''. Sau sửa, cả bốn ca có regression test và harness đạt 31/31 strict, đồng thời trả mã thoát khác 0 khi bất kỳ ca nào không đạt. Tỷ lệ 100\% chỉ áp dụng cho tập cố định này, chưa phải benchmark Gemini hoặc tập gán nhãn độc lập.
 
-Không có tuyên bố nào trong Bảng~\ref{tab:measured-results} chứng minh Gemini, OCR, STT hoặc luồng HTTP--PostgreSQL đã hoạt động end-to-end. Đây là ranh giới bằng chứng bắt buộc của báo cáo.
+Full smoke chứng minh luồng HTTP--PostgreSQL, Gemini cấu trúc đầu ra, OCR và STT có thể hoàn tất trên các fixture đã chọn. Kết quả này chỉ là smoke test khả dụng: không có ground truth đủ để suy ra accuracy, CER/WER hoặc numeric faithfulness; một lần đo thời gian cũng không phải p50/p95. Redis worker chưa được chạy live trong môi trường ghi nhận.
 
 \subsubsection{Trạng thái chức năng trọng yếu}
 
@@ -354,11 +357,11 @@ Không có tuyên bố nào trong Bảng~\ref{tab:measured-results} chứng minh
   \textbf{Chức năng} & \textbf{Hiện trạng} & \textbf{Khoảng trống chính} & \textbf{Điều kiện hoàn tất} \\
   \midrule
   \endhead
-  Giao dịch và analytics & \statusmeasured & Transaction, post-commit và zero-fill đã có hồi quy; chưa test DB thật. & Integration DB và dataset thuật toán rộng hơn. \\
-  Chat preview/confirm & \statusmeasured & Claim một lần, stale ID, edit/cancel race và thứ tự history đã sửa. & Bổ sung HTTP--DB E2E và đo TTL thực với Redis. \\
+  Giao dịch và analytics & \statusmeasured & Transaction, post-commit, zero-fill và full DB smoke đã đạt; 5.265 dòng live đã đối soát. & Dataset gán nhãn và fault-injection DB rộng hơn. \\
+  Chat preview/confirm & \statusmeasured & Claim một lần, stale ID, edit/cancel race, history và HTTP--DB smoke đã đạt. & Đo TTL/claim với Redis thật và tải đồng thời cao hơn. \\
   Local parser & \statusmeasured & Đạt 31/31 strict trên quality gate cố định. & Tách tập độc lập, tăng biến thể và báo macro-F1. \\
   LLM tool routing & \statusimplemented & Provider selection/media fallback đã sửa; chưa benchmark. & Contract test trên provider thật và tập gán nhãn. \\
-  OCR/STT & \statusimplemented & Chưa có ground truth và kiểm thử tích hợp. & Adapter failure test, CER/WER và field accuracy. \\
+  OCR/STT & \statusmeasured & Smoke provider thật đạt với 2 ảnh và 1 M4A; chưa có ground truth. & Adapter failure test, CER/WER và field accuracy trên tập ẩn danh. \\
   Ví/chuyển ví & Hiện thực một phần & Thiếu route/UI tạo ví trên fresh install; chưa có integration test transfer. & CRUD tối thiểu và kiểm thử toàn vẹn số dư. \\
   Recurring và worker & \statusmeasured & Payment đã khóa hàng, nguyên tử, có kỳ dự kiến và chat preview; notification vẫn là chat nội bộ. & Live DB test và kênh nhắc ngoài ứng dụng nếu mở rộng. \\
   Export/backup & Chưa đúng tên gọi & Mẫu số/escaping đã sửa; ``PDF'' vẫn là HTML, backup còn thiếu. & PDF thật hoặc đổi nhãn; backup/restore an toàn. \\

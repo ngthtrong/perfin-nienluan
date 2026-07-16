@@ -19,14 +19,14 @@ export default function Screen({
   const body = scroll ? (
     <ScrollView
       style={{ flex: 1 }}
-      contentContainerStyle={[padded && styles.padded, contentContainerStyle]}
+      contentContainerStyle={[styles.contentBounds, padded && styles.padded, contentContainerStyle]}
       showsVerticalScrollIndicator={false}
       refreshControl={refreshControl}
     >
       {children}
     </ScrollView>
   ) : (
-    <View style={[{ flex: 1 }, padded && styles.padded, contentContainerStyle]}>{children}</View>
+    <View style={[styles.contentBounds, { flex: 1 }, padded && styles.padded, contentContainerStyle]}>{children}</View>
   );
 
   return (
@@ -38,4 +38,5 @@ export default function Screen({
 
 const styles = StyleSheet.create({
   padded: { padding: 16, paddingBottom: 32 },
+  contentBounds: { width: '100%', maxWidth: 720, alignSelf: 'center' },
 });

@@ -144,7 +144,7 @@ const createStyles = (t) => StyleSheet.create({
 
   detailSection: { padding: 16 },
   desc: { fontSize: 16, fontWeight: '700', color: t.colors.text, marginBottom: 8 },
-  metaRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  metaRow: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 8 },
   metaChip: { backgroundColor: t.colors.brandSoft, paddingHorizontal: 10, paddingVertical: 4, borderRadius: t.radius.pill },
   metaChipText: { color: t.colors.brandText, fontSize: 12, fontWeight: '700' },
   metaDate: { color: t.colors.textMuted, fontSize: 12, fontWeight: '600' },

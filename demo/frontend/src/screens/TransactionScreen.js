@@ -9,7 +9,7 @@ import { formatVND } from '../utils/formatters';
 import TransactionCard from '../components/TransactionCard';
 import CategoryIcon from '../components/CategoryIcon';
 import AppIcon from '../components/AppIcon';
-import { Button, Chip, EmptyState, Skeleton } from '../components/ui';
+import { Button, Chip, EmptyState, ErrorState, Skeleton } from '../components/ui';
 
 const FILTERS = [
   { key: null, label: 'Tất cả', icon: 'apps' },
@@ -27,6 +27,7 @@ export default function TransactionScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState(null);
   const [categoryEditingId, setCategoryEditingId] = useState(null);
   const [categorySavingId, setCategorySavingId] = useState(null);
   const [filter, setFilter] = useState(null);
@@ -45,11 +46,13 @@ export default function TransactionScreen() {
       ]);
       setTransactions(tx.data || []);
       setCategories(cats.data || []);
+      setError(null);
       if (!form.category_id && cats.data?.length) {
         const defaultCat = cats.data.find((x) => x.type === form.type) || cats.data[0];
         setForm((prev) => ({ ...prev, category_id: defaultCat?.id || null }));
       }
-    } catch (_) {
+    } catch (err) {
+      setError(err.message || 'Không thể tải giao dịch.');
     } finally {
       setLoading(false);
     }
@@ -161,7 +164,7 @@ export default function TransactionScreen() {
           />
           <View style={styles.amountWrapper}>
             <TextInput
-              style={[styles.input, { flex: 1, marginBottom: 0 }]}
+              style={[styles.input, { flexGrow: 1, flexBasis: 180, minWidth: 0, marginBottom: 0 }]}
               placeholder="Số tiền (VND)"
               placeholderTextColor={c.textMuted}
               value={form.amount}
@@ -231,6 +234,14 @@ export default function TransactionScreen() {
     );
   }
 
+  if (error) {
+    return (
+      <View style={styles.container}>
+        <ErrorState message={error} onRetry={() => { setLoading(true); setError(null); load(); }} />
+      </View>
+    );
+  }
+
   return (
     <FlatList
       style={styles.container}
@@ -287,7 +298,7 @@ export default function TransactionScreen() {
 
 const createStyles = (t) => StyleSheet.create({
   container: { flex: 1, backgroundColor: t.colors.bg },
-  content: { padding: 16, paddingBottom: 32 },
+  content: { width: '100%', maxWidth: 720, alignSelf: 'center', padding: 16, paddingBottom: 32 },
 
   form: {
     backgroundColor: t.colors.surface, padding: 16, borderRadius: t.radius.lg,
@@ -305,12 +316,12 @@ const createStyles = (t) => StyleSheet.create({
     borderWidth: 1.5, borderColor: t.colors.border, borderRadius: t.radius.md,
     padding: 13, marginBottom: 12, fontSize: 15, color: t.colors.text, backgroundColor: t.colors.surfaceAlt,
   },
-  amountWrapper: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 14 },
+  amountWrapper: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 10, marginBottom: 14 },
   amountPreviewPill: { backgroundColor: t.colors.brandSoft, paddingHorizontal: 10, paddingVertical: 6, borderRadius: t.radius.pill },
   amountPreviewText: { color: t.colors.brandText, fontWeight: '800', fontSize: 13 },
   inputLabel: { color: t.colors.textMuted, fontWeight: '700', marginBottom: 8, fontSize: 13 },
 
-  filterRow: { flexDirection: 'row', gap: 8, marginBottom: 12 },
+  filterRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 12 },
 
   searchWrapper: {
     flexDirection: 'row', alignItems: 'center', gap: 10,

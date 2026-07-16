@@ -64,7 +64,7 @@ export default function ReportScreen() {
     });
   }
 
-  const maxExpense = Math.max(1, ...trend.map((item) => Number(item.expense)));
+  const maxTrendValue = Math.max(1, ...trend.flatMap((item) => [Number(item.expense) || 0, Number(item.income) || 0]));
   const netPositive = Number(summary.net ?? 0) >= 0;
   const isCurrent = period.month === now.month && period.year === now.year;
 
@@ -103,12 +103,12 @@ export default function ReportScreen() {
         </View>
 
         {loading ? (
-          <View style={{ flexDirection: 'row', gap: 12, marginBottom: 12 }}>
+          <View style={styles.statsRow}>
             <Skeleton height={96} radius={18} style={{ flex: 1 }} />
             <Skeleton height={96} radius={18} style={{ flex: 1 }} />
           </View>
         ) : (
-          <View style={{ flexDirection: 'row', gap: 12, marginBottom: 12 }}>
+          <View style={styles.statsRow}>
             <StatCard label="Thu nhập" value={formatVND(summary.total_income)} icon="trending-up" tone="income" />
             <StatCard label="Chi tiêu" value={formatVND(summary.total_expense)} icon="trending-down" tone="expense" />
           </View>
@@ -121,7 +121,7 @@ export default function ReportScreen() {
               <Text style={styles.netLabel}>{netPositive ? 'Tiết kiệm được' : 'Bội chi'}</Text>
             </View>
             <View style={{ alignItems: 'flex-end' }}>
-              <Text style={[styles.netValue, { color: netPositive ? c.income : c.expense }]}>
+              <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.72} style={[styles.netValue, { color: netPositive ? c.income : c.expense }]}>
                 {formatVND(Math.abs(summary.net ?? 0))}
               </Text>
               <Text style={styles.netSub}>{summary.transaction_count || 0} giao dịch</Text>
@@ -157,22 +157,22 @@ export default function ReportScreen() {
                     <Text style={styles.analyticsTitle}>Đường băng dòng tiền</Text>
                     <Text style={styles.analyticsSubtitle}>Ước tính từ nhịp chi 14 ngày gần đây</Text>
                   </View>
-                  <Text style={[styles.runwayDays, { color: insights.facts.runway.beforePayday ? c.warning : c.info }]}>
+                  <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75} style={[styles.runwayDays, { color: insights.facts.runway.beforePayday ? c.warning : c.info }]}>
                     {insights.facts.runway.daysLeft} ngày
                   </Text>
                 </View>
                 <View style={styles.runwayStats}>
                   <View style={styles.runwayStat}>
                     <Text style={styles.runwayStatLabel}>Số dư</Text>
-                    <Text style={styles.runwayStatValue}>{formatVND(insights.facts.runway.totalBalance)}</Text>
+                    <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.72} style={styles.runwayStatValue}>{formatVND(insights.facts.runway.totalBalance)}</Text>
                   </View>
                   <View style={styles.runwayStat}>
                     <Text style={styles.runwayStatLabel}>Chi trung bình/ngày</Text>
-                    <Text style={styles.runwayStatValue}>{formatVND(insights.facts.runway.avgBurn)}</Text>
+                    <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.72} style={styles.runwayStatValue}>{formatVND(insights.facts.runway.avgBurn)}</Text>
                   </View>
                   <View style={styles.runwayStat}>
                     <Text style={styles.runwayStatLabel}>Dự kiến cạn</Text>
-                    <Text style={styles.runwayStatValue}>{formatDate(insights.facts.runway.depletionDate)}</Text>
+                    <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={styles.runwayStatValue}>{formatDate(insights.facts.runway.depletionDate)}</Text>
                   </View>
                 </View>
                 {insights.facts.runway.beforePayday && (
@@ -204,13 +204,13 @@ export default function ReportScreen() {
                 </View>
                 {insights.facts.subscriptions.subscriptions.slice(0, 5).map((subscription, index) => (
                   <View key={`${subscription.label}-${index}`} style={[styles.subscriptionRow, index > 0 && styles.subscriptionBorder]}>
-                    <View style={{ flex: 1 }}>
+                    <View style={{ flex: 1, minWidth: 0 }}>
                       <Text style={styles.subscriptionName} numberOfLines={1}>{subscription.label}</Text>
                       <Text style={styles.subscriptionMeta}>
                         {subscription.occurrences} lần{subscription.cadenceDays ? ` · chu kỳ ~${subscription.cadenceDays} ngày` : ''}
                       </Text>
                     </View>
-                    <Text style={styles.subscriptionAmount}>{formatVND(subscription.monthlyEstimate)}/tháng</Text>
+                    <Text numberOfLines={2} style={styles.subscriptionAmount}>{formatVND(subscription.monthlyEstimate)}/tháng</Text>
                   </View>
                 ))}
               </View>
@@ -239,7 +239,7 @@ export default function ReportScreen() {
                 <View style={styles.catHeader}>
                   <View style={styles.catLeft}>
                     <View style={[styles.catDot, { backgroundColor: color }]} />
-                    <Text style={styles.catName}>{item.icon} {item.category_name}</Text>
+                    <Text numberOfLines={1} style={styles.catName}>{item.icon} {item.category_name}</Text>
                   </View>
                   <View style={{ alignItems: 'flex-end' }}>
                     <Text style={styles.catPct}>{item.percentage}%</Text>
@@ -264,12 +264,16 @@ export default function ReportScreen() {
             <View style={styles.trend}>
               {trend.map((item) => {
                 const isCurrentMonth = item.month === period.month;
-                const expH = Math.max(4, (Number(item.expense) / maxExpense) * 100);
-                const incH = Math.max(2, (Number(item.income) / maxExpense) * 100);
+                const expense = Number(item.expense) || 0;
+                const income = Number(item.income) || 0;
+                const expH = expense > 0 ? Math.max(3, Math.min(96, (expense / maxTrendValue) * 96)) : 0;
+                const incH = income > 0 ? Math.max(3, Math.min(96, (income / maxTrendValue) * 96)) : 0;
                 return (
                   <View key={item.month} style={styles.trendMonth}>
-                    {Number(item.income) > 0 && <View style={[styles.incomeBar, { height: incH }]} />}
-                    <View style={[styles.expenseBar, { height: expH }, isCurrentMonth && styles.expenseBarActive]} />
+                    <View style={styles.barPair}>
+                      <View style={[styles.incomeBar, { height: incH }]} />
+                      <View style={[styles.expenseBar, { height: expH }, isCurrentMonth && styles.expenseBarActive]} />
+                    </View>
                     <Text style={[styles.monthLabel, isCurrentMonth && styles.monthLabelActive]}>
                       {MONTHS_VI[item.month - 1] || item.month}
                     </Text>
@@ -278,14 +282,16 @@ export default function ReportScreen() {
               })}
             </View>
           )}
-          <View style={styles.legend}>
-            {[{ color: c.expense, label: 'Chi tiêu' }, { color: c.income, label: 'Thu nhập' }].map((l) => (
-              <View key={l.label} style={styles.legendItem}>
-                <View style={[styles.legendDot, { backgroundColor: l.color }]} />
-                <Text style={styles.legendText}>{l.label}</Text>
-              </View>
-            ))}
-          </View>
+          {!loading && trend.length > 0 && (
+            <View style={styles.legend}>
+              {[{ color: c.expense, label: 'Chi tiêu' }, { color: c.income, label: 'Thu nhập' }].map((l) => (
+                <View key={l.label} style={styles.legendItem}>
+                  <View style={[styles.legendDot, { backgroundColor: l.color }]} />
+                  <Text style={styles.legendText}>{l.label}</Text>
+                </View>
+              ))}
+            </View>
+          )}
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -294,7 +300,8 @@ export default function ReportScreen() {
 
 const createStyles = (t) => StyleSheet.create({
   safe: { flex: 1, backgroundColor: t.colors.bg },
-  content: { padding: 16, paddingBottom: 32 },
+  content: { width: '100%', maxWidth: 720, alignSelf: 'center', padding: 16, paddingBottom: 32 },
+  statsRow: { flexDirection: 'row', gap: 10, marginBottom: 12 },
 
   monthNav: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
@@ -310,8 +317,8 @@ const createStyles = (t) => StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     padding: 14, borderRadius: t.radius.lg, marginBottom: 20,
   },
-  netLeft: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  netLabel: { fontWeight: '700', color: t.colors.text, fontSize: 14 },
+  netLeft: { flex: 1, minWidth: 0, flexDirection: 'row', alignItems: 'center', gap: 8 },
+  netLabel: { flexShrink: 1, fontWeight: '700', color: t.colors.text, fontSize: 14 },
   netValue: { fontSize: 18, fontWeight: '900' },
   netSub: { color: t.colors.textMuted, fontSize: 11, marginTop: 2 },
 
@@ -335,7 +342,7 @@ const createStyles = (t) => StyleSheet.create({
     borderWidth: 1, borderColor: t.colors.border, marginBottom: 10, ...t.shadows.sm,
   },
   analyticsWarningCard: { borderColor: t.colors.warning },
-  analyticsHeader: { flexDirection: 'row', alignItems: 'center', gap: 9 },
+  analyticsHeader: { flexDirection: 'row', alignItems: 'center', gap: 9, minWidth: 0 },
   analyticsIcon: { width: 34, height: 34, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
   analyticsTitle: { color: t.colors.text, fontSize: 13, fontWeight: '900' },
   analyticsSubtitle: { color: t.colors.textMuted, fontSize: 10, fontWeight: '600', marginTop: 2 },
@@ -344,9 +351,9 @@ const createStyles = (t) => StyleSheet.create({
     backgroundColor: t.colors.brandSoft, alignItems: 'center', justifyContent: 'center',
   },
   analyticsCountText: { color: t.colors.brandText, fontSize: 11, fontWeight: '900' },
-  runwayDays: { fontSize: 19, fontWeight: '900' },
-  runwayStats: { flexDirection: 'row', marginTop: 13, gap: 6 },
-  runwayStat: { flex: 1, padding: 8, borderRadius: t.radius.sm, backgroundColor: t.colors.surfaceAlt },
+  runwayDays: { flexShrink: 1, maxWidth: '30%', textAlign: 'right', fontSize: 19, fontWeight: '900' },
+  runwayStats: { flexDirection: 'row', flexWrap: 'wrap', marginTop: 13, gap: 6 },
+  runwayStat: { flexGrow: 1, flexBasis: 96, minWidth: 0, padding: 9, borderRadius: t.radius.sm, backgroundColor: t.colors.surfaceAlt },
   runwayStatLabel: { color: t.colors.textMuted, fontSize: 9, fontWeight: '700', marginBottom: 3 },
   runwayStatValue: { color: t.colors.textSecondary, fontSize: 10, fontWeight: '800' },
   runwayWarning: {
@@ -358,7 +365,7 @@ const createStyles = (t) => StyleSheet.create({
   subscriptionBorder: { borderTopWidth: 1, borderTopColor: t.colors.border },
   subscriptionName: { color: t.colors.text, fontSize: 12, fontWeight: '800' },
   subscriptionMeta: { color: t.colors.textMuted, fontSize: 10, fontWeight: '600', marginTop: 2 },
-  subscriptionAmount: { color: t.colors.expense, fontSize: 10, fontWeight: '800' },
+  subscriptionAmount: { flexShrink: 1, maxWidth: '42%', color: t.colors.expense, fontSize: 10, lineHeight: 14, fontWeight: '800', textAlign: 'right' },
 
   catRow: {
     backgroundColor: t.colors.surface, padding: 14, borderRadius: t.radius.md,
@@ -367,7 +374,7 @@ const createStyles = (t) => StyleSheet.create({
   catHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
   catLeft: { flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1 },
   catDot: { width: 10, height: 10, borderRadius: 5 },
-  catName: { fontWeight: '700', fontSize: 14, color: t.colors.text },
+  catName: { flex: 1, minWidth: 0, fontWeight: '700', fontSize: 14, color: t.colors.text },
   catPct: { color: t.colors.textSecondary, fontSize: 13, fontWeight: '700' },
   catAmount: { color: t.colors.textMuted, fontSize: 12, marginTop: 1 },
 
@@ -375,10 +382,11 @@ const createStyles = (t) => StyleSheet.create({
     backgroundColor: t.colors.surface, padding: 16, borderRadius: t.radius.lg,
     borderWidth: 1, borderColor: t.colors.border, ...t.shadows.sm,
   },
-  trend: { height: 120, flexDirection: 'row', alignItems: 'flex-end', marginBottom: 8, gap: 3 },
-  trendMonth: { flex: 1, alignItems: 'center', justifyContent: 'flex-end', gap: 2 },
-  incomeBar: { width: '55%', backgroundColor: t.colors.income, borderRadius: 3, opacity: 0.45 },
-  expenseBar: { width: '80%', backgroundColor: t.colors.expense, borderRadius: 3, opacity: 0.55 },
+  trend: { height: 122, flexDirection: 'row', alignItems: 'stretch', marginBottom: 8, gap: 1 },
+  trendMonth: { flex: 1, minWidth: 0, alignItems: 'center', justifyContent: 'flex-end' },
+  barPair: { height: 98, width: '100%', flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'center', gap: 1 },
+  incomeBar: { width: '30%', maxWidth: 6, minWidth: 2, backgroundColor: t.colors.income, borderTopLeftRadius: 3, borderTopRightRadius: 3, opacity: 0.65 },
+  expenseBar: { width: '38%', maxWidth: 7, minWidth: 2, backgroundColor: t.colors.expense, borderTopLeftRadius: 3, borderTopRightRadius: 3, opacity: 0.6 },
   expenseBarActive: { opacity: 1 },
   monthLabel: { fontSize: 9, color: t.colors.textMuted, marginTop: 4, fontWeight: '600' },
   monthLabelActive: { color: t.colors.brandText, fontWeight: '900' },

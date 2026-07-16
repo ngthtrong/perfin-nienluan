@@ -122,7 +122,7 @@ export default function BudgetScreen() {
     return (
       <SafeAreaView style={styles.safe} edges={['top']}>
         <AppHeader subtitle="Ngân sách" showAIStatus={false} />
-        <View style={{ padding: 16, gap: 10 }}>
+        <View style={styles.loadingContent}>
           {[1, 2, 3].map((i) => <Skeleton key={i} height={96} radius={18} />)}
         </View>
       </SafeAreaView>
@@ -149,13 +149,13 @@ export default function BudgetScreen() {
         ListHeaderComponent={
           <View>
             <View style={styles.overviewCard}>
-              <View style={{ flex: 1 }}>
+              <View style={{ flex: 1, minWidth: 0 }}>
                 <View style={styles.periodChip}>
                   <AppIcon name="calendar-today" size={13} color={c.brandText} />
                   <Text style={styles.periodText}>Tháng {period.month}/{period.year}</Text>
                 </View>
-                <Text style={styles.overviewSpent}>{formatVND(totalSpent)}</Text>
-                <Text style={styles.overviewTotal}>/ {formatVND(totalBudget)} ngân sách</Text>
+                <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} style={styles.overviewSpent}>{formatVND(totalSpent)}</Text>
+                <Text numberOfLines={2} style={styles.overviewTotal}>/ {formatVND(totalBudget)} ngân sách</Text>
               </View>
               <View style={[styles.pctCircle, { borderColor: pctColor, backgroundColor: pctBg }]}>
                 <Text style={[styles.pctText, { color: pctColor }]}>{overallPct}%</Text>
@@ -169,13 +169,13 @@ export default function BudgetScreen() {
                   <View style={styles.recommendationIcon}>
                     <AppIcon name="auto-awesome" size={18} color={c.onBrand} />
                   </View>
-                  <View style={{ flex: 1 }}>
+                  <View style={{ flex: 1, minWidth: 0 }}>
                     <Text style={styles.recommendationTitle}>Ngân sách PERFIN đề xuất</Text>
                     <Text style={styles.recommendationSub}>
                       {recommendation.history_months || 0} tháng dữ liệu · chiến lược cân bằng
                     </Text>
                   </View>
-                  <Text style={styles.recommendationTotal}>{formatVND(recommendation.total_recommended)}</Text>
+                  <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.72} style={styles.recommendationTotal}>{formatVND(recommendation.total_recommended)}</Text>
                 </View>
 
                 {recommendation.categories?.length > 0 ? (
@@ -183,12 +183,12 @@ export default function BudgetScreen() {
                     <View style={styles.recommendationList}>
                       {recommendation.categories.slice(0, 4).map((item, index) => (
                         <View key={item.category_id} style={[styles.recommendationRow, index > 0 && styles.recommendationBorder]}>
-                          <View style={{ flex: 1 }}>
+                          <View style={{ flex: 1, minWidth: 0 }}>
                             <Text style={styles.recommendationName}>{item.category_name}</Text>
                             <Text style={styles.recommendationReason} numberOfLines={1}>{item.rationale}</Text>
                           </View>
                           <View style={{ alignItems: 'flex-end' }}>
-                            <Text style={styles.recommendationAmount}>{formatVND(item.recommended_limit)}</Text>
+                            <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75} style={styles.recommendationAmount}>{formatVND(item.recommended_limit)}</Text>
                             <Text style={styles.recommendationConfidence}>
                               {item.confidence === 'high' ? 'Tin cậy cao' : item.confidence === 'medium' ? 'Tin cậy vừa' : 'Khởi điểm'}
                             </Text>
@@ -254,7 +254,7 @@ export default function BudgetScreen() {
                 <Text style={styles.formLabel}>Mức ngân sách (VND)</Text>
                 <View style={styles.amountRow}>
                   <TextInput
-                    style={[styles.input, { flex: 1, marginBottom: 0 }]}
+                    style={[styles.input, { flexGrow: 1, flexBasis: 180, minWidth: 0, marginBottom: 0 }]}
                     value={amount}
                     onChangeText={setAmount}
                     keyboardType="numeric"
@@ -284,7 +284,7 @@ export default function BudgetScreen() {
                   <View style={styles.catIcon}>
                     <CategoryIcon icon={item.category_icon} name={item.category_name} type="expense" size={16} color={c.brand} />
                   </View>
-                  <Text style={styles.cardTitle}>{item.category_name}</Text>
+                      <Text numberOfLines={1} style={styles.cardTitle}>{item.category_name}</Text>
                 </View>
                 <View style={[styles.statusBadge, { backgroundColor: meta.bg }]}>
                   <AppIcon name={meta.icon} size={12} color={meta.color} />
@@ -320,7 +320,8 @@ export default function BudgetScreen() {
 
 const createStyles = (t) => StyleSheet.create({
   safe: { flex: 1, backgroundColor: t.colors.bg },
-  content: { padding: 16, paddingBottom: 32 },
+  content: { width: '100%', maxWidth: 720, alignSelf: 'center', padding: 16, paddingBottom: 32 },
+  loadingContent: { width: '100%', maxWidth: 720, alignSelf: 'center', padding: 16, gap: 10 },
 
   overviewCard: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
@@ -350,7 +351,7 @@ const createStyles = (t) => StyleSheet.create({
   },
   recommendationTitle: { color: t.colors.text, fontSize: 13, fontWeight: '900' },
   recommendationSub: { color: t.colors.textMuted, fontSize: 10, fontWeight: '600', marginTop: 2 },
-  recommendationTotal: { color: t.colors.brandText, fontSize: 13, fontWeight: '900', maxWidth: '30%' },
+  recommendationTotal: { flexShrink: 1, color: t.colors.brandText, fontSize: 13, fontWeight: '900', maxWidth: '32%', textAlign: 'right' },
   recommendationList: {
     marginTop: 12, borderTopWidth: 1, borderBottomWidth: 1, borderColor: t.colors.border,
   },
@@ -379,13 +380,13 @@ const createStyles = (t) => StyleSheet.create({
   catChipActive: { backgroundColor: t.colors.brand, borderColor: t.colors.brand },
   catChipText: { fontSize: 13, color: t.colors.textSecondary, fontWeight: '600' },
   catChipTextActive: { color: t.colors.onBrand, fontWeight: '700' },
-  amountRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 14 },
+  amountRow: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 10, marginBottom: 14 },
   input: {
     borderWidth: 1.5, borderColor: t.colors.border, borderRadius: t.radius.md,
     padding: 13, fontSize: 15, color: t.colors.text, backgroundColor: t.colors.surfaceAlt,
   },
-  amountPreview: { backgroundColor: t.colors.brandSoft, paddingHorizontal: 10, paddingVertical: 6, borderRadius: t.radius.pill },
-  amountPreviewText: { color: t.colors.brandText, fontWeight: '800', fontSize: 13 },
+  amountPreview: { maxWidth: '100%', backgroundColor: t.colors.brandSoft, paddingHorizontal: 10, paddingVertical: 6, borderRadius: t.radius.pill },
+  amountPreviewText: { color: t.colors.brandText, fontWeight: '800', fontSize: 13, flexShrink: 1 },
 
   sectionTitle: { fontSize: 16, fontWeight: '800', color: t.colors.text, marginBottom: 12 },
 
@@ -394,11 +395,11 @@ const createStyles = (t) => StyleSheet.create({
     borderWidth: 1, borderColor: t.colors.border, marginBottom: 10, ...t.shadows.sm,
   },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-  cardTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 },
+  cardTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1, minWidth: 0 },
   catIcon: { width: 36, height: 36, borderRadius: 12, backgroundColor: t.colors.brandSoft, alignItems: 'center', justifyContent: 'center' },
-  cardTitle: { fontSize: 15, fontWeight: '800', color: t.colors.text },
+  cardTitle: { flex: 1, minWidth: 0, fontSize: 15, fontWeight: '800', color: t.colors.text },
   statusBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 8, paddingVertical: 4, borderRadius: t.radius.pill },
   statusText: { fontSize: 11, fontWeight: '700' },
-  cardMeta: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 10 },
-  metaText: { color: t.colors.textMuted, fontSize: 13 },
+  cardMeta: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', gap: 6, marginTop: 10 },
+  metaText: { flexGrow: 1, flexBasis: 132, color: t.colors.textMuted, fontSize: 12 },
 });

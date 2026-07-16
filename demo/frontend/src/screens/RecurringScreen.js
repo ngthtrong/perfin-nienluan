@@ -206,9 +206,9 @@ function RecurringHeader({ styles, c, totalMonthly, count, suggestions, onAccept
   return (
     <View>
       <View style={styles.overviewCard}>
-        <View style={{ flex: 1 }}>
+        <View style={{ flex: 1, minWidth: 0 }}>
           <Text style={styles.overviewLabel}>Chi phí cố định hàng tháng</Text>
-          <Text style={styles.overviewAmount}>{formatVND(totalMonthly)}</Text>
+          <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.68} style={styles.overviewAmount}>{formatVND(totalMonthly)}</Text>
           <Text style={styles.overviewSub}>{count} khoản đang theo dõi</Text>
         </View>
         <View style={styles.overviewIcon}>
@@ -224,8 +224,8 @@ function RecurringHeader({ styles, c, totalMonthly, count, suggestions, onAccept
           </View>
           {suggestions.map((s) => (
             <View key={s.signature} style={styles.suggestItem}>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.suggestName}>{s.name}</Text>
+              <View style={{ flex: 1, minWidth: 0 }}>
+                <Text numberOfLines={1} style={styles.suggestName}>{s.name}</Text>
                 <Text style={styles.suggestMeta}>
                   ~{formatVND(s.amount)} · {FREQ_LABEL[s.frequency]} · {s.occurrences} lần
                   {s.is_variable_amount ? ' · số tiền thay đổi' : ''}
@@ -263,12 +263,12 @@ function BillCard({ styles, c, bill, onPay, onEdit, onDelete, onTogglePause, onH
           <View style={styles.catIcon}>
             <CategoryIcon icon={bill.category_icon || '🔔'} name={bill.category_name} type="expense" size={16} color={c.brand} />
           </View>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.cardTitle}>{bill.name}</Text>
+          <View style={{ flex: 1, minWidth: 0 }}>
+            <Text numberOfLines={1} style={styles.cardTitle}>{bill.name}</Text>
             <Text style={styles.cardSub}>{FREQ_LABEL[bill.frequency]} · kỳ kế {bill.next_due_date}</Text>
           </View>
         </View>
-        <Text style={styles.cardAmount}>{formatVND(bill.amount)}</Text>
+        <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.72} style={styles.cardAmount}>{formatVND(bill.amount)}</Text>
       </View>
 
       <View style={styles.badgeRow}>
@@ -370,9 +370,9 @@ function HistoryModal({ styles, c, bill, history, onClose }) {
           ) : (
             <>
               <View style={styles.summaryRow}>
-                <View style={styles.summaryItem}><Text style={styles.summaryValue}>{summary.paid_count || 0}</Text><Text style={styles.summaryLabel}>Đã trả</Text></View>
-                <View style={styles.summaryItem}><Text style={[styles.summaryValue, { color: c.expense }]}>{summary.overdue_count || 0}</Text><Text style={styles.summaryLabel}>Quá hạn</Text></View>
-                <View style={styles.summaryItem}><Text style={styles.summaryValue}>{formatVND(summary.total_paid || 0)}</Text><Text style={styles.summaryLabel}>Tổng đã trả</Text></View>
+                <View style={styles.summaryItem}><Text numberOfLines={1} style={styles.summaryValue}>{summary.paid_count || 0}</Text><Text style={styles.summaryLabel}>Đã trả</Text></View>
+                <View style={styles.summaryItem}><Text numberOfLines={1} style={[styles.summaryValue, { color: c.expense }]}>{summary.overdue_count || 0}</Text><Text style={styles.summaryLabel}>Quá hạn</Text></View>
+                <View style={styles.summaryItem}><Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.64} style={styles.summaryValue}>{formatVND(summary.total_paid || 0)}</Text><Text style={styles.summaryLabel}>Tổng đã trả</Text></View>
               </View>
               <FlatList
                 data={history.payments}
@@ -405,7 +405,7 @@ function HistoryModal({ styles, c, bill, history, onClose }) {
 
 const createStyles = (t) => StyleSheet.create({
   container: { flex: 1, backgroundColor: t.colors.bg },
-  content: { padding: 16, paddingBottom: 32 },
+  content: { width: '100%', maxWidth: 720, alignSelf: 'center', padding: 16, paddingBottom: 32 },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24, gap: 12, backgroundColor: t.colors.bg },
 
   overviewCard: {
@@ -429,25 +429,25 @@ const createStyles = (t) => StyleSheet.create({
   card: { backgroundColor: t.colors.surface, padding: 16, borderRadius: t.radius.lg, borderWidth: 1, borderColor: t.colors.border, marginBottom: 10, ...t.shadows.sm },
   cardPaused: { opacity: 0.7 },
   cardHeader: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' },
-  cardTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 },
+  cardTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1, minWidth: 0 },
   catIcon: { width: 38, height: 38, borderRadius: 12, backgroundColor: t.colors.brandSoft, alignItems: 'center', justifyContent: 'center' },
   cardTitle: { fontSize: 15, fontWeight: '800', color: t.colors.text },
   cardSub: { fontSize: 12, color: t.colors.textMuted, marginTop: 2 },
-  cardAmount: { fontSize: 16, fontWeight: '900', color: t.colors.expense },
-  badgeRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 12 },
+  cardAmount: { flexShrink: 1, maxWidth: '38%', textAlign: 'right', fontSize: 16, fontWeight: '900', color: t.colors.expense },
+  badgeRow: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 8, marginTop: 12 },
   badge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: t.radius.pill },
   badgeText: { fontSize: 11, fontWeight: '700' },
   walletText: { fontSize: 12, color: t.colors.textMuted },
-  actionRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 14 },
+  actionRow: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 8, marginTop: 14 },
   actionBtn: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 14, paddingVertical: 8, borderRadius: t.radius.pill },
-  payBtn: { backgroundColor: t.colors.income, flex: 1, justifyContent: 'center' },
+  payBtn: { backgroundColor: t.colors.income, flexGrow: 1, flexBasis: 100, justifyContent: 'center' },
   payBtnText: { color: '#fff', fontWeight: '800', fontSize: 13 },
   iconAction: { width: 38, height: 38, borderRadius: 12, backgroundColor: t.colors.surfaceAlt, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: t.colors.border },
 
   emptyMsgInline: { color: t.colors.textMuted, textAlign: 'center', paddingVertical: 16 },
 
   modalBackdrop: { flex: 1, backgroundColor: t.colors.overlay, justifyContent: 'flex-end' },
-  modalSheet: { backgroundColor: t.colors.surface, borderTopLeftRadius: t.radius.xl, borderTopRightRadius: t.radius.xl, padding: 20, maxHeight: '88%' },
+  modalSheet: { width: '100%', maxWidth: 720, alignSelf: 'center', backgroundColor: t.colors.surface, borderTopLeftRadius: t.radius.xl, borderTopRightRadius: t.radius.xl, padding: 20, maxHeight: '88%' },
   modalHandle: { width: 40, height: 4, borderRadius: 2, backgroundColor: t.colors.border, alignSelf: 'center', marginBottom: 14 },
   modalTitle: { fontSize: 18, fontWeight: '900', color: t.colors.text, marginBottom: 14 },
   formLabel: { color: t.colors.textMuted, fontWeight: '700', fontSize: 13, marginBottom: 8, marginTop: 6 },
@@ -465,7 +465,7 @@ const createStyles = (t) => StyleSheet.create({
 
   summaryRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 14, gap: 8 },
   summaryItem: { flex: 1, alignItems: 'center', backgroundColor: t.colors.surfaceAlt, paddingVertical: 12, borderRadius: t.radius.md },
-  summaryValue: { fontSize: 15, fontWeight: '900', color: t.colors.text },
+  summaryValue: { maxWidth: '100%', fontSize: 15, fontWeight: '900', color: t.colors.text },
   summaryLabel: { fontSize: 11, color: t.colors.textMuted, marginTop: 2 },
   histRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: t.colors.border },
   histDate: { fontSize: 14, fontWeight: '700', color: t.colors.text },

@@ -3,6 +3,7 @@ const cors = require('cors');
 require('dotenv').config();
 
 const { pool } = require('./config/database');
+const { getReadiness } = require('./services/health.service');
 const AccountModel = require('./models/account.model');
 const CategoryModel = require('./models/category.model');
 const aiRoutes = require('./routes/ai.routes');
@@ -30,6 +31,19 @@ app.use(express.json({ limit: '15mb' }));
 
 app.get('/', (req, res) => {
   res.json({ success: true, message: 'PERFIN MVP API is running' });
+});
+
+app.get('/api/health/live', (req, res) => {
+  res.json({ success: true, data: { status: 'alive', timestamp: new Date().toISOString() } });
+});
+
+app.get('/api/health/ready', async (req, res, next) => {
+  try {
+    const data = await getReadiness();
+    res.status(data.ready ? 200 : 503).json({ success: data.ready, data });
+  } catch (error) {
+    next(error);
+  }
 });
 
 app.get('/api/test-db', async (req, res, next) => {

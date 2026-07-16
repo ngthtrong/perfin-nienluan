@@ -226,7 +226,7 @@ export default function GoalsScreen() {
         </View>
         <View style={{ flex: 1 }}>
           <Text style={styles.surplusLabel}>Dòng tiền có thể phân bổ</Text>
-          <Text style={[styles.surplusValue, { color: Number(surplus?.surplus || 0) >= 0 ? c.income : c.expense }]}>
+          <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} style={[styles.surplusValue, { color: Number(surplus?.surplus || 0) >= 0 ? c.income : c.expense }]}>
             {formatVND(surplus?.surplus || 0)}/tháng
           </Text>
           <Text style={styles.surplusDetail}>
@@ -266,7 +266,7 @@ export default function GoalsScreen() {
           />
 
           <View style={styles.twoColumns}>
-            <View style={{ flex: 1 }}>
+            <View style={styles.fieldColumn}>
               <Text style={styles.label}>Số tiền mục tiêu</Text>
               <TextInput
                 style={styles.input}
@@ -277,7 +277,7 @@ export default function GoalsScreen() {
                 placeholderTextColor={c.textMuted}
               />
             </View>
-            <View style={{ flex: 1 }}>
+            <View style={styles.fieldColumn}>
               <Text style={styles.label}>Hiện đã có</Text>
               <TextInput
                 style={styles.input}
@@ -381,8 +381,8 @@ export default function GoalsScreen() {
               <View style={[styles.goalIcon, { backgroundColor: meta.bg }]}>
                 <AppIcon name={goal.goal_type === 'debt_payoff' ? 'credit-card-off' : goal.goal_type === 'purchase' ? 'shopping-bag' : 'savings'} size={20} color={meta.color} />
               </View>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.goalName}>{goal.name}</Text>
+              <View style={{ flex: 1, minWidth: 0 }}>
+                <Text numberOfLines={1} style={styles.goalName}>{goal.name}</Text>
                 <Text style={styles.goalType}>{goalTypeLabel(goal.goal_type)}</Text>
               </View>
               <View style={[styles.statusBadge, { backgroundColor: meta.bg }]}>
@@ -392,8 +392,8 @@ export default function GoalsScreen() {
             </View>
 
             <View style={styles.progressHeader}>
-              <Text style={styles.progressAmount}>{formatVND(goal.current_amount)}</Text>
-              <Text style={styles.progressTarget}>/ {formatVND(goal.target_amount)}</Text>
+              <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} style={styles.progressAmount}>{formatVND(goal.current_amount)}</Text>
+              <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} style={styles.progressTarget}>/ {formatVND(goal.target_amount)}</Text>
               <Text style={styles.progressPercent}>{Math.min(100, Math.max(0, percent)).toFixed(0)}%</Text>
             </View>
             <ProgressBar percentage={percent} color={meta.color} />
@@ -401,15 +401,15 @@ export default function GoalsScreen() {
             <View style={styles.goalStats}>
               <View style={styles.goalStat}>
                 <Text style={styles.goalStatLabel}>Còn thiếu</Text>
-                <Text style={styles.goalStatValue}>{formatVND(remaining)}</Text>
+                <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} style={styles.goalStatValue}>{formatVND(remaining)}</Text>
               </View>
               <View style={styles.goalStat}>
                 <Text style={styles.goalStatLabel}>Góp hàng tháng</Text>
-                <Text style={styles.goalStatValue}>{formatVND(goal.plan?.contribution ?? goal.plan?.monthlyPayment ?? 0)}</Text>
+                <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} style={styles.goalStatValue}>{formatVND(goal.plan?.contribution ?? goal.plan?.monthlyPayment ?? 0)}</Text>
               </View>
               <View style={styles.goalStat}>
                 <Text style={styles.goalStatLabel}>Dự kiến</Text>
-                <Text style={styles.goalStatValue} numberOfLines={1}>
+                <Text style={styles.goalStatValue} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
                   {goal.plan?.monthsNeeded == null ? 'Chưa xác định' : `${goal.plan.monthsNeeded} tháng`}
                 </Text>
               </View>
@@ -455,20 +455,20 @@ function PlanPreview({ data, styles, colors }) {
       <View style={styles.planGrid}>
         <View style={styles.planStat}>
           <Text style={styles.planStatLabel}>Góp/tháng</Text>
-          <Text style={styles.planStatValue}>{formatVND(plan.contribution ?? plan.monthlyPayment ?? 0)}</Text>
+          <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.72} style={styles.planStatValue}>{formatVND(plan.contribution ?? plan.monthlyPayment ?? 0)}</Text>
         </View>
         <View style={styles.planStat}>
           <Text style={styles.planStatLabel}>Thời gian</Text>
-          <Text style={styles.planStatValue}>{plan.monthsNeeded == null ? 'Chưa xác định' : `${plan.monthsNeeded} tháng`}</Text>
+          <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.72} style={styles.planStatValue}>{plan.monthsNeeded == null ? 'Chưa xác định' : `${plan.monthsNeeded} tháng`}</Text>
         </View>
         <View style={styles.planStat}>
           <Text style={styles.planStatLabel}>Ngày dự kiến</Text>
-          <Text style={styles.planStatValue}>{plan.projectedDate ? formatDate(plan.projectedDate) : '—'}</Text>
+          <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.72} style={styles.planStatValue}>{plan.projectedDate ? formatDate(plan.projectedDate) : '—'}</Text>
         </View>
         {plan.requiredMonthly != null && (
           <View style={styles.planStat}>
             <Text style={styles.planStatLabel}>Cần để kịp hạn</Text>
-            <Text style={styles.planStatValue}>{formatVND(plan.requiredMonthly)}</Text>
+            <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.72} style={styles.planStatValue}>{formatVND(plan.requiredMonthly)}</Text>
           </View>
         )}
       </View>
@@ -494,7 +494,7 @@ const createStyles = (t) => StyleSheet.create({
     backgroundColor: t.colors.brandSoft,
   },
   surplusLabel: { color: t.colors.textMuted, fontSize: 12, fontWeight: '700' },
-  surplusValue: { fontSize: 20, fontWeight: '900', marginTop: 2 },
+  surplusValue: { maxWidth: '100%', fontSize: 20, fontWeight: '900', marginTop: 2 },
   surplusDetail: { color: t.colors.textMuted, fontSize: 10, fontWeight: '600', marginTop: 3 },
   formCard: { marginBottom: 22 },
   formHeadingRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 },
@@ -509,7 +509,8 @@ const createStyles = (t) => StyleSheet.create({
     backgroundColor: t.colors.surfaceAlt, fontSize: 14,
   },
   noteInput: { minHeight: 76, textAlignVertical: 'top' },
-  twoColumns: { flexDirection: 'row', gap: 10 },
+  twoColumns: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  fieldColumn: { flexGrow: 1, flexBasis: 140, minWidth: 0 },
   planBox: {
     marginBottom: 10, padding: 13, backgroundColor: t.colors.brandSoft,
     borderRadius: t.radius.md, borderWidth: 1, borderColor: t.colors.brand,
@@ -517,7 +518,7 @@ const createStyles = (t) => StyleSheet.create({
   planTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 10 },
   planTitle: { color: t.colors.brandText, fontSize: 13, fontWeight: '900' },
   planGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  planStat: { width: '47%' },
+  planStat: { flexGrow: 1, flexBasis: 118, minWidth: 0 },
   planStatLabel: { color: t.colors.textMuted, fontSize: 10, fontWeight: '700' },
   planStatValue: { color: t.colors.text, fontSize: 12, fontWeight: '800', marginTop: 2 },
   whatIfText: { color: t.colors.brandText, fontSize: 11, lineHeight: 16, fontWeight: '700', marginTop: 9 },
@@ -529,21 +530,21 @@ const createStyles = (t) => StyleSheet.create({
   },
   totalBadgeText: { color: t.colors.brandText, fontSize: 11, fontWeight: '900' },
   goalCard: { marginBottom: 11 },
-  goalHeader: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 14 },
+  goalHeader: { flexDirection: 'row', alignItems: 'center', gap: 9, marginBottom: 14, minWidth: 0 },
   goalIcon: { width: 40, height: 40, borderRadius: 13, alignItems: 'center', justifyContent: 'center' },
   goalName: { color: t.colors.text, fontSize: 15, fontWeight: '900' },
   goalType: { color: t.colors.textMuted, fontSize: 11, fontWeight: '600', marginTop: 2 },
-  statusBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 8, paddingVertical: 5, borderRadius: t.radius.pill },
+  statusBadge: { flexShrink: 1, flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 8, paddingVertical: 5, borderRadius: t.radius.pill },
   statusText: { fontSize: 10, fontWeight: '800' },
   progressHeader: { flexDirection: 'row', alignItems: 'baseline', marginBottom: 8 },
-  progressAmount: { color: t.colors.text, fontSize: 16, fontWeight: '900' },
-  progressTarget: { flex: 1, color: t.colors.textMuted, fontSize: 11, fontWeight: '600', marginLeft: 4 },
+  progressAmount: { flexShrink: 1, maxWidth: '42%', color: t.colors.text, fontSize: 16, fontWeight: '900' },
+  progressTarget: { flex: 1, minWidth: 0, color: t.colors.textMuted, fontSize: 11, fontWeight: '600', marginLeft: 4 },
   progressPercent: { color: t.colors.brandText, fontSize: 13, fontWeight: '900' },
   goalStats: {
     flexDirection: 'row', marginTop: 12, paddingVertical: 10,
     borderTopWidth: 1, borderBottomWidth: 1, borderColor: t.colors.border,
   },
-  goalStat: { flex: 1, paddingHorizontal: 4 },
+  goalStat: { flex: 1, minWidth: 0, paddingHorizontal: 4 },
   goalStatLabel: { color: t.colors.textMuted, fontSize: 9, fontWeight: '700', marginBottom: 3 },
   goalStatValue: { color: t.colors.textSecondary, fontSize: 10, fontWeight: '800' },
   warningBox: {

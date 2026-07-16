@@ -8,8 +8,8 @@ const SPACING = { xs: 4, sm: 8, md: 12, lg: 16, xl: 20, xxl: 28 };
 
 // Font scale — role → { size, weight, lineHeight }
 const TYPO = {
-  display: { fontSize: 34, fontWeight: '800', lineHeight: 40 },
-  title:   { fontSize: 24, fontWeight: '800', lineHeight: 30 },
+  display: { fontSize: 32, fontWeight: '800', lineHeight: 38 },
+  title:   { fontSize: 22, fontWeight: '800', lineHeight: 28 },
   heading: { fontSize: 18, fontWeight: '800', lineHeight: 24 },
   subhead: { fontSize: 16, fontWeight: '700', lineHeight: 22 },
   body:    { fontSize: 15, fontWeight: '500', lineHeight: 21 },
@@ -26,40 +26,40 @@ const CATEGORY_COLORS = [
 
 const lightColors = {
   // Backgrounds
-  bg: '#F6F7FB',
+  bg: '#F5F6FA',
   bgElevated: '#FFFFFF',
   surface: '#FFFFFF',
-  surfaceAlt: '#F1F2F9',
+  surfaceAlt: '#F0F1F6',
   overlay: 'rgba(15, 15, 35, 0.45)',
 
   // Text
-  text: '#0F1024',
-  textSecondary: '#4A4B66',
-  textMuted: '#9A9BB4',
+  text: '#151625',
+  textSecondary: '#4E5065',
+  textMuted: '#73758B',
   onBrand: '#FFFFFF',
 
   // Borders
-  border: '#E8E9F2',
-  borderStrong: '#D5D7E6',
+  border: '#E2E4EC',
+  borderStrong: '#CDD0DC',
 
   // Brand accent
-  brand: '#5B5FEF',
-  brandSoft: '#EEEDFF',
-  brandStrong: '#3F3FCC',
-  brandText: '#5B5FEF',
+  brand: '#5758E6',
+  brandSoft: '#EEEEFF',
+  brandStrong: '#3F40C7',
+  brandText: '#4B4CCF',
 
   // Semantic
-  income: '#0FA968',
+  income: '#078A58',
   incomeSoft: '#DFF6EC',
-  expense: '#F03E62',
+  expense: '#E8395F',
   expenseSoft: '#FEE7EC',
-  warning: '#E08A00',
+  warning: '#A96600',
   warningSoft: '#FEF3D6',
-  info: '#0EA5C6',
+  info: '#087F9B',
   infoSoft: '#DEF4FA',
 
   // Chat
-  chatUserBubble: '#5B5FEF',
+  chatUserBubble: '#5758E6',
   chatAiBubble: '#FFFFFF',
 };
 
@@ -74,7 +74,7 @@ const darkColors = {
   // Text
   text: '#F3F3F8',
   textSecondary: '#B4B5C9',
-  textMuted: '#71738C',
+  textMuted: '#999AAF',
   onBrand: '#FFFFFF',
 
   // Borders
@@ -98,7 +98,7 @@ const darkColors = {
   infoSoft: '#122730',
 
   // Chat
-  chatUserBubble: '#5B5FEF',
+  chatUserBubble: '#6668EE',
   chatAiBubble: '#181926',
 };
 
@@ -112,9 +112,9 @@ function makeShadows(dark) {
     };
   }
   return {
-    sm: { shadowColor: '#1A1B3A', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 1 },
-    md: { shadowColor: '#1A1B3A', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 12, elevation: 3 },
-    lg: { shadowColor: '#1A1B3A', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.12, shadowRadius: 24, elevation: 8 },
+    sm: { shadowColor: '#20213D', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.045, shadowRadius: 6, elevation: 1 },
+    md: { shadowColor: '#20213D', shadowOffset: { width: 0, height: 5 }, shadowOpacity: 0.07, shadowRadius: 14, elevation: 3 },
+    lg: { shadowColor: '#20213D', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.1, shadowRadius: 26, elevation: 7 },
   };
 }
 

@@ -23,6 +23,7 @@ export default function SegmentedControl({ options, value, onChange, style }) {
         const active = opt.value === value;
         return (
           <TouchableOpacity
+            accessibilityRole="button"
             key={opt.value}
             onPress={() => onChange(opt.value)}
             activeOpacity={0.8}
@@ -36,7 +37,12 @@ export default function SegmentedControl({ options, value, onChange, style }) {
               ...(active ? theme.shadows.sm : null),
             }}
           >
-            <Text style={{ fontSize: 13, fontWeight: '700', color: active ? c.brandText : c.textMuted }}>
+            <Text
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.78}
+              style={{ fontSize: 13, fontWeight: '700', color: active ? c.brandText : c.textMuted }}
+            >
               {opt.label}
             </Text>
           </TouchableOpacity>

@@ -52,7 +52,7 @@ export default function TransactionCard({ transaction, onPress, onLongPress }) {
 
       <View style={styles.amountCol}>
         <BalanceDisplay amount={signAmount} showSign size={15} />
-        {transaction.wallet_name && <Text style={styles.wallet}>{transaction.wallet_name}</Text>}
+        {transaction.wallet_name && <Text numberOfLines={1} style={styles.wallet}>{transaction.wallet_name}</Text>}
       </View>
     </TouchableOpacity>
   );
@@ -72,10 +72,10 @@ const createStyles = (t) => StyleSheet.create({
     paddingVertical: 12,
   },
   iconWrapper: { width: 42, height: 42, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
-  main: { flex: 1 },
+  main: { flex: 1, minWidth: 0 },
   title: { fontSize: 15, fontWeight: '700', color: t.colors.text, marginBottom: 3 },
   metaRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
-  meta: { color: t.colors.textMuted, fontSize: 12, fontWeight: '500' },
+  meta: { flexShrink: 1, color: t.colors.textMuted, fontSize: 12, fontWeight: '500' },
   metaDot: { width: 3, height: 3, borderRadius: 1.5, backgroundColor: t.colors.textMuted },
   aiBadge: {
     alignSelf: 'flex-start',
@@ -86,6 +86,6 @@ const createStyles = (t) => StyleSheet.create({
     marginTop: 4,
   },
   aiBadgeText: { color: t.colors.brandText, fontSize: 10, fontWeight: '700' },
-  amountCol: { alignItems: 'flex-end' },
-  wallet: { color: t.colors.textMuted, fontSize: 10, marginTop: 2, fontWeight: '500' },
+  amountCol: { flexShrink: 1, maxWidth: '42%', alignItems: 'flex-end' },
+  wallet: { maxWidth: '100%', color: t.colors.textMuted, fontSize: 10, marginTop: 2, fontWeight: '500' },
 });

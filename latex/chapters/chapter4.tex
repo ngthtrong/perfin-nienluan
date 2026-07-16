@@ -15,14 +15,14 @@
     \midrule
     O1 --- Mô hình dữ liệu & Migration, model, validation và luồng transaction. & Đã hiện thực ở mức prototype; cần fault-injection trên DB thật. \\
     O2 --- Pipeline đa phương thức & Tool schema, parser, media adapter, preview/state. & Có luồng mã nguồn; chưa có accuracy khóa phiên bản. \\
-    O3 --- Giải thuật phân tích & Hàm analytics, goal, budget, feedback và test tự động. & 18/18 tệp test pass; đã zero-fill trục lịch, vẫn cần dataset rộng. \\
+    O3 --- Giải thuật phân tích & Hàm analytics, goal, budget, feedback và test tự động. & 100/100 test pass; đã zero-fill trục lịch, vẫn cần dataset gán nhãn rộng. \\
     O4 --- Ranh giới LLM & Tool declarations, facts--narrator flow và fallback. & Thiết kế rõ; numeric faithfulness chưa được đo hệ thống. \\
-    O5 --- Đánh giá vận hành & Backend test, parser harness và Expo export đã chạy. & Chưa đủ kết luận về DB, media, LLM, hiệu năng hoặc UAT. \\
+    O5 --- Đánh giá vận hành & Regression, parser, full API/DB/media smoke, mobile UI smoke và Expo export đã chạy. & Lõi demo có bằng chứng runtime; chưa đủ kết luận Redis worker, accuracy, hiệu năng hoặc UAT. \\
     \bottomrule
   \end{tabularx}
 \end{table}
 
-Baseline trước sửa ghi nhận 13/13 tệp backend đạt và local parser đạt 27/31 ca strict. Sau ổn định hóa, backend đạt 18/18 tệp, local-parser quality gate đạt 31/31 strict, Expo web export xử lý 652 module và tạo bundle khoảng 1,49~MB. Các số này không được dùng để tuyên bố hệ thống đã sẵn sàng production.
+Baseline trước sửa ghi nhận 13/13 tệp backend đạt và local parser đạt 27/31 ca strict. Sau ổn định hóa, backend đạt 100/100 test, local-parser quality gate đạt 31/31 strict, full smoke đạt 23/23, Expo web/Android export xử lý 653/960 module. PostgreSQL demo chứa 5.265 giao dịch đã đối soát và mobile-web smoke xác nhận ảnh hiển thị trực tiếp trong chat. Các số này không được dùng để tuyên bố hệ thống đã sẵn sàng production.
 
 \section{Tác động của LLM}
 
@@ -39,7 +39,7 @@ Tác động này chỉ tích cực khi có bốn hàng rào: schema, validation
   \item Runway và trend đã zero-fill ngày/tháng nhưng vẫn là ngoại suy đơn giản, chưa mô hình hóa mùa vụ, sự kiện tương lai hoặc thu nhập bất thường.
   \item Persona có thể làm phản hồi dễ đọc hơn nhưng hiệu quả hành vi chưa được chứng minh bằng UAT.
   \item Một số chức năng hỗ trợ demo chưa hoàn chỉnh: tạo ví, PDF thật, backup định kỳ, restore và push notification.
-  \item Bộ test hiện có chưa thay thế kiểm thử end-to-end với PostgreSQL, Redis và provider thật.
+  \item Luồng API--PostgreSQL và provider media đã smoke test; Redis worker, retry/idempotency live và nhiều thiết bị mobile vẫn chưa được kiểm chứng.
   \item ERD có user scope nhưng một số thao tác theo ID chưa luôn kèm điều kiện user, tạo rủi ro khi nâng cấp multi-user.
 \end{enumerate}
 
@@ -48,7 +48,7 @@ Tác động này chỉ tích cực khi có bốn hàng rào: schema, validation
 Thứ tự phát triển phải giữ trọng tâm dữ liệu và giải thuật:
 
 \begin{enumerate}
-  \item \textbf{Kiểm chứng tích hợp lõi:} transaction, pending claim, recurring period và validation đã có unit regression; bước kế tiếp là PostgreSQL/Redis integration test và user scope.
+  \item \textbf{Kiểm chứng tích hợp lõi:} transaction, pending claim, recurring period và PostgreSQL live đã có regression/smoke; bước kế tiếp là Redis worker, fault injection và user scope.
   \item \textbf{Mở rộng baseline ngôn ngữ:} quality gate 31 câu đã đạt; cần tách tập đánh giá độc lập, thêm typo, câu đa ý định và báo macro-F1.
   \item \textbf{Kiểm chứng giải thuật:} trục thời gian, zero-spend days và mẫu số đã sửa; cần khóa dataset tổng hợp lớn hơn, backtest và expected tính tay.
   \item \textbf{Đo tác động LLM:} xây tập tiếng Việt gán nhãn, ablation parser--LLM và numeric grounding checker.

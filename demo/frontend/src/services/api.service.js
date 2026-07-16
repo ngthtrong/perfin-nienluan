@@ -45,6 +45,23 @@ const TUNNEL_HEADERS = {
   'ngrok-skip-browser-warning': 'true',
 };
 
+function resolveMediaUri(value) {
+  if (typeof value !== 'string') return null;
+  const uri = value.trim();
+  if (!uri) return null;
+
+  if (/^(?:https?|data|blob|file|content|ph|assets-library|asset-library):/i.test(uri)) return uri;
+  if (uri.startsWith('//')) {
+    const protocol = BASE_URL.match(/^https?:/i)?.[0] || 'https:';
+    return `${protocol}${uri}`;
+  }
+
+  // Unknown schemes should not be handed to the native image loader. Plain and
+  // root-relative paths are API media paths and are resolved against BASE_URL.
+  if (/^[a-z][a-z0-9+.-]*:/i.test(uri)) return null;
+  return `${BASE_URL}/${uri.replace(/^(?:\.\/|\/)+/, '')}`;
+}
+
 function getExtension(uri = '') {
   const cleanUri = uri.split('?')[0];
   const fileName = cleanUri.split('/').pop() || '';
@@ -203,6 +220,7 @@ async function upload(path, fieldName, asset, fallbackMimeType) {
 
 export const api = {
   getBaseUrl: () => BASE_URL,
+  resolveMediaUri,
   getBalance: () => request('/api/accounts/balance'),
   getCategories: (type) => request(`/api/categories${type ? `?type=${type}` : ''}`),
   getTransactions: (query = '') => request(`/api/transactions${query}`),
@@ -213,6 +231,7 @@ export const api = {
   }),
   deleteTransaction: (id) => request(`/api/transactions/${id}`, { method: 'DELETE' }),
   getSummary: (month, year) => request(`/api/transactions/summary?month=${month}&year=${year}`),
+  getChatMessages: (limit = 20) => request(`/api/chat/messages?limit=${encodeURIComponent(limit)}`),
   sendChat: (text) => request('/api/chat/message', { method: 'POST', body: JSON.stringify({ text }) }),
   transcribeAudio: (asset) => upload('/api/speech', 'audio', asset, 'audio/m4a'),
   extractImageText: (asset) => upload('/api/ocr', 'image', asset, 'image/jpeg'),

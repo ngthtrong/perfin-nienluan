@@ -7,7 +7,7 @@ import { api } from '../services/api.service';
 import { useTheme } from '../theme/ThemeContext';
 import { formatVND } from '../utils/formatters';
 import AppIcon from '../components/AppIcon';
-import { Button } from '../components/ui';
+import { Button, EmptyState, ErrorState, Skeleton } from '../components/ui';
 
 const PERIODS = [
   { key: 'month', label: 'Tháng này' },
@@ -18,12 +18,14 @@ const PERIODS = [
 function CashflowBar({ label, value, maxValue, color, styles }) {
   const pct = maxValue > 0 ? Math.min(100, (Math.abs(value) / maxValue) * 100) : 0;
   return (
-    <View style={styles.barRow}>
-      <Text style={styles.barLabel}>{label}</Text>
+    <View style={styles.barGroup}>
+      <View style={styles.barHeader}>
+        <Text style={styles.barLabel}>{label}</Text>
+        <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.72} style={[styles.barValue, { color }]}>{formatVND(Math.abs(value))}</Text>
+      </View>
       <View style={styles.barTrack}>
         <View style={[styles.barFill, { width: `${pct}%`, backgroundColor: color }]} />
       </View>
-      <Text style={[styles.barValue, { color }]}>{formatVND(Math.abs(value))}</Text>
     </View>
   );
 }
@@ -45,6 +47,7 @@ export default function CashflowScreen() {
   const [transfers, setTransfers] = useState([]);
   const [period, setPeriod] = useState('month');
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
   const [showTransferForm, setShowTransferForm] = useState(false);
   const [showPnLForm, setShowPnLForm] = useState(false);
@@ -66,8 +69,9 @@ export default function CashflowScreen() {
       setCashflow(cf.data);
       setWallets(nw.data?.wallets || []);
       setTransfers(tr.data || []);
+      setError(null);
     } catch (err) {
-      Alert.alert('Lỗi', err.message);
+      setError(err.message || 'Không thể tải dữ liệu dòng tiền.');
     } finally {
       setLoading(false);
     }
@@ -136,7 +140,21 @@ export default function CashflowScreen() {
   );
 
   if (loading) {
-    return <View style={styles.centered}><ActivityIndicator color={c.brand} size="large" /></View>;
+    return (
+      <View style={styles.loadingScreen}>
+        <Skeleton height={160} radius={24} style={{ marginBottom: 12 }} />
+        <Skeleton height={180} radius={18} style={{ marginBottom: 12 }} />
+        <Skeleton height={64} radius={16} />
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={styles.container}>
+        <ErrorState message={error} onRetry={() => { setLoading(true); setError(null); load(); }} />
+      </View>
+    );
   }
 
   return (
@@ -151,15 +169,15 @@ export default function CashflowScreen() {
           <AppIcon name="account-balance" size={18} color="#fff" />
           <Text style={styles.netWorthTitle}>Tài sản ròng (Net Worth)</Text>
         </View>
-        <Text style={styles.netWorthValue}>{formatVND(netWorth?.net_worth || 0)}</Text>
+        <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.65} style={styles.netWorthValue}>{formatVND(netWorth?.net_worth || 0)}</Text>
         <View style={styles.netWorthBreakdown}>
           <View style={{ flex: 1 }}>
             <Text style={styles.nwLabel}>💰 Ví thường</Text>
-            <Text style={styles.nwValue}>{formatVND(netWorth?.regular_wallets || 0)}</Text>
+            <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} style={styles.nwValue}>{formatVND(netWorth?.regular_wallets || 0)}</Text>
           </View>
           <View style={{ flex: 1, alignItems: 'flex-end' }}>
             <Text style={styles.nwLabel}>📈 Đầu tư</Text>
-            <Text style={styles.nwValue}>{formatVND(netWorth?.investment_wallets || 0)}</Text>
+            <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} style={styles.nwValue}>{formatVND(netWorth?.investment_wallets || 0)}</Text>
           </View>
         </View>
       </View>
@@ -223,8 +241,8 @@ export default function CashflowScreen() {
       )}
 
       <View style={styles.actionRow}>
-        <Button label="Chuyển tiền" icon="swap-horiz" onPress={() => setShowTransferForm((v) => !v)} style={{ flex: 1 }} fullWidth={false} />
-        <Button label="Lãi/Lỗ đầu tư" icon="trending-up" variant="secondary" onPress={() => setShowPnLForm((v) => !v)} style={{ flex: 1 }} fullWidth={false} />
+        <Button label="Chuyển tiền" icon="swap-horiz" onPress={() => setShowTransferForm((v) => !v)} style={{ flexGrow: 1, flexBasis: 140 }} fullWidth={false} />
+        <Button label="Lãi/Lỗ đầu tư" icon="trending-up" variant="secondary" onPress={() => setShowPnLForm((v) => !v)} style={{ flexGrow: 1, flexBasis: 140 }} fullWidth={false} />
       </View>
 
       {showTransferForm && (
@@ -284,9 +302,9 @@ export default function CashflowScreen() {
         </View>
       )}
 
-      {transfers.length > 0 && (
+      <Text style={styles.sectionTitle}>Lịch sử chuyển tiền gần đây</Text>
+      {transfers.length > 0 ? (
         <>
-          <Text style={styles.sectionTitle}>Lịch sử chuyển tiền gần đây</Text>
           {transfers.map((t) => {
             const meta = TRANSFER_TYPES.find((tt) => tt.key === t.transfer_type) || TRANSFER_TYPES[0];
             return (
@@ -296,13 +314,20 @@ export default function CashflowScreen() {
                 </View>
                 <View style={styles.transferInfo}>
                   <Text style={styles.transferType}>{meta.label}</Text>
-                  <Text style={styles.transferMeta}>{t.from_wallet_name || '?'} → {t.to_wallet_name || '?'}</Text>
+                  <Text numberOfLines={1} style={styles.transferMeta}>{t.from_wallet_name || '?'} → {t.to_wallet_name || '?'}</Text>
                 </View>
-                <Text style={[styles.transferAmount, { color: meta.color }]}>{formatVND(t.amount)}</Text>
+                <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.72} style={[styles.transferAmount, { color: meta.color }]}>{formatVND(t.amount)}</Text>
               </View>
             );
           })}
         </>
+      ) : (
+        <EmptyState
+          emoji="⇄"
+          title="Chưa có lịch sử điều chuyển"
+          message="Các giao dịch giữa ví và tài khoản đầu tư sẽ xuất hiện tại đây."
+          style={styles.compactEmpty}
+        />
       )}
     </ScrollView>
   );
@@ -310,8 +335,9 @@ export default function CashflowScreen() {
 
 const createStyles = (t) => StyleSheet.create({
   container: { flex: 1, backgroundColor: t.colors.bg },
-  content: { padding: 16, paddingBottom: 40 },
+  content: { width: '100%', maxWidth: 720, alignSelf: 'center', padding: 16, paddingBottom: 40 },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: t.colors.bg },
+  loadingScreen: { flex: 1, width: '100%', maxWidth: 720, alignSelf: 'center', padding: 16, backgroundColor: t.colors.bg },
 
   netWorthCard: { backgroundColor: t.colors.brand, borderRadius: t.radius.xl, padding: 20, marginBottom: 14, ...t.shadows.md },
   netWorthHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12, opacity: 0.9 },
@@ -331,11 +357,12 @@ const createStyles = (t) => StyleSheet.create({
 
   card: { backgroundColor: t.colors.surface, borderRadius: t.radius.lg, padding: 16, borderWidth: 1, borderColor: t.colors.border, marginBottom: 14, ...t.shadows.sm },
   cardTitle: { fontSize: 14, fontWeight: '800', color: t.colors.text, marginBottom: 10 },
-  barRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 8 },
-  barLabel: { width: 72, fontSize: 12, color: t.colors.textMuted, fontWeight: '600' },
+  barGroup: { marginBottom: 12 },
+  barHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 7 },
+  barLabel: { flex: 1, fontSize: 12, color: t.colors.textMuted, fontWeight: '700' },
   barTrack: { flex: 1, height: 8, backgroundColor: t.colors.surfaceAlt, borderRadius: 4, overflow: 'hidden' },
   barFill: { height: 8, borderRadius: 4 },
-  barValue: { width: 90, textAlign: 'right', fontSize: 13, fontWeight: '700' },
+  barValue: { flexShrink: 1, maxWidth: '62%', textAlign: 'right', fontSize: 13, fontWeight: '800' },
   netRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 },
   netLabel: { color: t.colors.textMuted, fontSize: 13, fontWeight: '700' },
   netValue: { fontSize: 15, fontWeight: '800' },
@@ -344,14 +371,14 @@ const createStyles = (t) => StyleSheet.create({
   investLabel: { color: t.colors.textMuted, fontSize: 13 },
   investValue: { fontSize: 13, fontWeight: '700' },
 
-  actionRow: { flexDirection: 'row', gap: 12, marginBottom: 14 },
+  actionRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 14 },
 
   formCard: { backgroundColor: t.colors.surface, borderRadius: t.radius.lg, padding: 16, borderWidth: 1, borderColor: t.colors.border, marginBottom: 14, ...t.shadows.sm },
   formTitle: { fontSize: 15, fontWeight: '800', color: t.colors.text, marginBottom: 14 },
   formLabel: { color: t.colors.textMuted, fontSize: 12, fontWeight: '700', marginBottom: 8 },
-  transferTypeRow: { flexDirection: 'row', gap: 8, marginBottom: 14 },
+  transferTypeRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 14 },
   typeChip: {
-    flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4,
+    flexGrow: 1, flexBasis: 90, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4,
     paddingVertical: 8, borderRadius: t.radius.md, borderWidth: 1.5, borderColor: t.colors.border, backgroundColor: t.colors.surfaceAlt,
   },
   typeChipText: { fontSize: 11, fontWeight: '700', color: t.colors.textMuted },
@@ -363,8 +390,9 @@ const createStyles = (t) => StyleSheet.create({
   sectionTitle: { fontSize: 15, fontWeight: '800', color: t.colors.text, marginBottom: 10 },
   transferRow: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: t.colors.surface, padding: 13, borderRadius: t.radius.md, marginBottom: 8, borderWidth: 1, borderColor: t.colors.border, ...t.shadows.sm },
   transferIcon: { width: 40, height: 40, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
-  transferInfo: { flex: 1 },
+  transferInfo: { flex: 1, minWidth: 0 },
   transferType: { fontSize: 14, fontWeight: '700', color: t.colors.text },
   transferMeta: { fontSize: 12, color: t.colors.textMuted },
-  transferAmount: { fontSize: 15, fontWeight: '800' },
+  transferAmount: { flexShrink: 1, maxWidth: '40%', textAlign: 'right', fontSize: 15, fontWeight: '800' },
+  compactEmpty: { paddingVertical: 24, marginBottom: 8 },
 });

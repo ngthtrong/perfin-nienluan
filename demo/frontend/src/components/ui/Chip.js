@@ -9,6 +9,7 @@ export default function Chip({ label, active = false, icon, onPress, disabled = 
 
   return (
     <TouchableOpacity
+      accessibilityRole="button"
       onPress={onPress}
       disabled={disabled}
       activeOpacity={0.75}
@@ -29,7 +30,7 @@ export default function Chip({ label, active = false, icon, onPress, disabled = 
       ]}
     >
       {icon && <MaterialIcons name={icon} size={15} color={active ? c.onBrand : c.textSecondary} />}
-      <Text style={{ fontSize: 13, fontWeight: '700', color: active ? c.onBrand : c.textSecondary }}>
+      <Text numberOfLines={1} style={{ flexShrink: 1, fontSize: 13, fontWeight: '700', color: active ? c.onBrand : c.textSecondary }}>
         {label}
       </Text>
     </TouchableOpacity>
