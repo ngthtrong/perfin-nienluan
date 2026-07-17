@@ -1,12 +1,13 @@
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, FlatList,
-  ScrollView, StyleSheet, RefreshControl, Alert,
+  ScrollView, StyleSheet, RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { api } from '../services/api.service';
 import { useTheme } from '../theme/ThemeContext';
 import { currentPeriod, formatVND } from '../utils/formatters';
+import { showAlert } from '../utils/alerts';
 import BudgetProgressBar from '../components/BudgetProgressBar';
 import AppIcon from '../components/AppIcon';
 import CategoryIcon from '../components/CategoryIcon';
@@ -26,6 +27,8 @@ export default function BudgetScreen() {
   const period = currentPeriod();
 
   const [progress, setProgress] = useState([]);
+  const [forecast, setForecast] = useState([]);
+  const [forecastError, setForecastError] = useState(null);
   const [categories, setCategories] = useState([]);
   const [recommendation, setRecommendation] = useState(null);
   const [amount, setAmount] = useState('');
@@ -39,12 +42,20 @@ export default function BudgetScreen() {
 
   const load = useCallback(async () => {
     try {
-      const [items, cats, suggested] = await Promise.all([
+      const [items, forecastResult, cats, suggested] = await Promise.all([
         api.getBudgetProgress(period.month, period.year),
+        api.getBudgetForecast(period.month, period.year).catch((forecastFailure) => ({ forecastFailure })),
         api.getCategories('expense'),
         api.getBudgetRecommendations('hybrid').catch(() => null),
       ]);
       setProgress(items.data || []);
+      if (forecastResult?.forecastFailure) {
+        setForecast([]);
+        setForecastError(forecastResult.forecastFailure.message || 'Không tải được dự báo ngân sách.');
+      } else {
+        setForecast(forecastResult?.data || []);
+        setForecastError(null);
+      }
       setCategories(cats.data || []);
       setRecommendation(suggested?.data || null);
       setCategoryId((prev) => prev || cats.data?.[0]?.id || null);
@@ -66,7 +77,7 @@ export default function BudgetScreen() {
 
   async function add() {
     if (!categoryId || !amount || Number(amount) <= 0) {
-      Alert.alert('Thiếu thông tin', 'Vui lòng chọn danh mục và nhập số tiền ngân sách.');
+      showAlert('Thiếu thông tin', 'Vui lòng chọn danh mục và nhập số tiền ngân sách.');
       return;
     }
     setSaving(true);
@@ -76,7 +87,7 @@ export default function BudgetScreen() {
       setShowForm(false);
       await load();
     } catch (err) {
-      Alert.alert('Lỗi', err.message || 'Không thể tạo ngân sách');
+      showAlert('Lỗi', err.message || 'Không thể tạo ngân sách');
     } finally {
       setSaving(false);
     }
@@ -84,7 +95,7 @@ export default function BudgetScreen() {
 
   function applyRecommendation() {
     if (!recommendation?.categories?.length) return;
-    Alert.alert(
+    showAlert(
       'Áp dụng ngân sách đề xuất?',
       `PERFIN sẽ tạo hoặc cập nhật ${recommendation.categories.length} ngân sách cho tháng ${period.month}/${period.year}.`,
       [
@@ -100,9 +111,9 @@ export default function BudgetScreen() {
               }));
               await api.applyBudgetRecommendations(rows, period.month, period.year);
               await load();
-              Alert.alert('Đã áp dụng', 'Ngân sách đề xuất đã được cập nhật.');
+              showAlert('Đã áp dụng', 'Ngân sách đề xuất đã được cập nhật.');
             } catch (err) {
-              Alert.alert('Không thể áp dụng', err.message);
+              showAlert('Không thể áp dụng', err.message);
             } finally {
               setApplyingRecommendation(false);
             }
@@ -117,6 +128,9 @@ export default function BudgetScreen() {
   const overallPct = totalBudget > 0 ? Math.round((totalSpent / totalBudget) * 100) : 0;
   const pctColor = overallPct > 100 ? c.expense : overallPct > 70 ? c.warning : c.income;
   const pctBg = overallPct > 100 ? c.expenseSoft : overallPct > 70 ? c.warningSoft : c.incomeSoft;
+  const overspendForecasts = forecast
+    .filter((item) => item.likely_to_exceed)
+    .sort((left, right) => Number(right.projected_percentage) - Number(left.projected_percentage));
 
   if (loading) {
     return (
@@ -162,6 +176,59 @@ export default function BudgetScreen() {
                 <Text style={styles.pctLabel}>đã dùng</Text>
               </View>
             </View>
+
+            {overspendForecasts.length > 0 && (
+              <View style={styles.forecastCard}>
+                <View style={styles.forecastHeader}>
+                  <View style={styles.forecastIcon}>
+                    <AppIcon name="trending-up" size={17} color={c.warning} />
+                  </View>
+                  <View style={{ flex: 1, minWidth: 0 }}>
+                    <Text style={styles.forecastTitle}>Dự báo có thể vượt ngân sách</Text>
+                    <Text style={styles.forecastSub}>
+                      {overspendForecasts.length} danh mục có nguy cơ vượt hạn mức nếu tốc độ chi hiện tại tiếp tục.
+                    </Text>
+                  </View>
+                </View>
+
+                <View style={styles.forecastList}>
+                  {overspendForecasts.slice(0, 4).map((item, index) => {
+                    const limit = Number(item.amount_limit) || 0;
+                    const spent = Number(item.spent) || 0;
+                    const projectedSpend = Number(item.projected_spend) || 0;
+                    const projectedOver = Math.max(0, projectedSpend - limit);
+                    const alreadyOver = spent > limit;
+                    const timing = alreadyOver
+                      ? `Hiện đã vượt ${formatVND(spent - limit)}`
+                      : item.projected_exceed_day
+                        ? `Có thể chạm hạn mức khoảng ngày ${item.projected_exceed_day}/${period.month}`
+                        : 'Có thể vượt hạn mức trước cuối tháng';
+                    return (
+                      <View key={item.budget_id || item.category_id} style={[styles.forecastRow, index > 0 && styles.forecastBorder]}>
+                        <View style={{ flex: 1, minWidth: 0 }}>
+                          <Text numberOfLines={1} style={styles.forecastName}>{item.category_name}</Text>
+                          <Text style={styles.forecastDetail}>{timing} · dự kiến vượt {formatVND(projectedOver)}.</Text>
+                        </View>
+                        <View style={{ alignItems: 'flex-end', maxWidth: '36%' }}>
+                          <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.72} style={styles.forecastAmount}>{formatVND(projectedSpend)}</Text>
+                          <Text style={styles.forecastPercent}>{Math.round(Number(item.projected_percentage) || 0)}% hạn mức</Text>
+                        </View>
+                      </View>
+                    );
+                  })}
+                  {overspendForecasts.length > 4 && (
+                    <Text style={styles.forecastMore}>+{overspendForecasts.length - 4} danh mục có nguy cơ khác</Text>
+                  )}
+                </View>
+              </View>
+            )}
+
+            {forecastError && progress.length > 0 && (
+              <View style={styles.forecastUnavailable}>
+                <AppIcon name="info-outline" size={15} color={c.warning} />
+                <Text style={styles.forecastUnavailableText}>Chưa cập nhật được dự báo chi tiêu: {forecastError}</Text>
+              </View>
+            )}
 
             {recommendation && (
               <View style={styles.recommendationCard}>
@@ -339,6 +406,31 @@ const createStyles = (t) => StyleSheet.create({
   pctCircle: { width: 70, height: 70, borderRadius: 35, alignItems: 'center', justifyContent: 'center', borderWidth: 3 },
   pctText: { fontSize: 18, fontWeight: '900' },
   pctLabel: { fontSize: 9, color: t.colors.textMuted, fontWeight: '600' },
+
+  forecastCard: {
+    backgroundColor: t.colors.warningSoft, padding: 15, borderRadius: t.radius.lg,
+    borderWidth: 1, borderColor: t.colors.warning, marginBottom: 12,
+  },
+  forecastHeader: { flexDirection: 'row', alignItems: 'flex-start', gap: 9 },
+  forecastIcon: {
+    width: 34, height: 34, borderRadius: 11, alignItems: 'center', justifyContent: 'center',
+    backgroundColor: t.colors.surface,
+  },
+  forecastTitle: { color: t.colors.text, fontSize: 13, fontWeight: '900' },
+  forecastSub: { color: t.colors.textSecondary, fontSize: 10, lineHeight: 15, fontWeight: '600', marginTop: 2 },
+  forecastList: { marginTop: 10, borderTopWidth: 1, borderTopColor: t.colors.borderStrong },
+  forecastRow: { flexDirection: 'row', alignItems: 'center', gap: 9, paddingVertical: 9 },
+  forecastBorder: { borderTopWidth: 1, borderTopColor: t.colors.border },
+  forecastName: { color: t.colors.text, fontSize: 12, fontWeight: '800' },
+  forecastDetail: { color: t.colors.textMuted, fontSize: 9, lineHeight: 14, fontWeight: '600', marginTop: 2 },
+  forecastAmount: { color: t.colors.expense, fontSize: 11, fontWeight: '900' },
+  forecastPercent: { color: t.colors.warning, fontSize: 9, fontWeight: '800', marginTop: 2 },
+  forecastMore: { color: t.colors.warning, fontSize: 10, fontWeight: '800', paddingBottom: 2 },
+  forecastUnavailable: {
+    flexDirection: 'row', alignItems: 'flex-start', gap: 6, padding: 10,
+    backgroundColor: t.colors.warningSoft, borderRadius: t.radius.md, marginBottom: 12,
+  },
+  forecastUnavailableText: { flex: 1, color: t.colors.warning, fontSize: 10, lineHeight: 15, fontWeight: '700' },
 
   recommendationCard: {
     backgroundColor: t.colors.surface, padding: 15, borderRadius: t.radius.lg,

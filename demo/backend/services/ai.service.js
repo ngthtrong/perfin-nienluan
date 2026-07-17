@@ -152,10 +152,43 @@ class AIServiceManager {
     const cleanText = String(text || '').trim();
     if (!cleanText) return { success: true, provider_used: 'local', ...parseLocalTransaction('', categories) };
     const userPrompt = sourceType === 'voice' ? getVoicePrompt(cleanText) : getReceiptPrompt(cleanText);
-    return this.parseTransaction(cleanText, categories, userPrompt);
+    const parsed = await this.parseTransaction(cleanText, categories, userPrompt);
+    const transactions = parsed?.transactions || (parsed?.transaction ? [parsed.transaction] : []);
+    const hasUsableTransaction = transactions.some((transaction) => (
+      String(transaction?.description || '').trim()
+      && Number(transaction?.amount) > 0
+      && ['income', 'expense'].includes(transaction?.type)
+    ));
+    if (hasUsableTransaction) return parsed;
+
+    // A provider may answer the extraction prompt as ordinary prose instead of a
+    // tool call. Media confirmation is transaction-only, so try the deterministic
+    // parser before returning a structured clarification to the user.
+    const local = parseLocalTransaction(cleanText, categories);
+    return {
+      success: true,
+      provider_used: 'local',
+      fallback_from: parsed?.provider_used || null,
+      ...local,
+    };
   }
 
   async chat(text, context = {}) {
+    const normalized = normalizeText(text);
+    if (/(ban la ai|ban ten gi)/.test(normalized)) {
+      return {
+        success: true,
+        provider_used: 'local',
+        text: 'Mình là PERFIN, trợ lý quản lý tài chính cá nhân. Mình hỗ trợ bạn ghi nhận và phân tích dữ liệu; mọi thay đổi tiền bạc đều cần bạn xác nhận.',
+      };
+    }
+    if (/(ban co the lam gi|ban giup duoc gi)/.test(normalized)) {
+      return {
+        success: true,
+        provider_used: 'local',
+        text: 'Mình có thể ghi thu chi từ văn bản, ảnh hoặc giọng nói; quản lý ví, ngân sách, mục tiêu và khoản định kỳ; đồng thời tạo phân tích từ số liệu đã lưu.',
+      };
+    }
     const providers = this.getProviderOrder();
     for (const provider of providers) {
       try {

@@ -128,6 +128,42 @@ function periodStartFor(frequency, dueDate) {
   return formatDateOnly(start);
 }
 
+function inferRecurringCadence(transactions) {
+  const uniqueDates = [...new Set((transactions || []).map((tx) => formatDateOnly(tx.transaction_date)))].sort();
+  if (uniqueDates.length < 3) return null;
+
+  const days = uniqueDates.map((date) => parseLocalDate(date).getTime());
+  const gaps = days.slice(1).map((day, index) => (day - days[index]) / 86400000);
+  const spanDays = (days.at(-1) - days[0]) / 86400000;
+  const cadences = [
+    { frequency: 'weekly', minDates: 4, minSpan: 18, minGap: 5, maxGap: 9, expected: 7 },
+    { frequency: 'monthly', minDates: 3, minSpan: 45, minGap: 20, maxGap: 40, expected: 30 },
+    { frequency: 'quarterly', minDates: 3, minSpan: 150, minGap: 75, maxGap: 105, expected: 90 },
+  ];
+
+  const matches = cadences
+    .filter((cadence) => uniqueDates.length >= cadence.minDates && spanDays >= cadence.minSpan)
+    .map((cadence) => {
+      const matchingGaps = gaps.filter((gap) => gap >= cadence.minGap && gap <= cadence.maxGap);
+      const confidence = matchingGaps.length / gaps.length;
+      const meanError = matchingGaps.length
+        ? matchingGaps.reduce((sum, gap) => sum + Math.abs(gap - cadence.expected), 0) / matchingGaps.length
+        : Number.POSITIVE_INFINITY;
+      return { ...cadence, confidence, meanError };
+    })
+    // An average can make irregular everyday spending look weekly. Require most
+    // individual intervals to fit before suggesting a recurring commitment.
+    .filter((cadence) => cadence.confidence >= 0.7)
+    .sort((left, right) => right.confidence - left.confidence || left.meanError - right.meanError);
+
+  if (!matches.length) return null;
+  return {
+    frequency: matches[0].frequency,
+    confidence: Number(matches[0].confidence.toFixed(2)),
+    observed_periods: uniqueDates.length,
+  };
+}
+
 async function getJoined(id, runQuery = query) {
   const result = await runQuery(
     `SELECT b.*, c.name AS category_name, c.icon AS category_icon, w.name AS wallet_name
@@ -164,6 +200,7 @@ const RecurringBillModel = {
   computeNextDueDate,
   formatDateOnly,
   validateRecurringSchedule,
+  inferRecurringCadence,
 
   async create(data) {
     const userId = data.userId || DEFAULT_USER;
@@ -495,19 +532,14 @@ const RecurringBillModel = {
       const max = Math.max(...amounts);
       const isVariable = max - min > avg * 0.15;
 
-      // Verify roughly-monthly spacing
-      const days = txs.map((t) => new Date(t.transaction_date).getTime());
-      const gaps = [];
-      for (let i = 1; i < days.length; i += 1) gaps.push((days[i] - days[i - 1]) / 86400000);
-      const avgGap = gaps.reduce((a, b) => a + b, 0) / gaps.length;
-      let frequency = 'monthly';
-      if (avgGap >= 6 && avgGap <= 9) frequency = 'weekly';
-      else if (avgGap >= 80 && avgGap <= 100) frequency = 'quarterly';
-      else if (avgGap < 20 || avgGap > 120) continue; // not a clear cadence
+      const cadence = inferRecurringCadence(txs);
+      if (!cadence) continue;
+      const { frequency } = cadence;
 
+      const sampleDate = parseLocalDate(sample.transaction_date);
       const dueDay = frequency === 'weekly'
-        ? ((new Date(sample.transaction_date).getDay() + 6) % 7) + 1
-        : new Date(sample.transaction_date).getDate();
+        ? ((sampleDate.getDay() + 6) % 7) + 1
+        : sampleDate.getDate();
 
       const signature = `${normalizeText(sample.description)}|${Math.round(avg / 100000)}|${frequency}`;
       if (dismissedSigs.has(signature)) continue;
@@ -522,6 +554,8 @@ const RecurringBillModel = {
         category_id: sample.category_id,
         wallet_id: sample.wallet_id,
         occurrences: txs.length,
+        observed_periods: cadence.observed_periods,
+        confidence: cadence.confidence,
       });
     }
     return candidates;

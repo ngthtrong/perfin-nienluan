@@ -32,6 +32,18 @@ test('trung bình danh mục tính cả tháng không phát sinh', () => {
   assert.equal(summary.categories[0].average_spend, 1000000);
 });
 
+test('trung bình giữ tháng hoàn tất không có bất kỳ giao dịch nào trong mẫu số', () => {
+  const summary = summarizeHistory([
+    { period: '2026-04', type: 'income', total: 9000000 },
+    { period: '2026-04', type: 'expense', category_id: 1, category_name: 'Ăn uống', total: 3000000 },
+    { period: '2026-06', type: 'income', total: 9000000 },
+  ], ['2026-04', '2026-05', '2026-06']);
+
+  assert.equal(summary.period_count, 3);
+  assert.equal(summary.average_income, 6000000);
+  assert.equal(summary.categories[0].average_spend, 1000000);
+});
+
 test('hybrid giữ nhóm mong muốn trong trần 30% thu nhập', () => {
   const result = recommendCategoryBudgets(history, { strategy: 'hybrid', bufferRate: 0 });
   const needs = result.categories.find((category) => category.group === 'needs');

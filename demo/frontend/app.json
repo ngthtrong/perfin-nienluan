@@ -25,7 +25,8 @@
           "microphonePermission": "Cho phép PERFIN sử dụng micro để nhập giao dịch bằng giọng nói."
         }
       ],
-      "expo-asset"
+      "expo-asset",
+      "expo-status-bar"
     ]
   }
 }

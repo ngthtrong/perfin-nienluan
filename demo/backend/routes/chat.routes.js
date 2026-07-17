@@ -19,6 +19,7 @@ const ConversationState = require('../services/conversationState.service');
 const { TransferModel, InvestmentPnLModel } = require('../models/cashflow.model');
 const { exportCSV, exportPDF } = require('../services/export.service');
 const { enqueueJob, JOB_NAMES } = require('../services/jobs');
+const { localDateKey } = require('../services/jobs/schedules');
 const { resolveUserPayday } = require('../services/jobs/userScope');
 const ChatMessage = require('../models/chatMessage.model');
 const pending = require('../services/pendingTransaction.service');
@@ -35,18 +36,55 @@ function formatVND(amount) {
 // AIService with the same persona's style_prompt.
 async function applyPersona(text) {
   const persona = await Persona.getActivePersona(userId);
-  return persona.decorate(text);
+  return typeof persona?.decorate === 'function' ? persona.decorate(text) : text;
 }
 
 function previewResponse(transaction, pendingId, message = 'Mình hiểu bạn muốn ghi nhận giao dịch này:') {
   return { type: 'transaction_preview', message, transaction, pending_id: pendingId };
 }
 
-// Build proactive reminder messages for bills whose reminder window has arrived (FR-08-03).
-// Multiple bills due the same day are merged into one summary message.
-async function buildReminders() {
-  const due = await RecurringBillModel.getDueBills(userId);
+function messageMetadata(message) {
+  if (message?.metadata && typeof message.metadata === 'object' && !Array.isArray(message.metadata)) {
+    return message.metadata;
+  }
+  if (typeof message?.metadata === 'string') {
+    try {
+      const parsed = JSON.parse(message.metadata);
+      return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {};
+    } catch (_) {
+      return {};
+    }
+  }
+  return {};
+}
+
+function coveredRecurringBillIds(messages, dateKey) {
+  const covered = new Set();
+  for (const message of messages || []) {
+    const metadata = messageMetadata(message);
+    if (
+      metadata.source !== 'proactive_worker'
+      || metadata.notification_type !== 'recurring_bill_reminder'
+      || metadata.local_date !== dateKey
+    ) continue;
+    for (const billId of metadata.bill_ids || []) covered.add(String(billId));
+  }
+  return covered;
+}
+
+// Build a dynamic fallback when the worker is disabled/unavailable. Bills already
+// persisted by today's worker message are filtered out to avoid duplicate prompts.
+async function buildReminders(messages = [], now = new Date()) {
+  const dateKey = localDateKey(now, process.env.JOBS_TIMEZONE || 'Asia/Bangkok');
+  const covered = coveredRecurringBillIds(messages, dateKey);
+  const due = (await RecurringBillModel.getDueBills(userId, now))
+    .filter((bill) => !covered.has(String(bill.id)));
   if (!due.length) return [];
+
+  const fallbackMetadata = {
+    event_key: `recurring-reminder-fallback:${dateKey}:${due.map((bill) => bill.id).join(',')}`,
+    local_date: dateKey,
+  };
 
   if (due.length === 1) {
     const bill = due[0];
@@ -55,21 +93,24 @@ async function buildReminders() {
       `${bill.wallet_name ? ` (ví ${bill.wallet_name}${bill.wallet_balance != null ? ` còn ${formatVND(bill.wallet_balance)}` : ''})` : ''}` +
       `${bill.wallet_balance != null && Number(bill.wallet_balance) < Number(bill.amount) ? `, đang thiếu ${formatVND(Number(bill.amount) - Number(bill.wallet_balance))}` : ''}, bạn đã thanh toán chưa để mình cập nhật số dư?`
     );
-    return [{ type: 'reminder', message: text, bill_id: bill.id, bills: [bill] }];
+    return [{ type: 'reminder', message: text, bill_id: bill.id, bills: [bill], ...fallbackMetadata }];
   }
 
   const total = due.reduce((sum, b) => sum + Number(b.amount), 0);
   const lines = due.map((b) => `• ${b.name}: ${formatVND(b.amount)}${b.wallet_name ? ` (ví ${b.wallet_name}${b.wallet_balance != null ? ` còn ${formatVND(b.wallet_balance)}` : ''})` : ''}${b.wallet_balance != null && Number(b.wallet_balance) < Number(b.amount) ? ` — thiếu ${formatVND(Number(b.amount) - Number(b.wallet_balance))}` : ''}`).join('\n');
   const text = await applyPersona(`Hôm nay bạn có ${due.length} khoản chi cố định đến hạn, tổng ${formatVND(total)}:\n${lines}\nBạn đã thanh toán khoản nào chưa?`);
-  return [{ type: 'reminder', message: text, bills: due }];
+  return [{ type: 'reminder', message: text, bills: due, ...fallbackMetadata }];
 }
 
 router.get('/messages', async (req, res, next) => {
   try {
-    const [messages, reminders] = await Promise.all([
+    const now = new Date();
+    const dateKey = localDateKey(now, process.env.JOBS_TIMEZONE || 'Asia/Bangkok');
+    const [messages, workerMessages] = await Promise.all([
       ChatMessage.getRecent(userId, req.query.limit || 30),
-      buildReminders(),
+      ChatMessage.getRecurringWorkerMessagesForDate(userId, dateKey),
     ]);
+    const reminders = await buildReminders(workerMessages, now);
     res.json({ success: true, data: messages, reminders });
   } catch (error) {
     next(error);
@@ -365,8 +406,19 @@ async function handleFinancialQuery(parsed) {
       return { type: 'goal_list', message: await applyPersona(`Các mục tiêu hiện tại:\n${lines}`), goals: rows };
     }
     case 'query_budgets': {
-      const budgets = await BudgetModel.getProgress(userId);
-      return { type: 'budget_progress', message: await applyPersona(budgets.length ? `Bạn đang theo dõi ${budgets.length} ngân sách trong tháng này.` : 'Bạn chưa đặt ngân sách tháng này.'), budgets };
+      const budgets = forecastBudgets(await BudgetModel.getProgress(userId));
+      if (!budgets.length) {
+        return { type: 'budget_progress', message: await applyPersona('Bạn chưa đặt ngân sách tháng này.'), budgets };
+      }
+      const atRisk = budgets.filter((budget) => budget.likely_to_exceed);
+      const riskSummary = atRisk.length
+        ? ` ${atRisk.slice(0, 3).map((budget) => `${budget.category_name} dự kiến ${Math.round(budget.projected_percentage)}%`).join(', ')}.`
+        : ' Chưa có danh mục nào được dự báo vượt hạn mức.';
+      return {
+        type: 'budget_progress',
+        message: await applyPersona(`Bạn đang theo dõi ${budgets.length} ngân sách trong tháng này.${riskSummary}`),
+        budgets,
+      };
     }
     case 'query_category_suggestions': {
       const suggestions = await CategoryRetagService.discover(userId, { type: 'expense', months: 6, minimumOccurrences: 3 });
@@ -814,3 +866,5 @@ router.post('/cancel', async (req, res, next) => {
 });
 
 module.exports = router;
+module.exports.buildReminders = buildReminders;
+module.exports.coveredRecurringBillIds = coveredRecurringBillIds;

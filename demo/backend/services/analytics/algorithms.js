@@ -120,8 +120,42 @@ function cashflowRunway(balance, dailySpends, { today = new Date(), payday = nul
     return Number.isFinite(amount) && amount > 0 ? amount : 0;
   });
   const avgBurn = mean(calendarSpends);
-  if (avgBurn <= 0) return { avgBurn: 0, daysLeft: null, depletionDate: null, beforePayday: false };
-  const daysLeft = Math.floor(balance / avgBurn);
+  const currentBalance = Number(balance);
+
+  // A depleted wallet has no future runway, even when there is no recent spend
+  // history. Handle it before the zero-burn branch so callers never receive a
+  // negative day count or a depletion date in the past.
+  if (Number.isFinite(currentBalance) && currentBalance <= 0) {
+    const depletion = new Date(today);
+    let beforePayday = false;
+    let daysBeforePayday = null;
+    if (payday) {
+      const nextPay = new Date(today);
+      nextPay.setDate(payday);
+      if (nextPay <= today) nextPay.setMonth(nextPay.getMonth() + 1);
+      beforePayday = true;
+      daysBeforePayday = Math.max(0, Math.round((nextPay - depletion) / (1000 * 60 * 60 * 24)));
+    }
+    return {
+      avgBurn: Math.round(avgBurn),
+      daysLeft: 0,
+      depletionDate: localDayKey(depletion),
+      beforePayday,
+      daysBeforePayday,
+      alreadyDepleted: true,
+    };
+  }
+
+  if (avgBurn <= 0) {
+    return {
+      avgBurn: 0,
+      daysLeft: null,
+      depletionDate: null,
+      beforePayday: false,
+      alreadyDepleted: false,
+    };
+  }
+  const daysLeft = Math.max(0, Math.floor(currentBalance / avgBurn));
   const depletion = new Date(today);
   depletion.setDate(depletion.getDate() + daysLeft);
 
@@ -142,6 +176,7 @@ function cashflowRunway(balance, dailySpends, { today = new Date(), payday = nul
     depletionDate: localDayKey(depletion),
     beforePayday,
     daysBeforePayday,
+    alreadyDepleted: false,
   };
 }
 

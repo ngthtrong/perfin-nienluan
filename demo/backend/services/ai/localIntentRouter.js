@@ -42,8 +42,19 @@ function inferGoal(text) {
   };
 }
 
+function looksLikeTransactionRequest(normalized) {
+  return /\b(chi|tieu|mua|an|uong|tra|dong|thanh toan|nhan luong|nhan tien|thu nhap|ban hang|nap tien|rut tien)\b/.test(normalized);
+}
+
 function routeLocalIntent(text, categories) {
   const normalized = normalizeText(text);
+
+  if (/(loi khuyen|tu van tai chinh)/.test(normalized)) {
+    return { intent: 'query_insights', query: { query: 'insights' } };
+  }
+  if (/(ban la ai|ban ten gi|ban co the lam gi|ban giup duoc gi|xin chao|^chao\b|cam on|tam biet)/.test(normalized)) {
+    return { intent: 'question', needs_clarification: false };
+  }
 
   if (/(subscription|dang ky|phi dinh ky|chi tieu an|khoan chi lap lai)/.test(normalized)
       && /(co|nao|kiem tra|xem|an)/.test(normalized)) {
@@ -112,7 +123,13 @@ function routeLocalIntent(text, categories) {
     const transactions = clauses.map((part) => parseLocalTransaction(part, categories)).filter((item) => item.transaction).map((item) => item.transaction);
     if (transactions.length > 1) return { intent: 'transactions', transactions, transaction: transactions[0], needs_clarification: false };
   }
-  return parseLocalTransaction(text, categories);
+  const parsed = parseLocalTransaction(text, categories);
+  if (parsed.needs_clarification
+      && parsed.transaction?.category_match_kind === 'fallback'
+      && !looksLikeTransactionRequest(normalized)) {
+    return { intent: 'question', needs_clarification: false };
+  }
+  return parsed;
 }
 
-module.exports = { extractAllAmounts, splitTransactionClauses, inferGoal, routeLocalIntent };
+module.exports = { extractAllAmounts, splitTransactionClauses, inferGoal, looksLikeTransactionRequest, routeLocalIntent };

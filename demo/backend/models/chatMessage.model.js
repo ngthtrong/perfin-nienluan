@@ -14,4 +14,16 @@ module.exports = {
     const result = await query('SELECT * FROM chat_messages WHERE user_id = $1 ORDER BY created_at DESC LIMIT $2', [userId, limit]);
     return result.rows.reverse();
   },
+  async getRecurringWorkerMessagesForDate(userId = DEFAULT_USER, dateKey) {
+    const result = await query(
+      `SELECT metadata
+       FROM chat_messages
+       WHERE user_id = $1
+         AND metadata->>'source' = 'proactive_worker'
+         AND metadata->>'notification_type' = 'recurring_bill_reminder'
+         AND metadata->>'local_date' = $2`,
+      [userId, dateKey]
+    );
+    return result.rows;
+  },
 };

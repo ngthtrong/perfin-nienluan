@@ -1,0 +1,200 @@
+const test = require('node:test');
+const assert = require('node:assert/strict');
+
+const databasePath = require.resolve('../config/database');
+const kvPath = require.resolve('../services/store/kv.store');
+const modelPath = require.resolve('../models/cashflow.model');
+const database = require(databasePath);
+const KVStore = require(kvPath);
+
+const originalConnect = database.pool.connect;
+const originalQuery = database.query;
+const originalDel = KVStore.del;
+
+let connectImpl;
+let rootQueryImpl = async () => ({ rows: [], rowCount: 0 });
+let delImpl = async () => true;
+
+database.pool.connect = (...args) => connectImpl(...args);
+database.query = (...args) => rootQueryImpl(...args);
+KVStore.del = (...args) => delImpl(...args);
+delete require.cache[modelPath];
+const { TransferModel, InvestmentPnLModel } = require(modelPath);
+
+test.after(() => {
+  database.pool.connect = originalConnect;
+  database.query = originalQuery;
+  KVStore.del = originalDel;
+  delete require.cache[modelPath];
+});
+
+function mockClient(handler) {
+  const events = [];
+  const client = {
+    async query(sql, params) {
+      const normalized = String(sql).trim().split(/\s+/).join(' ');
+      events.push(normalized);
+      return handler(String(sql), params);
+    },
+    release() {
+      events.push('RELEASE');
+    },
+  };
+  connectImpl = async () => client;
+  return events;
+}
+
+test('a successful transfer debits and credits the same amount without changing net worth', async () => {
+  const balances = { 1: 200000, 2: 50000 };
+  const records = [];
+  let snapshot;
+  const events = mockClient(async (sql, params) => {
+    if (sql === 'BEGIN') {
+      snapshot = { ...balances };
+      return { rows: [], rowCount: 0 };
+    }
+    if (/SELECT id, name, type, balance/.test(sql)) {
+      return {
+        rows: params[1].map((id) => ({ id, name: `Ví ${id}`, type: 'cash', balance: String(balances[id]) })),
+        rowCount: params[1].length,
+      };
+    }
+    if (/balance = balance -/.test(sql)) {
+      balances[params[1]] -= params[0];
+      return { rows: [], rowCount: 1 };
+    }
+    if (/balance = balance \+/.test(sql)) {
+      balances[params[1]] += params[0];
+      return { rows: [], rowCount: 1 };
+    }
+    if (/INSERT INTO wallet_transfers/.test(sql)) {
+      const row = { id: 31, user_id: params[0], from_wallet_id: params[1], to_wallet_id: params[2], amount: params[3], transfer_type: params[4] };
+      records.push(row);
+      return { rows: [row], rowCount: 1 };
+    }
+    if (sql === 'ROLLBACK') Object.assign(balances, snapshot);
+    return { rows: [], rowCount: 0 };
+  });
+  rootQueryImpl = async (sql, params) => ({
+    rows: [{ ...records[0], from_wallet_name: 'Ví 1', to_wallet_name: 'Ví 2' }],
+    rowCount: 1,
+    sql,
+    params,
+  });
+  delImpl = async () => true;
+
+  const before = balances[1] + balances[2];
+  const result = await TransferModel.create({
+    userId: 'u1',
+    from_wallet_id: '1',
+    to_wallet_id: '2',
+    amount: 75000,
+    transfer_type: 'transfer',
+  });
+
+  assert.equal(result.id, 31);
+  assert.deepEqual(balances, { 1: 125000, 2: 125000 });
+  assert.equal(balances[1] + balances[2], before);
+  assert.equal(records.length, 1);
+  assert.ok(events.includes('COMMIT'));
+  assert.equal(events.includes('ROLLBACK'), false);
+  assert.equal(events.at(-1), 'RELEASE');
+});
+
+test('fault injection before transfer-log insert rolls back both wallet updates', async () => {
+  const balances = { 1: 200000, 2: 50000 };
+  let snapshot;
+  const events = mockClient(async (sql, params) => {
+    if (sql === 'BEGIN') {
+      snapshot = { ...balances };
+      return { rows: [], rowCount: 0 };
+    }
+    if (/SELECT id, name, type, balance/.test(sql)) {
+      return {
+        rows: params[1].map((id) => ({ id, name: `Ví ${id}`, type: 'cash', balance: String(balances[id]) })),
+        rowCount: params[1].length,
+      };
+    }
+    if (/balance = balance -/.test(sql)) {
+      balances[params[1]] -= params[0];
+      return { rows: [], rowCount: 1 };
+    }
+    if (/balance = balance \+/.test(sql)) {
+      balances[params[1]] += params[0];
+      return { rows: [], rowCount: 1 };
+    }
+    if (/INSERT INTO wallet_transfers/.test(sql)) throw new Error('injected insert failure');
+    if (sql === 'ROLLBACK') {
+      Object.assign(balances, snapshot);
+      return { rows: [], rowCount: 0 };
+    }
+    return { rows: [], rowCount: 0 };
+  });
+  delImpl = async () => true;
+
+  await assert.rejects(
+    TransferModel.create({ userId: 'u1', from_wallet_id: 1, to_wallet_id: 2, amount: 75000 }),
+    /injected insert failure/
+  );
+
+  assert.deepEqual(balances, { 1: 200000, 2: 50000 });
+  assert.ok(events.includes('ROLLBACK'));
+  assert.equal(events.includes('COMMIT'), false);
+  assert.equal(events.at(-1), 'RELEASE');
+});
+
+test('post-commit cache and hydration failures still return the durable transfer', async (t) => {
+  t.mock.method(console, 'warn', () => {});
+  const created = { id: 44, user_id: 'u1', from_wallet_id: 1, to_wallet_id: 2, amount: 10000, transfer_type: 'transfer' };
+  const events = mockClient(async (sql, params) => {
+    if (/SELECT id, name, type, balance/.test(sql)) {
+      return {
+        rows: params[1].map((id) => ({ id, name: `Ví ${id}`, type: 'cash', balance: '100000' })),
+        rowCount: params[1].length,
+      };
+    }
+    if (/INSERT INTO wallet_transfers/.test(sql)) return { rows: [created], rowCount: 1 };
+    return { rows: [], rowCount: 1 };
+  });
+  delImpl = async () => {
+    throw new Error('cache unavailable');
+  };
+  rootQueryImpl = async () => {
+    throw new Error('hydrate unavailable');
+  };
+
+  assert.deepEqual(
+    await TransferModel.create({ userId: 'u1', from_wallet_id: 1, to_wallet_id: 2, amount: 10000 }),
+    created
+  );
+  assert.ok(events.includes('COMMIT'));
+  assert.equal(events.includes('ROLLBACK'), false);
+  assert.equal(events.at(-1), 'RELEASE');
+});
+
+test('missing investment P&L update closes its transaction before releasing the client', async () => {
+  const events = mockClient(async (sql) => {
+    if (/SELECT \* FROM investment_pnl/.test(sql)) return { rows: [], rowCount: 0 };
+    return { rows: [], rowCount: 0 };
+  });
+
+  assert.equal(await InvestmentPnLModel.update(404, { amount: 1000 }, 'u1'), null);
+  assert.ok(events.includes('ROLLBACK'));
+  assert.equal(events.at(-1), 'RELEASE');
+});
+
+test('investment P&L create remains successful when cache invalidation fails after commit', async (t) => {
+  t.mock.method(console, 'warn', () => {});
+  const created = { id: 51, user_id: 'u1', wallet_id: 8, amount: 25000 };
+  const events = mockClient(async (sql) => {
+    if (/SELECT id, type FROM wallets/.test(sql)) return { rows: [{ id: 8, type: 'investment' }], rowCount: 1 };
+    if (/INSERT INTO investment_pnl/.test(sql)) return { rows: [created], rowCount: 1 };
+    return { rows: [], rowCount: 1 };
+  });
+  delImpl = async () => { throw new Error('cache unavailable'); };
+
+  assert.deepEqual(await InvestmentPnLModel.create({ userId: 'u1', wallet_id: 8, amount: 25000 }), created);
+  assert.ok(events.includes('COMMIT'));
+  assert.equal(events.includes('ROLLBACK'), false);
+  assert.equal(events.at(-1), 'RELEASE');
+});

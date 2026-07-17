@@ -1,11 +1,12 @@
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, FlatList,
-  ScrollView, StyleSheet, ActivityIndicator, RefreshControl, Alert, Modal,
+  ScrollView, StyleSheet, ActivityIndicator, RefreshControl, Modal,
 } from 'react-native';
 import { api } from '../services/api.service';
 import { useTheme } from '../theme/ThemeContext';
 import { formatVND } from '../utils/formatters';
+import { showAlert } from '../utils/alerts';
 import AppIcon from '../components/AppIcon';
 import CategoryIcon from '../components/CategoryIcon';
 import { Button, EmptyState, ErrorState } from '../components/ui';
@@ -77,7 +78,7 @@ export default function RecurringScreen() {
 
   async function save() {
     if (!form.name.trim() || !form.amount || Number(form.amount) <= 0 || !form.due_day) {
-      Alert.alert('Thiếu thông tin', 'Vui lòng nhập tên, số tiền dương và ngày thanh toán.');
+      showAlert('Thiếu thông tin', 'Vui lòng nhập tên, số tiền dương và ngày thanh toán.');
       return;
     }
     setSaving(true);
@@ -91,7 +92,7 @@ export default function RecurringScreen() {
       setShowForm(false);
       await load();
     } catch (err) {
-      Alert.alert('Lỗi', err.message || 'Không thể lưu chi phí cố định');
+      showAlert('Lỗi', err.message || 'Không thể lưu chi phí cố định');
     } finally {
       setSaving(false);
     }
@@ -102,11 +103,11 @@ export default function RecurringScreen() {
       if (bill.status === 'paused') await api.resumeRecurringBill(bill.id);
       else await api.pauseRecurringBill(bill.id);
       await load();
-    } catch (err) { Alert.alert('Lỗi', err.message); }
+    } catch (err) { showAlert('Lỗi', err.message); }
   }
 
   function confirmDelete(bill) {
-    Alert.alert('Xóa chi phí cố định', `Xóa "${bill.name}"? Nhắc nhở sẽ bị hủy nhưng lịch sử thanh toán đã ghi nhận vẫn được giữ nguyên.`, [
+    showAlert('Xóa chi phí cố định', `Xóa "${bill.name}"? Nhắc nhở sẽ bị hủy nhưng lịch sử thanh toán đã ghi nhận vẫn được giữ nguyên.`, [
       { text: 'Hủy', style: 'cancel' },
       { text: 'Xóa', style: 'destructive', onPress: async () => { await api.deleteRecurringBill(bill.id); await load(); } },
     ]);
@@ -116,8 +117,8 @@ export default function RecurringScreen() {
     try {
       await api.payRecurringBill(bill.id, { period_due_date: bill.next_due_date });
       await load();
-      Alert.alert('Đã ghi nhận', `Đã thanh toán ${formatVND(bill.amount)} cho ${bill.name}.`);
-    } catch (err) { Alert.alert('Lỗi', err.message); }
+      showAlert('Đã ghi nhận', `Đã thanh toán ${formatVND(bill.amount)} cho ${bill.name}.`);
+    } catch (err) { showAlert('Lỗi', err.message); }
   }
 
   async function openHistory(bill) {
@@ -127,14 +128,26 @@ export default function RecurringScreen() {
     catch (err) { setHistory({ payments: [], summary: {} }); }
   }
 
-  async function acceptSuggestion(s) {
-    try {
-      await api.createRecurringBill({
-        name: s.name, amount: s.amount, frequency: s.frequency,
-        due_day: s.due_day, category_id: s.category_id, is_variable_amount: s.is_variable_amount,
-      });
-      await load();
-    } catch (err) { Alert.alert('Lỗi', err.message); }
+  function acceptSuggestion(s) {
+    showAlert(
+      'Tạo chi phí cố định?',
+      `PERFIN phát hiện “${s.name}” lặp lại ${s.observed_periods || s.occurrences} kỳ, trung bình ${formatVND(s.amount)}. Chỉ tạo nếu đây thực sự là khoản phải trả định kỳ.`,
+      [
+        { text: 'Để sau', style: 'cancel' },
+        {
+          text: 'Tạo nhắc nhở',
+          onPress: async () => {
+            try {
+              await api.createRecurringBill({
+                name: s.name, amount: s.amount, frequency: s.frequency,
+                due_day: s.due_day, category_id: s.category_id, is_variable_amount: s.is_variable_amount,
+              });
+              await load();
+            } catch (err) { showAlert('Lỗi', err.message); }
+          },
+        },
+      ]
+    );
   }
 
   async function dismissSuggestion(s) {

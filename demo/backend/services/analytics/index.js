@@ -115,22 +115,27 @@ async function correlationFacts(userId, weeks = 12) {
 async function buildInsightFacts(userId = DEFAULT_USER, { payday = null, useCache = true } = {}) {
   const key = `cache:insights:${userId}`;
   const producer = async () => {
-    const [trend, anomaly, runway, subscriptions, dayOfWeek, correlation] = await Promise.all([
-      trendFacts(userId).catch(() => null),
-      anomalyFacts(userId).catch(() => null),
-      runwayFacts(userId, payday).catch(() => null),
-      subscriptionFacts(userId).catch(() => null),
-      dayOfWeekFacts(userId).catch(() => null),
-      correlationFacts(userId).catch(() => null),
-    ]);
+    const definitions = [
+      ['trend', trendFacts(userId)],
+      ['anomaly', anomalyFacts(userId)],
+      ['runway', runwayFacts(userId, payday)],
+      ['subscriptions', subscriptionFacts(userId)],
+      ['day_of_week', dayOfWeekFacts(userId)],
+      ['correlation', correlationFacts(userId)],
+    ];
+    const results = await Promise.all(definitions.map(async ([name, task]) => {
+      try {
+        return { name, value: await task, error: null };
+      } catch (error) {
+        return { name, value: null, error };
+      }
+    }));
+    const values = Object.fromEntries(results.map((result) => [result.name, result.value]));
+    const degradedComponents = results.filter((result) => result.error).map((result) => result.name);
     return {
       generated_at: new Date().toISOString(),
-      trend,
-      anomaly,
-      runway,
-      subscriptions,
-      day_of_week: dayOfWeek,
-      correlation,
+      ...values,
+      degraded_components: degradedComponents,
     };
   };
   return useCache ? KVStore.remember(key, CACHE_TTL, producer) : producer();

@@ -372,7 +372,31 @@ router.post('/ocr/confirm', async (req, res, next) => {
 async function createMediaPendingPreview(parsed, originalText, source) {
   const transactions = parsed?.transactions || (parsed?.transaction ? [parsed.transaction] : []);
   if (!transactions.length) {
-    return { type: 'clarification', message: 'Không trích xuất được giao dịch từ nội dung đã xác nhận.' };
+    return {
+      type: 'clarification',
+      code: 'MEDIA_TRANSACTION_NOT_FOUND',
+      missing_fields: ['description', 'amount'],
+      message: `Mình chưa nhận ra giao dịch trong ${source === 'voice' ? 'transcript' : 'nội dung hóa đơn'}. Hãy ${source === 'voice' ? 'sửa transcript, ví dụ “Chi 45 nghìn mua hủ tiếu”, rồi xác nhận lại' : 'kiểm tra lại nội dung nhận dạng'}.`,
+    };
+  }
+
+  const missingFields = new Set();
+  for (const transaction of transactions) {
+    if (!String(transaction?.description || '').trim()) missingFields.add('description');
+    if (!(Number(transaction?.amount) > 0)) missingFields.add('amount');
+    if (!['income', 'expense'].includes(transaction?.type)) missingFields.add('type');
+  }
+  if (missingFields.size) {
+    const missing = [...missingFields];
+    const amountMissing = missing.includes('amount');
+    return {
+      type: 'clarification',
+      code: 'MEDIA_TRANSACTION_INCOMPLETE',
+      missing_fields: missing,
+      message: amountMissing
+        ? `Mình chưa xác định được số tiền từ ${source === 'voice' ? 'transcript' : 'nội dung hóa đơn'}. Hãy ${source === 'voice' ? 'sửa thành câu rõ như “Chi 45 nghìn mua hủ tiếu”, rồi xác nhận lại' : 'bổ sung số tiền trước khi tiếp tục'}.`
+        : `Nội dung nhận dạng còn thiếu ${missing.join(', ')}. Vui lòng sửa lại trước khi tiếp tục.`,
+    };
   }
   const wallet = await AccountModel.ensureDefault(userId);
   const drafts = transactions.map((transaction) => ({

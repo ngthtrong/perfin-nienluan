@@ -5,6 +5,16 @@ const DEFAULT_USER = 'default_user';
 const CACHE_TTL = 300;
 const cacheKey = (userId) => `cache:wallets:${userId}`;
 
+async function invalidateAfterWrite(userId) {
+  try {
+    await KVStore.del(cacheKey(userId));
+  } catch (error) {
+    // The row is already durable. Returning an error here would invite a retry
+    // and turn a temporary cache outage into a duplicate wallet request.
+    console.warn(`[account] post-write cache invalidation failed: ${error.message}`);
+  }
+}
+
 const AccountModel = {
   async ensureDefault(userId = DEFAULT_USER) {
     const existing = await this.getDefault(userId);
@@ -36,8 +46,8 @@ const AccountModel = {
     return KVStore.del(cacheKey(userId));
   },
 
-  async getById(id) {
-    const result = await query('SELECT * FROM wallets WHERE id = $1', [id]);
+  async getById(id, userId = DEFAULT_USER) {
+    const result = await query('SELECT * FROM wallets WHERE id = $1 AND user_id = $2', [id, userId]);
     return result.rows[0] || null;
   },
 
@@ -54,20 +64,41 @@ const AccountModel = {
     return wallet;
   },
 
-  async create({ name, type = 'cash', balance = 0, is_default = false, userId = DEFAULT_USER }) {
-    const result = await query(
-      `INSERT INTO wallets (user_id, name, type, balance, is_default)
-       VALUES ($1, $2, $3, $4, $5) RETURNING *`,
-      [userId, name, type, balance, is_default]
-    );
-    await this.invalidateCache(userId);
-    return result.rows[0];
+  async create({ name, type = 'cash', balance = 0, currency = 'VND', is_default = false, userId = DEFAULT_USER }) {
+    let wallet;
+    try {
+      const result = await query(
+        `INSERT INTO wallets (user_id, name, type, balance, initial_balance, currency, is_default)
+         VALUES ($1, $2, $3, $4, $4, $5, $6)
+         RETURNING *`,
+        [userId, name, type, balance, currency, Boolean(is_default)]
+      );
+      wallet = result.rows[0];
+    } catch (error) {
+      if (error.code === '23505') {
+        const duplicate = new Error('Tên ví đã tồn tại');
+        duplicate.status = 409;
+        duplicate.code = 'WALLET_NAME_EXISTS';
+        duplicate.cause = error;
+        throw duplicate;
+      }
+      throw error;
+    }
+
+    await invalidateAfterWrite(userId);
+    return wallet;
   },
 
-  async update(id, { name }) {
-    const result = await query('UPDATE wallets SET name = COALESCE($2, name), updated_at = NOW() WHERE id = $1 RETURNING *', [id, name || null]);
+  async update(id, { name }, userId = DEFAULT_USER) {
+    const result = await query(
+      `UPDATE wallets
+       SET name = COALESCE($3, name), updated_at = NOW()
+       WHERE id = $1 AND user_id = $2
+       RETURNING *`,
+      [id, userId, name || null]
+    );
     const wallet = result.rows[0] || null;
-    if (wallet) await this.invalidateCache(wallet.user_id || DEFAULT_USER);
+    if (wallet) await invalidateAfterWrite(userId);
     return wallet;
   },
 };

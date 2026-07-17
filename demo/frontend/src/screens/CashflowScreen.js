@@ -1,11 +1,12 @@
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet,
-  TextInput, RefreshControl, Alert, ActivityIndicator,
+  TextInput, RefreshControl,
 } from 'react-native';
 import { api } from '../services/api.service';
 import { useTheme } from '../theme/ThemeContext';
 import { formatVND } from '../utils/formatters';
+import { showAlert } from '../utils/alerts';
 import AppIcon from '../components/AppIcon';
 import { Button, EmptyState, ErrorState, Skeleton } from '../components/ui';
 
@@ -13,6 +14,15 @@ const PERIODS = [
   { key: 'month', label: 'Tháng này' },
   { key: 'quarter', label: 'Quý này' },
   { key: 'year', label: 'Năm nay' },
+];
+
+const WALLET_TYPES = [
+  { key: 'cash', label: 'Tiền mặt' },
+  { key: 'bank', label: 'Ngân hàng' },
+  { key: 'e_wallet', label: 'Ví điện tử' },
+  { key: 'credit_card', label: 'Thẻ tín dụng' },
+  { key: 'investment', label: 'Đầu tư' },
+  { key: 'savings', label: 'Tiết kiệm' },
 ];
 
 function CashflowBar({ label, value, maxValue, color, styles }) {
@@ -51,12 +61,14 @@ export default function CashflowScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [showTransferForm, setShowTransferForm] = useState(false);
   const [showPnLForm, setShowPnLForm] = useState(false);
+  const [showWalletForm, setShowWalletForm] = useState(false);
   const [saving, setSaving] = useState(false);
 
   const [transferForm, setTransferForm] = useState({
     from_wallet_id: '', to_wallet_id: '', amount: '', transfer_type: 'transfer', note: '',
   });
   const [pnlForm, setPnlForm] = useState({ wallet_id: '', amount: '', note: '' });
+  const [walletForm, setWalletForm] = useState({ name: '', type: 'cash', balance: '0' });
 
   const load = useCallback(async () => {
     try {
@@ -87,8 +99,8 @@ export default function CashflowScreen() {
 
   async function addTransfer() {
     const { from_wallet_id, to_wallet_id, amount, transfer_type, note } = transferForm;
-    if (!amount || Number(amount) <= 0) return Alert.alert('Lỗi', 'Nhập số tiền hợp lệ');
-    if (!from_wallet_id && !to_wallet_id) return Alert.alert('Lỗi', 'Chọn ít nhất một ví');
+    if (!amount || Number(amount) <= 0) return showAlert('Lỗi', 'Nhập số tiền hợp lệ');
+    if (!from_wallet_id && !to_wallet_id) return showAlert('Lỗi', 'Chọn ít nhất một ví');
     setSaving(true);
     try {
       await api.createTransfer({ from_wallet_id: from_wallet_id || null, to_wallet_id: to_wallet_id || null, amount: Number(amount), transfer_type, note });
@@ -96,7 +108,7 @@ export default function CashflowScreen() {
       setTransferForm({ from_wallet_id: '', to_wallet_id: '', amount: '', transfer_type: 'transfer', note: '' });
       await load();
     } catch (err) {
-      Alert.alert('Lỗi', err.message);
+      showAlert('Lỗi', err.message);
     } finally {
       setSaving(false);
     }
@@ -104,8 +116,8 @@ export default function CashflowScreen() {
 
   async function addPnL() {
     const { wallet_id, amount, note } = pnlForm;
-    if (!wallet_id) return Alert.alert('Lỗi', 'Chọn tài khoản đầu tư');
-    if (!amount || isNaN(Number(amount))) return Alert.alert('Lỗi', 'Nhập số tiền (dương = lãi, âm = lỗ)');
+    if (!wallet_id) return showAlert('Lỗi', 'Chọn tài khoản đầu tư');
+    if (!amount || isNaN(Number(amount))) return showAlert('Lỗi', 'Nhập số tiền (dương = lãi, âm = lỗ)');
     setSaving(true);
     try {
       await api.createInvestmentPnL({ wallet_id: Number(wallet_id), amount: Number(amount), note });
@@ -113,7 +125,25 @@ export default function CashflowScreen() {
       setPnlForm({ wallet_id: '', amount: '', note: '' });
       await load();
     } catch (err) {
-      Alert.alert('Lỗi', err.message);
+      showAlert('Lỗi', err.message);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function addWallet() {
+    const name = walletForm.name.trim();
+    const balance = Number(walletForm.balance || 0);
+    if (!name) return showAlert('Thiếu thông tin', 'Hãy nhập tên ví.');
+    if (!Number.isFinite(balance)) return showAlert('Số dư không hợp lệ', 'Số dư ban đầu phải là một số hợp lệ.');
+    setSaving(true);
+    try {
+      await api.createWallet({ name, type: walletForm.type, balance, currency: 'VND' });
+      setWalletForm({ name: '', type: 'cash', balance: '0' });
+      setShowWalletForm(false);
+      await load();
+    } catch (err) {
+      showAlert('Không thể tạo ví', err.message);
     } finally {
       setSaving(false);
     }
@@ -241,9 +271,47 @@ export default function CashflowScreen() {
       )}
 
       <View style={styles.actionRow}>
+        <Button label="Tạo ví" icon="account-balance-wallet" variant="secondary" onPress={() => setShowWalletForm((v) => !v)} style={{ flexGrow: 1, flexBasis: 120 }} fullWidth={false} />
         <Button label="Chuyển tiền" icon="swap-horiz" onPress={() => setShowTransferForm((v) => !v)} style={{ flexGrow: 1, flexBasis: 140 }} fullWidth={false} />
         <Button label="Lãi/Lỗ đầu tư" icon="trending-up" variant="secondary" onPress={() => setShowPnLForm((v) => !v)} style={{ flexGrow: 1, flexBasis: 140 }} fullWidth={false} />
       </View>
+
+      {showWalletForm && (
+        <View style={styles.formCard}>
+          <Text style={styles.formTitle}>Tạo ví tài chính</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Tên ví, ví dụ: Tài khoản đầu tư"
+            placeholderTextColor={c.textMuted}
+            value={walletForm.name}
+            onChangeText={(name) => setWalletForm((form) => ({ ...form, name }))}
+          />
+          <Text style={styles.formLabel}>Loại ví</Text>
+          <View style={styles.transferTypeRow}>
+            {WALLET_TYPES.map((type) => {
+              const active = walletForm.type === type.key;
+              return (
+                <TouchableOpacity
+                  key={type.key}
+                  style={[styles.typeChip, active && styles.walletTypeActive]}
+                  onPress={() => setWalletForm((form) => ({ ...form, type: type.key }))}
+                >
+                  <Text style={[styles.typeChipText, active && { color: c.onBrand }]}>{type.label}</Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+          <TextInput
+            style={styles.input}
+            placeholder="Số dư ban đầu"
+            placeholderTextColor={c.textMuted}
+            value={walletForm.balance}
+            onChangeText={(balance) => setWalletForm((form) => ({ ...form, balance }))}
+            keyboardType="numbers-and-punctuation"
+          />
+          <Button label="Lưu ví" icon="save" onPress={addWallet} loading={saving} />
+        </View>
+      )}
 
       {showTransferForm && (
         <View style={styles.formCard}>
@@ -382,6 +450,7 @@ const createStyles = (t) => StyleSheet.create({
     paddingVertical: 8, borderRadius: t.radius.md, borderWidth: 1.5, borderColor: t.colors.border, backgroundColor: t.colors.surfaceAlt,
   },
   typeChipText: { fontSize: 11, fontWeight: '700', color: t.colors.textMuted },
+  walletTypeActive: { backgroundColor: t.colors.brand, borderColor: t.colors.brand },
   walletChip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: t.radius.pill, backgroundColor: t.colors.surfaceAlt, borderWidth: 1.5, borderColor: t.colors.border },
   walletChipActive: { backgroundColor: t.colors.brand, borderColor: t.colors.brand },
   walletChipText: { fontSize: 13, color: t.colors.textSecondary, fontWeight: '600' },

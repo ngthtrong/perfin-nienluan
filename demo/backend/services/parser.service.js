@@ -28,6 +28,100 @@ function normalizeText(str = '') {
   return removeDiacritics(str).toLowerCase().trim();
 }
 
+const VIETNAMESE_DIGIT_WORDS = {
+  khong: 0,
+  mot: 1,
+  hai: 2,
+  ba: 3,
+  bon: 4,
+  tu: 4,
+  nam: 5,
+  lam: 5,
+  sau: 6,
+  bay: 7,
+  tam: 8,
+  chin: 9,
+};
+
+function parseVietnameseWordAmount(input) {
+  const text = normalizeText(input).replace(/[^a-z\s]/g, ' ').replace(/\s+/g, ' ');
+  const token = '(?:khong|mot|hai|ba|bon|tu|nam|lam|sau|bay|tam|chin|muoi|tram|linh|le|nghin|ngan|trieu|ty|ruoi)';
+  const runs = text.match(new RegExp(`\\b${token}(?:\\s+${token})*\\b`, 'g')) || [];
+  const values = [];
+
+  for (const run of runs) {
+    // A magnitude is required. This prevents noisy STT such as "một hai ba bốn"
+    // from being invented into a monetary amount.
+    if (!/\b(nghin|ngan|trieu|ty)\b/.test(run)) continue;
+
+    let total = 0;
+    let group = 0;
+    let current = null;
+    let previousWasDigit = false;
+    let valid = true;
+    let lastMagnitude = 0;
+
+    for (const part of run.split(' ')) {
+      if (Object.hasOwn(VIETNAMESE_DIGIT_WORDS, part)) {
+        if (previousWasDigit) {
+          valid = false;
+          break;
+        }
+        current = VIETNAMESE_DIGIT_WORDS[part];
+        previousWasDigit = true;
+        continue;
+      }
+      previousWasDigit = false;
+      if (part === 'linh' || part === 'le') continue;
+      if (part === 'tram') {
+        group += (current ?? 1) * 100;
+        current = null;
+        continue;
+      }
+      if (part === 'muoi') {
+        group += (current ?? 1) * 10;
+        current = null;
+        continue;
+      }
+      if (part === 'ruoi') {
+        if (!lastMagnitude) {
+          valid = false;
+          break;
+        }
+        total += lastMagnitude / 2;
+        continue;
+      }
+
+      const magnitude = part === 'ty' ? 1_000_000_000
+        : part === 'trieu' ? 1_000_000
+          : (part === 'nghin' || part === 'ngan') ? 1_000 : 0;
+      if (!magnitude) continue;
+      group += current ?? 0;
+      current = null;
+      if (!(group > 0)) {
+        valid = false;
+        break;
+      }
+      total += group * magnitude;
+      group = 0;
+      lastMagnitude = magnitude;
+    }
+
+    if (!valid) continue;
+    const remainder = group + (current ?? 0);
+    if (remainder > 0 && lastMagnitude === 1_000_000 && remainder < 1_000) {
+      // Colloquial shorthand: "một triệu năm", "một triệu năm mươi" and
+      // "một triệu năm trăm" all denote 1.5 million.
+      total += Number(String(remainder).padEnd(3, '0')) * 1_000;
+    } else {
+      total += remainder;
+    }
+    if (total > 0) values.push(total);
+  }
+
+  return values.length ? Math.round(Math.max(...values)) : null;
+}
+
 function normalizeAmount(input) {
   if (typeof input === 'number') return Math.round(input);
   if (!input) return null;
@@ -47,6 +141,9 @@ function normalizeAmount(input) {
     const unitPrice = normalizeAmount(perItem[2]);
     return unitPrice ? Number(perItem[1]) * unitPrice : null;
   }
+
+  const spokenWords = parseVietnameseWordAmount(text);
+  if (spokenWords) return spokenWords;
 
   const trDecimal = text.match(/(\d+)\s*tr\s*(\d+)/);
   if (trDecimal) return Number(trDecimal[1]) * 1000000 + Number(trDecimal[2].padEnd(3, '0')) * 1000;
@@ -189,6 +286,7 @@ module.exports = {
   CATEGORY_ALIASES,
   removeDiacritics,
   normalizeText,
+  parseVietnameseWordAmount,
   normalizeAmount,
   inferDate,
   inferCategoryName,

@@ -1,13 +1,13 @@
-import { useEffect, useState, useCallback, useMemo } from 'react';
+import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, FlatList,
-  StyleSheet, RefreshControl, Alert, ScrollView,
+  StyleSheet, RefreshControl, ScrollView,
 } from 'react-native';
 import { api } from '../services/api.service';
 import { useTheme } from '../theme/ThemeContext';
 import { formatVND } from '../utils/formatters';
+import { showAlert } from '../utils/alerts';
 import TransactionCard from '../components/TransactionCard';
-import CategoryIcon from '../components/CategoryIcon';
 import AppIcon from '../components/AppIcon';
 import { Button, Chip, EmptyState, ErrorState, Skeleton } from '../components/ui';
 
@@ -17,6 +17,16 @@ const FILTERS = [
   { key: 'income', label: 'Thu nhập', icon: 'trending-up' },
 ];
 
+const EMPTY_FORM = {
+  description: '',
+  amount: '',
+  type: 'expense',
+  category_id: null,
+  wallet_id: null,
+  transaction_date: '',
+  note: '',
+};
+
 export default function TransactionScreen() {
   const { theme } = useTheme();
   const styles = useMemo(() => createStyles(theme), [theme]);
@@ -24,6 +34,7 @@ export default function TransactionScreen() {
 
   const [transactions, setTransactions] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [wallets, setWallets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -32,25 +43,36 @@ export default function TransactionScreen() {
   const [categorySavingId, setCategorySavingId] = useState(null);
   const [filter, setFilter] = useState(null);
   const [search, setSearch] = useState('');
-  const [form, setForm] = useState({ description: '', amount: '', type: 'expense', category_id: null });
+  const [form, setForm] = useState(EMPTY_FORM);
   const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState(null);
+  const listRef = useRef(null);
 
   const load = useCallback(async () => {
     try {
       const params = new URLSearchParams({ limit: '50' });
       if (filter) params.set('type', filter);
       if (search.trim()) params.set('search', search.trim());
-      const [tx, cats] = await Promise.all([
+      const [tx, cats, walletResponse] = await Promise.all([
         api.getTransactions('?' + params.toString()),
         api.getCategories(),
+        api.getWallets(),
       ]);
+      const nextCategories = cats.data || [];
+      const nextWallets = walletResponse.data || [];
       setTransactions(tx.data || []);
-      setCategories(cats.data || []);
+      setCategories(nextCategories);
+      setWallets(nextWallets);
       setError(null);
-      if (!form.category_id && cats.data?.length) {
-        const defaultCat = cats.data.find((x) => x.type === form.type) || cats.data[0];
-        setForm((prev) => ({ ...prev, category_id: defaultCat?.id || null }));
-      }
+      setForm((previous) => {
+        const defaultCategory = nextCategories.find((item) => item.type === previous.type);
+        const defaultWallet = nextWallets.find((item) => item.is_default) || nextWallets[0];
+        return {
+          ...previous,
+          category_id: previous.category_id || defaultCategory?.id || null,
+          wallet_id: previous.wallet_id || defaultWallet?.id || null,
+        };
+      });
     } catch (err) {
       setError(err.message || 'Không thể tải giao dịch.');
     } finally {
@@ -66,37 +88,99 @@ export default function TransactionScreen() {
     setRefreshing(false);
   }, [load]);
 
-  async function add() {
-    if (!form.description.trim() || !form.amount || !form.category_id) {
-      Alert.alert('Thiếu thông tin', 'Vui lòng nhập đầy đủ mô tả, số tiền và chọn danh mục.');
+  function resetForm({ close = true } = {}) {
+    const defaultCategory = categories.find((item) => item.type === 'expense');
+    const defaultWallet = wallets.find((item) => item.is_default) || wallets[0];
+    setForm({
+      ...EMPTY_FORM,
+      category_id: defaultCategory?.id || null,
+      wallet_id: defaultWallet?.id || null,
+    });
+    setEditingId(null);
+    if (close) setShowForm(false);
+  }
+
+  function beginEdit(transaction) {
+    setEditingId(transaction.id);
+    setForm({
+      description: transaction.description || '',
+      amount: String(transaction.amount ?? ''),
+      type: transaction.type || 'expense',
+      category_id: transaction.category_id || null,
+      wallet_id: transaction.wallet_id || null,
+      transaction_date: transaction.transaction_date ? String(transaction.transaction_date).slice(0, 10) : '',
+      note: transaction.note || '',
+    });
+    setCategoryEditingId(null);
+    setShowForm(true);
+    setTimeout(() => listRef.current?.scrollToOffset?.({ offset: 0, animated: true }), 0);
+  }
+
+  async function saveTransaction() {
+    const amount = Number(form.amount);
+    if (!form.description.trim() || !(amount > 0) || !Number.isFinite(amount) || !form.category_id || !form.wallet_id) {
+      showAlert('Thiếu thông tin', 'Vui lòng nhập mô tả, số tiền dương, danh mục và ví.');
+      return;
+    }
+    if (form.transaction_date && !/^\d{4}-\d{2}-\d{2}$/.test(form.transaction_date)) {
+      showAlert('Ngày không hợp lệ', 'Ngày giao dịch cần có định dạng YYYY-MM-DD.');
       return;
     }
     setSaving(true);
     try {
-      await api.createTransaction({
+      const payload = {
         description: form.description.trim(),
-        amount: Number(form.amount),
+        amount,
         type: form.type,
         category_id: form.category_id,
-      });
-      const defaultCat = categories.find((x) => x.type === form.type) || categories[0];
-      setForm({ description: '', amount: '', type: 'expense', category_id: defaultCat?.id || null });
-      setShowForm(false);
+        wallet_id: form.wallet_id,
+        note: form.note.trim() || null,
+      };
+      if (form.transaction_date) payload.transaction_date = form.transaction_date;
+
+      if (editingId) await api.updateTransaction(editingId, payload);
+      else await api.createTransaction(payload);
+
+      resetForm();
       await load();
     } catch (err) {
-      Alert.alert('Lỗi', err.message);
+      showAlert(editingId ? 'Không thể cập nhật giao dịch' : 'Không thể tạo giao dịch', err.message);
     } finally {
       setSaving(false);
     }
   }
 
   function deleteTransaction(id) {
-    Alert.alert('Xoá giao dịch', 'Bạn có muốn xoá giao dịch này?', [
+    showAlert('Xoá giao dịch', 'Bạn có muốn xoá giao dịch này?', [
       { text: 'Huỷ', style: 'cancel' },
       {
         text: 'Xoá', style: 'destructive', onPress: async () => {
-          try { await api.deleteTransaction(id); await load(); }
-          catch (err) { Alert.alert('Lỗi', err.message); }
+          try {
+            await api.deleteTransaction(id);
+            if (editingId === id) resetForm();
+            await load();
+            showAlert(
+              'Đã xoá giao dịch',
+              'Bạn có thể hoàn tác trong 30 giây. Hoàn tác sẽ khôi phục giao dịch và số dư ví.',
+              [
+                { text: 'Đóng', style: 'cancel' },
+                {
+                  text: 'Hoàn tác',
+                  onPress: async () => {
+                    try {
+                      await api.restoreTransaction(id);
+                      await load();
+                      showAlert('Đã hoàn tác', 'Giao dịch và số dư ví đã được khôi phục.');
+                    } catch (err) {
+                      showAlert('Không thể hoàn tác', err.message);
+                    }
+                  },
+                },
+              ]
+            );
+          } catch (err) {
+            showAlert('Không thể xoá giao dịch', err.message);
+          }
         },
       },
     ]);
@@ -116,7 +200,7 @@ export default function TransactionScreen() {
       )));
       setCategoryEditingId(null);
     } catch (err) {
-      Alert.alert('Không thể đổi danh mục', err.message);
+      showAlert('Không thể đổi danh mục', err.message);
     } finally {
       setCategorySavingId(null);
     }
@@ -127,15 +211,29 @@ export default function TransactionScreen() {
   const ListHeader = (
     <View>
       <Button
-        label={showForm ? 'Đóng form' : 'Thêm giao dịch mới'}
+        label={showForm ? (editingId ? 'Huỷ chỉnh sửa' : 'Đóng biểu mẫu') : 'Thêm giao dịch mới'}
         icon={showForm ? 'close' : 'add'}
         variant={showForm ? 'secondary' : 'primary'}
-        onPress={() => setShowForm((v) => !v)}
+        onPress={() => {
+          if (showForm) resetForm();
+          else {
+            resetForm({ close: false });
+            setShowForm(true);
+          }
+        }}
         style={{ marginBottom: 12 }}
       />
 
       {showForm && (
         <View style={styles.form}>
+          <View style={styles.formHeader}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.formTitle}>{editingId ? 'Chỉnh sửa giao dịch' : 'Giao dịch mới'}</Text>
+              <Text style={styles.formHint}>Số dư sẽ được cập nhật theo đúng ví và loại giao dịch.</Text>
+            </View>
+            {editingId && <View style={styles.editBadge}><Text style={styles.editBadgeText}>Đang sửa</Text></View>}
+          </View>
+
           <View style={styles.segment}>
             {[['expense', 'Chi tiêu', 'trending-down', c.expense], ['income', 'Thu nhập', 'trending-up', c.income]].map(([type, label, icon, color]) => {
               const active = form.type === type;
@@ -195,7 +293,60 @@ export default function TransactionScreen() {
             contentContainerStyle={{ paddingBottom: 14 }}
           />
 
-          <Button label="Lưu giao dịch" icon="check-circle" onPress={add} loading={saving} />
+          <Text style={styles.inputLabel}>Ví ghi nhận</Text>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.walletList}
+          >
+            {wallets.map((wallet) => {
+              const active = Number(form.wallet_id) === Number(wallet.id);
+              return (
+                <TouchableOpacity
+                  key={wallet.id}
+                  style={[styles.walletChip, active && styles.walletChipActive]}
+                  onPress={() => setForm((previous) => ({ ...previous, wallet_id: wallet.id }))}
+                >
+                  <AppIcon name="account-balance-wallet" size={14} color={active ? c.onBrand : c.textMuted} />
+                  <View>
+                    <Text style={[styles.walletChipName, active && styles.walletChipNameActive]}>{wallet.name}</Text>
+                    <Text style={[styles.walletChipBalance, active && styles.walletChipBalanceActive]}>{formatVND(wallet.balance)}</Text>
+                  </View>
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+
+          <View style={styles.optionalFields}>
+            <View style={styles.optionalColumn}>
+              <Text style={styles.inputLabel}>Ngày giao dịch</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="YYYY-MM-DD (mặc định hôm nay)"
+                placeholderTextColor={c.textMuted}
+                value={form.transaction_date}
+                onChangeText={(value) => setForm((previous) => ({ ...previous, transaction_date: value }))}
+                autoCapitalize="none"
+              />
+            </View>
+            <View style={styles.optionalColumn}>
+              <Text style={styles.inputLabel}>Ghi chú</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Không bắt buộc"
+                placeholderTextColor={c.textMuted}
+                value={form.note}
+                onChangeText={(value) => setForm((previous) => ({ ...previous, note: value }))}
+              />
+            </View>
+          </View>
+
+          <Button
+            label={editingId ? 'Lưu thay đổi' : 'Lưu giao dịch'}
+            icon={editingId ? 'save' : 'check-circle'}
+            onPress={saveTransaction}
+            loading={saving}
+          />
         </View>
       )}
 
@@ -244,6 +395,7 @@ export default function TransactionScreen() {
 
   return (
     <FlatList
+      ref={listRef}
       style={styles.container}
       contentContainerStyle={styles.content}
       data={transactions}
@@ -255,6 +407,23 @@ export default function TransactionScreen() {
             onPress={() => setCategoryEditingId((current) => current === item.id ? null : item.id)}
             onLongPress={() => deleteTransaction(item.id)}
           />
+          <View style={styles.transactionActions}>
+            <TouchableOpacity
+              style={styles.transactionAction}
+              onPress={() => setCategoryEditingId((current) => current === item.id ? null : item.id)}
+            >
+              <AppIcon name="category" size={14} color={c.brandText} />
+              <Text style={styles.transactionActionText}>Danh mục</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.transactionAction} onPress={() => beginEdit(item)}>
+              <AppIcon name="edit" size={14} color={c.brandText} />
+              <Text style={styles.transactionActionText}>Chỉnh sửa</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={[styles.transactionAction, styles.deleteAction]} onPress={() => deleteTransaction(item.id)}>
+              <AppIcon name="delete-outline" size={14} color={c.expense} />
+              <Text style={styles.deleteActionText}>Xoá</Text>
+            </TouchableOpacity>
+          </View>
           {categoryEditingId === item.id && (
             <View style={styles.categoryEditor}>
               <View style={styles.categoryEditorHeader}>
@@ -304,6 +473,11 @@ const createStyles = (t) => StyleSheet.create({
     backgroundColor: t.colors.surface, padding: 16, borderRadius: t.radius.lg,
     borderWidth: 1, borderColor: t.colors.border, marginBottom: 14, ...t.shadows.sm,
   },
+  formHeader: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, marginBottom: 14 },
+  formTitle: { color: t.colors.text, fontSize: 16, fontWeight: '900' },
+  formHint: { color: t.colors.textMuted, fontSize: 11, lineHeight: 16, fontWeight: '600', marginTop: 2 },
+  editBadge: { backgroundColor: t.colors.brandSoft, borderRadius: t.radius.pill, paddingHorizontal: 9, paddingVertical: 5 },
+  editBadgeText: { color: t.colors.brandText, fontSize: 10, fontWeight: '800' },
   segment: { flexDirection: 'row', gap: 10, marginBottom: 14 },
   segmentButton: {
     flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
@@ -320,6 +494,19 @@ const createStyles = (t) => StyleSheet.create({
   amountPreviewPill: { backgroundColor: t.colors.brandSoft, paddingHorizontal: 10, paddingVertical: 6, borderRadius: t.radius.pill },
   amountPreviewText: { color: t.colors.brandText, fontWeight: '800', fontSize: 13 },
   inputLabel: { color: t.colors.textMuted, fontWeight: '700', marginBottom: 8, fontSize: 13 },
+  walletList: { gap: 8, paddingBottom: 14 },
+  walletChip: {
+    minWidth: 138, flexDirection: 'row', alignItems: 'center', gap: 8,
+    paddingHorizontal: 11, paddingVertical: 9, borderRadius: t.radius.md,
+    borderWidth: 1.5, borderColor: t.colors.border, backgroundColor: t.colors.surfaceAlt,
+  },
+  walletChipActive: { backgroundColor: t.colors.brand, borderColor: t.colors.brand },
+  walletChipName: { color: t.colors.text, fontSize: 12, fontWeight: '800' },
+  walletChipNameActive: { color: t.colors.onBrand },
+  walletChipBalance: { color: t.colors.textMuted, fontSize: 9, fontWeight: '600', marginTop: 1 },
+  walletChipBalanceActive: { color: t.colors.onBrand },
+  optionalFields: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  optionalColumn: { flexGrow: 1, flexBasis: 220, minWidth: 0 },
 
   filterRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 12 },
 
@@ -330,9 +517,21 @@ const createStyles = (t) => StyleSheet.create({
   },
   searchInput: { flex: 1, fontSize: 14, color: t.colors.text },
   resultCount: { color: t.colors.textMuted, fontSize: 12, fontWeight: '600', marginBottom: 10 },
+  transactionActions: {
+    flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'flex-end', gap: 6,
+    marginTop: -4, marginBottom: 10, paddingHorizontal: 2,
+  },
+  transactionAction: {
+    flexDirection: 'row', alignItems: 'center', gap: 4,
+    paddingHorizontal: 9, paddingVertical: 6, borderRadius: t.radius.pill,
+    backgroundColor: t.colors.brandSoft,
+  },
+  transactionActionText: { color: t.colors.brandText, fontSize: 10, fontWeight: '800' },
+  deleteAction: { backgroundColor: t.colors.expenseSoft },
+  deleteActionText: { color: t.colors.expense, fontSize: 10, fontWeight: '800' },
   categoryEditor: {
     backgroundColor: t.colors.surface, borderWidth: 1.5, borderColor: t.colors.brand,
-    borderRadius: t.radius.md, padding: 12, marginTop: -3, marginBottom: 10,
+    borderRadius: t.radius.md, padding: 12, marginTop: -5, marginBottom: 10,
   },
   categoryEditorHeader: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, marginBottom: 10 },
   categoryEditorTitle: { color: t.colors.text, fontSize: 13, fontWeight: '900' },

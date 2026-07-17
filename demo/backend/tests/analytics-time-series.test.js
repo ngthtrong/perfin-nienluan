@@ -31,6 +31,31 @@ test('runway depletion date remains a local calendar date around midnight', () =
   assert.equal(runway.depletionDate, '2026-07-21');
 });
 
+test('runway reports an already depleted balance as zero days without a past date', () => {
+  const today = new Date(2026, 6, 19, 9, 0, 0, 0);
+  const runway = cashflowRunway(-1_328_000, [73_046, 73_046], {
+    today,
+    payday: 25,
+  });
+
+  assert.equal(runway.daysLeft, 0);
+  assert.equal(runway.depletionDate, '2026-07-19');
+  assert.equal(runway.alreadyDepleted, true);
+  assert.equal(runway.beforePayday, true);
+  assert.ok(runway.daysBeforePayday >= 0);
+});
+
+test('runway still reports depletion when balance is zero and burn history is empty', () => {
+  const runway = cashflowRunway(0, [], {
+    today: new Date(2026, 6, 19, 9, 0, 0, 0),
+  });
+
+  assert.equal(runway.avgBurn, 0);
+  assert.equal(runway.daysLeft, 0);
+  assert.equal(runway.depletionDate, '2026-07-19');
+  assert.equal(runway.alreadyDepleted, true);
+});
+
 test('category trend keeps empty months on the OLS time axis', () => {
   const dense = completeMonthlyByCategory([
     { category_name: 'Ăn uống', icon: '🍜', ym: '2026-01', total: 100 },

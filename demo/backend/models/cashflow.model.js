@@ -10,20 +10,52 @@ async function invalidateFinancialCaches(userId = DEFAULT_USER) {
   ]);
 }
 
+async function rollbackAfterFailure(client, error) {
+  try {
+    await client.query('ROLLBACK');
+  } catch (rollbackError) {
+    error.rollbackError = rollbackError;
+  }
+}
+
+async function invalidateAfterCommit(userId) {
+  try {
+    await invalidateFinancialCaches(userId);
+  } catch (error) {
+    // The transfer is already durable. Do not report it as failed and encourage
+    // a duplicate retry merely because Redis is unavailable.
+    console.warn(`[cashflow] post-commit cache invalidation failed: ${error.message}`);
+  }
+}
+
+function optionalWalletId(value, label) {
+  if (value === undefined || value === null || value === '') return null;
+  const id = Number(value);
+  if (!Number.isInteger(id) || id <= 0) {
+    const error = new Error(`${label} không hợp lệ`);
+    error.status = 400;
+    error.code = 'VALIDATION_ERROR';
+    throw error;
+  }
+  return id;
+}
+
 function validateTransferInput(data = {}) {
   const amount = Number(data.amount);
   const type = data.transfer_type || 'transfer';
+  const from_wallet_id = optionalWalletId(data.from_wallet_id, 'Ví nguồn');
+  const to_wallet_id = optionalWalletId(data.to_wallet_id, 'Ví nhận');
   const allowed = new Set(['transfer', 'investment_inflow', 'investment_outflow']);
   if (!(amount > 0) || !Number.isFinite(amount)) throw Object.assign(new Error('Số tiền chuyển phải lớn hơn 0'), { status: 400 });
   if (!allowed.has(type)) throw Object.assign(new Error('Loại chuyển tiền không hợp lệ'), { status: 400 });
-  if (!data.from_wallet_id && !data.to_wallet_id) throw Object.assign(new Error('Cần ít nhất một ví nguồn hoặc ví nhận'), { status: 400 });
-  if (type === 'transfer' && (!data.from_wallet_id || !data.to_wallet_id)) {
+  if (!from_wallet_id && !to_wallet_id) throw Object.assign(new Error('Cần ít nhất một ví nguồn hoặc ví nhận'), { status: 400 });
+  if (type === 'transfer' && (!from_wallet_id || !to_wallet_id)) {
     throw Object.assign(new Error('Chuyển giữa ví cần đủ ví nguồn và ví nhận'), { status: 400 });
   }
-  if (data.from_wallet_id && data.to_wallet_id && Number(data.from_wallet_id) === Number(data.to_wallet_id)) {
+  if (from_wallet_id && to_wallet_id && from_wallet_id === to_wallet_id) {
     throw Object.assign(new Error('Ví nguồn và ví nhận phải khác nhau'), { status: 400 });
   }
-  return { amount, transfer_type: type };
+  return { amount, transfer_type: type, from_wallet_id, to_wallet_id };
 }
 
 // ─── Wallet Transfers (REQ-06: Transfer / Investment Inflow / Outflow) ──────
@@ -35,15 +67,21 @@ const TransferModel = {
    */
   async create(data) {
     const validated = validateTransferInput(data);
-    const { userId = DEFAULT_USER, from_wallet_id, to_wallet_id, note, transaction_date } = data;
-    const { amount, transfer_type } = validated;
+    const { userId = DEFAULT_USER, note, transaction_date } = data;
+    const { amount, transfer_type, from_wallet_id, to_wallet_id } = validated;
     const client = await pool.connect();
+    let transactionClosed = false;
+    let created;
     try {
       await client.query('BEGIN');
 
       const walletIds = [...new Set([from_wallet_id, to_wallet_id].filter(Boolean).map(Number))];
       const wallets = await client.query(
-        'SELECT id, name, type, balance FROM wallets WHERE user_id = $1 AND id = ANY($2::int[]) FOR UPDATE',
+        `SELECT id, name, type, balance
+         FROM wallets
+         WHERE user_id = $1 AND id = ANY($2::int[])
+         ORDER BY id
+         FOR UPDATE`,
         [userId, walletIds]
       );
       if (wallets.rowCount !== walletIds.length) {
@@ -83,17 +121,25 @@ const TransferModel = {
       );
 
       await client.query('COMMIT');
-      await invalidateFinancialCaches(userId);
-      return this.getById(result.rows[0].id);
+      transactionClosed = true;
+      created = result.rows[0];
     } catch (err) {
-      await client.query('ROLLBACK');
+      if (!transactionClosed) await rollbackAfterFailure(client, err);
       throw err;
     } finally {
       client.release();
     }
+
+    await invalidateAfterCommit(userId);
+    try {
+      return (await this.getById(created.id, userId)) || created;
+    } catch (error) {
+      console.warn(`[cashflow] post-commit transfer hydration failed: ${error.message}`);
+      return created;
+    }
   },
 
-  async getById(id) {
+  async getById(id, userId = DEFAULT_USER) {
     const result = await query(
       `SELECT wt.*,
               fw.name AS from_wallet_name, fw.type AS from_wallet_type,
@@ -101,8 +147,8 @@ const TransferModel = {
        FROM wallet_transfers wt
        LEFT JOIN wallets fw ON fw.id = wt.from_wallet_id
        LEFT JOIN wallets tw ON tw.id = wt.to_wallet_id
-       WHERE wt.id = $1`,
-      [id]
+       WHERE wt.id = $1 AND wt.user_id = $2`,
+      [id, userId]
     );
     return result.rows[0] || null;
   },
@@ -147,13 +193,24 @@ const TransferModel = {
 
 const InvestmentPnLModel = {
   async create(data) {
-    const { userId = DEFAULT_USER, wallet_id, amount, note, recorded_at } = data;
-    if (!Number.isFinite(Number(amount)) || Number(amount) === 0) {
+    const { userId = DEFAULT_USER, note, recorded_at } = data;
+    const wallet_id = optionalWalletId(data.wallet_id, 'Ví đầu tư');
+    const amount = Number(data.amount);
+    if (!wallet_id) {
+      const error = new Error('Ví đầu tư không hợp lệ');
+      error.status = 400;
+      error.code = 'VALIDATION_ERROR';
+      throw error;
+    }
+    if (!Number.isFinite(amount) || amount === 0) {
       const error = new Error('Giá trị lãi/lỗ phải là số khác 0');
       error.status = 400;
+      error.code = 'VALIDATION_ERROR';
       throw error;
     }
     const client = await pool.connect();
+    let transactionClosed = false;
+    let created;
     try {
       await client.query('BEGIN');
 
@@ -183,68 +240,104 @@ const InvestmentPnLModel = {
       );
 
       await client.query('COMMIT');
-      await invalidateFinancialCaches(userId);
-      return result.rows[0];
+      transactionClosed = true;
+      created = result.rows[0];
     } catch (err) {
-      await client.query('ROLLBACK');
+      if (!transactionClosed) await rollbackAfterFailure(client, err);
       throw err;
     } finally {
       client.release();
     }
+
+    await invalidateAfterCommit(userId);
+    return created;
   },
 
-  async update(id, data) {
+  async update(id, data, userId = DEFAULT_USER) {
+    const amount = Number(data.amount);
+    if (!Number.isFinite(amount) || amount === 0) {
+      const error = new Error('Giá trị lãi/lỗ phải là số khác 0');
+      error.status = 400;
+      error.code = 'VALIDATION_ERROR';
+      throw error;
+    }
     const client = await pool.connect();
+    let transactionClosed = false;
+    let updated;
     try {
       await client.query('BEGIN');
-      const old = await client.query('SELECT * FROM investment_pnl WHERE id = $1 FOR UPDATE', [id]);
-      if (!old.rows[0]) return null;
-
-      const diff = Number(data.amount) - Number(old.rows[0].amount);
-      await client.query(
-        'UPDATE wallets SET balance = balance + $1, updated_at = NOW() WHERE id = $2',
-        [diff, old.rows[0].wallet_id]
+      const old = await client.query(
+        'SELECT * FROM investment_pnl WHERE id = $1 AND user_id = $2 FOR UPDATE',
+        [id, userId]
       );
+      if (!old.rows[0]) {
+        await client.query('ROLLBACK');
+        transactionClosed = true;
+        return null;
+      }
+
+      const diff = amount - Number(old.rows[0].amount);
+      const wallet = await client.query(
+        'UPDATE wallets SET balance = balance + $1, updated_at = NOW() WHERE id = $2 AND user_id = $3',
+        [diff, old.rows[0].wallet_id, userId]
+      );
+      if (wallet.rowCount !== 1) throw Object.assign(new Error('Ví đầu tư không thuộc người dùng'), { status: 409 });
 
       const result = await client.query(
         `UPDATE investment_pnl SET amount = $2, note = $3, recorded_at = COALESCE($4, recorded_at), updated_at = NOW()
-         WHERE id = $1 RETURNING *`,
-        [id, data.amount, data.note ?? old.rows[0].note, data.recorded_at || null]
+         WHERE id = $1 AND user_id = $5 RETURNING *`,
+        [id, amount, data.note ?? old.rows[0].note, data.recorded_at || null, userId]
       );
 
       await client.query('COMMIT');
-      await invalidateFinancialCaches(old.rows[0].user_id || DEFAULT_USER);
-      return result.rows[0];
+      transactionClosed = true;
+      updated = result.rows[0];
     } catch (err) {
-      await client.query('ROLLBACK');
+      if (!transactionClosed) await rollbackAfterFailure(client, err);
       throw err;
     } finally {
       client.release();
     }
+
+    await invalidateAfterCommit(userId);
+    return updated;
   },
 
-  async delete(id) {
+  async delete(id, userId = DEFAULT_USER) {
     const client = await pool.connect();
+    let transactionClosed = false;
+    let deleted;
     try {
       await client.query('BEGIN');
-      const old = await client.query('SELECT * FROM investment_pnl WHERE id = $1 FOR UPDATE', [id]);
-      if (!old.rows[0]) return null;
+      const old = await client.query(
+        'SELECT * FROM investment_pnl WHERE id = $1 AND user_id = $2 FOR UPDATE',
+        [id, userId]
+      );
+      if (!old.rows[0]) {
+        await client.query('ROLLBACK');
+        transactionClosed = true;
+        return null;
+      }
 
       // Reverse the balance impact
-      await client.query(
-        'UPDATE wallets SET balance = balance - $1, updated_at = NOW() WHERE id = $2',
-        [old.rows[0].amount, old.rows[0].wallet_id]
+      const wallet = await client.query(
+        'UPDATE wallets SET balance = balance - $1, updated_at = NOW() WHERE id = $2 AND user_id = $3',
+        [old.rows[0].amount, old.rows[0].wallet_id, userId]
       );
-      await client.query('DELETE FROM investment_pnl WHERE id = $1', [id]);
+      if (wallet.rowCount !== 1) throw Object.assign(new Error('Ví đầu tư không thuộc người dùng'), { status: 409 });
+      await client.query('DELETE FROM investment_pnl WHERE id = $1 AND user_id = $2', [id, userId]);
       await client.query('COMMIT');
-      await invalidateFinancialCaches(old.rows[0].user_id || DEFAULT_USER);
-      return old.rows[0];
+      transactionClosed = true;
+      deleted = old.rows[0];
     } catch (err) {
-      await client.query('ROLLBACK');
+      if (!transactionClosed) await rollbackAfterFailure(client, err);
       throw err;
     } finally {
       client.release();
     }
+
+    await invalidateAfterCommit(userId);
+    return deleted;
   },
 
   async getByWallet(walletId, userId = DEFAULT_USER) {

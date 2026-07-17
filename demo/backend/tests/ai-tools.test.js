@@ -49,6 +49,21 @@ test('query and budget intents use deterministic local routing', () => {
   assert.equal(routeLocalIntent('mình có phí định kỳ ẩn nào không?', categories).intent, 'query_subscriptions');
   assert.equal(routeLocalIntent('gợi ý ngân sách giúp mình', categories).intent, 'budget_suggest');
   assert.equal(routeLocalIntent('gợi ý danh mục mới phù hợp', categories).intent, 'query_category_suggestions');
+  assert.equal(routeLocalIntent('bạn có lời khuyên nào cho tôi không?', categories).intent, 'query_insights');
+});
+
+test('general questions do not enter transaction clarification state', async () => {
+  assert.equal(routeLocalIntent('bạn là ai?', categories).intent, 'question');
+  assert.equal(routeLocalIntent('bạn có thể làm gì?', categories).intent, 'question');
+  assert.equal(routeLocalIntent('thời tiết hôm nay thế nào?', categories).intent, 'question');
+
+  const incompleteTransaction = routeLocalIntent('ăn phở', categories);
+  assert.equal(incompleteTransaction.needs_clarification, true);
+  assert.equal(incompleteTransaction.transaction.category_name, 'Ăn uống');
+
+  const manager = new AIServiceManager();
+  assert.match((await manager.chat('bạn là ai?')).text, /PERFIN/);
+  assert.match((await manager.chat('bạn có thể làm gì?')).text, /ghi thu chi/i);
 });
 
 test('insight narration cannot relabel daily runway burn as monthly', () => {
@@ -81,4 +96,20 @@ test('empty OCR or voice text falls back without throwing', async () => {
   assert.equal(result.intent, 'unclear');
   assert.equal(result.transaction.amount, null);
   assert.equal(result.needs_clarification, true);
+});
+
+test('media extraction falls back locally when provider returns prose without a tool call', async () => {
+  const manager = new AIServiceManager();
+  manager.parseTransaction = async () => ({
+    success: true,
+    provider_used: 'gemini',
+    intent: 'question',
+    chat_response: 'Bạn có thể nói rõ hơn không?',
+  });
+
+  const result = await manager.parseFromMedia('chi bốn mươi lăm nghìn mua hủ tiếu', categories, 'voice');
+  assert.equal(result.provider_used, 'local');
+  assert.equal(result.fallback_from, 'gemini');
+  assert.equal(result.intent, 'transaction');
+  assert.equal(result.transaction.amount, 45_000);
 });

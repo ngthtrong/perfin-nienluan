@@ -2,12 +2,13 @@ import { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, FlatList,
   KeyboardAvoidingView, Platform, StyleSheet, ActivityIndicator,
-  Alert, ScrollView, Animated,
+  ScrollView, Animated,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { RecordingPresets, requestRecordingPermissionsAsync, setAudioModeAsync, useAudioRecorder, useAudioRecorderState } from 'expo-audio';
 import * as ImagePicker from 'expo-image-picker';
 import { api } from '../services/api.service';
+import { showAlert } from '../utils/alerts';
 import { useTheme } from '../theme/ThemeContext';
 import TransactionPreviewCard from '../components/TransactionPreviewCard';
 import MultiTransactionPreviewCard from '../components/MultiTransactionPreviewCard';
@@ -135,7 +136,7 @@ export default function ChatScreen() {
         };
       });
       const reminders = (data.reminders || []).map((r, idx) => ({
-        id: `reminder-${idx}-${Date.now()}`,
+        id: r.event_key || `reminder-${r.bill_id || idx}`,
         role: 'assistant',
         type: 'text',
         text: r.message,
@@ -215,7 +216,7 @@ export default function ChatScreen() {
     try {
       const permission = await requestRecordingPermissionsAsync();
       if (!permission.granted) {
-        Alert.alert('Cần quyền micro', 'Hãy cấp quyền micro để nhập giao dịch bằng giọng nói.');
+        showAlert('Cần quyền micro', 'Hãy cấp quyền micro để nhập giao dịch bằng giọng nói.');
         return;
       }
       await setAudioModeAsync({ allowsRecording: true, playsInSilentMode: true });
@@ -269,7 +270,7 @@ export default function ChatScreen() {
         ? await ImagePicker.requestCameraPermissionsAsync()
         : await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (!permission.granted) {
-        Alert.alert('Cần quyền truy cập', useCamera
+        showAlert('Cần quyền truy cập', useCamera
           ? 'Hãy cấp quyền camera để chụp hóa đơn.'
           : 'Hãy cấp quyền thư viện ảnh để chọn hóa đơn.');
         return;
@@ -380,8 +381,9 @@ export default function ChatScreen() {
     setPendingActionId(messageId);
     try {
       const response = await api.confirmSpeechTranscript(transcript);
-      updateMessage(messageId, { text: response.transcript || transcript, resolved: true });
       const data = response.data || {};
+      const hasPreview = ['transaction_preview', 'transactions_preview'].includes(data.type);
+      updateMessage(messageId, { text: response.transcript || transcript, resolved: hasPreview });
       push({
         role: 'assistant',
         ...data,
@@ -400,8 +402,9 @@ export default function ChatScreen() {
     setPendingActionId(messageId);
     try {
       const response = await api.confirmReceiptText(text, mode);
-      updateMessage(messageId, { resolved: true, selectedMode: mode });
       const data = response.data || {};
+      const hasPreview = ['transaction_preview', 'transactions_preview'].includes(data.type);
+      updateMessage(messageId, { resolved: hasPreview, selectedMode: hasPreview ? mode : null });
       push({
         role: 'assistant',
         ...data,

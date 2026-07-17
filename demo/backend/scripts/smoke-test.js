@@ -165,6 +165,43 @@ async function runWriteChecks() {
     });
     return 'no transaction committed';
   });
+
+  await check('General chat identity and capabilities', async () => {
+    const identity = await request('/api/chat/message', {
+      method: 'POST',
+      body: JSON.stringify({ text: 'bạn là ai?' }),
+    });
+    assert.equal(identity.data.type, 'chat_response');
+    assert.match(identity.data.message, /PERFIN/i);
+
+    const capabilities = await request('/api/chat/message', {
+      method: 'POST',
+      body: JSON.stringify({ text: 'bạn có thể làm gì?' }),
+    });
+    assert.equal(capabilities.data.type, 'chat_response');
+    assert.match(capabilities.data.message, /thu chi|tài chính/i);
+    return 'no transaction clarification created';
+  });
+
+  await check('Confirmed voice text -> safe preview or retry', async () => {
+    const valid = await request('/api/ai/speech/confirm', {
+      method: 'POST',
+      body: JSON.stringify({ transcript: 'chi bốn mươi lăm nghìn mua hủ tiếu' }),
+    });
+    assert.equal(valid.data.type, 'transaction_preview');
+    assert.equal(Number(valid.data.transaction.amount), 45000);
+    assert.ok(valid.data.pending_id);
+    await cancelPending(valid.data);
+
+    const noisy = await request('/api/ai/speech/confirm', {
+      method: 'POST',
+      body: JSON.stringify({ transcript: 'một hai ba bốn bột heo bốn' }),
+    });
+    assert.equal(noisy.data.type, 'clarification');
+    assert.equal(noisy.data.code, 'MEDIA_TRANSACTION_INCOMPLETE');
+    assert.equal(noisy.data.pending_id, undefined);
+    return 'valid preview; noisy transcript rejected';
+  });
 }
 
 async function runMediaChecks() {
@@ -206,8 +243,15 @@ async function runMediaChecks() {
         method: 'POST',
         body: JSON.stringify({ transcript: body.transcript }),
       });
-      await cancelPending(confirmed.data);
-      return `${body.provider}; transcript=${String(body.transcript).trim().length} chars`;
+      assert.ok(['transaction_preview', 'transactions_preview', 'clarification'].includes(confirmed.data?.type));
+      if (confirmed.data.type === 'clarification') {
+        assert.match(String(confirmed.data.code || ''), /^MEDIA_TRANSACTION_/);
+        assert.equal(confirmed.data.pending_id, undefined);
+      } else {
+        assert.ok(confirmed.data.pending_id);
+        await cancelPending(confirmed.data);
+      }
+      return `${body.provider}; transcript=${String(body.transcript).trim().length} chars; result=${confirmed.data.type}`;
     });
   }
 }

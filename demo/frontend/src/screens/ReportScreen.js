@@ -21,6 +21,7 @@ export default function ReportScreen() {
   const [breakdown, setBreakdown] = useState([]);
   const [trend, setTrend] = useState([]);
   const [insights, setInsights] = useState(null);
+  const [insightsError, setInsightsError] = useState(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
@@ -32,12 +33,18 @@ export default function ReportScreen() {
         api.getReportSummary(m, y),
         api.getCategoryBreakdown(m, y),
         api.getMonthlyTrend(y),
-        api.getReportInsights({ payday: 25, fresh: freshInsights }).catch(() => null),
+        api.getReportInsights({ fresh: freshInsights }).catch((insightError) => ({ insightError })),
       ]);
       setSummary(s.data || {});
       setBreakdown(b.data || []);
       setTrend(t.data || []);
-      setInsights(i?.data || null);
+      if (i?.insightError) {
+        setInsights(null);
+        setInsightsError(i.insightError.message || 'Không thể tải phân tích hiện tại.');
+      } else {
+        setInsights(i?.data || null);
+        setInsightsError(null);
+      }
       setError(null);
     } catch (err) {
       setError(err.message);
@@ -129,7 +136,10 @@ export default function ReportScreen() {
           </View>
         )}
 
-        <Text style={styles.sectionTitle}>Phân tích thông minh</Text>
+        <Text style={styles.sectionTitle}>Phân tích hiện tại</Text>
+        {!isCurrent && (
+          <Text style={styles.currentInsightNote}>Các insight bên dưới dùng số dư và dữ liệu gần đây, không phải riêng tháng đang xem.</Text>
+        )}
         {loading ? (
           <Skeleton height={144} radius={18} style={{ marginBottom: 12 }} />
         ) : insights ? (
@@ -146,6 +156,15 @@ export default function ReportScreen() {
               </View>
               <Text style={styles.insightComment}>{insights.ai_comment}</Text>
             </View>
+
+            {insights.facts?.degraded_components?.length > 0 && (
+              <View style={styles.insightNotice}>
+                <AppIcon name="warning-amber" size={15} color={c.warning} />
+                <Text style={styles.insightNoticeText}>
+                  Một phần phân tích chưa khả dụng: {insights.facts.degraded_components.join(', ')}.
+                </Text>
+              </View>
+            )}
 
             {insights.facts?.runway && (
               <View style={[styles.analyticsCard, insights.facts.runway.beforePayday && styles.analyticsWarningCard]}>
@@ -216,6 +235,11 @@ export default function ReportScreen() {
               </View>
             )}
           </>
+        ) : insightsError ? (
+          <View style={styles.insightNotice}>
+            <AppIcon name="warning-amber" size={15} color={c.warning} />
+            <Text style={styles.insightNoticeText}>{insightsError}</Text>
+          </View>
         ) : (
           <View style={styles.emptyState}>
             <Text style={styles.emptyIcon}>✨</Text>
@@ -323,6 +347,7 @@ const createStyles = (t) => StyleSheet.create({
   netSub: { color: t.colors.textMuted, fontSize: 11, marginTop: 2 },
 
   sectionTitle: { fontSize: 16, fontWeight: '800', color: t.colors.text, marginBottom: 12 },
+  currentInsightNote: { color: t.colors.textMuted, fontSize: 10, lineHeight: 15, fontWeight: '600', marginTop: -7, marginBottom: 12 },
 
   insightCard: {
     backgroundColor: t.colors.brandSoft, padding: 16, borderRadius: t.radius.lg,
@@ -336,6 +361,11 @@ const createStyles = (t) => StyleSheet.create({
   insightTitle: { color: t.colors.text, fontSize: 14, fontWeight: '900' },
   insightProvider: { color: t.colors.textMuted, fontSize: 10, fontWeight: '600', marginTop: 2 },
   insightComment: { color: t.colors.textSecondary, fontSize: 13, lineHeight: 19, fontWeight: '600' },
+  insightNotice: {
+    flexDirection: 'row', alignItems: 'flex-start', gap: 7, padding: 10,
+    borderRadius: t.radius.md, backgroundColor: t.colors.warningSoft, marginBottom: 10,
+  },
+  insightNoticeText: { flex: 1, color: t.colors.warning, fontSize: 10, lineHeight: 15, fontWeight: '700' },
 
   analyticsCard: {
     backgroundColor: t.colors.surface, padding: 15, borderRadius: t.radius.lg,

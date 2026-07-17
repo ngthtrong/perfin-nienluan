@@ -1,10 +1,11 @@
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet,
-  RefreshControl, Alert, ActivityIndicator, Switch, Linking,
+  RefreshControl, ActivityIndicator, Switch, Linking,
 } from 'react-native';
 import { api } from '../services/api.service';
 import { useTheme } from '../theme/ThemeContext';
+import { showAlert } from '../utils/alerts';
 import AppIcon from '../components/AppIcon';
 import { EmptyState, ErrorState, Skeleton } from '../components/ui';
 
@@ -93,26 +94,26 @@ export default function ExportScreen() {
       const result = await api.exportFromIntent(format, {});
       if (result.data?.download_url) {
         const url = api.getBaseUrl() + result.data.download_url.replace(/^\/api/, '/api');
-        Alert.alert('✅ Xuất thành công', `File: ${result.data.file_name}\nTruy cập server để tải file.`, [
+        showAlert('✅ Xuất thành công', `File: ${result.data.file_name}\nTruy cập server để tải file.`, [
           { text: 'Mở link', onPress: () => Linking.openURL(url) },
           { text: 'OK' },
         ]);
       }
       await load();
     } catch (err) {
-      Alert.alert('Lỗi', err.message);
+      showAlert('Lỗi', err.message);
     } finally {
       setExporting(null);
     }
   }
 
   function handleDelete(id) {
-    Alert.alert('Xoá bản ghi', 'Xoá file này? Không thể hoàn tác.', [
+    showAlert('Xoá bản ghi', 'Xoá file này? Không thể hoàn tác.', [
       { text: 'Huỷ', style: 'cancel' },
       {
         text: 'Xoá', style: 'destructive', onPress: async () => {
           try { await api.deleteExportHistory(id); setHistory((h) => h.filter((i) => i.id !== id)); }
-          catch (err) { Alert.alert('Lỗi', err.message); }
+          catch (err) { showAlert('Lỗi', err.message); }
         },
       },
     ]);
@@ -121,17 +122,17 @@ export default function ExportScreen() {
   async function handleDownload(id) {
     const url = api.getDownloadUrl(id);
     try { await Linking.openURL(url); }
-    catch { Alert.alert('Lỗi', 'Không thể mở URL. Thử copy: ' + url); }
+    catch { showAlert('Lỗi', 'Không thể mở URL. Thử copy: ' + url); }
   }
 
   async function toggleAutoBackup(value) {
     try { const updated = await api.updateBackupConfig({ auto_enabled: value }); setConfig(updated.data); }
-    catch (err) { Alert.alert('Lỗi', err.message); }
+    catch (err) { showAlert('Lỗi', err.message); }
   }
 
   async function changeFrequency(freq) {
     try { const updated = await api.updateBackupConfig({ frequency: freq }); setConfig(updated.data); }
-    catch (err) { Alert.alert('Lỗi', err.message); }
+    catch (err) { showAlert('Lỗi', err.message); }
   }
 
   if (loading) {

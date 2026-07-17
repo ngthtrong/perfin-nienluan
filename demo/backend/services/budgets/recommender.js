@@ -37,8 +37,9 @@ function roundCurrency(value, increment = 10000) {
   return Math.max(Math.round(amount / step) * step, amount > 0 ? step : 0);
 }
 
-function summarizeHistory(rows = []) {
-  const periods = new Set();
+function summarizeHistory(rows = [], expectedPeriods = []) {
+  const periods = new Set((expectedPeriods || []).map(normalizePeriod).filter(Boolean));
+  const observedPeriods = new Set();
   const incomesByPeriod = new Map();
   const expenses = new Map();
 
@@ -46,6 +47,7 @@ function summarizeHistory(rows = []) {
     const period = normalizePeriod(row.period || row.month || row.transaction_month);
     if (!period) continue;
     periods.add(period);
+    observedPeriods.add(period);
     const amount = Math.max(toFiniteNumber(row.total ?? row.amount ?? row.total_amount ?? row.spent), 0);
     const type = row.type || 'expense';
     if (type === 'income') {
@@ -72,6 +74,7 @@ function summarizeHistory(rows = []) {
   return {
     periods: [...periods].sort(),
     period_count: periodCount,
+    observed_period_count: observedPeriods.size,
     average_income: periodCount ? incomeTotal / periodCount : 0,
     categories: [...expenses.values()].map((category) => ({
       category_id: category.category_id,
@@ -102,7 +105,7 @@ function normalizeStrategy(value = 'hybrid') {
 }
 
 function recommendCategoryBudgets(rows = [], options = {}) {
-  const summary = summarizeHistory(rows);
+  const summary = summarizeHistory(rows, options.historyPeriods);
   const requestedStrategy = options.strategy || 'hybrid';
   const normalizedStrategy = normalizeStrategy(requestedStrategy);
   if (!normalizedStrategy) {
@@ -119,7 +122,7 @@ function recommendCategoryBudgets(rows = [], options = {}) {
     strategy = 'category_average';
     warnings.push('Không đủ dữ liệu thu nhập; đã dùng trung bình chi tiêu theo danh mục.');
   }
-  if (summary.period_count < 3) {
+  if (summary.observed_period_count < 3) {
     warnings.push('Dữ liệu dưới 3 tháng; nên xem đề xuất là mức khởi điểm.');
   }
 
@@ -165,7 +168,7 @@ function recommendCategoryBudgets(rows = [], options = {}) {
       average_spend: Math.round(category.average_spend),
       recommended_limit: recommendedLimit,
       active_months: category.active_periods,
-      confidence: confidenceFromMonths(summary.period_count),
+      confidence: confidenceFromMonths(category.active_periods),
       rationale,
     };
   }).filter((category) => category.recommended_limit > 0);

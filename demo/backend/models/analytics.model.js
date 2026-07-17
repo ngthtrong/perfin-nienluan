@@ -7,6 +7,7 @@ const {
   completeDailyTotals,
   completeMonthlyByCategory,
   completeMonthlyCashflow,
+  recentMonthKeys,
 } = require('../services/analytics/timeSeries');
 
 const DEFAULT_USER = 'default_user';
@@ -102,21 +103,31 @@ const AnalyticsModel = {
     }));
   },
 
-  // Average monthly income & expense over last `months` (for surplus / goal planner).
-  async monthlyCashflow(userId = DEFAULT_USER, months = 6) {
+  // Average monthly income & expense over the last `months` completed calendar
+  // months (for surplus / goal planner). The current partial month is excluded so
+  // an early-month snapshot cannot depress the historical average.
+  async monthlyCashflow(userId = DEFAULT_USER, months = 6, options = {}) {
     const windowMonths = Number.isInteger(Number(months)) && Number(months) > 0 ? Number(months) : 6;
+    const asOf = options.asOf ? new Date(options.asOf) : new Date();
+    if (Number.isNaN(asOf.getTime())) {
+      const error = new Error('Ngày kết thúc lịch sử không hợp lệ');
+      error.status = 400;
+      throw error;
+    }
+    const asOfDay = asOf.toISOString().slice(0, 10);
+    const completedAnchorMonth = recentMonthKeys(2, asOfDay.slice(0, 7))[0];
     const result = await query(
       `SELECT to_char(date_trunc('month', transaction_date), 'YYYY-MM') AS ym,
               COALESCE(SUM(CASE WHEN type='income' THEN amount ELSE 0 END),0) AS income,
               COALESCE(SUM(CASE WHEN type='expense' THEN amount ELSE 0 END),0) AS expense
        FROM transactions
        WHERE user_id = $1 AND deleted_at IS NULL
-         AND transaction_date >= date_trunc('month', CURRENT_DATE) - (($2::int - 1) * INTERVAL '1 month')
-         AND transaction_date < date_trunc('month', CURRENT_DATE) + INTERVAL '1 month'
+         AND transaction_date >= date_trunc('month', $2::date) - ($3::int * INTERVAL '1 month')
+         AND transaction_date < date_trunc('month', $2::date)
        GROUP BY ym ORDER BY ym`,
-      [userId, windowMonths]
+      [userId, asOfDay, windowMonths]
     );
-    return completeMonthlyCashflow(result.rows, windowMonths);
+    return completeMonthlyCashflow(result.rows, windowMonths, completedAnchorMonth);
   },
 };
 

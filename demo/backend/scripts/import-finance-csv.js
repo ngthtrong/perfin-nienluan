@@ -57,7 +57,8 @@ Tùy chọn:
   --json                         In kết quả JSON máy đọc được
 
 --apply chỉ chạy khi có đồng thời --replace và --confirm-user trùng --user.
-Importer chỉ thay bảng transactions của user đã chọn; không xóa budgets/chat/media.`;
+Importer chỉ thay bảng transactions của user đã chọn; không xóa budgets/chat/media/recurring.
+Các recurring bill được giữ nguyên và phải được rà soát sau khi thay lịch sử giao dịch.`;
 }
 
 function formatMoney(value) {
@@ -132,11 +133,18 @@ async function run(argv = process.argv.slice(2)) {
   const KVStore = require('../services/store/kv.store');
   const client = await pool.connect();
   try {
+    const recurring = await client.query(
+      `SELECT COUNT(*)::integer AS count
+       FROM recurring_bills
+       WHERE user_id = $1`,
+      [options.userId]
+    );
     const result = await replaceTransactions(client, plan, {
       userId: options.userId,
       walletName,
       batchSize: options.batchSize,
     });
+    result.recurring_bills_preserved = Number(recurring.rows[0]?.count || 0);
     await Promise.all([
       KVStore.del(`cache:wallets:${options.userId}`),
       KVStore.del(`cache:insights:${options.userId}`),
@@ -146,6 +154,9 @@ async function run(argv = process.argv.slice(2)) {
       console.log('IMPORT COMMITTED');
       console.log(`Đã xóa ${result.deleted_rows} và chèn ${result.inserted_rows} giao dịch.`);
       console.log(`Đối soát net: ${formatMoney(result.reconciliation.net)} VND.`);
+      if (result.recurring_bills_preserved > 0) {
+        console.log(`CẢNH BÁO: Đã giữ nguyên ${result.recurring_bills_preserved} recurring bill; hãy rà soát/tạm dừng các gợi ý không còn khớp lịch sử mới.`);
+      }
     }
     return { mode: 'apply', result };
   } finally {

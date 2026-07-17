@@ -15,6 +15,11 @@ test('normalizes spoken million fractions and per-item prices', () => {
   assert.equal(normalizeAmount('shopping 1 triệu 5'), 1_500_000);
   assert.equal(normalizeAmount('mua 3 cái áo mỗi cái 200k'), 600_000);
   assert.equal(normalizeAmount('50k x 2 ly cà phê'), 100_000);
+  assert.equal(normalizeAmount('chi bốn mươi lăm nghìn mua hủ tiếu'), 45_000);
+  assert.equal(normalizeAmount('hai trăm ba mươi nghìn tiền chợ'), 230_000);
+  assert.equal(normalizeAmount('một triệu hai trăm nghìn tiền nhà'), 1_200_000);
+  assert.equal(normalizeAmount('một triệu rưỡi tiền trọ'), 1_500_000);
+  assert.equal(normalizeAmount('một hai ba bốn bột heo bốn'), null);
 });
 
 test('recognizes clothing and eating phrases with deterministic aliases', () => {

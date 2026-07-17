@@ -10,6 +10,8 @@
 
 const KVStore = require('./store/kv.store');
 
+const identity = (text) => text;
+
 const BUILTIN_PERSONAS = {
   expert: {
     id: 'expert',
@@ -53,12 +55,30 @@ function get(personaId) {
   return BUILTIN_PERSONAS[personaId] || BUILTIN_PERSONAS[DEFAULT_PERSONA_ID];
 }
 
+// Redis stores JSON, so functions must never be part of the cached value. Keep a
+// serializable DTO and restore the short-message decorator from the trusted
+// built-in registry on every read. Unknown/custom personas intentionally use an
+// identity decorator while retaining their DB-provided style_prompt for LLM use.
+function toCacheDTO(persona = {}) {
+  const { decorate: _decorate, ...dto } = persona;
+  const key = dto.key || (BUILTIN_PERSONAS[dto.id] ? dto.id : null);
+  return { ...dto, key };
+}
+
+function hydratePersona(persona = {}) {
+  const dto = toCacheDTO(persona);
+  return {
+    ...dto,
+    decorate: BUILTIN_PERSONAS[dto.key]?.decorate || identity,
+  };
+}
+
 // Resolve the active persona for a user. Tries DB (ai_personalities) if available,
 // falls back to the built-in default. Cached briefly to avoid per-request lookups.
 async function getActivePersona(userId = 'default_user') {
   const cacheKey = `cache:persona:${userId}`;
   const cached = await KVStore.get(cacheKey);
-  if (cached) return cached;
+  if (cached) return hydratePersona(cached);
 
   let persona = get(DEFAULT_PERSONA_ID);
   try {
@@ -74,16 +94,18 @@ async function getActivePersona(userId = 'default_user') {
       const row = result.rows[0];
       persona = {
         id: row.key || String(row.id),
+        key: row.key || null,
+        db_id: row.id,
         name: row.name,
         style_prompt: row.style_prompt,
-        decorate: get(row.key)?.decorate || ((t) => t),
       };
     }
   } catch (_) {
     // table not present yet → built-in default; this is expected pre-migration
   }
-  await KVStore.set(cacheKey, persona, 300);
-  return persona;
+  const dto = toCacheDTO(persona);
+  await KVStore.set(cacheKey, dto, 300);
+  return hydratePersona(dto);
 }
 
 async function invalidate(userId = 'default_user') {
@@ -94,6 +116,7 @@ module.exports = {
   BUILTIN_PERSONAS,
   DEFAULT_PERSONA_ID,
   get,
+  hydratePersona,
   getActivePersona,
   invalidate,
   list: () => Object.values(BUILTIN_PERSONAS).map(({ id, name }) => ({ id, name })),

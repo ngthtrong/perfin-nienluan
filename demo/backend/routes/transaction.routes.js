@@ -1,9 +1,13 @@
 const express = require('express');
 const TransactionModel = require('../models/transaction.model');
 const AccountModel = require('../models/account.model');
-const CategoryModel = require('../models/category.model');
 const { FeedbackService } = require('../services/feedback');
-const { validateTransaction } = require('../middleware/validation.middleware');
+const { recordFeedbackAfterCommit } = require('../services/feedback/bestEffort');
+const {
+  validateTransaction,
+  validateTransactionUpdate,
+  validateTransactionCategoryUpdate,
+} = require('../middleware/validation.middleware');
 
 const router = express.Router();
 const userId = 'default_user';
@@ -27,10 +31,8 @@ router.get('/', async (req, res, next) => {
 
 router.post('/', validateTransaction, async (req, res, next) => {
   try {
-    const wallet = req.body.wallet_id ? await AccountModel.getById(req.body.wallet_id) : await AccountModel.ensureDefault(userId);
+    const wallet = req.body.wallet_id ? await AccountModel.getById(req.body.wallet_id, userId) : await AccountModel.ensureDefault(userId);
     if (!wallet) return res.status(400).json({ success: false, error: 'Ví không tồn tại' });
-    const category = await CategoryModel.getById(req.body.category_id);
-    if (!category || category.type !== req.body.type) return res.status(400).json({ success: false, error: 'Danh mục không hợp lệ' });
     const data = await TransactionModel.create({ ...req.body, userId, wallet_id: wallet.id });
     res.status(201).json({ success: true, data, wallet_balance: Number(data.wallet_balance) });
   } catch (error) {
@@ -40,7 +42,7 @@ router.post('/', validateTransaction, async (req, res, next) => {
 
 router.get('/:id', async (req, res, next) => {
   try {
-    const data = await TransactionModel.getById(req.params.id);
+    const data = await TransactionModel.getById(req.params.id, userId);
     if (!data) return res.status(404).json({ success: false, error: 'Không tìm thấy giao dịch' });
     res.json({ success: true, data });
   } catch (error) {
@@ -48,19 +50,21 @@ router.get('/:id', async (req, res, next) => {
   }
 });
 
-router.put('/:id/category', async (req, res, next) => {
+router.put('/:id/category', validateTransactionCategoryUpdate, async (req, res, next) => {
   try {
-    const before = await TransactionModel.getById(req.params.id);
-    const data = await TransactionModel.updateCategory(req.params.id, req.body.category_id);
+    const before = await TransactionModel.getById(req.params.id, userId);
+    const data = await TransactionModel.updateCategory(req.params.id, req.body.category_id, userId);
     if (!data) return res.status(404).json({ success: false, error: 'Không tìm thấy giao dịch' });
     if (before && Number(before.category_id) !== Number(data.category_id) && before.source !== 'manual') {
-      await FeedbackService.recordClassificationCorrection({
-        userId,
-        transactionId: data.id,
-        originalText: before.original_text || before.description,
-        aiResult: { category_id: before.category_id, category_name: before.category_name },
-        correctedResult: { category_id: data.category_id, category_name: data.category_name },
-      });
+      await recordFeedbackAfterCommit('classification', () => (
+        FeedbackService.recordClassificationCorrection({
+          userId,
+          transactionId: data.id,
+          originalText: before.original_text || before.description,
+          aiResult: { category_id: before.category_id, category_name: before.category_name },
+          correctedResult: { category_id: data.category_id, category_name: data.category_name },
+        })
+      ));
     }
     res.json({ success: true, data, message: 'Đã cập nhật danh mục giao dịch' });
   } catch (error) {
@@ -68,30 +72,34 @@ router.put('/:id/category', async (req, res, next) => {
   }
 });
 
-router.put('/:id', async (req, res, next) => {
+router.put('/:id', validateTransactionUpdate, async (req, res, next) => {
   try {
-    const before = await TransactionModel.getById(req.params.id);
-    const data = await TransactionModel.update(req.params.id, req.body);
+    const before = await TransactionModel.getById(req.params.id, userId);
+    const data = await TransactionModel.update(req.params.id, req.body, userId);
     if (!data) return res.status(404).json({ success: false, error: 'Không tìm thấy giao dịch' });
     if (before && before.source !== 'manual') {
       if (req.body.category_id && Number(before.category_id) !== Number(data.category_id)) {
-        await FeedbackService.recordClassificationCorrection({
-          userId,
-          transactionId: data.id,
-          originalText: before.original_text || before.description,
-          aiResult: { category_id: before.category_id, category_name: before.category_name },
-          correctedResult: { category_id: data.category_id, category_name: data.category_name },
-        });
+        await recordFeedbackAfterCommit('classification', () => (
+          FeedbackService.recordClassificationCorrection({
+            userId,
+            transactionId: data.id,
+            originalText: before.original_text || before.description,
+            aiResult: { category_id: before.category_id, category_name: before.category_name },
+            correctedResult: { category_id: data.category_id, category_name: data.category_name },
+          })
+        ));
       }
       const extractionChanged = ['description', 'amount', 'type'].some((field) => req.body[field] !== undefined && String(req.body[field]) !== String(before[field]));
       if (extractionChanged) {
-        await FeedbackService.recordExtractionCorrection({
-          userId,
-          transactionId: data.id,
-          originalText: before.original_text || before.description,
-          aiResult: { description: before.description, amount: Number(before.amount), type: before.type },
-          correctedResult: { description: data.description, amount: Number(data.amount), type: data.type },
-        });
+        await recordFeedbackAfterCommit('extraction', () => (
+          FeedbackService.recordExtractionCorrection({
+            userId,
+            transactionId: data.id,
+            originalText: before.original_text || before.description,
+            aiResult: { description: before.description, amount: Number(before.amount), type: before.type },
+            correctedResult: { description: data.description, amount: Number(data.amount), type: data.type },
+          })
+        ));
       }
     }
     res.json({ success: true, data, wallet_balance: Number(data.wallet_balance) });
@@ -102,7 +110,7 @@ router.put('/:id', async (req, res, next) => {
 
 router.delete('/:id', async (req, res, next) => {
   try {
-    const data = await TransactionModel.softDelete(req.params.id);
+    const data = await TransactionModel.softDelete(req.params.id, userId);
     if (!data) return res.status(404).json({ success: false, error: 'Không tìm thấy giao dịch' });
     res.json({ ...data, message: 'Đã xóa giao dịch', restore_url: `/api/transactions/${req.params.id}/restore` });
   } catch (error) {
@@ -112,7 +120,8 @@ router.delete('/:id', async (req, res, next) => {
 
 router.post('/:id/restore', async (req, res, next) => {
   try {
-    const data = await TransactionModel.restore(req.params.id);
+    const data = await TransactionModel.restore(req.params.id, userId);
+    if (!data) return res.status(404).json({ success: false, error: 'Không tìm thấy giao dịch' });
     res.json({ success: true, data, message: 'Đã khôi phục giao dịch' });
   } catch (error) {
     next(error);

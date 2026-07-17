@@ -125,15 +125,24 @@ async function parseJson(response) {
   }
 }
 
-function apiError(message) {
+function apiError(message, { code, status, details } = {}) {
   const error = new Error(message);
   error.fromApi = true;
+  error.code = code || null;
+  error.status = status || null;
+  error.details = details || null;
   return error;
 }
 
 async function unwrapResponse(response) {
   const data = await parseJson(response);
-  if (!response.ok || data.success === false) throw apiError(data.error || 'Có lỗi xảy ra');
+  if (!response.ok || data.success === false) {
+    throw apiError(data.error || 'Có lỗi xảy ra', {
+      code: data.code,
+      status: response.status,
+      details: data.details,
+    });
+  }
   return data;
 }
 
@@ -222,14 +231,21 @@ export const api = {
   getBaseUrl: () => BASE_URL,
   resolveMediaUri,
   getBalance: () => request('/api/accounts/balance'),
+  getWallets: () => request('/api/accounts'),
+  createWallet: (data) => request('/api/accounts', { method: 'POST', body: JSON.stringify(data) }),
   getCategories: (type) => request(`/api/categories${type ? `?type=${type}` : ''}`),
   getTransactions: (query = '') => request(`/api/transactions${query}`),
   createTransaction: (data) => request('/api/transactions', { method: 'POST', body: JSON.stringify(data) }),
+  updateTransaction: (id, data) => request(`/api/transactions/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  }),
   updateTransactionCategory: (id, categoryId) => request(`/api/transactions/${id}/category`, {
     method: 'PUT',
     body: JSON.stringify({ category_id: categoryId }),
   }),
   deleteTransaction: (id) => request(`/api/transactions/${id}`, { method: 'DELETE' }),
+  restoreTransaction: (id) => request(`/api/transactions/${id}/restore`, { method: 'POST', body: '{}' }),
   getSummary: (month, year) => request(`/api/transactions/summary?month=${month}&year=${year}`),
   getChatMessages: (limit = 20) => request(`/api/chat/messages?limit=${encodeURIComponent(limit)}`),
   sendChat: (text) => request('/api/chat/message', { method: 'POST', body: JSON.stringify({ text }) }),
@@ -265,9 +281,13 @@ export const api = {
   getReportSummary: (month, year) => request(`/api/reports/summary?month=${month}&year=${year}`),
   getCategoryBreakdown: (month, year) => request(`/api/reports/category-breakdown?month=${month}&year=${year}`),
   getMonthlyTrend: (year) => request(`/api/reports/monthly-trend?year=${year}`),
-  getReportInsights: ({ payday = 25, fresh = false } = {}) => request(
-    `/api/reports/insights?payday=${payday}${fresh ? '&fresh=1' : ''}`
-  ),
+  getReportInsights: ({ payday, fresh = false } = {}) => {
+    const params = new URLSearchParams();
+    if (payday != null) params.set('payday', String(payday));
+    if (fresh) params.set('fresh', '1');
+    const query = params.toString();
+    return request(`/api/reports/insights${query ? `?${query}` : ''}`);
+  },
   getAIModels: () => request('/api/ai/models'),
   setAISelection: (data) => request('/api/ai/selection', { method: 'POST', body: JSON.stringify(data) }),
 

@@ -152,7 +152,7 @@ router.post('/investment-pnl', async (req, res, next) => {
  */
 router.put('/investment-pnl/:id', async (req, res, next) => {
   try {
-    const data = await InvestmentPnLModel.update(req.params.id, req.body);
+    const data = await InvestmentPnLModel.update(req.params.id, req.body, userId);
     if (!data) return res.status(404).json({ success: false, error: 'Không tìm thấy bản ghi' });
     res.json({ success: true, data });
   } catch (err) {
@@ -165,7 +165,7 @@ router.put('/investment-pnl/:id', async (req, res, next) => {
  */
 router.delete('/investment-pnl/:id', async (req, res, next) => {
   try {
-    const data = await InvestmentPnLModel.delete(req.params.id);
+    const data = await InvestmentPnLModel.delete(req.params.id, userId);
     if (!data) return res.status(404).json({ success: false, error: 'Không tìm thấy bản ghi' });
     res.json({ success: true, data });
   } catch (err) {

@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  Alert, RefreshControl, StyleSheet, Text, TextInput, TouchableOpacity, View,
+  RefreshControl, StyleSheet, Text, TextInput, TouchableOpacity, View,
 } from 'react-native';
 import { api } from '../services/api.service';
 import { useTheme } from '../theme/ThemeContext';
 import { formatDate, formatVND } from '../utils/formatters';
+import { showAlert } from '../utils/alerts';
 import AppIcon from '../components/AppIcon';
 import {
   Button, Card, EmptyState, ErrorState, ProgressBar, Screen, SegmentedControl, Skeleton,
@@ -31,6 +32,18 @@ function statusMeta(status, colors) {
   if (status === 'completed' || status === 'achieved') {
     return { label: 'Hoàn thành', icon: 'check-circle', color: colors.income, bg: colors.incomeSoft };
   }
+  if (status === 'no_contribution') {
+    return { label: 'Chưa có khoản góp', icon: 'money-off', color: colors.warning, bg: colors.warningSoft };
+  }
+  if (status === 'no_payment') {
+    return { label: 'Chưa có khoản trả', icon: 'money-off', color: colors.expense, bg: colors.expenseSoft };
+  }
+  if (status === 'negative_amortization') {
+    return { label: 'Nợ không giảm', icon: 'trending-up', color: colors.expense, bg: colors.expenseSoft };
+  }
+  if (status === 'horizon_exceeded') {
+    return { label: 'Chưa khả thi', icon: 'error-outline', color: colors.expense, bg: colors.expenseSoft };
+  }
   if (['off_track', 'behind_schedule', 'overdue', 'deadline_reached'].includes(status)) {
     return { label: 'Chậm tiến độ', icon: 'warning-amber', color: colors.expense, bg: colors.expenseSoft };
   }
@@ -44,6 +57,27 @@ function goalTypeLabel(value) {
   return GOAL_TYPES.find((option) => option.value === value)?.label || 'Mục tiêu';
 }
 
+function payloadFingerprint(payload) {
+  return JSON.stringify(payload);
+}
+
+function whatIfMessage(scenario) {
+  if (!scenario || !(Number(scenario.extraMonthly) > 0)) return null;
+  const prefix = `Nếu góp thêm ${formatVND(scenario.extraMonthly)}/tháng`;
+  const horizon = Number.isInteger(scenario.newMonthsNeeded)
+    ? `${scenario.newMonthsNeeded} tháng${scenario.newProjectedDate ? ` (khoảng ${formatDate(scenario.newProjectedDate)})` : ''}`
+    : null;
+
+  if (scenario.becomesFeasible && horizon) {
+    return `${prefix}, kế hoạch sẽ trở nên khả thi với thời gian dự kiến ${horizon}.`;
+  }
+  if (Number(scenario.monthsSaved) > 0) {
+    return `${prefix}, bạn có thể rút ngắn khoảng ${scenario.monthsSaved} tháng${horizon ? `, còn ${horizon}` : ''}.`;
+  }
+  if (horizon) return `${prefix}, thời gian dự kiến mới là ${horizon}.`;
+  return null;
+}
+
 export default function GoalsScreen() {
   const { theme } = useTheme();
   const styles = useMemo(() => createStyles(theme), [theme]);
@@ -53,6 +87,7 @@ export default function GoalsScreen() {
   const [form, setForm] = useState(EMPTY_FORM);
   const [editingId, setEditingId] = useState(null);
   const [planPreview, setPlanPreview] = useState(null);
+  const [planPreviewFingerprint, setPlanPreviewFingerprint] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -88,6 +123,7 @@ export default function GoalsScreen() {
   function setField(field, value) {
     setForm((previous) => ({ ...previous, [field]: value }));
     setPlanPreview(null);
+    setPlanPreviewFingerprint(null);
   }
 
   function payloadFromForm() {
@@ -118,13 +154,18 @@ export default function GoalsScreen() {
 
   async function previewPlan() {
     const validation = validateForm();
-    if (validation) return Alert.alert('Thiếu thông tin', validation);
+    if (validation) return showAlert('Thiếu thông tin', validation);
+    const payload = payloadFromForm();
+    const fingerprint = payloadFingerprint(payload);
     setPlanning(true);
     try {
-      const response = await api.planGoal(payloadFromForm());
+      const response = await api.planGoal(payload);
       setPlanPreview(response.data || null);
+      setPlanPreviewFingerprint(fingerprint);
     } catch (err) {
-      Alert.alert('Không thể lập kế hoạch', err.message);
+      setPlanPreview(null);
+      setPlanPreviewFingerprint(null);
+      showAlert('Không thể lập kế hoạch', err.message);
     } finally {
       setPlanning(false);
     }
@@ -132,16 +173,20 @@ export default function GoalsScreen() {
 
   async function saveGoal() {
     const validation = validateForm();
-    if (validation) return Alert.alert('Thiếu thông tin', validation);
+    if (validation) return showAlert('Thiếu thông tin', validation);
+    const payload = payloadFromForm();
+    if (!planPreview?.plan || planPreviewFingerprint !== payloadFingerprint(payload)) {
+      return showAlert('Cần xem kế hoạch', 'Hãy xem lại kế hoạch cho đúng dữ liệu hiện tại trước khi lưu mục tiêu.');
+    }
     setSaving(true);
     try {
-      const payload = payloadFromForm();
-      if (editingId) await api.updateGoal(editingId, payload);
-      else await api.createGoal(payload);
+      const confirmedPayload = { ...payload, preview_token: planPreview.preview_token };
+      if (editingId) await api.updateGoal(editingId, confirmedPayload);
+      else await api.createGoal(confirmedPayload);
       resetForm();
       await load();
     } catch (err) {
-      Alert.alert('Không thể lưu mục tiêu', err.message);
+      showAlert('Không thể lưu mục tiêu', err.message);
     } finally {
       setSaving(false);
     }
@@ -151,6 +196,7 @@ export default function GoalsScreen() {
     setForm(EMPTY_FORM);
     setEditingId(null);
     setPlanPreview(null);
+    setPlanPreviewFingerprint(null);
     setShowForm(false);
   }
 
@@ -166,12 +212,13 @@ export default function GoalsScreen() {
       annual_interest_rate: Number(goal.annual_interest_rate || 0) > 0 ? String(goal.annual_interest_rate) : '',
       note: goal.note || '',
     });
-    setPlanPreview({ plan: goal.plan, progress: goal.progress, cashflow: goal.cashflow });
+    setPlanPreview(null);
+    setPlanPreviewFingerprint(null);
     setShowForm(true);
   }
 
   function requestDelete(goal) {
-    Alert.alert(
+    showAlert(
       'Xóa mục tiêu?',
       `Mục tiêu “${goal.name}” sẽ được chuyển sang trạng thái đã hủy.`,
       [
@@ -186,7 +233,7 @@ export default function GoalsScreen() {
               if (editingId === goal.id) resetForm();
               await load();
             } catch (err) {
-              Alert.alert('Không thể xóa mục tiêu', err.message);
+              showAlert('Không thể xóa mục tiêu', err.message);
             } finally {
               setDeletingId(null);
             }
@@ -213,6 +260,11 @@ export default function GoalsScreen() {
       </Screen>
     );
   }
+
+  const planPreviewIsCurrent = Boolean(
+    planPreview?.plan
+    && planPreviewFingerprint === payloadFingerprint(payloadFromForm())
+  );
 
   return (
     <Screen
@@ -343,8 +395,15 @@ export default function GoalsScreen() {
             style={{ marginBottom: 9 }}
           />
 
-          {planPreview?.plan && (
+          {planPreviewIsCurrent && (
             <PlanPreview data={planPreview} styles={styles} colors={c} />
+          )}
+
+          {!planPreviewIsCurrent && (
+            <View style={styles.previewRequired}>
+              <AppIcon name="info-outline" size={15} color={c.brandText} />
+              <Text style={styles.previewRequiredText}>Xem kế hoạch với dữ liệu hiện tại để mở nút lưu.</Text>
+            </View>
           )}
 
           <Button
@@ -352,6 +411,7 @@ export default function GoalsScreen() {
             icon={editingId ? 'save' : 'flag'}
             onPress={saveGoal}
             loading={saving}
+            disabled={!planPreviewIsCurrent}
           />
         </Card>
       )}
@@ -446,6 +506,7 @@ export default function GoalsScreen() {
 function PlanPreview({ data, styles, colors }) {
   const plan = data.plan || {};
   const warning = data.progress?.warning || plan.warning;
+  const scenarioMessage = whatIfMessage(plan.whatIf);
   return (
     <View style={styles.planBox}>
       <View style={styles.planTitleRow}>
@@ -478,11 +539,7 @@ function PlanPreview({ data, styles, colors }) {
           <Text style={styles.warningText}>{warning.message}</Text>
         </View>
       )}
-      {plan.whatIf?.monthsSaved > 0 && (
-        <Text style={styles.whatIfText}>
-          Nếu góp thêm {formatVND(plan.whatIf.extraMonthly)}/tháng, bạn có thể rút ngắn khoảng {plan.whatIf.monthsSaved} tháng.
-        </Text>
-      )}
+      {scenarioMessage && <Text style={styles.whatIfText}>{scenarioMessage}</Text>}
     </View>
   );
 }
@@ -522,6 +579,12 @@ const createStyles = (t) => StyleSheet.create({
   planStatLabel: { color: t.colors.textMuted, fontSize: 10, fontWeight: '700' },
   planStatValue: { color: t.colors.text, fontSize: 12, fontWeight: '800', marginTop: 2 },
   whatIfText: { color: t.colors.brandText, fontSize: 11, lineHeight: 16, fontWeight: '700', marginTop: 9 },
+  previewRequired: {
+    flexDirection: 'row', alignItems: 'flex-start', gap: 6, paddingHorizontal: 10,
+    paddingVertical: 9, marginBottom: 9, backgroundColor: t.colors.brandSoft,
+    borderRadius: t.radius.sm,
+  },
+  previewRequiredText: { flex: 1, color: t.colors.brandText, fontSize: 10, lineHeight: 15, fontWeight: '700' },
   sectionHeadingRow: { flexDirection: 'row', alignItems: 'center', gap: 7, marginBottom: 12 },
   sectionHeading: { color: t.colors.text, fontSize: 17, fontWeight: '900' },
   totalBadge: {

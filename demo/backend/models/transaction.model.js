@@ -1,5 +1,6 @@
 const { pool, query } = require('../config/database');
 const KVStore = require('../services/store/kv.store');
+const { EDITABLE_FIELDS, validateTransactionPayload } = require('../services/transactions/validation');
 
 const DEFAULT_USER = 'default_user';
 
@@ -14,16 +15,67 @@ async function invalidateFinancialCaches(userId = DEFAULT_USER) {
   ]);
 }
 
-async function getJoinedById(id, includeDeleted = false) {
+function referenceError(message) {
+  const error = new Error(message);
+  error.status = 400;
+  error.code = 'INVALID_TRANSACTION_REFERENCE';
+  return error;
+}
+
+async function getJoinedById(id, userId = DEFAULT_USER, includeDeleted = false) {
   const result = await query(
     `SELECT t.*, c.name AS category_name, c.icon AS category_icon, w.name AS wallet_name, w.balance AS wallet_balance
      FROM transactions t
-     JOIN categories c ON c.id = t.category_id
-     JOIN wallets w ON w.id = t.wallet_id
-     WHERE t.id = $1 ${includeDeleted ? '' : 'AND t.deleted_at IS NULL'}`,
-    [id]
+     JOIN categories c ON c.id = t.category_id AND c.user_id = t.user_id
+     JOIN wallets w ON w.id = t.wallet_id AND w.user_id = t.user_id
+     WHERE t.id = $1 AND t.user_id = $2 ${includeDeleted ? '' : 'AND t.deleted_at IS NULL'}`,
+    [id, userId]
   );
   return result.rows[0] || null;
+}
+
+async function lockOwnedCategories(client, categoryIds, userId) {
+  const ids = [...new Set(categoryIds.map(Number))].sort((a, b) => a - b);
+  const result = await client.query(
+    `SELECT id, type, name, icon
+     FROM categories
+     WHERE id = ANY($1::int[]) AND user_id = $2
+     ORDER BY id
+     FOR KEY SHARE`,
+    [ids, userId]
+  );
+  if (result.rows.length !== ids.length) {
+    throw referenceError('Danh mục không tồn tại hoặc không thuộc người dùng');
+  }
+  return new Map(result.rows.map((row) => [Number(row.id), row]));
+}
+
+async function lockOwnedWallets(client, walletIds, userId) {
+  const ids = [...new Set(walletIds.map(Number))].sort((a, b) => a - b);
+  const result = await client.query(
+    `SELECT id, balance
+     FROM wallets
+     WHERE id = ANY($1::int[]) AND user_id = $2
+     ORDER BY id
+     FOR UPDATE`,
+    [ids, userId]
+  );
+  if (result.rows.length !== ids.length) {
+    throw referenceError('Ví giao dịch không tồn tại hoặc không thuộc người dùng');
+  }
+  return new Map(result.rows.map((row) => [Number(row.id), row]));
+}
+
+function assertCategoryMatches(category, type) {
+  if (category.type !== type) throw referenceError('Loại danh mục không khớp với giao dịch');
+}
+
+function editablePatch(old, data) {
+  const next = { ...old };
+  for (const field of EDITABLE_FIELDS) {
+    if (Object.prototype.hasOwnProperty.call(data, field)) next[field] = data[field];
+  }
+  return next;
 }
 
 async function rollbackAfterFailure(client, error) {
@@ -46,9 +98,9 @@ async function invalidateAfterCommit(userId) {
   }
 }
 
-async function hydrateAfterCommit(id, fallback, includeDeleted = false) {
+async function hydrateAfterCommit(id, userId, fallback, includeDeleted = false) {
   try {
-    return (await getJoinedById(id, includeDeleted)) || fallback;
+    return (await getJoinedById(id, userId, includeDeleted)) || fallback;
   } catch (error) {
     console.warn(`[transaction] post-commit hydration failed: ${error.message}`);
     return fallback;
@@ -57,22 +109,27 @@ async function hydrateAfterCommit(id, fallback, includeDeleted = false) {
 
 const TransactionModel = {
   async create(data) {
+    const ownerId = data.userId || DEFAULT_USER;
+    validateTransactionPayload(data, { requireWallet: true });
     const client = await pool.connect();
     let transactionClosed = false;
     let tx;
     let walletBalance;
     try {
       await client.query('BEGIN');
+      const categories = await lockOwnedCategories(client, [data.category_id], ownerId);
+      assertCategoryMatches(categories.get(Number(data.category_id)), data.type);
+      await lockOwnedWallets(client, [data.wallet_id], ownerId);
       const result = await client.query(
         `INSERT INTO transactions (user_id, description, amount, type, category_id, wallet_id, transaction_date, source, note, original_text, ai_parsed)
          VALUES ($1, $2, $3, $4::transaction_type, $5, $6, COALESCE($7, CURRENT_DATE), COALESCE($8, 'manual')::transaction_source, $9, $10, COALESCE($11::jsonb, '{}'::jsonb))
          RETURNING *`,
-        [data.userId || DEFAULT_USER, data.description, data.amount, data.type, data.category_id, data.wallet_id, data.transaction_date || null, data.source || 'manual', data.note || null, data.original_text || null, data.ai_parsed ? JSON.stringify(data.ai_parsed) : null]
+        [ownerId, data.description.trim(), data.amount, data.type, data.category_id, data.wallet_id, data.transaction_date || null, data.source || 'manual', data.note ?? null, data.original_text || null, data.ai_parsed ? JSON.stringify(data.ai_parsed) : null]
       );
       tx = result.rows[0];
       const wallet = await client.query(
         'UPDATE wallets SET balance = balance + $1, updated_at = NOW() WHERE id = $2 AND user_id = $3 RETURNING balance',
-        [balanceDelta(tx.type, tx.amount), tx.wallet_id, data.userId || DEFAULT_USER]
+        [balanceDelta(tx.type, tx.amount), tx.wallet_id, ownerId]
       );
       if (!wallet.rowCount) {
         const error = new Error('Ví giao dịch không tồn tại hoặc không thuộc người dùng');
@@ -91,26 +148,35 @@ const TransactionModel = {
 
     // Post-commit work is best-effort: a durable create must still be reported as
     // successful even if Redis or response hydration is temporarily unavailable.
-    await invalidateAfterCommit(data.userId || DEFAULT_USER);
-    return { ...(await hydrateAfterCommit(tx.id, tx)), wallet_balance: walletBalance };
+    await invalidateAfterCommit(ownerId);
+    return {
+      ...(await hydrateAfterCommit(tx.id, ownerId, { ...tx, wallet_balance: walletBalance })),
+      wallet_balance: walletBalance,
+    };
   },
 
   // Atomically create all transactions from a multi-transaction preview. If any
   // row is invalid, none of the wallet balances or transactions are committed.
   async createMany(items, userId = DEFAULT_USER) {
     if (!Array.isArray(items) || !items.length) return [];
+    for (const item of items) validateTransactionPayload(item, { requireWallet: true });
     const client = await pool.connect();
     const ids = [];
     const createdRows = [];
     let transactionClosed = false;
     try {
       await client.query('BEGIN');
+      const categories = await lockOwnedCategories(client, items.map((item) => item.category_id), userId);
+      for (const item of items) {
+        assertCategoryMatches(categories.get(Number(item.category_id)), item.type);
+      }
+      await lockOwnedWallets(client, items.map((item) => item.wallet_id), userId);
       for (const data of items) {
         const result = await client.query(
           `INSERT INTO transactions (user_id, description, amount, type, category_id, wallet_id, transaction_date, source, note, original_text, ai_parsed)
            VALUES ($1, $2, $3, $4::transaction_type, $5, $6, COALESCE($7, CURRENT_DATE), COALESCE($8, 'manual')::transaction_source, $9, $10, COALESCE($11::jsonb, '{}'::jsonb))
            RETURNING *`,
-          [userId, data.description, data.amount, data.type, data.category_id, data.wallet_id,
+          [userId, data.description.trim(), data.amount, data.type, data.category_id, data.wallet_id,
             data.transaction_date || null, data.source || 'manual', data.note || null,
             data.original_text || null, data.ai_parsed ? JSON.stringify(data.ai_parsed) : null]
         );
@@ -137,7 +203,7 @@ const TransactionModel = {
     }
 
     await invalidateAfterCommit(userId);
-    return Promise.all(ids.map((id, index) => hydrateAfterCommit(id, createdRows[index])));
+    return Promise.all(ids.map((id, index) => hydrateAfterCommit(id, userId, createdRows[index])));
   },
 
   async getAll(userId = DEFAULT_USER, filters = {}) {
@@ -160,8 +226,8 @@ const TransactionModel = {
     const result = await query(
       `SELECT t.*, c.name AS category_name, c.icon AS category_icon, w.name AS wallet_name
        FROM transactions t
-       JOIN categories c ON c.id = t.category_id
-       JOIN wallets w ON w.id = t.wallet_id
+       JOIN categories c ON c.id = t.category_id AND c.user_id = t.user_id
+       JOIN wallets w ON w.id = t.wallet_id AND w.user_id = t.user_id
        WHERE ${where.join(' AND ')}
        ORDER BY t.transaction_date DESC, t.created_at DESC
        LIMIT $${params.length - 1} OFFSET $${params.length}`,
@@ -171,38 +237,76 @@ const TransactionModel = {
     return { data: result.rows, pagination: { page, limit, total, totalPages: Math.ceil(total / limit) } };
   },
 
-  async getById(id) {
-    return getJoinedById(id, false);
+  async getById(id, userId = DEFAULT_USER) {
+    return getJoinedById(id, userId, false);
   },
 
-  async update(id, data) {
+  async update(id, data, userId = DEFAULT_USER) {
+    validateTransactionPayload(data, { partial: true, rejectUnknown: true });
     const client = await pool.connect();
     let transactionClosed = false;
     let updatedId;
     let updatedRow;
-    let ownerId = DEFAULT_USER;
+    let walletBalance;
     try {
       await client.query('BEGIN');
-      const oldResult = await client.query('SELECT * FROM transactions WHERE id = $1 AND deleted_at IS NULL FOR UPDATE', [id]);
+      const oldResult = await client.query(
+        'SELECT * FROM transactions WHERE id = $1 AND user_id = $2 AND deleted_at IS NULL FOR UPDATE',
+        [id, userId]
+      );
       const old = oldResult.rows[0];
       if (!old) {
         await client.query('ROLLBACK');
         transactionClosed = true;
         return null;
       }
-      const next = { ...old, ...data };
-      await client.query('UPDATE wallets SET balance = balance - $1 WHERE id = $2', [balanceDelta(old.type, old.amount), old.wallet_id]);
+      const next = editablePatch(old, data);
+      const categories = await lockOwnedCategories(client, [next.category_id], userId);
+      assertCategoryMatches(categories.get(Number(next.category_id)), next.type);
+      const wallets = await lockOwnedWallets(client, [old.wallet_id, next.wallet_id], userId);
       const updated = await client.query(
-        `UPDATE transactions SET description = $2, amount = $3, type = $4, category_id = $5, transaction_date = $6, note = $7, updated_at = NOW()
-         WHERE id = $1 RETURNING *`,
-        [id, next.description, next.amount, next.type, next.category_id, next.transaction_date, next.note]
+        `UPDATE transactions
+         SET description = $3, amount = $4, type = $5, category_id = $6,
+             transaction_date = $7, note = $8, wallet_id = $9, updated_at = NOW()
+         WHERE id = $1 AND user_id = $2
+         RETURNING *`,
+        [id, userId, next.description.trim(), next.amount, next.type, next.category_id,
+          next.transaction_date, next.note ?? null, next.wallet_id]
       );
-      await client.query('UPDATE wallets SET balance = balance + $1, updated_at = NOW() WHERE id = $2', [balanceDelta(next.type, next.amount), old.wallet_id]);
+
+      if (Number(old.wallet_id) === Number(next.wallet_id)) {
+        const adjustment = balanceDelta(next.type, next.amount) - balanceDelta(old.type, old.amount);
+        if (adjustment !== 0) {
+          const wallet = await client.query(
+            `UPDATE wallets SET balance = balance + $1, updated_at = NOW()
+             WHERE id = $2 AND user_id = $3 RETURNING balance`,
+            [adjustment, next.wallet_id, userId]
+          );
+          if (!wallet.rowCount) throw referenceError('Ví giao dịch không tồn tại hoặc không thuộc người dùng');
+          walletBalance = Number(wallet.rows[0].balance);
+        } else {
+          walletBalance = Number(wallets.get(Number(next.wallet_id)).balance);
+        }
+      } else {
+        const oldWallet = await client.query(
+          `UPDATE wallets SET balance = balance - $1, updated_at = NOW()
+           WHERE id = $2 AND user_id = $3 RETURNING balance`,
+          [balanceDelta(old.type, old.amount), old.wallet_id, userId]
+        );
+        const newWallet = await client.query(
+          `UPDATE wallets SET balance = balance + $1, updated_at = NOW()
+           WHERE id = $2 AND user_id = $3 RETURNING balance`,
+          [balanceDelta(next.type, next.amount), next.wallet_id, userId]
+        );
+        if (!oldWallet.rowCount || !newWallet.rowCount) {
+          throw referenceError('Ví giao dịch không tồn tại hoặc không thuộc người dùng');
+        }
+        walletBalance = Number(newWallet.rows[0].balance);
+      }
       await client.query('COMMIT');
       transactionClosed = true;
       updatedId = updated.rows[0].id;
       updatedRow = updated.rows[0];
-      ownerId = old.user_id || DEFAULT_USER;
     } catch (error) {
       if (!transactionClosed) await rollbackAfterFailure(client, error);
       throw error;
@@ -210,43 +314,37 @@ const TransactionModel = {
       client.release();
     }
 
-    await invalidateAfterCommit(ownerId);
-    return hydrateAfterCommit(updatedId, updatedRow);
+    await invalidateAfterCommit(userId);
+    return hydrateAfterCommit(updatedId, userId, { ...updatedRow, wallet_balance: walletBalance });
   },
 
-  async updateCategory(id, categoryId) {
-    const tx = await getJoinedById(id);
-    if (!tx) return null;
-    const category = await query('SELECT * FROM categories WHERE id = $1', [categoryId]);
-    if (!category.rows[0]) {
-      const err = new Error('Danh mục không tồn tại');
-      err.status = 400;
-      throw err;
-    }
-    if (category.rows[0].type !== tx.type) {
-      const err = new Error('Loại danh mục không khớp với giao dịch');
-      err.status = 400;
-      throw err;
-    }
-    await query('UPDATE transactions SET category_id = $2, updated_at = NOW() WHERE id = $1', [id, categoryId]);
-    await invalidateAfterCommit(tx.user_id || DEFAULT_USER);
-    return hydrateAfterCommit(id, { ...tx, category_id: categoryId, category_name: category.rows[0].name, category_icon: category.rows[0].icon });
-  },
-
-  async softDelete(id) {
+  async updateCategory(id, categoryId, userId = DEFAULT_USER) {
+    validateTransactionPayload({ category_id: categoryId }, { partial: true });
     const client = await pool.connect();
     let transactionClosed = false;
     let tx;
+    let category;
     try {
       await client.query('BEGIN');
-      const old = await client.query('UPDATE transactions SET deleted_at = NOW(), updated_at = NOW() WHERE id = $1 AND deleted_at IS NULL RETURNING *', [id]);
+      const old = await client.query(
+        'SELECT * FROM transactions WHERE id = $1 AND user_id = $2 AND deleted_at IS NULL FOR UPDATE',
+        [id, userId]
+      );
       tx = old.rows[0];
       if (!tx) {
         await client.query('ROLLBACK');
         transactionClosed = true;
         return null;
       }
-      await client.query('UPDATE wallets SET balance = balance - $1, updated_at = NOW() WHERE id = $2', [balanceDelta(tx.type, tx.amount), tx.wallet_id]);
+      const categories = await lockOwnedCategories(client, [categoryId], userId);
+      category = categories.get(Number(categoryId));
+      assertCategoryMatches(category, tx.type);
+      const updated = await client.query(
+        `UPDATE transactions SET category_id = $3, updated_at = NOW()
+         WHERE id = $1 AND user_id = $2 RETURNING *`,
+        [id, userId, categoryId]
+      );
+      tx = updated.rows[0];
       await client.query('COMMIT');
       transactionClosed = true;
     } catch (error) {
@@ -256,30 +354,37 @@ const TransactionModel = {
       client.release();
     }
 
-    await invalidateAfterCommit(tx.user_id || DEFAULT_USER);
-    const deletedAt = new Date(tx.deleted_at);
-    return { success: true, deleted_at: tx.deleted_at, restore_deadline: new Date(deletedAt.getTime() + 30000).toISOString() };
+    await invalidateAfterCommit(userId);
+    return hydrateAfterCommit(id, userId, {
+      ...tx,
+      category_name: category.name,
+      category_icon: category.icon,
+    });
   },
 
-  async restore(id) {
+  async softDelete(id, userId = DEFAULT_USER) {
     const client = await pool.connect();
     let transactionClosed = false;
     let tx;
     try {
       await client.query('BEGIN');
       const old = await client.query(
-        `UPDATE transactions SET deleted_at = NULL, updated_at = NOW()
-         WHERE id = $1 AND deleted_at IS NOT NULL AND deleted_at > NOW() - INTERVAL '30 seconds'
-         RETURNING *`,
-        [id]
+        `UPDATE transactions SET deleted_at = NOW(), updated_at = NOW()
+         WHERE id = $1 AND user_id = $2 AND deleted_at IS NULL RETURNING *`,
+        [id, userId]
       );
       tx = old.rows[0];
       if (!tx) {
-        const err = new Error('Đã quá thời hạn khôi phục (30 giây)');
-        err.status = 410;
-        throw err;
+        await client.query('ROLLBACK');
+        transactionClosed = true;
+        return null;
       }
-      await client.query('UPDATE wallets SET balance = balance + $1, updated_at = NOW() WHERE id = $2', [balanceDelta(tx.type, tx.amount), tx.wallet_id]);
+      const wallet = await client.query(
+        `UPDATE wallets SET balance = balance - $1, updated_at = NOW()
+         WHERE id = $2 AND user_id = $3 RETURNING balance`,
+        [balanceDelta(tx.type, tx.amount), tx.wallet_id, userId]
+      );
+      if (!wallet.rowCount) throw referenceError('Ví giao dịch không tồn tại hoặc không thuộc người dùng');
       await client.query('COMMIT');
       transactionClosed = true;
     } catch (error) {
@@ -289,8 +394,63 @@ const TransactionModel = {
       client.release();
     }
 
-    await invalidateAfterCommit(tx.user_id || DEFAULT_USER);
-    return hydrateAfterCommit(id, tx);
+    await invalidateAfterCommit(userId);
+    const deletedAt = new Date(tx.deleted_at);
+    return { success: true, deleted_at: tx.deleted_at, restore_deadline: new Date(deletedAt.getTime() + 30000).toISOString() };
+  },
+
+  async restore(id, userId = DEFAULT_USER) {
+    const client = await pool.connect();
+    let transactionClosed = false;
+    let tx;
+    try {
+      await client.query('BEGIN');
+      const old = await client.query(
+        'SELECT * FROM transactions WHERE id = $1 AND user_id = $2 FOR UPDATE',
+        [id, userId]
+      );
+      tx = old.rows[0];
+      if (!tx) {
+        await client.query('ROLLBACK');
+        transactionClosed = true;
+        return null;
+      }
+      if (!tx.deleted_at) {
+        const err = new Error('Đã quá thời hạn khôi phục (30 giây)');
+        err.status = 410;
+        throw err;
+      }
+      const restored = await client.query(
+        `UPDATE transactions SET deleted_at = NULL, updated_at = NOW()
+         WHERE id = $1 AND user_id = $2
+           AND deleted_at IS NOT NULL
+           AND deleted_at > NOW() - INTERVAL '30 seconds'
+         RETURNING *`,
+        [id, userId]
+      );
+      tx = restored.rows[0];
+      if (!tx) {
+        const err = new Error('Đã quá thời hạn khôi phục (30 giây)');
+        err.status = 410;
+        throw err;
+      }
+      const wallet = await client.query(
+        `UPDATE wallets SET balance = balance + $1, updated_at = NOW()
+         WHERE id = $2 AND user_id = $3 RETURNING balance`,
+        [balanceDelta(tx.type, tx.amount), tx.wallet_id, userId]
+      );
+      if (!wallet.rowCount) throw referenceError('Ví giao dịch không tồn tại hoặc không thuộc người dùng');
+      await client.query('COMMIT');
+      transactionClosed = true;
+    } catch (error) {
+      if (!transactionClosed) await rollbackAfterFailure(client, error);
+      throw error;
+    } finally {
+      client.release();
+    }
+
+    await invalidateAfterCommit(userId);
+    return hydrateAfterCommit(id, userId, tx);
   },
 
   async getMonthlySummary(userId = DEFAULT_USER, month, year) {

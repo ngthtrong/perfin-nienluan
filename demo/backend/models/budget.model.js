@@ -111,8 +111,8 @@ const BudgetModel = {
        JOIN categories c ON c.id = t.category_id
        WHERE t.user_id = $1
          AND t.deleted_at IS NULL
-         AND t.transaction_date >= DATE_TRUNC('month', $2::date) - (($3::int - 1) * INTERVAL '1 month')
-         AND t.transaction_date < DATE_TRUNC('month', $2::date) + INTERVAL '1 month'
+         AND t.transaction_date >= DATE_TRUNC('month', $2::date) - ($3::int * INTERVAL '1 month')
+         AND t.transaction_date < DATE_TRUNC('month', $2::date)
        GROUP BY DATE_TRUNC('month', t.transaction_date), t.type, t.category_id, c.name
        ORDER BY period ASC, t.type ASC, c.name ASC`,
       [userId, asOf.toISOString().slice(0, 10), months]
