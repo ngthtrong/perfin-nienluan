@@ -3,13 +3,15 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '../../theme/ThemeContext';
 
 // Pill-shaped selectable chip. Used for filters, category pickers, provider selection.
-export default function Chip({ label, active = false, icon, onPress, disabled = false, style }) {
+export default function Chip({ label, active = false, icon, onPress, disabled = false, style, accessibilityLabel }) {
   const { theme } = useTheme();
   const c = theme.colors;
 
   return (
     <TouchableOpacity
       accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel || label}
+      accessibilityState={{ selected: active, disabled }}
       onPress={onPress}
       disabled={disabled}
       activeOpacity={0.75}

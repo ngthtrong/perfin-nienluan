@@ -1,7 +1,7 @@
 const express = require('express');
 const CategoryModel = require('../models/category.model');
 const { CategoryRetagService } = require('../services/feedback');
-const { validateCategory } = require('../middleware/validation.middleware');
+const { validateCategory, validateCategoryUpdate } = require('../middleware/validation.middleware');
 
 const router = express.Router();
 const userId = 'default_user';
@@ -56,7 +56,7 @@ router.get('/', async (req, res, next) => {
 
 router.get('/:id', async (req, res, next) => {
   try {
-    const data = await CategoryModel.getById(req.params.id);
+    const data = await CategoryModel.getById(req.params.id, userId);
     if (!data) return res.status(404).json({ success: false, error: 'Không tìm thấy danh mục' });
     res.json({ success: true, data });
   } catch (error) {
@@ -73,9 +73,9 @@ router.post('/', validateCategory, async (req, res, next) => {
   }
 });
 
-router.put('/:id', async (req, res, next) => {
+router.put('/:id', validateCategoryUpdate, async (req, res, next) => {
   try {
-    const data = await CategoryModel.update(req.params.id, req.body);
+    const data = await CategoryModel.update(req.params.id, req.body, userId);
     if (!data) return res.status(404).json({ success: false, error: 'Không tìm thấy danh mục' });
     res.json({ success: true, data });
   } catch (error) {
@@ -85,9 +85,9 @@ router.put('/:id', async (req, res, next) => {
 
 router.delete('/:id', async (req, res, next) => {
   try {
-    const data = await CategoryModel.delete(req.params.id);
+    const data = await CategoryModel.delete(req.params.id, userId);
     if (!data) return res.status(404).json({ success: false, error: 'Không tìm thấy danh mục' });
-    res.json({ success: true, message: 'Đã xóa danh mục' });
+    res.json({ success: true, data, message: `Đã xóa danh mục và chuyển ${data.reassigned_transactions} giao dịch sang ${data.fallback_category.name}` });
   } catch (error) {
     next(error);
   }

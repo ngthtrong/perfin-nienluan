@@ -77,6 +77,12 @@ function parseCacheKey(text, categories, userPrompt) {
   return `cache:ai-parse:${digest}`;
 }
 
+function isPriorityLocalIntent(parsed) {
+  return parsed?.intent === 'query_transactions'
+    || parsed?.intent === 'query_insights'
+    || (parsed?.intent === 'recurring_pay' && parsed?.recurring?.acknowledgement === true);
+}
+
 function enforceInsightUnits(text, facts) {
   let safe = String(text || '');
   if (facts?.runway?.avgBurn) {
@@ -125,6 +131,15 @@ class AIServiceManager {
   }
 
   async parseTransaction(text, categories, userPrompt) {
+    // These intents are deterministic, high-confidence questions/answers rather
+    // than transaction extraction. Resolve them before provider/cache lookup so
+    // an enabled LLM cannot collapse a filtered listing into the whole-month
+    // summary or interpret a short recurring acknowledgement as an incomplete
+    // ad-hoc transaction. Actual writes still pass through preview + confirm.
+    const localIntent = routeLocalIntent(text, categories);
+    if (isPriorityLocalIntent(localIntent)) {
+      return { success: true, provider_used: 'local', ...localIntent };
+    }
     const cacheKey = parseCacheKey(text, categories, userPrompt);
     const cached = await KVStore.get(cacheKey);
     if (cached) return { ...cached, cache_hit: true };
@@ -311,3 +326,4 @@ module.exports = new AIServiceManager();
 module.exports.AIServiceManager = AIServiceManager;
 module.exports.normalizeAIResponse = normalizeAIResponse;
 module.exports.enforceInsightUnits = enforceInsightUnits;
+module.exports.isPriorityLocalIntent = isPriorityLocalIntent;

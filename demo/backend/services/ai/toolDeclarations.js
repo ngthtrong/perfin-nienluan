@@ -66,16 +66,21 @@ const FINANCIAL_TOOL_DECLARATIONS = [
   },
   {
     name: 'query_financial_data',
-    description: 'Request exact computed financial data instead of guessing numbers.',
+    description: 'Request exact computed financial data instead of guessing numbers. Use query=transactions with search/type/category and action=list or aggregate when the user asks about matching transactions; do not replace it with a whole-month summary.',
     parametersJsonSchema: {
       type: 'object',
       properties: {
         query: {
           type: 'string',
-          enum: ['summary', 'insights', 'runway', 'subscriptions', 'goals', 'budgets', 'category_suggestions'],
+          enum: ['summary', 'transactions', 'insights', 'runway', 'subscriptions', 'goals', 'budgets', 'category_suggestions'],
         },
         month: { type: ['number', 'null'], minimum: 1, maximum: 12 },
         year: { type: ['number', 'null'], minimum: 2020, maximum: 2100 },
+        transaction_type: { type: ['string', 'null'], enum: ['income', 'expense', null] },
+        category_name: { type: ['string', 'null'] },
+        search: { type: ['string', 'null'], description: 'Words from the requested transaction description/merchant/activity' },
+        action: { type: ['string', 'null'], enum: ['list', 'aggregate', null] },
+        limit: { type: ['number', 'null'], minimum: 1, maximum: 20 },
       },
       required: ['query'],
     },
@@ -162,7 +167,13 @@ function toolCallToIntent(call) {
     case 'create_financial_goal':
       return { intent: 'goal_create', goal: args };
     case 'query_financial_data':
-      return { intent: `query_${args.query}`, query: args };
+      return {
+        intent: `query_${args.query}`,
+        query: {
+          ...args,
+          type: args.transaction_type || args.type || null,
+        },
+      };
     case 'suggest_budget':
       return { intent: 'budget_suggest', budget: args };
     case 'export_financial_data':

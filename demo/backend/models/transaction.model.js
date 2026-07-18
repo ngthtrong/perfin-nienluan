@@ -1,6 +1,7 @@
 const { pool, query } = require('../config/database');
 const KVStore = require('../services/store/kv.store');
 const { EDITABLE_FIELDS, validateTransactionPayload } = require('../services/transactions/validation');
+const { SORT_EXPRESSIONS, normalizeTransactionQuery } = require('../services/transactions/query');
 
 const DEFAULT_USER = 'default_user';
 
@@ -12,6 +13,7 @@ async function invalidateFinancialCaches(userId = DEFAULT_USER) {
   await Promise.all([
     KVStore.del(`cache:wallets:${userId}`),
     KVStore.del(`cache:insights:${userId}`),
+    KVStore.del(`cache:categories:${userId}`),
   ]);
 }
 
@@ -207,8 +209,8 @@ const TransactionModel = {
   },
 
   async getAll(userId = DEFAULT_USER, filters = {}) {
-    const page = Math.max(Number(filters.page || 1), 1);
-    const limit = Math.min(Math.max(Number(filters.limit || 20), 1), 100);
+    const normalized = normalizeTransactionQuery(filters);
+    const { page, limit } = normalized;
     const offset = (page - 1) * limit;
     const where = ['t.deleted_at IS NULL', 't.user_id = $1'];
     const params = [userId];
@@ -216,12 +218,17 @@ const TransactionModel = {
       params.push(value);
       where.push(clause.replace('?', `$${params.length}`));
     };
-    if (filters.from) add('t.transaction_date >= ?', filters.from);
-    if (filters.to) add('t.transaction_date <= ?', filters.to);
-    if (filters.category_id) add('t.category_id = ?', filters.category_id);
-    if (filters.type) add('t.type = ?', filters.type);
-    if (filters.search) add('t.description ILIKE ?', `%${filters.search}%`);
+    if (normalized.from) add('t.transaction_date >= ?', normalized.from);
+    if (normalized.to) add('t.transaction_date <= ?', normalized.to);
+    if (normalized.category_id) add('t.category_id = ?', normalized.category_id);
+    if (normalized.type) add('t.type = ?', normalized.type);
+    if (normalized.search) add('t.description ILIKE ?', `%${normalized.search}%`);
     const count = await query(`SELECT COUNT(*) FROM transactions t WHERE ${where.join(' AND ')}`, params);
+    const direction = normalized.sort_order.toUpperCase();
+    const primarySort = `${SORT_EXPRESSIONS[normalized.sort_by]} ${direction}`;
+    const orderBy = normalized.sort_by === 'transaction_date'
+      ? `${primarySort}, t.created_at ${direction}, t.id ${direction}`
+      : `${primarySort}, t.transaction_date DESC, t.created_at DESC, t.id DESC`;
     params.push(limit, offset);
     const result = await query(
       `SELECT t.*, c.name AS category_name, c.icon AS category_icon, w.name AS wallet_name
@@ -229,12 +236,24 @@ const TransactionModel = {
        JOIN categories c ON c.id = t.category_id AND c.user_id = t.user_id
        JOIN wallets w ON w.id = t.wallet_id AND w.user_id = t.user_id
        WHERE ${where.join(' AND ')}
-       ORDER BY t.transaction_date DESC, t.created_at DESC
+       ORDER BY ${orderBy}
        LIMIT $${params.length - 1} OFFSET $${params.length}`,
       params
     );
     const total = Number(count.rows[0].count);
-    return { data: result.rows, pagination: { page, limit, total, totalPages: Math.ceil(total / limit) } };
+    const totalPages = Math.ceil(total / limit);
+    return {
+      data: result.rows,
+      total,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages,
+        hasNextPage: page < totalPages,
+        hasPreviousPage: page > 1,
+      },
+    };
   },
 
   async getById(id, userId = DEFAULT_USER) {
@@ -451,6 +470,59 @@ const TransactionModel = {
 
     await invalidateAfterCommit(userId);
     return hydrateAfterCommit(id, userId, tx);
+  },
+
+  // Chat referents such as "5 giao dịch đó" carry an exact, server-produced id
+  // set. Keep this separate from the public filter/pagination contract so the
+  // assistant cannot accidentally widen the referent to unrelated transactions.
+  async getByIds(ids, userId = DEFAULT_USER) {
+    const safeIds = [...new Set((ids || []).map(Number))]
+      .filter((id) => Number.isInteger(id) && id > 0)
+      .slice(0, 200);
+    if (!safeIds.length) return [];
+    const result = await query(
+      `SELECT t.*, c.name AS category_name, c.icon AS category_icon, w.name AS wallet_name
+       FROM transactions t
+       JOIN categories c ON c.id = t.category_id AND c.user_id = t.user_id
+       JOIN wallets w ON w.id = t.wallet_id AND w.user_id = t.user_id
+       WHERE t.user_id = $1 AND t.deleted_at IS NULL AND t.id = ANY($2::int[])
+       ORDER BY array_position($2::int[], t.id)`,
+      [userId, safeIds]
+    );
+    return result.rows;
+  },
+
+  // Aggregate over the complete filtered set. The ordinary list endpoint is
+  // paginated, so summing its first page would silently recreate the old
+  // "recent transactions only" bug in chat answers.
+  async getFilteredTotals(userId = DEFAULT_USER, filters = {}) {
+    const where = ['deleted_at IS NULL', 'user_id = $1'];
+    const params = [userId];
+    const add = (clause, value) => {
+      params.push(value);
+      where.push(clause.replace('?', `$${params.length}`));
+    };
+    if (filters.from) add('transaction_date >= ?', filters.from);
+    if (filters.to) add('transaction_date <= ?', filters.to);
+    if (filters.category_id) add('category_id = ?', filters.category_id);
+    if (filters.type && ['income', 'expense'].includes(filters.type)) add('type = ?::transaction_type', filters.type);
+    if (filters.search) add('description ILIKE ?', `%${String(filters.search).trim()}%`);
+    const result = await query(
+      `SELECT COUNT(*) AS transaction_count,
+              COALESCE(SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END), 0) AS total_income,
+              COALESCE(SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END), 0) AS total_expense,
+              COALESCE(SUM(amount), 0) AS total_amount
+       FROM transactions
+       WHERE ${where.join(' AND ')}`,
+      params
+    );
+    const row = result.rows[0] || {};
+    return {
+      transaction_count: Number(row.transaction_count || 0),
+      total_income: Number(row.total_income || 0),
+      total_expense: Number(row.total_expense || 0),
+      total_amount: Number(row.total_amount || 0),
+    };
   },
 
   async getMonthlySummary(userId = DEFAULT_USER, month, year) {

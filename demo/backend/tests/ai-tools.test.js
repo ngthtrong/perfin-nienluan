@@ -2,7 +2,11 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 
 const { toolCallToIntent, FINANCIAL_TOOL_DECLARATIONS } = require('../services/ai/toolDeclarations');
-const { routeLocalIntent, extractAllAmounts } = require('../services/ai/localIntentRouter');
+const {
+  routeLocalIntent,
+  extractAllAmounts,
+  isRecurringPaymentAcknowledgement,
+} = require('../services/ai/localIntentRouter');
 const { enforceInsightUnits, AIServiceManager } = require('../services/ai.service');
 
 const categories = [
@@ -24,6 +28,19 @@ test('tool declarations have unique names and map multi-transaction calls', () =
   });
   assert.equal(result.intent, 'transactions');
   assert.equal(result.transactions.length, 2);
+
+  const query = toolCallToIntent({
+    name: 'query_financial_data',
+    args: {
+      query: 'transactions',
+      transaction_type: 'expense',
+      search: 'đánh bida',
+      action: 'aggregate',
+    },
+  });
+  assert.equal(query.intent, 'query_transactions');
+  assert.equal(query.query.type, 'expense');
+  assert.equal(query.query.search, 'đánh bida');
 });
 
 test('local router extracts multiple transactions without splitting a single combined item', () => {
@@ -50,6 +67,56 @@ test('query and budget intents use deterministic local routing', () => {
   assert.equal(routeLocalIntent('gợi ý ngân sách giúp mình', categories).intent, 'budget_suggest');
   assert.equal(routeLocalIntent('gợi ý danh mục mới phù hợp', categories).intent, 'query_category_suggestions');
   assert.equal(routeLocalIntent('bạn có lời khuyên nào cho tôi không?', categories).intent, 'query_insights');
+  assert.equal(routeLocalIntent('tư vấn cho tôi', categories).intent, 'query_insights');
+});
+
+test('transaction questions retain their requested filter instead of becoming a monthly summary', () => {
+  const amountQuery = routeLocalIntent('tôi đã chi bao nhiêu tiền đánh bida trong tháng này?', categories);
+  assert.equal(amountQuery.intent, 'query_transactions');
+  assert.equal(amountQuery.query.action, 'aggregate');
+  assert.equal(amountQuery.query.type, 'expense');
+  assert.equal(amountQuery.query.current_month, true);
+  assert.equal(amountQuery.query.search, 'đánh bida');
+
+  const referent = routeLocalIntent('liệt kê 5 giao dịch đó', categories);
+  assert.equal(referent.intent, 'query_transactions');
+  assert.equal(referent.query.reference, 'last_category_retag');
+  assert.equal(referent.query.limit, 5);
+  assert.equal(referent.query.search, null);
+});
+
+test('short recurring payment replies are recognized without treating arbitrary payment text as acknowledgement', () => {
+  assert.equal(isRecurringPaymentAcknowledgement('tôi đã thanh toán rồi'), true);
+  assert.equal(isRecurringPaymentAcknowledgement('tôi đã thanh toán r.'), true);
+  assert.equal(routeLocalIntent('tôi đã thanh toán r', categories).intent, 'recurring_pay');
+  assert.equal(isRecurringPaymentAcknowledgement('tôi đã thanh toán tiền điện 500k'), false);
+});
+
+test('high-confidence chat intents bypass an enabled provider', async () => {
+  const manager = new AIServiceManager();
+  let providerCalls = 0;
+  manager.selected.provider = 'gemini';
+  manager.gemini = {
+    models: {
+      async generateContent() {
+        providerCalls += 1;
+        return { text: 'generic response' };
+      },
+    },
+  };
+
+  const transactionQuery = await manager.parseTransaction(
+    'tôi đã chi bao nhiêu tiền đánh bida trong tháng này?',
+    categories
+  );
+  const advice = await manager.parseTransaction('tư vấn cho tôi', categories);
+  const paid = await manager.parseTransaction('tôi đã thanh toán rồi', categories);
+
+  assert.equal(transactionQuery.intent, 'query_transactions');
+  assert.equal(transactionQuery.query.search, 'đánh bida');
+  assert.equal(advice.intent, 'query_insights');
+  assert.equal(paid.intent, 'recurring_pay');
+  assert.equal(providerCalls, 0);
 });
 
 test('general questions do not enter transaction clarification state', async () => {

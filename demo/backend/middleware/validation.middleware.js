@@ -1,4 +1,9 @@
 const { validateTransactionPayload } = require('../services/transactions/validation');
+const { normalizeTransactionQuery } = require('../services/transactions/query');
+const {
+  validateCategoryCreatePayload,
+  validateCategoryUpdatePayload,
+} = require('../services/categories/validation');
 
 function bad(message) {
   const err = new Error(message);
@@ -37,6 +42,15 @@ function validateTransactionCategoryUpdate(req, res, next) {
   }
 }
 
+function validateTransactionQuery(req, res, next) {
+  try {
+    req.transactionQuery = normalizeTransactionQuery(req.query);
+    next();
+  } catch (error) {
+    next(error);
+  }
+}
+
 function validateBudget(req, res, next) {
   const data = req.body;
   if (!Number(data.category_id)) return next(bad('Danh mục không hợp lệ'));
@@ -46,16 +60,29 @@ function validateBudget(req, res, next) {
 }
 
 function validateCategory(req, res, next) {
-  const data = req.body;
-  if (!data.name || String(data.name).trim().length > 50) return next(bad('Tên danh mục không hợp lệ'));
-  if (!['income', 'expense'].includes(data.type)) return next(bad('Loại danh mục không hợp lệ'));
-  next();
+  try {
+    req.body = validateCategoryCreatePayload(req.body);
+    next();
+  } catch (error) {
+    next(error);
+  }
+}
+
+function validateCategoryUpdate(req, res, next) {
+  try {
+    req.body = validateCategoryUpdatePayload(req.body);
+    next();
+  } catch (error) {
+    next(error);
+  }
 }
 
 module.exports = {
   validateTransaction,
   validateTransactionUpdate,
   validateTransactionCategoryUpdate,
+  validateTransactionQuery,
   validateBudget,
   validateCategory,
+  validateCategoryUpdate,
 };

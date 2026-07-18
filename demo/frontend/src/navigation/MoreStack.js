@@ -7,6 +7,7 @@ import RecurringScreen from '../screens/RecurringScreen';
 import ExportScreen from '../screens/ExportScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import GoalsScreen from '../screens/GoalsScreen';
+import CategoryScreen from '../screens/CategoryScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -26,6 +27,7 @@ export default function MoreStack() {
     >
       <Stack.Screen name="MoreHome" component={MoreScreen} options={{ headerShown: false }} />
       <Stack.Screen name="Transactions" component={TransactionScreen} options={{ title: 'Giao dịch' }} />
+      <Stack.Screen name="Categories" component={CategoryScreen} options={{ title: 'Quản lý danh mục' }} />
       <Stack.Screen name="Cashflow" component={CashflowScreen} options={{ title: 'Dòng tiền & Tài sản' }} />
       <Stack.Screen name="Recurring" component={RecurringScreen} options={{ title: 'Chi phí cố định' }} />
       <Stack.Screen name="Goals" component={GoalsScreen} options={{ title: 'Mục tiêu tài chính' }} />

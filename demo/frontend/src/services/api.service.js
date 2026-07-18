@@ -234,6 +234,12 @@ export const api = {
   getWallets: () => request('/api/accounts'),
   createWallet: (data) => request('/api/accounts', { method: 'POST', body: JSON.stringify(data) }),
   getCategories: (type) => request(`/api/categories${type ? `?type=${type}` : ''}`),
+  createCategory: (data) => request('/api/categories', { method: 'POST', body: JSON.stringify(data) }),
+  updateCategory: (id, data) => request(`/api/categories/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  }),
+  deleteCategory: (id) => request(`/api/categories/${id}`, { method: 'DELETE' }),
   getTransactions: (query = '') => request(`/api/transactions${query}`),
   createTransaction: (data) => request('/api/transactions', { method: 'POST', body: JSON.stringify(data) }),
   updateTransaction: (id, data) => request(`/api/transactions/${id}`, {

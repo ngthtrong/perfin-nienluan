@@ -46,10 +46,72 @@ function looksLikeTransactionRequest(normalized) {
   return /\b(chi|tieu|mua|an|uong|tra|dong|thanh toan|nhan luong|nhan tien|thu nhap|ban hang|nap tien|rut tien)\b/.test(normalized);
 }
 
+function isRecurringPaymentAcknowledgement(text) {
+  const normalized = normalizeText(text).replace(/[?!.]+$/g, '').trim();
+  // Keep this deliberately narrow. A short acknowledgement is only a recurring
+  // payment signal when it reads like an answer to "đã thanh toán chưa?". Longer
+  // statements still go through the normal parser and never become an automatic
+  // money-changing action.
+  return /^(?:(?:toi|minh)\s+)?(?:da\s+)?(?:thanh toan|dong|tra)(?:\s+xong)?\s+(?:roi|r)$/.test(normalized);
+}
+
+function transactionQuerySearchText(text) {
+  let value = String(text || '').trim();
+  value = value
+    .replace(/^(?:(?:tôi|toi|mình|minh)\s+)?(?:(?:đã|da)\s+)?(?:chi|tiêu|tieu)\s+bao\s+nhiêu(?:\s+tiền)?\s*/i, '')
+    .replace(/^(?:(?:hãy|hay|vui\s+lòng)\s+)?(?:liệt\s+kê|liet\s+ke|xem|cho\s+(?:tôi|toi|mình|minh)\s+xem)\s+(?:\d+\s+)?(?:các\s+)?giao\s+d(?:ị|i)ch(?:\s+(?:về|ve|của|cua))?\s*/i, '')
+    .replace(/\s+(?:trong\s+)?tháng\s+(?:này|nay|\d{1,2}(?:\s*[\/-]\s*\d{4})?)\s*[?!.]*$/i, '')
+    .replace(/[?!.]+$/g, '')
+    .trim();
+  return /^(?:đó|do|này|nay|vừa\s+nói|vua\s+noi)$/i.test(value) ? '' : value;
+}
+
+function parseTransactionQuery(text, categories = []) {
+  const normalized = normalizeText(text);
+  const looksLikeQuery = (
+    /(?:chi|tieu).{0,24}bao nhieu|bao nhieu.{0,24}(?:chi|tieu)/.test(normalized)
+    || /(?:liet ke|danh sach|xem).{0,35}giao dich/.test(normalized)
+    || /bao nhieu\s+giao dich|giao dich.{0,24}(?:nao|thang nay|gan day)/.test(normalized)
+  );
+  if (!looksLikeQuery) return null;
+
+  const explicitPeriod = normalized.match(/thang\s+(\d{1,2})(?:\s*[\/-]\s*(\d{4}))?/);
+  const limitMatch = normalized.match(/(?:liet ke|xem)\s+(\d{1,3})|(?:toi da co|co)\s+(\d{1,3})\s+giao dich/);
+  const requestedLimit = Number(limitMatch?.[1] || limitMatch?.[2] || 5);
+  const mentionsIncome = /\b(?:thu|nhan luong|nhan tien|thu nhap)\b/.test(normalized);
+  const mentionsExpense = /\b(?:chi|tieu)\b/.test(normalized);
+  const reference = /\b(?:cac\s+)?giao dich\s+(?:do|nay|vua (?:phan loai|noi))\b/.test(normalized)
+    ? 'last_category_retag'
+    : null;
+  const category = (categories || []).find((item) => (
+    normalizeText(item.name).length > 1 && normalized.includes(normalizeText(item.name))
+  ));
+  const search = reference || category ? null : transactionQuerySearchText(text) || null;
+
+  return {
+    intent: 'query_transactions',
+    query: {
+      action: /bao nhieu|\btong\b/.test(normalized) ? 'aggregate' : 'list',
+      type: mentionsExpense && !mentionsIncome ? 'expense' : mentionsIncome && !mentionsExpense ? 'income' : null,
+      category_id: category?.id || null,
+      category_name: category?.name || null,
+      search,
+      month: explicitPeriod ? Number(explicitPeriod[1]) : null,
+      year: explicitPeriod?.[2] ? Number(explicitPeriod[2]) : null,
+      current_month: !explicitPeriod,
+      reference,
+      limit: Math.min(Math.max(requestedLimit, 1), 20),
+    },
+    needs_clarification: false,
+  };
+}
+
 function routeLocalIntent(text, categories) {
   const normalized = normalizeText(text);
+  const normalizedSentence = normalized.replace(/[?!.]+$/g, '').trim();
 
-  if (/(loi khuyen|tu van tai chinh)/.test(normalized)) {
+  if (/(loi khuyen)/.test(normalized)
+      || /^(?:(?:ban )?co the )?tu van(?: tai chinh)?(?: cho (?:toi|minh))?(?: giup (?:toi|minh))?(?: duoc khong)?$/.test(normalizedSentence)) {
     return { intent: 'query_insights', query: { query: 'insights' } };
   }
   if (/(ban la ai|ban ten gi|ban co the lam gi|ban giup duoc gi|xin chao|^chao\b|cam on|tam biet)/.test(normalized)) {
@@ -63,6 +125,9 @@ function routeLocalIntent(text, categories) {
   if (/(goi y|de xuat|tao).*(danh muc)|danh muc.*(?:moi|phu hop)/.test(normalized)) {
     return { intent: 'query_category_suggestions', query: { query: 'category_suggestions' } };
   }
+
+  const transactionQuery = parseTransactionQuery(text, categories);
+  if (transactionQuery) return transactionQuery;
 
   if (/(nhac|dinh ky|hang thang|moi thang)/.test(normalized)) {
     if (/(danh sach|liet ke|co nhung)/.test(normalized)) return { intent: 'recurring_list', recurring: {} };
@@ -81,6 +146,9 @@ function routeLocalIntent(text, categories) {
       intent: 'recurring_create',
       recurring: { name: (name || String(text)).slice(0, 150), amount, frequency: 'monthly', due_day: due ? Number(due[1]) : null },
     };
+  }
+  if (isRecurringPaymentAcknowledgement(text)) {
+    return { intent: 'recurring_pay', recurring: { acknowledgement: true } };
   }
   if (/(da dong|da tra|thanh toan xong)/.test(normalized)) return { intent: 'recurring_pay', recurring: { name: text } };
 
@@ -132,4 +200,13 @@ function routeLocalIntent(text, categories) {
   return parsed;
 }
 
-module.exports = { extractAllAmounts, splitTransactionClauses, inferGoal, looksLikeTransactionRequest, routeLocalIntent };
+module.exports = {
+  extractAllAmounts,
+  splitTransactionClauses,
+  inferGoal,
+  looksLikeTransactionRequest,
+  isRecurringPaymentAcknowledgement,
+  transactionQuerySearchText,
+  parseTransactionQuery,
+  routeLocalIntent,
+};

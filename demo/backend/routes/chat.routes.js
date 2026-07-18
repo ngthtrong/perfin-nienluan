@@ -24,6 +24,7 @@ const { resolveUserPayday } = require('../services/jobs/userScope');
 const ChatMessage = require('../models/chatMessage.model');
 const pending = require('../services/pendingTransaction.service');
 const { matchCategory, normalizeAmount, normalizeText } = require('../services/parser.service');
+const { isRecurringPaymentAcknowledgement } = require('../services/ai/localIntentRouter');
 
 const router = express.Router();
 const userId = 'default_user';
@@ -56,6 +57,55 @@ function messageMetadata(message) {
     }
   }
   return {};
+}
+
+function positiveIntegerIds(values, max = 200) {
+  return [...new Set((Array.isArray(values) ? values : []).map(Number))]
+    .filter((id) => Number.isInteger(id) && id > 0)
+    .slice(0, max);
+}
+
+function categoryRetagTransactionIds(message) {
+  return positiveIntegerIds(messageMetadata(message).category_retag?.transaction_ids);
+}
+
+function recurringReminderBillIds(message) {
+  return positiveIntegerIds(messageMetadata(message).bill_ids);
+}
+
+function selectRelevantReminderBills(dueBills, reminderContext) {
+  const remindedIds = recurringReminderBillIds(reminderContext);
+  return {
+    remindedIds,
+    constrained: remindedIds.length > 0,
+    candidates: remindedIds.length
+      ? (dueBills || []).filter((bill) => remindedIds.includes(Number(bill.id)))
+      : (dueBills || []),
+  };
+}
+
+function transactionMonthWindow(querySpec = {}, now = new Date()) {
+  const requestedMonth = Number(querySpec.month);
+  const requestedYear = Number(querySpec.year);
+  const month = Number.isInteger(requestedMonth) && requestedMonth >= 1 && requestedMonth <= 12
+    ? requestedMonth
+    : now.getMonth() + 1;
+  const year = Number.isInteger(requestedYear) && requestedYear >= 2020 && requestedYear <= 2100
+    ? requestedYear
+    : now.getFullYear();
+  const lastDay = new Date(year, month, 0).getDate();
+  return {
+    month,
+    year,
+    from: `${year}-${String(month).padStart(2, '0')}-01`,
+    to: `${year}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`,
+  };
+}
+
+function transactionListLine(transaction, index) {
+  const sign = transaction.type === 'income' ? '+' : '-';
+  const date = RecurringBillModel.formatDateOnly(transaction.transaction_date);
+  return `${index + 1}. ${date} • ${transaction.description} • ${sign}${formatVND(transaction.amount)} • ${transaction.category_name}`;
 }
 
 function coveredRecurringBillIds(messages, dateKey) {
@@ -180,13 +230,34 @@ async function handleRecurringPay(parsed) {
   // Prefer a bill named in the message; otherwise use the single due bill if unambiguous.
   const name = parsed.recurring?.name;
   let target = null;
+  let dueCandidates = null;
+
+  if (parsed.recurring?.acknowledgement) {
+    const reminderDate = localDateKey(new Date(), process.env.JOBS_TIMEZONE || 'Asia/Bangkok');
+    const [due, reminderContext] = await Promise.all([
+      RecurringBillModel.getDueBills(userId),
+      ChatMessage.getLatestRecurringReminderContext(userId, reminderDate),
+    ]);
+    const reminderSelection = selectRelevantReminderBills(due, reminderContext);
+    dueCandidates = reminderSelection.candidates;
+    if (reminderSelection.constrained && !dueCandidates.length) {
+      return {
+        type: 'chat_response',
+        message: await applyPersona('Khoản trong lời nhắc gần nhất đã được xử lý hoặc không còn đến hạn; mình sẽ không ghi thêm giao dịch trùng.'),
+      };
+    }
+    if (dueCandidates.length === 1) target = dueCandidates[0];
+    else if (dueCandidates.length > 1) {
+      return startBillChoice('recurring_pay', dueCandidates, 'Bạn vừa thanh toán khoản nào trong lời nhắc?');
+    }
+  }
   if (name) {
     const { bill, candidates } = await findBillByName(name);
     target = bill;
     if (!target && candidates.length > 1) return startBillChoice('recurring_pay', candidates, 'Bạn vừa thanh toán khoản nào?');
   }
   if (!target) {
-    const due = await RecurringBillModel.getDueBills(userId);
+    const due = dueCandidates || await RecurringBillModel.getDueBills(userId);
     if (due.length === 1) target = due[0];
     else if (due.length > 1) {
       return startBillChoice('recurring_pay', due, 'Bạn vừa thanh toán khoản nào trong số này?');
@@ -380,8 +451,126 @@ async function narrateFacts(facts, periodLabel = 'gần đây') {
   return { type: 'insight', message: narration.text, facts, persona: { id: persona.id, name: persona.name }, provider_used: narration.provider_used };
 }
 
+function totalsFromTransactions(transactions) {
+  return (transactions || []).reduce((summary, transaction) => {
+    const amount = Number(transaction.amount || 0);
+    summary.transaction_count += 1;
+    summary.total_amount += amount;
+    if (transaction.type === 'income') summary.total_income += amount;
+    if (transaction.type === 'expense') summary.total_expense += amount;
+    return summary;
+  }, { transaction_count: 0, total_income: 0, total_expense: 0, total_amount: 0 });
+}
+
+async function handleTransactionQuery(parsed) {
+  const spec = parsed.query || {};
+  const limit = Math.min(Math.max(Number(spec.limit || 5), 1), 20);
+  let transactions;
+  let totals;
+  let period = null;
+  let filters = {};
+  let contextLabel;
+
+  if (spec.reference === 'last_category_retag') {
+    const context = await ChatMessage.getLatestCategoryRetagContext(userId);
+    const transactionIds = categoryRetagTransactionIds(context);
+    if (!transactionIds.length) {
+      return {
+        type: 'chat_response',
+        message: await applyPersona('Mình chưa tìm thấy nhóm giao dịch vừa được phân loại để liệt kê. Bạn hãy yêu cầu lại gợi ý danh mục nhé.'),
+      };
+    }
+    const exact = await TransactionModel.getByIds(transactionIds, userId);
+    totals = totalsFromTransactions(exact);
+    transactions = exact.slice(0, limit);
+    filters = { transaction_ids: transactionIds };
+    contextLabel = 'trong nhóm vừa được phân loại';
+  } else {
+    period = transactionMonthWindow(spec);
+    let categoryId = Number.isInteger(Number(spec.category_id)) && Number(spec.category_id) > 0
+      ? Number(spec.category_id)
+      : null;
+    if (!categoryId && spec.category_name) {
+      const categories = await CategoryModel.getAll(userId);
+      const wantedCategory = normalizeText(spec.category_name);
+      const category = categories.find((item) => (
+        normalizeText(item.name) === wantedCategory
+        && (!spec.type || item.type === spec.type)
+      ));
+      categoryId = category?.id || null;
+      if (!categoryId) {
+        return {
+          type: 'transaction_list',
+          message: await applyPersona(`Mình không tìm thấy danh mục “${String(spec.category_name).slice(0, 100)}”, nên chưa mở rộng truy vấn sang các giao dịch khác.`),
+          transactions: [],
+          summary: { transaction_count: 0, total_income: 0, total_expense: 0, total_amount: 0 },
+          filters: { category_name: String(spec.category_name).slice(0, 100) },
+          period,
+        };
+      }
+    }
+    filters = {
+      from: period.from,
+      to: period.to,
+      type: ['income', 'expense'].includes(spec.type) ? spec.type : undefined,
+      category_id: categoryId || undefined,
+      search: String(spec.search || '').trim().slice(0, 150) || undefined,
+    };
+    const [page, aggregate] = await Promise.all([
+      TransactionModel.getAll(userId, { ...filters, page: 1, limit }),
+      TransactionModel.getFilteredTotals(userId, filters),
+    ]);
+    transactions = page.data || [];
+    totals = aggregate;
+    contextLabel = `trong tháng ${period.month}/${period.year}`;
+  }
+
+  const searchLabel = filters.search ? ` khớp “${filters.search}”` : '';
+  if (!totals.transaction_count) {
+    return {
+      type: 'transaction_list',
+      message: await applyPersona(`Mình không tìm thấy giao dịch nào${searchLabel} ${contextLabel}.`),
+      transactions: [],
+      summary: totals,
+      filters,
+      period,
+    };
+  }
+
+  if (spec.action === 'aggregate') {
+    const amountText = filters.type === 'expense'
+      ? `tổng chi ${formatVND(totals.total_expense)}`
+      : filters.type === 'income'
+        ? `tổng thu ${formatVND(totals.total_income)}`
+        : `tổng thu ${formatVND(totals.total_income)}, tổng chi ${formatVND(totals.total_expense)}`;
+    return {
+      type: 'transaction_summary',
+      message: await applyPersona(`Mình tìm thấy ${totals.transaction_count} giao dịch${searchLabel} ${contextLabel}, ${amountText}.`),
+      transactions,
+      summary: totals,
+      filters,
+      period,
+    };
+  }
+
+  const lines = transactions.map(transactionListLine).join('\n');
+  const hidden = totals.transaction_count > transactions.length
+    ? `\nCòn ${totals.transaction_count - transactions.length} giao dịch phù hợp; bạn có thể yêu cầu số lượng lớn hơn hoặc dùng bộ lọc giao dịch.`
+    : '';
+  return {
+    type: 'transaction_list',
+    message: await applyPersona(`${totals.transaction_count} giao dịch ${contextLabel}:\n${lines}${hidden}`),
+    transactions,
+    summary: totals,
+    filters,
+    period,
+  };
+}
+
 async function handleFinancialQuery(parsed) {
   switch (parsed.intent) {
+    case 'query_transactions':
+      return handleTransactionQuery(parsed);
     case 'query_runway': {
       const runway = await AnalyticsEngine.runwayFacts(userId, await resolveUserPayday(userId));
       return narrateFacts({ runway });
@@ -730,7 +919,9 @@ router.post('/message', async (req, res, next) => {
       return res.json({ success: true, data });
     }
 
-    const conversation = await ConversationState.get(userId);
+    const recurringAcknowledgement = isRecurringPaymentAcknowledgement(text);
+    if (recurringAcknowledgement) await ConversationState.clear(userId);
+    const conversation = recurringAcknowledgement ? null : await ConversationState.get(userId);
     const parsed = conversation
       ? await resolveConversation(text, conversation, categories)
       : await parseWithLearnedFeedback(text, categories);
@@ -868,3 +1059,10 @@ router.post('/cancel', async (req, res, next) => {
 module.exports = router;
 module.exports.buildReminders = buildReminders;
 module.exports.coveredRecurringBillIds = coveredRecurringBillIds;
+module.exports.categoryRetagTransactionIds = categoryRetagTransactionIds;
+module.exports.recurringReminderBillIds = recurringReminderBillIds;
+module.exports.selectRelevantReminderBills = selectRelevantReminderBills;
+module.exports.transactionMonthWindow = transactionMonthWindow;
+module.exports.totalsFromTransactions = totalsFromTransactions;
+module.exports.handleRecurringPay = handleRecurringPay;
+module.exports.handleTransactionQuery = handleTransactionQuery;

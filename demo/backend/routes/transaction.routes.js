@@ -7,6 +7,7 @@ const {
   validateTransaction,
   validateTransactionUpdate,
   validateTransactionCategoryUpdate,
+  validateTransactionQuery,
 } = require('../middleware/validation.middleware');
 
 const router = express.Router();
@@ -20,10 +21,10 @@ router.get('/summary', async (req, res, next) => {
   }
 });
 
-router.get('/', async (req, res, next) => {
+router.get('/', validateTransactionQuery, async (req, res, next) => {
   try {
-    const result = await TransactionModel.getAll(userId, req.query);
-    res.json({ success: true, ...result });
+    const result = await TransactionModel.getAll(userId, req.transactionQuery);
+    res.json({ success: true, ...result, total: result.pagination.total });
   } catch (error) {
     next(error);
   }

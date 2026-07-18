@@ -74,7 +74,7 @@ const CategoryRetagService = {
 
     if (suggestion.target_category_id || suggestion.targetCategoryId) {
       const targetId = suggestion.target_category_id || suggestion.targetCategoryId;
-      const target = await CategoryModel.getById(targetId);
+      const target = await CategoryModel.getById(targetId, userId);
       if (!target || target.type !== type || (!target.is_default && target.user_id !== userId)) {
         const error = new Error('Danh mục đích không hợp lệ');
         error.status = 400;

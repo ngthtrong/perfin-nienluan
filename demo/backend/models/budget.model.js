@@ -12,7 +12,7 @@ function statusFromPercentage(value) {
 
 const BudgetModel = {
   async create({ category_id, amount_limit, month, year, userId = DEFAULT_USER }) {
-    const category = await CategoryModel.getById(category_id);
+    const category = await CategoryModel.getById(category_id, userId);
     if (!category || category.type !== 'expense') {
       const err = new Error('Chỉ danh mục chi tiêu mới có thể tạo ngân sách');
       err.status = 400;

@@ -4,6 +4,7 @@ import { Screen, ListRow, AppHeader } from '../components/ui';
 
 const TOOLS = [
   { route: 'Transactions', icon: 'format-list-bulleted', title: 'Giao dịch', subtitle: 'Xem và quản lý mọi khoản thu chi', tone: 'brand' },
+  { route: 'Categories', icon: 'category', title: 'Danh mục', subtitle: 'Tạo, đổi tên và sắp xếp giao dịch theo danh mục', tone: 'warning' },
   { route: 'Cashflow', icon: 'trending-up', title: 'Dòng tiền & Tài sản', subtitle: 'Chuyển ví, đầu tư, tài sản ròng', tone: 'info' },
   { route: 'Recurring', icon: 'event-repeat', title: 'Chi phí cố định', subtitle: 'Hóa đơn định kỳ và nhắc nhở', tone: 'brand' },
   { route: 'Goals', icon: 'flag', title: 'Mục tiêu tài chính', subtitle: 'Lập kế hoạch và theo dõi tiến độ', tone: 'warning' },
