@@ -76,6 +76,13 @@ export default function CashflowScreen() {
   const [pnlForm, setPnlForm] = useState(EMPTY_PNL_FORM);
   const [walletForm, setWalletForm] = useState(EMPTY_WALLET_FORM);
 
+  const [pnlHistory, setPnlHistory] = useState([]);
+  const [editingWalletId, setEditingWalletId] = useState(null);
+  const [editWalletName, setEditWalletName] = useState('');
+  const [editingPnlId, setEditingPnlId] = useState(null);
+  const [editPnlForm, setEditPnlForm] = useState({ amount: '', note: '' });
+  const [rowBusyId, setRowBusyId] = useState(null);
+
   const load = useCallback(async () => {
     try {
       const [nw, cf, tr] = await Promise.all([
@@ -85,8 +92,22 @@ export default function CashflowScreen() {
       ]);
       setNetWorth(nw.data);
       setCashflow(cf.data);
-      setWallets(nw.data?.wallets || []);
+      const walletList = nw.data?.wallets || [];
+      setWallets(walletList);
       setTransfers(tr.data || []);
+
+      const invWallets = walletList.filter((w) => ['investment', 'savings'].includes(w.type));
+      const pnlResults = await Promise.all(
+        invWallets.map((w) =>
+          api.getInvestmentPnL(w.id)
+            .then((res) => (res.data || []).map((row) => ({ ...row, wallet_name: w.name })))
+            .catch(() => [])
+        )
+      );
+      const mergedPnl = pnlResults
+        .flat()
+        .sort((a, b) => new Date(b.recorded_at || b.created_at || 0) - new Date(a.recorded_at || a.created_at || 0));
+      setPnlHistory(mergedPnl);
       setError(null);
     } catch (err) {
       setError(err.message || 'Không thể tải dữ liệu dòng tiền.');
@@ -155,6 +176,84 @@ export default function CashflowScreen() {
     } finally {
       setSaving(false);
     }
+  }
+
+  function startWalletEdit(wallet) {
+    setEditingWalletId(wallet.id);
+    setEditWalletName(wallet.name);
+  }
+
+  function cancelWalletEdit() {
+    setEditingWalletId(null);
+    setEditWalletName('');
+  }
+
+  async function saveWalletEdit(wallet) {
+    const name = editWalletName.trim();
+    if (!name) return showAlert('Thiếu tên', 'Tên ví không được để trống.');
+    setRowBusyId(`wallet-${wallet.id}`);
+    try {
+      await api.updateWallet(wallet.id, { name });
+      cancelWalletEdit();
+      await load();
+    } catch (err) {
+      showAlert('Lỗi', err.message || 'Không thể đổi tên ví');
+    } finally {
+      setRowBusyId(null);
+    }
+  }
+
+  function startPnlEdit(row) {
+    setEditingPnlId(row.id);
+    setEditPnlForm({ amount: String(Math.round(Number(row.amount) || 0)), note: row.note || '' });
+  }
+
+  function cancelPnlEdit() {
+    setEditingPnlId(null);
+    setEditPnlForm({ amount: '', note: '' });
+  }
+
+  async function savePnlEdit(row) {
+    const parsedAmount = parseMoneyInput(editPnlForm.amount);
+    if (!Number.isFinite(parsedAmount) || parsedAmount === 0) {
+      return showAlert('Số tiền không hợp lệ', 'Nhập số tiền (dương = lãi, âm = lỗ).');
+    }
+    setRowBusyId(`pnl-${row.id}`);
+    try {
+      await api.updateInvestmentPnL(row.id, { amount: parsedAmount, note: editPnlForm.note });
+      cancelPnlEdit();
+      await load();
+    } catch (err) {
+      showAlert('Lỗi', err.message || 'Không thể cập nhật lãi/lỗ');
+    } finally {
+      setRowBusyId(null);
+    }
+  }
+
+  function removePnl(row) {
+    showAlert(
+      'Xóa bản ghi lãi/lỗ?',
+      `Xóa lãi/lỗ ${formatVND(Math.abs(Number(row.amount)))} tại ví "${row.wallet_name}"? Số dư ví sẽ được điều chỉnh lại.`,
+      [
+        { text: 'Hủy', style: 'cancel' },
+        {
+          text: 'Xóa',
+          style: 'destructive',
+          onPress: async () => {
+            setRowBusyId(`pnl-${row.id}`);
+            try {
+              await api.deleteInvestmentPnL(row.id);
+              if (editingPnlId === row.id) cancelPnlEdit();
+              await load();
+            } catch (err) {
+              showAlert('Lỗi', err.message || 'Không thể xóa bản ghi');
+            } finally {
+              setRowBusyId(null);
+            }
+          },
+        },
+      ]
+    );
   }
 
   const investmentWallets = wallets.filter((w) => ['investment', 'savings'].includes(w.type));
@@ -378,6 +477,130 @@ export default function CashflowScreen() {
         </View>
       )}
 
+      <Text style={styles.sectionTitle}>Ví của bạn · {wallets.length}</Text>
+      {wallets.length > 0 ? (
+        wallets.map((w) => {
+          const isEditing = editingWalletId === w.id;
+          const rowBusy = rowBusyId === `wallet-${w.id}`;
+          const typeLabel = WALLET_TYPES.find((wt) => wt.key === w.type)?.label || w.type;
+          return (
+            <View key={w.id} style={styles.walletRow}>
+              {isEditing ? (
+                <View style={{ flex: 1, gap: 8 }}>
+                  <TextInput
+                    style={[styles.input, { marginBottom: 0 }]}
+                    value={editWalletName}
+                    onChangeText={setEditWalletName}
+                    placeholder="Tên ví"
+                    placeholderTextColor={c.textMuted}
+                    autoFocus
+                  />
+                  <View style={styles.walletEditActions}>
+                    <Button label="Lưu" icon="check" size="sm" onPress={() => saveWalletEdit(w)} loading={rowBusy} style={{ flex: 1 }} />
+                    <Button label="Hủy" icon="close" size="sm" variant="secondary" onPress={cancelWalletEdit} disabled={rowBusy} style={{ flex: 1 }} />
+                  </View>
+                </View>
+              ) : (
+                <>
+                  <View style={styles.transferInfo}>
+                    <Text numberOfLines={1} style={styles.transferType}>{w.name}</Text>
+                    <Text style={styles.transferMeta}>{typeLabel}</Text>
+                  </View>
+                  <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.72} style={styles.walletBalance}>{formatVND(w.balance)}</Text>
+                  <TouchableOpacity
+                    accessibilityRole="button"
+                    accessibilityLabel={`Đổi tên ví ${w.name}`}
+                    style={styles.iconButton}
+                    onPress={() => startWalletEdit(w)}
+                    disabled={rowBusy}
+                  >
+                    <AppIcon name="edit" size={17} color={c.brandText} />
+                  </TouchableOpacity>
+                </>
+              )}
+            </View>
+          );
+        })
+      ) : (
+        <EmptyState
+          emoji="👛"
+          title="Chưa có ví nào"
+          message='Tạo ví đầu tiên bằng nút "Tạo ví" phía trên.'
+          style={styles.compactEmpty}
+        />
+      )}
+
+      {pnlHistory.length > 0 && (
+        <>
+          <Text style={styles.sectionTitle}>Lịch sử lãi/lỗ đầu tư</Text>
+          {pnlHistory.map((row) => {
+            const isEditing = editingPnlId === row.id;
+            const rowBusy = rowBusyId === `pnl-${row.id}`;
+            const amount = Number(row.amount) || 0;
+            const positive = amount >= 0;
+            const pnlColor = positive ? c.income : c.expense;
+            return (
+              <View key={row.id} style={styles.pnlRow}>
+                {isEditing ? (
+                  <View style={{ flex: 1, gap: 8 }}>
+                    <MoneyInput
+                      style={[styles.input, { marginBottom: 0 }]}
+                      value={editPnlForm.amount}
+                      onChangeText={(v) => setEditPnlForm((f) => ({ ...f, amount: v }))}
+                      placeholder="Số tiền (dương = lãi, âm = lỗ)"
+                      placeholderTextColor={c.textMuted}
+                      allowNegative
+                    />
+                    <TextInput
+                      style={[styles.input, { marginBottom: 0 }]}
+                      value={editPnlForm.note}
+                      onChangeText={(v) => setEditPnlForm((f) => ({ ...f, note: v }))}
+                      placeholder="Ghi chú (tùy chọn)"
+                      placeholderTextColor={c.textMuted}
+                    />
+                    <View style={styles.walletEditActions}>
+                      <Button label="Lưu" icon="check" size="sm" onPress={() => savePnlEdit(row)} loading={rowBusy} style={{ flex: 1 }} />
+                      <Button label="Hủy" icon="close" size="sm" variant="secondary" onPress={cancelPnlEdit} disabled={rowBusy} style={{ flex: 1 }} />
+                    </View>
+                  </View>
+                ) : (
+                  <>
+                    <View style={[styles.transferIcon, { backgroundColor: pnlColor + '20' }]}>
+                      <AppIcon name={positive ? 'trending-up' : 'trending-down'} size={18} color={pnlColor} />
+                    </View>
+                    <View style={styles.transferInfo}>
+                      <Text numberOfLines={1} style={styles.transferType}>{row.wallet_name}</Text>
+                      <Text numberOfLines={1} style={styles.transferMeta}>{row.note || (positive ? 'Lãi đầu tư' : 'Lỗ đầu tư')}</Text>
+                    </View>
+                    <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.72} style={[styles.transferAmount, { color: pnlColor, maxWidth: '30%' }]}>
+                      {positive ? '+' : '-'}{formatVND(Math.abs(amount))}
+                    </Text>
+                    <TouchableOpacity
+                      accessibilityRole="button"
+                      accessibilityLabel="Sửa lãi/lỗ"
+                      style={styles.iconButton}
+                      onPress={() => startPnlEdit(row)}
+                      disabled={rowBusy}
+                    >
+                      <AppIcon name="edit" size={16} color={c.brandText} />
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      accessibilityRole="button"
+                      accessibilityLabel="Xóa lãi/lỗ"
+                      style={styles.iconButton}
+                      onPress={() => removePnl(row)}
+                      disabled={rowBusy}
+                    >
+                      <AppIcon name="delete-outline" size={16} color={c.expense} />
+                    </TouchableOpacity>
+                  </>
+                )}
+              </View>
+            );
+          })}
+        </>
+      )}
+
       <Text style={styles.sectionTitle}>Lịch sử chuyển tiền gần đây</Text>
       {transfers.length > 0 ? (
         <>
@@ -472,4 +695,10 @@ const createStyles = (t) => StyleSheet.create({
   transferMeta: { fontSize: 12, color: t.colors.textMuted },
   transferAmount: { flexShrink: 1, maxWidth: '40%', textAlign: 'right', fontSize: 15, fontWeight: '800' },
   compactEmpty: { paddingVertical: 24, marginBottom: 8 },
+
+  walletRow: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: t.colors.surface, padding: 13, borderRadius: t.radius.md, marginBottom: 8, borderWidth: 1, borderColor: t.colors.border, ...t.shadows.sm },
+  walletBalance: { flexShrink: 1, maxWidth: '38%', textAlign: 'right', fontSize: 14, fontWeight: '800', color: t.colors.text },
+  walletEditActions: { flexDirection: 'row', gap: 8 },
+  iconButton: { width: 38, height: 38, borderRadius: t.radius.md, alignItems: 'center', justifyContent: 'center', backgroundColor: t.colors.surfaceAlt, borderWidth: 1, borderColor: t.colors.border },
+  pnlRow: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: t.colors.surface, padding: 13, borderRadius: t.radius.md, marginBottom: 8, borderWidth: 1, borderColor: t.colors.border, ...t.shadows.sm },
 });

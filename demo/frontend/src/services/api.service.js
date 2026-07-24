@@ -238,6 +238,7 @@ export const api = {
   getBalance: () => request('/api/accounts/balance'),
   getWallets: () => request('/api/accounts'),
   createWallet: (data) => request('/api/accounts', { method: 'POST', body: JSON.stringify(data) }),
+  updateWallet: (id, data) => request(`/api/accounts/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   getCategories: (type) => request(`/api/categories${type ? `?type=${type}` : ''}`),
   createCategory: (data) => request('/api/categories', { method: 'POST', body: JSON.stringify(data) }),
   updateCategory: (id, data) => request(`/api/categories/${id}`, {
@@ -284,6 +285,7 @@ export const api = {
   getBudgets: (month, year) => request(`/api/budgets?month=${month}&year=${year}`),
   getBudgetProgress: (month, year) => request(`/api/budgets/progress?month=${month}&year=${year}`),
   createBudget: (data) => request('/api/budgets', { method: 'POST', body: JSON.stringify(data) }),
+  updateBudget: (id, data) => request(`/api/budgets/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   deleteBudget: (id) => request(`/api/budgets/${id}`, { method: 'DELETE' }),
   getBudgetRecommendations: (strategy = 'hybrid') => request(`/api/budgets/recommendations?strategy=${strategy}`),
   applyBudgetRecommendations: (recommendations, month, year) => request('/api/budgets/recommendations/apply', {
@@ -309,6 +311,18 @@ export const api = {
   setActivePersona: (personaId) => request('/api/personas/active', {
     method: 'POST',
     body: JSON.stringify({ persona_id: personaId }),
+  }),
+  getPersonalizationProfile: () => request('/api/personas/profile'),
+  setPersonalizationConsent: (consent) => request('/api/personas/profile/consent', {
+    method: 'PUT',
+    body: JSON.stringify({ consent }),
+  }),
+  upsertPersonalizationTrait: (traitType, value) => request(`/api/personas/profile/traits/${encodeURIComponent(traitType)}`, {
+    method: 'PUT',
+    body: JSON.stringify({ value }),
+  }),
+  deletePersonalizationTrait: (traitType) => request(`/api/personas/profile/traits/${encodeURIComponent(traitType)}`, {
+    method: 'DELETE',
   }),
 
   // ── Financial goals ────────────────────────────────────────────────
@@ -346,6 +360,22 @@ export const api = {
   updateBackupConfig: (data) => request('/api/export/backup-config', { method: 'PUT', body: JSON.stringify(data) }),
   exportFromIntent: (format, filters = {}) => request('/api/export/from-intent', { method: 'POST', body: JSON.stringify({ format, filters }) }),
   getDownloadUrl: (historyId) => `${BASE_URL}/api/export/history/${historyId}/download`,
+  restoreBackup: async (file) => {
+    // `file` is a browser File (web) or an { uri, name, mimeType } asset (native).
+    const formData = new FormData();
+    if (Platform.OS === 'web') {
+      formData.append('file', file, file.name);
+    } else {
+      formData.append('file', { uri: file.uri, name: file.name || 'backup.pfbak', type: file.mimeType || 'application/octet-stream' });
+    }
+    let response;
+    try {
+      response = await fetch(`${BASE_URL}/api/export/restore`, { method: 'POST', headers: TUNNEL_HEADERS, body: formData });
+    } catch (error) {
+      throw new Error(`Không kết nối được API tại ${BASE_URL}. ${CONNECTION_HINT}`);
+    }
+    return unwrapResponse(response);
+  },
 
   // ── REQ-08: Recurring Bills & Reminders ──────────────────────────────────────
   getRecurringBills: () => request('/api/recurring'),

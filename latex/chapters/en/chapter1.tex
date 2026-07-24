@@ -1,0 +1,102 @@
+\chapter{Introduction}
+\label{chap:introduction}
+
+\section{Problem Statement}
+
+\subsection{Background}
+
+Personal finance management requires users to record transactions regularly, classify them correctly, and understand the meaning behind their income--expense history. Financial literacy is directly linked to the ability to plan and make long-term decisions \cite{lusardi2014}. However, traditional recording tools typically demand multiple manual steps: selecting the transaction type, entering the amount, choosing a category, a wallet, and a time. When data entry becomes burdensome, records are prone to being missing or misclassified, which in turn makes every downstream report less reliable.
+
+Natural-language input such as ``ăn phở sáng nay 45k bằng Momo'' (had phở this morning, 45k, paid via Momo) reduces the number of manual steps, but introduces new technical challenges. The system must understand Vietnamese currency notation, relative dates, multiple transactions within a single sentence, approximate wallet names, and categorization context. Receipt images and voice input add further OCR/STT noise on top of this. If inferred results are written directly into the database, a small error can corrupt balances, budgets, and every insight derived afterward.
+
+\subsection{The Analysis and Interpretation Problem}
+
+Charts and filters answer well-defined questions such as ``how much was spent this month'' effectively. The research value of PERFIN does not lie in wrapping SQL queries with a chatbot. The system needs to detect phenomena that are hard to observe from a single number: gradually rising trends, anomalous spending days, the rate at which cash flow is being depleted, recurring fees, or goals that have drifted off track.
+
+These phenomena must be computed by testable algorithms. An LLM can understand questions and narrate results, but it is not the source of truth for financial computation. Delegating the entire analysis to an LLM makes results hard to reproduce and increases the risk of numbers appearing that are not grounded in the underlying data.
+
+\subsection{Research Questions}
+
+This project focuses on answering three questions:
+
+\begin{enumerate}
+  \item How can text, image, and voice input be converted into structured transactions while preserving data correctness?
+  \item Which deterministic algorithms are suitable for producing explainable insights from personal financial history?
+  \item Where should the LLM be involved to increase naturalness and personalization without taking over computation or unilaterally modifying data?
+\end{enumerate}
+
+\widereportfigure{01-system-context.pdf}{Context diagram and scope of the PERFIN system. The user interacts with the application; LLM, OCR, and STT providers are merely external supporting services.}{fig:system-context}
+
+Figure~\ref{fig:system-context} positions PERFIN as a data and algorithm management system. Bank connectivity, shared wallets, production-grade authentication, and high-availability infrastructure are outside the scope of this basic-topic undergraduate project.
+
+\section{Objectives}
+
+The overall objective is to build and evaluate a personal finance management prototype in which structured data and deterministic algorithms form the foundation, while the LLM serves as a controlled layer for language understanding and narration.
+
+\begin{table}[H]
+  \centering
+  \caption{Project objectives and evaluation criteria}
+  \label{tab:objectives}
+  \begin{tabularx}{\textwidth}{@{}L{1.1cm}Y Y@{}}
+    \toprule
+    \textbf{Code} & \textbf{Specific objective} & \textbf{Evidence and acceptance criteria} \\
+    \midrule
+    O1 & Build a financial data model with keys, constraints, indexes, and atomic transactions. & Migrations, ERD, rollback tests; critical update flows must complete fully or leave data unchanged. \\
+    O2 & Build a multimodal extraction pipeline with clarification and confirmation. & Labeled dataset, tool-call logs; no write to the database when a required field is missing. \\
+    O3 & Implement trend, anomaly, runway, recurring, correlation, budget, and goal analytics. & Formula tests against normal data, edge-case data, and hand-computed results. \\
+    O4 & Restrict the LLM to intent understanding, tool invocation, and narration of facts. & Tool schema, numeric-faithfulness checks and fallback; no figures added beyond the facts. \\
+    O5 & Evaluate the operational viability of the prototype. & Integration tests, p50/p95, provider error rates, and UAT must have reproducible logs before being reported. \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+The thresholds in Table~\ref{tab:objectives} are \textbf{acceptance targets}, not results that are automatically assumed to have been achieved. The report only labels a result as ``measured'' when the command, environment, and reproducible output are available.
+
+\section{Project Scope}
+
+\subsection{Scope of Implementation}
+
+\begin{table}[H]
+  \centering
+  \caption{In-scope implementation and out-of-scope content}
+  \label{tab:scope}
+  \begin{tabularx}{\textwidth}{@{}Y Y@{}}
+    \toprule
+    \textbf{In scope} & \textbf{Out of scope} \\
+    \midrule
+    Income, expense, wallet-transfer transactions, and investment gain/loss at prototype level. & Open Banking integration and real bank synchronization. \\
+    Text, receipt-image, and voice input; preview and confirmation. & Training new foundation models, OCR, or STT engines. \\
+    Categories, correction feedback, suggestions, and confirmed re-tagging. & Shared wallets, group debt splitting, and real-time collaboration. \\
+    Budgets, recurring bills, insights, and financial goals. & Investment advice, credit scoring, or decisions made on the user's behalf. \\
+    A single demo profile \code{default_user} and a data upgrade path. & Registration, JWT, authorization, and production-grade multi-user isolation. \\
+    Redis, worker, and fallback mechanisms for demo/testing purposes. & High availability, centralized monitoring, and uptime commitments. \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+The focus of this project is the data model, the correctness of data transformations, and the analytical algorithms. The mobile interface serves to capture input and demonstrate usability; full CRUD coverage for every entity is not the primary measure of academic contribution.
+
+\subsection{Assumptions and Limitations}
+
+\begin{itemize}
+  \item The default currency unit is VND; monetary data is stored as a decimal type in PostgreSQL. Numbers generated by the LLM must not be used as an authoritative source.
+  \item Statistical conclusions are only meaningful when the number of observations is sufficiently large. The system must lower its confidence level or decline to draw a conclusion when data is too sparse.
+  \item A persona only changes the manner of expression, not the facts, computations, access rights, or confirmation conditions.
+  \item The prototype does not replace a financial expert; its suggestions only support the organization and understanding of personal data.
+\end{itemize}
+
+\section{Contributions}
+
+This project aims to deliver five verifiable contributions:
+
+\begin{enumerate}
+  \item a data model with constraints and atomic update flows;
+  \item a pipeline combining an LLM, local parsers, fuzzy matching, and a human in the loop;
+  \item a set of deterministic analytical algorithms, decoupled from the language-generation layer;
+  \item a grounded-narration mechanism, in which the LLM only narrates already-computed facts;
+  \item an evaluation protocol that separates algorithmic correctness, AI quality, performance, and data-entry experience.
+\end{enumerate}
+
+\section{Report Structure}
+
+Chapter~\ref{chap:introduction} presents the problem, objectives, and scope. Chapter~\ref{chap:theory} builds the theoretical foundation on financial data, LLMs, OCR/STT, and analytical algorithms. Chapter~\ref{chap:results} specifies requirements, architectural design, the data model, processing flows, and testing. Chapter~\ref{chap:conclusion} reviews the objectives achieved, states limitations, and proposes directions for future development.

@@ -9,6 +9,7 @@ const {
   getWorkerOptions,
   localDateKey,
   isLastDayOfMonth,
+  isBackupDue,
   monthDateRange,
 } = require('../services/jobs/schedules');
 const {
@@ -24,6 +25,7 @@ const { syncJobSchedulers } = require('../services/jobs/scheduler');
 const { createJobProcessor } = require('../services/jobs/processor');
 const { createRecurringReminderHandler } = require('../services/jobs/handlers/recurringReminder');
 const { createMonthEndInsightsHandler } = require('../services/jobs/handlers/monthEndInsights');
+const { createAutoBackupHandler } = require('../services/jobs/handlers/autoBackup');
 const { startJobWorker } = require('../services/jobs/worker');
 const { isPathInside, isManagedFilePath, cleanupExpiredExports } = require('../services/exportCleanup.service');
 
@@ -58,7 +60,7 @@ test('schedule definitions support global and per-job switches', () => {
     JOB_RECURRING_CRON: '5 7 * * *',
     JOB_SUBSCRIPTION_ENABLED: 'false',
   });
-  assert.equal(definitions.length, 5);
+  assert.equal(definitions.length, 6);
   assert.equal(definitions.find((d) => d.name === JOB_NAMES.RECURRING_REMINDERS).pattern, '5 7 * * *');
   assert.equal(definitions.find((d) => d.name === JOB_NAMES.SUBSCRIPTION_SCAN).enabled, false);
   assert(definitions.every((d) => d.timezone === 'UTC'));
@@ -222,6 +224,68 @@ test('month-end retries do not generate a duplicate automatic export', async () 
   assert.equal(result.skipped, false);
   assert.equal(exports, 0);
   assert.equal(result.users[0].notificationCreated, false);
+});
+
+test('isBackupDue honors each frequency against the last backup', () => {
+  const tz = 'UTC';
+  // Never backed up → always due (regardless of frequency).
+  assert.equal(isBackupDue({ auto_enabled: true, frequency: 'monthly', last_backup_at: null }, new Date('2026-07-24T04:00:00.000Z'), tz), true);
+  // Disabled → never due.
+  assert.equal(isBackupDue({ auto_enabled: false, frequency: 'daily', last_backup_at: null }, new Date('2026-07-24T04:00:00.000Z'), tz), false);
+
+  // Daily: same local date → not due; next local date → due.
+  const daily = { auto_enabled: true, frequency: 'daily', last_backup_at: '2026-07-24T02:00:00.000Z' };
+  assert.equal(isBackupDue(daily, new Date('2026-07-24T20:00:00.000Z'), tz), false);
+  assert.equal(isBackupDue(daily, new Date('2026-07-25T01:00:00.000Z'), tz), true);
+
+  // Weekly: <7 days → not due; ≥7 days → due.
+  const weekly = { auto_enabled: true, frequency: 'weekly', last_backup_at: '2026-07-17T03:30:00.000Z' };
+  assert.equal(isBackupDue(weekly, new Date('2026-07-23T03:30:00.000Z'), tz), false);
+  assert.equal(isBackupDue(weekly, new Date('2026-07-24T03:30:00.000Z'), tz), true);
+
+  // Monthly: same (year, month) → not due; new month → due.
+  const monthly = { auto_enabled: true, frequency: 'monthly', last_backup_at: '2026-07-02T03:30:00.000Z' };
+  assert.equal(isBackupDue(monthly, new Date('2026-07-31T03:30:00.000Z'), tz), false);
+  assert.equal(isBackupDue(monthly, new Date('2026-08-01T03:30:00.000Z'), tz), true);
+});
+
+test('auto-backup handler skips disabled/not-due users and backs up due users', async () => {
+  const backups = [];
+  const configs = {
+    u1: { auto_enabled: true, frequency: 'daily', last_backup_at: null },       // due
+    u2: { auto_enabled: false, frequency: 'daily', last_backup_at: null },      // disabled
+    u3: { auto_enabled: true, frequency: 'daily', last_backup_at: '2026-07-24T02:00:00.000Z' }, // not due (same day)
+  };
+  const handler = createAutoBackupHandler({
+    timezone: 'UTC',
+    now: () => new Date('2026-07-24T04:00:00.000Z'),
+    resolveTargetUserIds: async () => ['u1', 'u2', 'u3'],
+    getBackupConfig: async (userId) => configs[userId],
+    createBackup: async (userId) => { backups.push(userId); return { historyId: backups.length }; },
+  });
+  const result = await handler({ data: {} });
+  assert.deepEqual(backups, ['u1']);
+  assert.equal(result.users.find((u) => u.userId === 'u1').backedUp, true);
+  assert.equal(result.users.find((u) => u.userId === 'u2').reason, 'auto_disabled');
+  assert.equal(result.users.find((u) => u.userId === 'u3').reason, 'not_due');
+});
+
+test('auto-backup handler force flag bypasses the due-check but still respects auto_enabled', async () => {
+  const backups = [];
+  const configs = {
+    u1: { auto_enabled: true, frequency: 'monthly', last_backup_at: '2026-07-24T02:00:00.000Z' }, // not due, but forced
+    u2: { auto_enabled: false, frequency: 'daily', last_backup_at: null }, // disabled → still skipped
+  };
+  const handler = createAutoBackupHandler({
+    timezone: 'UTC',
+    now: () => new Date('2026-07-24T04:00:00.000Z'),
+    resolveTargetUserIds: async () => ['u1', 'u2'],
+    getBackupConfig: async (userId) => configs[userId],
+    createBackup: async (userId) => { backups.push(userId); return { historyId: backups.length }; },
+  });
+  const result = await handler({ data: { force: true } });
+  assert.deepEqual(backups, ['u1']);
+  assert.equal(result.users.find((u) => u.userId === 'u2').reason, 'auto_disabled');
 });
 
 test('worker can be administratively disabled without touching Redis', async () => {

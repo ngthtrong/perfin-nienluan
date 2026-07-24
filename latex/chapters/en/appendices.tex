@@ -1,0 +1,98 @@
+\appendix
+
+\chapter{List of Draw.io Diagrams}
+
+Each diagram has its canonical editable source at \path{archive/latex/figures/drawio} and its rendered version at \path{archive/latex/figures/rendered}. The report links to the vector PDF version; PNG/SVG formats are used for quick viewing and web documentation. Terminology in the diagrams must be consistent with the report and must clearly distinguish the deterministic core, the LLM, persistent data, transient state, and external services.
+
+\begin{longtable}{@{}C{1.0cm}L{4.2cm}L{4.5cm}L{3.0cm}@{}}
+  \toprule
+  \textbf{No.} & \textbf{Figure Name} & \textbf{Basename} & \textbf{Location in Report} \\
+  \midrule
+  \endfirsthead
+  \toprule
+  \textbf{No.} & \textbf{Figure Name} & \textbf{Basename} & \textbf{Location in Report} \\
+  \midrule
+  \endhead
+  1 & System context & \path{01-system-context} & Figure~\ref{fig:system-context} \\
+  2 & Runtime architecture & \path{02-runtime-architecture} & Figure~\ref{fig:runtime-architecture} \\
+  3 & Prototype deployment & \path{03-deployment} & Figure~\ref{fig:deployment} \\
+  4 & Business domain aggregate & \path{04-domain-class} & Figure~\ref{fig:domain-class} \\
+  5 & Physical ERD & \path{05-physical-erd} & Figure~\ref{fig:physical-erd} \\
+  6 & LLM boundary & \path{06-llm-boundary} & Figure~\ref{fig:llm-boundary} \\
+  7 & Conversation state & \path{07-conversation-state} & Figure~\ref{fig:conversation-state} \\
+  8 & Text-based transaction entry & \path{08-text-sequence} & Figure~\ref{fig:text-sequence} \\
+  9 & Multimodal input & \path{09-multimodal-flow} & Figure~\ref{fig:multimodal-flow} \\
+  10 & Feedback and classification & \path{10-feedback-flow} & Figure~\ref{fig:feedback-flow} \\
+  11 & Evidence-based insight & \path{11-insight-sequence} & Figure~\ref{fig:insight-sequence} \\
+  12 & Goal planner and what-if & \path{12-goal-flow} & Figure~\ref{fig:goal-flow} \\
+  13 & Proactive task & \path{13-worker-sequence} & Figure~\ref{fig:worker-sequence} \\
+  \bottomrule
+\end{longtable}
+
+\chapter{Test Reproduction Commands}
+
+The commands below must be run from the correct component directory. The person carrying out the test must record the commit, runtime version, provider configuration, and service status; secrets must not be copied into the record.
+
+\begin{verbatim}
+cd demo/backend
+npm test
+npm run test:ai
+
+cd ../frontend
+EXPO_PUBLIC_API_URL=http://127.0.0.1:3000 \
+  npx expo export --platform web \
+  --output-dir /tmp/perfin-web-final
+\end{verbatim}
+
+Integration testing requires a dedicated test PostgreSQL instance and a running Redis instance. Migrations must be run against the test database; after each test group, rollback must be verified and data cleaned up using fixtures. A personal development database must never be used as the automated test environment.
+
+\chapter{Results Record for 16/07/2026}
+
+\begin{longtable}{@{}L{4.0cm}L{10.5cm}@{}}
+  \toprule
+  \textbf{Field} & \textbf{Recorded Value} \\
+  \midrule
+  Baseline commit & \code{8bebe83}; stabilization-session changes not yet committed. \\
+  Run time & 16/07/2026, development workspace. \\
+  Runtime & Node.js 24.16.0; PostgreSQL 16.14; Chromium 150.0.7871.46. \\
+  Backend tests after fix & 100/100 tests passed, 0 failed. \\
+  Local parser after fix & 31/31 strict pass, 0 partial, 0 fail; local provider. \\
+  Baseline before fix & 13/13 backend files; parser 27/31 strict, 2 partial, 2 fail. \\
+  API/DB/media smoke & 23/23 pass; PostgreSQL, chat preview/edit/cancel, OCR on 2 images, and STT on 1 M4A file. \\
+  Frontend export/UI & Web 653 modules; Android 960 modules; mobile smoke 4/4 gates passed. \\
+  Live data & 5.265 transactions, 0 rejected, 420 income/4.845 expense, net 594.000 VND. \\
+  PostgreSQL/Redis & Live PostgreSQL has been reconciled; Redis unavailable, worker shut down in a controlled manner, readiness degraded. \\
+  OCR/STT ground truth & No published measurement yet. \\
+  LLM model/prompt benchmark & No published measurement yet. \\
+  Parser regression & ``1 triệu 5'', the quantity--unit-price multiplication, and the ``quần jeans'' and ``đi ăn'' cases all passed. \\
+  Data regression & Transaction/post-commit, pending race, recurring period, and time-series zero-fill tests have been added. \\
+  \bottomrule
+\end{longtable}
+
+When finalizing the acceptance record, a new record must lock down the commit; the Node, PostgreSQL, and Redis versions; the provider, model, and prompt; the dataset, sample size, complete logs, and error analysis. Recording ``not yet measured'' here is a valid audit outcome, not an estimated value.
+
+\chapter{Demonstration Principles}
+
+\begin{enumerate}
+  \item Start with scripted seed data and clearly disclose that it is simulated data.
+  \item Demonstrate the same transaction through both the form and chat to quantify the data-entry benefit.
+  \item Enter a sentence missing the amount to demonstrate the clarification state and TTL.
+  \item Correct the category, then repeat a near-identical sentence to demonstrate feedback retrieval.
+  \item Open an insight and display the facts alongside the persona's narrative interpretation at the same time.
+  \item Shut down the provider or Redis in a controlled manner to demonstrate that the fallback does not generate mock data.
+  \item Do not present auth, bank sync, push notifications, PDF, or backup as completed features when the acceptance criteria have not been met.
+\end{enumerate}
+
+\chapter{Stability Criteria for Critical Functions}
+
+Post-report bug-fix priority is determined by the impact on data integrity and on the ability to conduct an academic demo:
+
+\begin{enumerate}
+  \item \textbf{P0 --- data integrity:} transactions that do not leak connections, atomic pending confirmation, correct batch rollback, user-scoped IDs.
+  \item \textbf{P1 --- input pipeline:} correct amount parsing, correctly stated provider-selector state, stable ordering for clarification and history.
+  \item \textbf{P1 --- algorithms:} the timeline retains months with no data, runway correctly handles no-spend days, reports use the correct denominator for the filtered period.
+  \item \textbf{P2 --- tasks and media:} atomic recurring payments, worker deduplication, adapters that return genuine errors and have ground truth.
+  \item \textbf{P2 --- demo support:} wallet creation on a fresh install, correctly formatted export, and backup/restore that does not retain secret keys in the bundle.
+\end{enumerate}
+
+Every fix must have a regression test that fails before the fix and passes after the fix. Only functionality with both an automated test and a reproducible demo flow may be moved from ``target design'' to ``measured''.

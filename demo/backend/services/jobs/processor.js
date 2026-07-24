@@ -4,6 +4,7 @@ const { createMonthEndInsightsHandler } = require('./handlers/monthEndInsights')
 const { createRunwayScanHandler } = require('./handlers/runwayScan');
 const { createSubscriptionScanHandler } = require('./handlers/subscriptionScan');
 const { createExportCleanupHandler } = require('./handlers/exportCleanup');
+const { createAutoBackupHandler } = require('./handlers/autoBackup');
 
 function createHandlers(options = {}) {
   return {
@@ -12,6 +13,7 @@ function createHandlers(options = {}) {
     [JOB_NAMES.RUNWAY_SCAN]: createRunwayScanHandler(options.runway),
     [JOB_NAMES.SUBSCRIPTION_SCAN]: createSubscriptionScanHandler(options.subscription),
     [JOB_NAMES.CLEANUP_EXPORTS]: createExportCleanupHandler(options.cleanup),
+    [JOB_NAMES.AUTO_BACKUP]: createAutoBackupHandler(options.autoBackup),
   };
 }
 

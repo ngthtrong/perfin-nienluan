@@ -104,13 +104,13 @@ tạo preview.
 
 Chuỗi được bỏ dấu, chuyển chữ thường, loại ký tự ngoài chữ/số và thu gọn
 khoảng trắng. Với hai chuỗi chuẩn hóa $a,b$, điểm chỉnh sửa dùng khoảng
-cách Levenshtein $D_{lev}$:
+cách Levenshtein $D_{lev}$~\cite{levenshtein1966}:
 
 \begin{equation}
   s_{edit}=1-\frac{D_{lev}(a,b)}{\max(|a|,|b|)}.
 \end{equation}
 
-Gọi $T_a,T_b$ là hai tập token, hệ số Dice là
+Gọi $T_a,T_b$ là hai tập token, hệ số Dice~\cite{dice1945} là
 
 \begin{equation}
   s_{dice}=\frac{2|T_a\cap T_b|}{|T_a|+|T_b|}.
@@ -188,7 +188,7 @@ hệ thống trả lỗi hoặc cho nhập tay, không sinh dữ liệu mẫu.
 
 Gọi $y_i$ là tổng chi của kỳ $i$, $x_i=i$ với
 $i=0,\ldots,n-1$, $\bar{x}$ và $\bar{y}$ là trung bình tương ứng.
-Đường bình phương tối thiểu $\hat y_i=a+bx_i$ có
+Đường bình phương tối thiểu (OLS) $\hat y_i=a+bx_i$~\cite{montgomery2012} có
 
 \begin{equation}
   b=\frac{\sum_{i=0}^{n-1}(x_i-\bar{x})(y_i-\bar{y})}
@@ -280,7 +280,7 @@ là ``dấu hiệu định kỳ'', không tự tạo recurring bill hay hủy d�
 
 Với hai chuỗi chi theo tuần $X=(x_1,\ldots,x_n)$ và
 $Y=(y_1,\ldots,y_n)$ trên cùng trục tuần, tuần thiếu của một danh mục
-được điền 0. Hệ số Pearson là
+được điền 0. Hệ số tương quan Pearson~\cite{pearson1895} là
 
 \begin{equation}
   r=\frac{\sum_i(x_i-\bar{x})(y_i-\bar{y})}
@@ -528,18 +528,25 @@ hoạt động.
 
 \section{Nghiên cứu và ứng dụng liên quan}
 
-Hồi quy tuyến tính, z-score, IQR và tương quan là các kỹ thuật giải thích
-được, phù hợp mục tiêu niên luận vì đầu ra có thể kiểm tra độc lập. OCR,
-STT và LLM đa phương thức mở rộng kênh nhập liệu nhưng không tự bảo đảm
-tính đúng của bản ghi tài chính.
+Nghiên cứu về hiểu biết tài chính chỉ ra vai trò của năng lực lập kế
+hoạch và ra quyết định dài hạn~\cite{lusardi2014}. Hồi quy tuyến
+tính~\cite{montgomery2012}, z-score, IQR~\cite{tukey1977} và tương
+quan~\cite{pearson1895} là các kỹ thuật giải thích được, phù hợp mục
+tiêu niên luận vì đầu ra có thể kiểm tra độc lập. OCR~\cite{smith2007},
+STT~\cite{radford2022} và LLM đa phương thức~\cite{gemini2023} mở rộng
+kênh nhập liệu nhưng không tự bảo đảm tính đúng của bản ghi tài chính.
 
-Các hệ thống quản lý tài chính thường rơi vào ba nhóm: ứng dụng
-form/dashboard có dữ liệu cấu trúc nhưng nhập liệu nhiều bước; chatbot
-tự nhiên nhưng khó truy vết số liệu; và mô hình phân tích chuyên sâu
-nhưng thiếu vòng xác nhận cho người dùng phổ thông. PERFIN không cạnh
-tranh về độ đầy đủ thương mại. Khoảng trống được chọn là kết hợp sổ cái
-quan hệ, giải thuật xác định, con người trong vòng lặp và lớp ngôn ngữ
-có ranh giới.
+Các hệ thống quản lý tài chính thương mại thường rơi vào ba nhóm. Nhóm
+thứ nhất là ứng dụng form/dashboard như Money Lover~\cite{moneylover}
+hay MISA MoneyKeeper~\cite{misamoneykeeper}: dữ liệu cấu trúc tốt, nhiều
+báo cáo trực quan, nhưng nhập liệu vẫn theo biểu mẫu nhiều bước và ít hỗ
+trợ ngôn ngữ tự nhiên tiếng Việt đời thường. Nhóm thứ hai là chatbot tài
+chính: nhập liệu tự nhiên nhưng số liệu trả về thường khó truy vết về
+nguồn và dễ sai lệch. Nhóm thứ ba là mô hình phân tích chuyên sâu: mạnh
+về thống kê nhưng thiếu vòng xác nhận cho người dùng phổ thông. PERFIN
+không cạnh tranh về độ đầy đủ thương mại. Khoảng trống được chọn là kết
+hợp sổ cái quan hệ, giải thuật xác định, con người trong vòng lặp và lớp
+ngôn ngữ có ranh giới.
 
 \begin{table}[htbp]
   \centering

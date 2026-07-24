@@ -26,8 +26,7 @@
         }
       ],
       "expo-asset",
-      "expo-status-bar",
-      "@react-native-community/datetimepicker"
+      "expo-status-bar"
     ]
   }
 }

@@ -22,6 +22,9 @@ inference_results/
 # Temporary uploads used by OCR/speech endpoints
 uploads/
 
+# Generated export artifacts (CSV/HTML reports, .pfbak backups)
+exports/
+
 
 
 

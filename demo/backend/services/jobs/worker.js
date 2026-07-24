@@ -43,6 +43,7 @@ async function startJobWorker({ env = process.env, logger = console, handlers = 
       runway: { timezone: env.JOBS_TIMEZONE, alertDays: workerOptions.runwayAlertDays },
       monthEnd: { timezone: env.JOBS_TIMEZONE, autoExport: workerOptions.monthEndAutoExport },
       cleanup: { batchSize: workerOptions.exportCleanupBatchSize },
+      autoBackup: { timezone: env.JOBS_TIMEZONE },
     });
     worker = new Worker(QUEUE_NAME, createJobProcessor(resolvedHandlers), {
       connection,

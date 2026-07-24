@@ -573,8 +573,39 @@ async function restoreBackup(userId = DEFAULT_USER, filePath) {
       );
     }
 
+    // Recompute each wallet's running balance from the restored history. Wallets
+    // are intentionally left in place (see note above), so `balance` would still
+    // reflect the pre-restore state unless we rebuild it here from initial_balance
+    // plus every flow: transactions (income +, expense -), transfers (in +/out -)
+    // and investment P&L (+). Without this, restore leaves balances inconsistent
+    // with the transaction history it just replaced.
+    await client.query(
+      `UPDATE wallets w SET
+         balance = w.initial_balance
+           + COALESCE((SELECT SUM(CASE WHEN t.type = 'income' THEN t.amount ELSE -t.amount END)
+                       FROM transactions t
+                       WHERE t.wallet_id = w.id AND t.user_id = w.user_id AND t.deleted_at IS NULL), 0)
+           + COALESCE((SELECT SUM(tr.amount) FROM wallet_transfers tr
+                       WHERE tr.to_wallet_id = w.id AND tr.user_id = w.user_id), 0)
+           - COALESCE((SELECT SUM(tr.amount) FROM wallet_transfers tr
+                       WHERE tr.from_wallet_id = w.id AND tr.user_id = w.user_id), 0)
+           + COALESCE((SELECT SUM(p.amount) FROM investment_pnl p
+                       WHERE p.wallet_id = w.id AND p.user_id = w.user_id), 0),
+         updated_at = NOW()
+       WHERE w.user_id = $1`,
+      [userId]
+    );
+
     await client.query('COMMIT');
-    return { success: true, restored: { transactions: data.transactions?.length || 0, budgets: data.budgets?.length || 0 } };
+    return {
+      success: true,
+      restored: {
+        transactions: data.transactions?.length || 0,
+        budgets: data.budgets?.length || 0,
+        wallet_transfers: data.wallet_transfers?.length || 0,
+        investment_pnl: data.investment_pnl?.length || 0,
+      },
+    };
   } catch (err) {
     await client.query('ROLLBACK');
     throw err;

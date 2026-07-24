@@ -56,6 +56,9 @@ export default function BudgetScreen() {
   const [categorySearch, setCategorySearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [sortFilter, setSortFilter] = useState('usage');
+  const [editingId, setEditingId] = useState(null);
+  const [editAmount, setEditAmount] = useState('');
+  const [rowBusyId, setRowBusyId] = useState(null);
 
   const load = useCallback(async () => {
     try {
@@ -134,6 +137,60 @@ export default function BudgetScreen() {
               showAlert('Không thể áp dụng', err.message);
             } finally {
               setApplyingRecommendation(false);
+            }
+          },
+        },
+      ]
+    );
+  }
+
+  function startEdit(item) {
+    setEditingId(item.budget_id);
+    setEditAmount(String(Math.round(Number(item.amount_limit) || 0)));
+  }
+
+  function cancelEdit() {
+    setEditingId(null);
+    setEditAmount('');
+  }
+
+  async function saveEdit(item) {
+    const parsedAmount = parseMoneyInput(editAmount);
+    if (!(parsedAmount > 0)) {
+      showAlert('Số tiền không hợp lệ', 'Vui lòng nhập mức ngân sách lớn hơn 0.');
+      return;
+    }
+    setRowBusyId(item.budget_id);
+    try {
+      await api.updateBudget(item.budget_id, { amount_limit: parsedAmount });
+      cancelEdit();
+      await load();
+    } catch (err) {
+      showAlert('Lỗi', err.message || 'Không thể cập nhật ngân sách');
+    } finally {
+      setRowBusyId(null);
+    }
+  }
+
+  function removeBudget(item) {
+    showAlert(
+      'Xóa ngân sách?',
+      `Xóa ngân sách cho "${item.category_name}" trong tháng ${period.month}/${period.year}?`,
+      [
+        { text: 'Hủy', style: 'cancel' },
+        {
+          text: 'Xóa',
+          style: 'destructive',
+          onPress: async () => {
+            setRowBusyId(item.budget_id);
+            try {
+              await api.deleteBudget(item.budget_id);
+              if (editingId === item.budget_id) cancelEdit();
+              await load();
+            } catch (err) {
+              showAlert('Lỗi', err.message || 'Không thể xóa ngân sách');
+            } finally {
+              setRowBusyId(null);
             }
           },
         },
@@ -446,6 +503,8 @@ export default function BudgetScreen() {
         }
         renderItem={({ item }) => {
           const meta = getStatusMeta(item.status, c);
+          const isEditing = editingId === item.budget_id;
+          const rowBusy = rowBusyId === item.budget_id;
           return (
             <View style={styles.card}>
               <View style={styles.cardHeader}>
@@ -469,6 +528,53 @@ export default function BudgetScreen() {
                   Còn lại: <Text style={{ color: item.remaining < 0 ? c.expense : c.income, fontWeight: '700' }}>{formatVND(item.remaining)}</Text>
                 </Text>
               </View>
+
+              {isEditing ? (
+                <View style={styles.editBox}>
+                  <Text style={styles.editLabel}>Mức ngân sách mới (VND)</Text>
+                  <View style={styles.amountRow}>
+                    <MoneyInput
+                      style={[styles.input, { flexGrow: 1, flexBasis: 180, minWidth: 0, marginBottom: 0 }]}
+                      value={editAmount}
+                      onChangeText={setEditAmount}
+                      placeholder="Ví dụ: 2,000,000"
+                      placeholderTextColor={c.textMuted}
+                    />
+                    {editAmount.length > 0 && (
+                      <View style={styles.amountPreview}>
+                        <Text style={styles.amountPreviewText}>{formatVND(parseMoneyInput(editAmount))}</Text>
+                      </View>
+                    )}
+                  </View>
+                  <View style={styles.editActions}>
+                    <Button label="Lưu" icon="check" size="sm" onPress={() => saveEdit(item)} loading={rowBusy} style={{ flex: 1 }} />
+                    <Button label="Hủy" icon="close" size="sm" variant="secondary" onPress={cancelEdit} disabled={rowBusy} style={{ flex: 1 }} />
+                  </View>
+                </View>
+              ) : (
+                <View style={styles.cardActions}>
+                  <TouchableOpacity
+                    accessibilityRole="button"
+                    accessibilityLabel={`Sửa ngân sách ${item.category_name}`}
+                    style={styles.actionButton}
+                    onPress={() => startEdit(item)}
+                    disabled={rowBusy}
+                  >
+                    <AppIcon name="edit" size={15} color={c.brandText} />
+                    <Text style={styles.actionText}>Sửa</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    accessibilityRole="button"
+                    accessibilityLabel={`Xóa ngân sách ${item.category_name}`}
+                    style={styles.actionButton}
+                    onPress={() => removeBudget(item)}
+                    disabled={rowBusy}
+                  >
+                    <AppIcon name="delete-outline" size={15} color={c.expense} />
+                    <Text style={[styles.actionText, { color: c.expense }]}>Xóa</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
             </View>
           );
         }}
@@ -629,4 +735,19 @@ const createStyles = (t) => StyleSheet.create({
   statusText: { fontSize: 11, fontWeight: '700' },
   cardMeta: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', gap: 6, marginTop: 10 },
   metaText: { flexGrow: 1, flexBasis: 132, color: t.colors.textMuted, fontSize: 12 },
+
+  cardActions: {
+    flexDirection: 'row', gap: 8, marginTop: 12, paddingTop: 12,
+    borderTopWidth: 1, borderTopColor: t.colors.border,
+  },
+  actionButton: {
+    flex: 1, minHeight: 40, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
+    borderRadius: t.radius.md, borderWidth: 1.5, borderColor: t.colors.border, backgroundColor: t.colors.surfaceAlt,
+  },
+  actionText: { color: t.colors.brandText, fontWeight: '700', fontSize: 13 },
+  editBox: {
+    marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: t.colors.border,
+  },
+  editLabel: { color: t.colors.textMuted, fontWeight: '700', fontSize: 13, marginBottom: 8 },
+  editActions: { flexDirection: 'row', gap: 8 },
 });

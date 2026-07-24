@@ -13,6 +13,7 @@ import { useTheme } from '../theme/ThemeContext';
 import TransactionPreviewCard from '../components/TransactionPreviewCard';
 import MultiTransactionPreviewCard from '../components/MultiTransactionPreviewCard';
 import MediaConfirmationCard from '../components/MediaConfirmationCard';
+import PendingActionCard from '../components/PendingActionCard';
 import ChatImagePreview from '../components/ChatImagePreview';
 import AppIcon from '../components/AppIcon';
 import { AppHeader } from '../components/ui';
@@ -32,6 +33,17 @@ const PROVIDER_META = {
   gemini: { label: 'Gemini', icon: 'auto-awesome' },
   local: { label: 'Local', icon: 'memory' },
 };
+
+// Backend pending-preview types that carry a pending_id and are committed via
+// the generic /confirm and /cancel endpoints. Rendered by PendingActionCard.
+const PENDING_ACTION_TYPES = new Set([
+  'transfer_preview',
+  'investment_preview',
+  'budget_suggestion',
+  'goal_preview',
+  'recurring_preview',
+  'category_suggestion',
+]);
 
 function TypingIndicator({ styles, color }) {
   const dot1 = useRef(new Animated.Value(0)).current;
@@ -518,6 +530,17 @@ export default function ChatScreen() {
         />
       );
     }
+    if (PENDING_ACTION_TYPES.has(item.type)) {
+      return (
+        <PendingActionCard
+          item={item}
+          onConfirm={() => confirm(item.id, item.pending_id)}
+          onCancel={() => cancel(item.id, item.pending_id)}
+          busy={pendingActionId === item.id}
+        />
+      );
+    }
+
     const isUser = item.role === 'user';
     const isSystem = item.role === 'system';
 

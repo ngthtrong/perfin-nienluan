@@ -6,6 +6,7 @@ const JOB_NAMES = Object.freeze({
   RUNWAY_SCAN: 'runway-scan',
   SUBSCRIPTION_SCAN: 'subscription-scan',
   CLEANUP_EXPORTS: 'cleanup-exports',
+  AUTO_BACKUP: 'auto-backup',
 });
 
 const SCHEDULER_IDS = Object.freeze({
@@ -15,6 +16,7 @@ const SCHEDULER_IDS = Object.freeze({
   [JOB_NAMES.RUNWAY_SCAN]: 'schedule-runway-scan',
   [JOB_NAMES.SUBSCRIPTION_SCAN]: 'schedule-subscription-scan',
   [JOB_NAMES.CLEANUP_EXPORTS]: 'schedule-cleanup-exports',
+  [JOB_NAMES.AUTO_BACKUP]: 'schedule-auto-backup',
 });
 
 module.exports = { QUEUE_NAME, JOB_NAMES, SCHEDULER_IDS };

@@ -1,7 +1,7 @@
-import { useEffect, useState, useCallback, useMemo } from 'react';
+import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet,
-  RefreshControl, ActivityIndicator, Switch, Linking,
+  RefreshControl, ActivityIndicator, Switch, Linking, Platform,
 } from 'react-native';
 import { api } from '../services/api.service';
 import { useTheme } from '../theme/ThemeContext';
@@ -66,6 +66,8 @@ export default function ExportScreen() {
   const [error, setError] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
   const [exporting, setExporting] = useState(null);
+  const [restoring, setRestoring] = useState(false);
+  const fileInputRef = useRef(null);
 
   const load = useCallback(async () => {
     try {
@@ -93,7 +95,7 @@ export default function ExportScreen() {
     try {
       const result = await api.exportFromIntent(format, {});
       if (result.data?.download_url) {
-        const url = api.getBaseUrl() + result.data.download_url.replace(/^\/api/, '/api');
+        const url = api.getBaseUrl() + result.data.download_url;
         showAlert('✅ Xuất thành công', `File: ${result.data.file_name}\nTruy cập server để tải file.`, [
           { text: 'Mở link', onPress: () => Linking.openURL(url) },
           { text: 'OK' },
@@ -135,6 +137,57 @@ export default function ExportScreen() {
     catch (err) { showAlert('Lỗi', err.message); }
   }
 
+  function pickBackupFile() {
+    if (restoring) return;
+    if (Platform.OS === 'web') {
+      fileInputRef.current?.click();
+    } else {
+      // No document picker is bundled in the demo; restore is exercised on the
+      // web build. Guide native users rather than failing silently.
+      showAlert(
+        'Khôi phục trên web',
+        'Tính năng chọn file backup hiện hỗ trợ trên bản web. Hãy mở PERFIN trên trình duyệt để khôi phục từ file .pfbak.'
+      );
+    }
+  }
+
+  function confirmRestore(file) {
+    showAlert(
+      'Khôi phục từ backup?',
+      'Toàn bộ giao dịch, ngân sách, điều chuyển và lãi/lỗ hiện tại sẽ bị thay thế bằng dữ liệu trong file backup. Hành động này không thể hoàn tác.',
+      [
+        { text: 'Hủy', style: 'cancel' },
+        { text: 'Khôi phục', style: 'destructive', onPress: () => runRestore(file) },
+      ]
+    );
+  }
+
+  async function runRestore(file) {
+    setRestoring(true);
+    try {
+      const result = await api.restoreBackup(file);
+      const summary = result.data?.restored || result.data || {};
+      const parts = [
+        summary.transactions != null ? `${summary.transactions} giao dịch` : null,
+        summary.budgets != null ? `${summary.budgets} ngân sách` : null,
+        summary.wallet_transfers != null ? `${summary.wallet_transfers} điều chuyển` : null,
+        summary.investment_pnl != null ? `${summary.investment_pnl} lãi/lỗ` : null,
+      ].filter(Boolean);
+      showAlert('✅ Khôi phục thành công', parts.length ? `Đã khôi phục: ${parts.join(', ')}.` : 'Dữ liệu đã được khôi phục từ backup.');
+      await load();
+    } catch (err) {
+      showAlert('Khôi phục thất bại', err.message || 'Không đọc được file backup.');
+    } finally {
+      setRestoring(false);
+    }
+  }
+
+  function onWebFileSelected(event) {
+    const file = event?.target?.files?.[0];
+    if (event?.target) event.target.value = '';
+    if (file) confirmRestore(file);
+  }
+
   if (loading) {
     return (
       <View style={styles.loadingScreen}>
@@ -155,7 +208,7 @@ export default function ExportScreen() {
 
   const EXPORT_CARDS = [
     { format: 'csv', icon: 'table-chart', title: 'Xuất CSV', desc: 'Danh sách giao dịch\nmã hóa UTF-8', color: c.income },
-    { format: 'pdf', icon: 'picture-as-pdf', title: 'Báo cáo', desc: 'Báo cáo tài chính\ncó biểu đồ', color: c.expense },
+    { format: 'pdf', icon: 'picture-as-pdf', title: 'Báo cáo', desc: 'Báo cáo HTML\nin PDF qua trình duyệt', color: c.expense },
     { format: 'backup', icon: 'cloud-done', title: 'Sao lưu', desc: 'File mã hóa\nAES-256', color: c.brand },
   ];
 
@@ -226,10 +279,46 @@ export default function ExportScreen() {
         )}
       </View>
 
+      <Text style={styles.sectionTitle}>Khôi phục từ bản sao lưu</Text>
+      <View style={styles.configCard}>
+        <View style={styles.restoreRow}>
+          <View style={styles.restoreIcon}>
+            <AppIcon name="restore" size={18} color={c.brand} />
+          </View>
+          <View style={{ flex: 1, minWidth: 0 }}>
+            <Text style={styles.configLabel}>Nạp lại dữ liệu từ file .pfbak</Text>
+            <Text style={styles.restoreHint}>
+              Ghi đè toàn bộ giao dịch, ngân sách, chuyển tiền và lãi/lỗ hiện tại bằng nội dung trong bản sao lưu.
+            </Text>
+          </View>
+        </View>
+        <TouchableOpacity
+          style={[styles.restoreButton, restoring && { opacity: 0.6 }]}
+          onPress={pickBackupFile}
+          disabled={restoring}
+          accessibilityRole="button"
+          accessibilityLabel="Chọn file backup để khôi phục"
+        >
+          {restoring
+            ? <ActivityIndicator size="small" color={c.onBrand} />
+            : <AppIcon name="upload-file" size={18} color={c.onBrand} />}
+          <Text style={styles.restoreButtonText}>{restoring ? 'Đang khôi phục...' : 'Chọn file & khôi phục'}</Text>
+        </TouchableOpacity>
+        {Platform.OS === 'web' && (
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".pfbak,application/octet-stream"
+            style={{ display: 'none' }}
+            onChange={onWebFileSelected}
+          />
+        )}
+      </View>
+
       <View style={styles.infoBox}>
         <AppIcon name="info-outline" size={16} color={c.brandText} />
         <Text style={styles.infoText}>
-          File backup được mã hóa AES-256-GCM với checksum SHA-256.{'\n'}
+          File backup được mã hóa AES-256-GCM với checksum SHA-256; chỉ khôi phục được từ file .pfbak do PERFIN tạo.{'\n'}
           File CSV dùng mã UTF-8, có thể mở bằng Excel/Google Sheets.{'\n'}
           File báo cáo là HTML — in PDF bằng trình duyệt (Ctrl+P).
         </Text>
@@ -281,6 +370,15 @@ const createStyles = (t) => StyleSheet.create({
   freqText: { fontSize: 12, color: t.colors.textMuted, fontWeight: '700' },
   freqTextActive: { color: '#fff' },
   lastBackupText: { marginTop: 10, color: t.colors.textMuted, fontSize: 12 },
+
+  restoreRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, marginBottom: 14 },
+  restoreIcon: { width: 36, height: 36, borderRadius: 12, backgroundColor: t.colors.brandSoft, alignItems: 'center', justifyContent: 'center' },
+  restoreHint: { color: t.colors.textMuted, fontSize: 12, lineHeight: 17, marginTop: 3 },
+  restoreButton: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, minHeight: 44,
+    backgroundColor: t.colors.brand, borderRadius: t.radius.md,
+  },
+  restoreButtonText: { color: t.colors.onBrand, fontWeight: '800', fontSize: 14 },
 
   infoBox: {
     flexDirection: 'row', gap: 10, backgroundColor: t.colors.brandSoft,

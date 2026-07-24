@@ -52,6 +52,13 @@ function getScheduleDefinitions(env = process.env) {
       env.JOB_EXPORT_CLEANUP_CRON || '0 3 * * *',
       env.JOB_EXPORT_CLEANUP_ENABLED
     ),
+    // Runs daily; the handler checks each user's chosen frequency (daily/weekly/monthly)
+    // against their last backup and only backs up when actually due.
+    definition(
+      JOB_NAMES.AUTO_BACKUP,
+      env.JOB_AUTO_BACKUP_CRON || '30 3 * * *',
+      env.JOB_AUTO_BACKUP_ENABLED
+    ),
   ];
 }
 
@@ -85,6 +92,37 @@ function isLastDayOfMonth(date = new Date(), timezone = 'Asia/Bangkok') {
   return day === new Date(Date.UTC(year, month, 0)).getUTCDate();
 }
 
+// Decides whether an automatic backup is due for a user, given their config and the
+// current time. The scheduler fires this job daily; this guard enforces the user's
+// chosen cadence so we never create more than one backup per period.
+//   - daily:   different local date-key than the last backup
+//   - weekly:  at least 7 local days have elapsed since the last backup
+//   - monthly: a different local (year, month) than the last backup
+// A missing last_backup_at (never backed up) is always due.
+function isBackupDue(config = {}, now = new Date(), timezone = 'Asia/Bangkok') {
+  if (!config || !config.auto_enabled) return false;
+  const last = config.last_backup_at ? new Date(config.last_backup_at) : null;
+  if (!last || Number.isNaN(last.getTime())) return true;
+
+  const frequency = String(config.frequency || 'weekly').toLowerCase();
+  if (frequency === 'daily') {
+    return localDateKey(now, timezone) !== localDateKey(last, timezone);
+  }
+  if (frequency === 'monthly') {
+    const nowParts = zonedDateParts(now, timezone);
+    const lastParts = zonedDateParts(last, timezone);
+    return nowParts.year !== lastParts.year || nowParts.month !== lastParts.month;
+  }
+  // weekly (default): compare whole-day distance between local date keys.
+  const dayMs = 24 * 60 * 60 * 1000;
+  const toUtcMidnight = (date) => {
+    const { year, month, day } = zonedDateParts(date, timezone);
+    return Date.UTC(year, month - 1, day);
+  };
+  const elapsedDays = Math.floor((toUtcMidnight(now) - toUtcMidnight(last)) / dayMs);
+  return elapsedDays >= 7;
+}
+
 function monthDateRange(date = new Date(), timezone = 'Asia/Bangkok') {
   const { year, month } = zonedDateParts(date, timezone);
   const lastDay = new Date(Date.UTC(year, month, 0)).getUTCDate();
@@ -106,5 +144,6 @@ module.exports = {
   zonedDateParts,
   localDateKey,
   isLastDayOfMonth,
+  isBackupDue,
   monthDateRange,
 };

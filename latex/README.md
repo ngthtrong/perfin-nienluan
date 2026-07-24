@@ -4,21 +4,24 @@
 
 ## Biên dịch
 
-Yêu cầu XeLaTeX và các gói TeX Live thông dụng. Từ thư mục `latex/`:
+Yêu cầu XeLaTeX và các gói TeX Live thông dụng. Dự án hỗ trợ hai ngôn ngữ từ cùng một mã nguồn; chỉ nội dung văn xuôi tách theo ngôn ngữ, còn preamble, font, heading và hình dùng chung. Từ thư mục `latex_vn/`:
 
 ```bash
-make
+make vi    # -> main-vi.pdf (tiếng Việt)
+make en    # -> main-en.pdf (tiếng Anh)
+make all   # cả hai bản
 ```
 
-Hoặc chạy thủ công ba lượt để mục lục, trích dẫn và tham chiếu ổn định:
+Ngôn ngữ được chọn qua biến `\doclang` (mặc định `vi` trong `main.tex`). Có thể build thủ công bằng cách truyền biến từ dòng lệnh và tách tên tệp đầu ra bằng `-jobname`:
 
 ```bash
-xelatex -interaction=nonstopmode -halt-on-error main.tex
-xelatex -interaction=nonstopmode -halt-on-error main.tex
-xelatex -interaction=nonstopmode -halt-on-error main.tex
+xelatex -interaction=nonstopmode -halt-on-error -jobname=main-en \
+  "\def\doclang{en}\input{main.tex}"
 ```
 
-Không cần `--shell-escape`, Python, `minted`, BibTeX hoặc Biber. Tài liệu tham khảo IEEE được quản lý thủ công trong `chapters/references.tex`.
+Chạy ba lượt để mục lục, trích dẫn và tham chiếu ổn định (target `make` đã tự lặp ba lượt).
+
+Không cần `--shell-escape`, Python, `minted`, BibTeX hoặc Biber. Tài liệu tham khảo IEEE được quản lý thủ công trong `chapters/<lang>/references.tex`.
 
 ## Font và quy chuẩn
 
@@ -33,15 +36,16 @@ Nếu máy thiếu Times New Roman hoặc Arial, cấu hình tự dùng TeX Gyre
 
 ## Cấu trúc
 
-- `main.tex`: điểm vào và thứ tự tài liệu.
-- `metadata.tex`: thông tin đề tài, sinh viên và giảng viên.
-- `config/preamble.tex`: font, lề, heading, bảng và macro hình.
-- `frontmatter/`: trang bìa, tóm tắt và từ viết tắt.
-- `chapters/chapter1.tex` đến `chapter4.tex`: bốn chương theo guideline.
-- `chapters/references.tex`: tài liệu tham khảo IEEE.
-- `chapters/appendices.tex`: sơ đồ, lệnh tái lập, biên bản và tiêu chí ổn định.
-- `figures/drawio/`: 13 tệp nguồn có thể chỉnh sửa.
-- `figures/rendered/`: bản PDF/PNG/SVG đã xuất.
+- `main.tex`: điểm vào; chọn ngôn ngữ qua `\doclang` và nạp `config/lang-<lang>`, `metadata-<lang>`, nội dung `<lang>/`.
+- `config/preamble.tex`: phần **dùng chung** — font, lề, heading, bảng và macro hình.
+- `config/lang-vi.tex`, `config/lang-en.tex`: cấu hình polyglossia, tên khối (Chương/Chapter...) và macro trạng thái theo ngôn ngữ.
+- `metadata-vi.tex`, `metadata-en.tex`: thông tin đề tài, sinh viên và giảng viên theo ngôn ngữ.
+- `frontmatter/<lang>/`: trang bìa, tóm tắt và từ viết tắt.
+- `chapters/<lang>/chapter1.tex` đến `chapter4.tex`: bốn chương theo guideline.
+- `chapters/<lang>/references.tex`: tài liệu tham khảo IEEE (tiêu đề mục lục dùng `\bibname`).
+- `chapters/<lang>/appendices.tex`: sơ đồ, lệnh tái lập, biên bản và tiêu chí ổn định.
+- `figures/drawio/`: 13 tệp nguồn có thể chỉnh sửa (dùng chung cho cả hai ngôn ngữ).
+- `figures/rendered/`: bản PDF/PNG/SVG đã xuất (dùng chung).
 
 Trang bìa tái sử dụng logo CTU tại `../archive/latex/images/ctu_logo.png`; nếu tệp không tồn tại, tài liệu dùng khung logo dự phòng và vẫn biên dịch.
 

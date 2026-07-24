@@ -1,0 +1,64 @@
+\frontchapter{List of Abbreviations}
+
+\begin{longtable}{@{}L{2.8cm}L{11.5cm}@{}}
+  \toprule
+  \textbf{Abbreviation} & \textbf{Meaning} \\
+  \midrule
+  \endfirsthead
+  \toprule
+  \textbf{Abbreviation} & \textbf{Meaning} \\
+  \midrule
+  \endhead
+  AI & Artificial Intelligence \\
+  API & Application Programming Interface \\
+  ASR & Automatic Speech Recognition \\
+  CRUD & Create, Read, Update, Delete \\
+  CSV & Comma-Separated Values \\
+  DB & Database \\
+  ERD & Entity--Relationship Diagram \\
+  F1 & Harmonic mean of precision and recall \\
+  IQR & Interquartile Range \\
+  JSON & JavaScript Object Notation \\
+  KV & Key--Value \\
+  LLM & Large Language Model \\
+  NFR & Non-Functional Requirement \\
+  NLP & Natural Language Processing \\
+  OCR & Optical Character Recognition \\
+  PII & Personally Identifiable Information \\
+  REST & Representational State Transfer \\
+  SRS & Software Requirements Specification \\
+  STT & Speech-to-Text \\
+  TTL & Time To Live \\
+  UI & User Interface \\
+  UAT & User Acceptance Testing \\
+  VND & Vietnamese Dong \\
+  \bottomrule
+\end{longtable}
+
+% Longtable without a caption still increments the counter; reset it so the
+% first captioned table carries number 1.
+\setcounter{table}{0}
+
+\frontchapter{Status and Result Conventions}
+
+This report clearly distinguishes implemented components, measured results and
+behavior that exists only at the design level. This convention prevents
+expectations or smoke tests from being presented as completed quality evidence.
+
+\begin{longtable}{@{}L{3.0cm}L{5.2cm}L{5.8cm}@{}}
+  \caption{Convention for levels of information confidence in the report}\label{tab:report-status}\\
+  \toprule
+  \textbf{Label} & \textbf{Meaning} & \textbf{Usage} \\
+  \midrule
+  \endfirsthead
+  \toprule
+  \textbf{Label} & \textbf{Meaning} & \textbf{Usage} \\
+  \midrule
+  \endhead
+  Implemented & A corresponding component exists in source code, migrations or tests. & Proves existence; does not automatically prove quality. \\
+  Measured & A command, timestamp and reproducible run result exist. & May be used to report figures in the results section. \\
+  Target & A desired threshold used as an acceptance criterion. & Must not be presented as an achieved result. \\
+  Design target & Expected behavior after in-scope fixes are completed. & Must be tested before being converted to ``measured''. \\
+  Out of scope & Not a goal of the current project. & Mentioned only under limitations or future work. \\
+  \bottomrule
+\end{longtable}
