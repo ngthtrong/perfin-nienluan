@@ -1,4 +1,4 @@
-# 📱 Ứng dụng Di động Quản lý Tài chính Cá nhân tích hợp Trí tuệ Nhân tạo — PERFIN
+# 📱 Ứng dụng Di động Quản lý Tài chính Cá nhân có hỗ trợ bởi Mô hình Ngôn ngữ Lớn — PERFIN
 
 > **Niên luận Cơ sở ngành - Ngành Kỹ thuật Phần mềm**  
 > **Trường Công nghệ Thông tin và Truyền thông - Đại học Cần Thơ (CTU)**
@@ -15,54 +15,60 @@
 * **Học kỳ:** 3 — Năm học: 2025-2026
 
 ### 💡 Ý tưởng Đề tài
-**PERFIN** (Personal Finance) là ứng dụng di động quản lý tài chính cá nhân với **giao diện hội thoại AI (Chatbot) làm trung tâm**. Thay vì phải thực hiện nhiều thao tác thủ công phức tạp (nhập số tiền, chọn ngày, chọn danh mục, tìm tài khoản...) như các ứng dụng truyền thống, người dùng chỉ cần giao tiếp bằng ngôn ngữ tự nhiên:
+**PERFIN** (Personal Finance) là ứng dụng di động quản lý tài chính cá nhân với **giao diện hội thoại (Chatbot) làm trung tâm**. Thay vì thực hiện nhiều thao tác thủ công (nhập số tiền, chọn ngày, chọn danh mục, tìm tài khoản...) như các ứng dụng truyền thống, người dùng giao tiếp bằng ngôn ngữ tự nhiên:
 * **Nhập liệu đa phương thức (Multi-modal Input):** Nhập giao dịch bằng văn bản chat tự nhiên (*"ăn sáng 30k"*), ghi âm giọng nói (*"mình mới chuyển khoản 500 nghìn đóng tiền điện bằng ví Momo"*), hoặc chụp ảnh/tải lên hóa đơn/biên lai chuyển tiền.
-* **Xử lý thông minh bằng AI:** AI tự động bóc tách thực thể (tên giao dịch, giá trị, thời gian, nguồn tiền) và suy đoán phân loại danh mục thu chi (Auto-Categorization).
-* **Tương tác có tính cá nhân hóa:** Trò chuyện và nhận lời khuyên tài chính từ các "Nhân cách AI" tùy chọn (ví dụ: *Bà mẹ nghiêm khắc* cằn nhằn khi tiêu hoang, hoặc *Chuyên gia tài chính* đưa ra phân tích chuyên nghiệp).
+* **Điều phối bằng LLM có kiểm soát:** Mô hình ngôn ngữ lớn đóng vai trò **bộ định tuyến ý định (intent router)** — chỉ chọn và điền một *lệnh có kiểu* (typed tool call), còn mọi tác vụ ghi dữ liệu vẫn nằm ở tầng nghiệp vụ, sau khi kiểm tra hợp lệ và (khi cần) người dùng xác nhận preview.
+* **Tương tác cá nhân hóa:** Trò chuyện và nhận lời khuyên tài chính từ các "Nhân cách AI" tùy chọn (ví dụ: *Bà mẹ nghiêm khắc* cằn nhằn khi tiêu hoang, hoặc *Chuyên gia tài chính* đưa ra phân tích chuyên nghiệp).
 
 ---
 
 ## 🎯 2. Yêu cầu của Niên luận Cơ sở ngành
 
-Đối với học phần **Niên luận Cơ sở ngành**, trọng tâm của đề tài được phân biệt rõ với Niên luận chuyên ngành hoặc Luận văn tốt nghiệp:
-* **Tập trung vào Dữ liệu & Giải thuật:** Tập trung tối đa vào việc tổ chức cấu trúc dữ liệu giao dịch, giải thuật bóc tách thực thể ngôn ngữ tự nhiên (NLP) từ câu chat, giải thuật OCR trích xuất văn bản từ hóa đơn và thuật toán phân loại tự động (Auto-Categorization).
+Với học phần **Niên luận Cơ sở ngành**, trọng tâm đề tài được phân biệt rõ với Niên luận chuyên ngành hoặc Luận văn tốt nghiệp:
+* **Tập trung vào Dữ liệu & Giải thuật:** Tổ chức cấu trúc dữ liệu giao dịch, giải thuật bóc tách thực thể từ ngôn ngữ tự nhiên, luồng OCR trích xuất văn bản từ hóa đơn, luồng Speech-to-Text và bài toán phân loại tự động (Auto-Categorization), cùng ranh giới rõ ràng giữa LLM và logic nghiệp vụ.
 * **Sản phẩm bàn giao yêu cầu:**
-  1. **Mã nguồn ứng dụng (Source Code):** Hệ thống Client-Server hoàn chỉnh chạy được demo kết nối Database để kiểm chứng giải thuật.
-  2. **Cơ sở dữ liệu (Database):** Lưu trữ lịch sử giao dịch, hội thoại, ngân sách và cấu trúc danh mục phân cấp.
-  3. **Báo cáo Niên luận cuối kỳ:** Được soạn thảo chuẩn hóa bằng **LaTeX**, tuân thủ cấu trúc chương mục và định dạng quy định của Trường CNTT&TT - ĐH Cần Thơ.
+  1. **Mã nguồn ứng dụng (Source Code):** Hệ thống Client-Server hoàn chỉnh chạy được demo, kết nối cơ sở dữ liệu để kiểm chứng giải thuật.
+  2. **Cơ sở dữ liệu (Database):** Lưu trữ lịch sử giao dịch, hội thoại, ngân sách, mục tiêu, tài khoản và cấu trúc danh mục phân cấp.
+  3. **Báo cáo Niên luận cuối kỳ:** Soạn thảo chuẩn hóa bằng **LaTeX (XeLaTeX)**, hỗ trợ song ngữ Việt/Anh, tuân thủ cấu trúc chương mục và định dạng của Trường CNTT&TT - ĐH Cần Thơ.
 
 ---
 
-## 🏗️ 3. Các Thành phần Hệ thống & Công nghệ Sử dụng
+## 🏗️ 3. Kiến trúc Hệ thống & Công nghệ Sử dụng
 
-Hệ thống được thiết kế theo cấu trúc phân tầng kết hợp hướng dịch vụ (Service-Oriented):
+Hệ thống theo cấu trúc phân tầng, tách rõ tầng điều phối AI khỏi tầng nghiệp vụ:
 
 ```mermaid
 graph TD
-    Client[React Native Expo App] <-->|APIs / HTTP & JSON| Gateway[API Gateway / Express]
-    Gateway <--> CoreServices[Core Services Node.js]
-    CoreServices <--> Database[(PostgreSQL DB)]
-    CoreServices <--> AIService[AI Orchestrator Service]
-    AIService <--> Gemini[Google Gemini API / NLP & Categorization]
-    AIService <--> SpeechToText[Google Speech-to-Text API]
-    AIService <--> Vision[Google Cloud Vision / OCR Engine]
+    Client[React Native Expo App] <-->|REST / HTTP & JSON| API[Express API Server]
+    API <--> Core[Core Services Node.js]
+    Core <--> DB[(PostgreSQL)]
+    API --> AIOrch[AI Orchestrator / Intent Router]
+    AIOrch -->|function calling| Gemini[Google Gemini API]
+    AIOrch -->|fallback| LocalParser[Local Rule-based Parser]
+    Core <--> Queue[BullMQ + Redis]
+    Queue --> Worker[Background Worker / Proactive Jobs]
+    API --> Media[Media-AI Service]
+    Media --> OCR[OCR: PaddleOCR local / Google Vision]
+    Media --> STT[Speech: PhoWhisper local / Google Speech-to-Text]
 ```
 
-### 💻 Chi tiết Công nghệ Sử dụng
+### 💻 Chi tiết Công nghệ
 
 * **Frontend (Mobile App):**
-  * **React Native** & **Expo Go**: Hỗ trợ xây dựng giao diện đa nền tảng (iOS & Android) nhanh chóng từ một codebase.
-  * **State Management & Fetching**: Tích hợp các hooks React để gọi API từ server.
+  * **React Native** + **Expo** (SDK 57): giao diện đa nền tảng iOS/Android/Web từ một codebase.
+  * **React Navigation** (bottom tabs + native stack): điều hướng giữa các màn hình Dashboard, Chat, Giao dịch, Ngân sách, Báo cáo, Mục tiêu, Dòng tiền, Chi phí định kỳ, Xuất dữ liệu, Cài đặt.
+  * Hệ thống UI riêng (`src/components/ui`) với theme/tokens, hỗ trợ chạy web smoke test.
 * **Backend (RESTful API Server):**
-  * **Node.js** & **Express**: Cung cấp các endpoint xử lý logic nghiệp vụ tài chính và điều phối AI.
-  * **PostgreSQL** (sử dụng gói `pg`): Cơ sở dữ liệu quan hệ lưu trữ thông tin có cấu trúc (giao dịch, người dùng, ví, ngân sách, nhắc nhở).
+  * **Node.js** + **Express 5**: các endpoint xử lý logic nghiệp vụ tài chính và điều phối AI, có rate limiting và health check (`/api/health/live`, `/api/health/ready`).
+  * **PostgreSQL** (gói `pg`): cơ sở dữ liệu quan hệ, quản lý bằng hệ thống **migration** đánh số (`001`–`008`).
+  * **BullMQ + Redis** (`ioredis`): hàng đợi và **worker chạy nền** cho các tác vụ chủ động (nhắc chi phí định kỳ, tổng kết cuối tháng, quét runway/subscription, tự sao lưu, dọn file export).
 * **AI & Xử lý Dữ liệu:**
-  * **Google Gemini API**: Đóng vai trò LLM cốt lõi để phân tích ngữ cảnh chat tiếng Việt/tiếng Anh, trích xuất intent/entity và thực hiện phân loại giao dịch.
-  * **Google Cloud Vision (hoặc Tesseract OCR)**: Nhận dạng ký tự quang học từ hóa đơn/biên lai chuyển tiền.
-  * **Google Speech-to-Text**: Chuyển giọng nói ghi âm từ ứng dụng sang văn bản thô để AI phân tích.
+  * **Google Gemini API** (`@google/genai`, mặc định `gemini-3.1-flash-lite` với danh sách fallback): LLM cốt lõi dùng **function calling** làm intent router. Các tool đã khai báo: `record_transactions`, `manage_recurring_bill`, `create_financial_goal`, `query_financial_data`, `suggest_budget`, `export_financial_data`, `transfer_money`, `record_investment_pnl`.
+  * **Local parser (fallback):** bộ luật tiếng Việt tự phân tích giao dịch/ý định khi không có `GEMINI_API_KEY` hoặc khi API lỗi, giúp demo luôn chạy được.
+  * **OCR:** **PaddleOCR** chạy local (Python) hoặc **Google Cloud Vision**, chọn qua biến `OCR_PROVIDER`.
+  * **Speech-to-Text:** **PhoWhisper** chạy local (Python) hoặc **Google Speech-to-Text**, chọn qua biến `SPEECH_PROVIDER`.
 * **Tài liệu & Báo cáo:**
-  * **LaTeX (TeX Live / Overleaf)**: Biên soạn báo cáo chuyên nghiệp.
-  * **Python Script (`convert_reqs.py`)**: Tự động chuyển đổi tài liệu đặc tả yêu cầu từ định dạng Markdown (.md) sang mã nguồn LaTeX (.tex) để đồng bộ nội dung báo cáo.
+  * **LaTeX (XeLaTeX)**: báo cáo song ngữ Việt/Anh từ cùng một mã nguồn, chọn ngôn ngữ qua biến `\doclang`, biên dịch bằng `make vi` / `make en` / `make all`. Không cần `--shell-escape`, Python, minted hay BibTeX.
 
 ---
 
@@ -70,40 +76,53 @@ graph TD
 
 ```
 perfin-nienluan/
-├── README.md               # File này - Giới thiệu tổng quan dự án
-├── .gitignore              # Cấu hình bỏ qua các file không cần commit lên Git
-├── demo/                   # Mã nguồn ứng dụng demo thực tế
-│   └── v1/                 # Phiên bản phát triển ban đầu (Boilerplate kết nối)
-│       ├── backend/        # RESTful API Server (Node.js, Express, PostgreSQL)
-│       │   ├── index.js    # Entry point backend & API test DB
-│       │   ├── package.json
-│       │   └── .gitignore
-│       └── frontend/       # Mobile App (React Native Expo)
-│           ├── App.js      # Giao diện chính hiển thị trạng thái kết nối backend
-│           ├── app.json    # Cấu hình Expo
-│           ├── package.json
-│           └── AGENTS.md   # Tài liệu hướng dẫn sử dụng thư viện
-└── doc/                    # Tài liệu đặc tả và báo cáo Niên luận
-    ├── requirements/       # 9 tài liệu đặc tả yêu cầu chi tiết (REQ-01 -> REQ-09) dạng Markdown
-    │   ├── REQ-01 Nhập liệu đa phương thức bằng AI (AI-Powered Input).md
-    │   ├── REQ-02 Phân loại thông minh (Auto-Categorization).md
-    │   └── ...
-    └── latex/              # Dự án LaTeX biên dịch báo cáo Niên luận chính thức
-        ├── main.tex        # Entry point biên dịch LaTeX
-        ├── metadata.tex    # Cấu hình thông tin SV, GVHD, Tên đề tài
-        ├── convert_reqs.py # Script Python đồng bộ từ Markdown REQ sang LaTeX .tex
-        ├── chapters/       # Nội dung các chương (Giới thiệu, Lý thuyết, Kết quả, Kết luận...)
-        └── requirements/   # Mã nguồn LaTeX của các REQ sau khi đồng bộ
+├── README.md               # File này — giới thiệu tổng quan dự án
+├── demo/                   # Mã nguồn ứng dụng MVP thực tế
+│   ├── README.md           # Hướng dẫn chi tiết chạy demo
+│   ├── docker-compose.yml  # Container hóa Redis (backend + worker chạy trên host)
+│   ├── start-app.sh        # Script khởi động nhanh (lan/tunnel, kèm migrate)
+│   ├── stop-app.sh         # Script dừng và dọn tiến trình
+│   ├── backend/            # RESTful API Server (Node.js, Express, PostgreSQL)
+│   │   ├── index.js        # Entry point + gắn 12 nhóm route
+│   │   ├── config/         # Cấu hình kết nối database
+│   │   ├── routes/         # ai, chat, transaction, category, budget, account,
+│   │   │                   #   report, cashflow, export, recurring, persona, goal
+│   │   ├── services/       # Logic nghiệp vụ + AI (ai.service, parser, analytics,
+│   │   │                   #   jobs/worker, media-ai, persona, report, goals...)
+│   │   ├── models/         # Truy vấn PostgreSQL theo bảng
+│   │   ├── migrations/     # 001–008: schema, seed, cashflow, recurring, users...
+│   │   ├── prompts/        # Prompt template cho Gemini
+│   │   ├── scripts/        # migrate, worker, seed-demo, import-finance-csv,
+│   │   │                   #   smoke-test, paddleocr_ocr.py, phowhisper_speech.py
+│   │   ├── tests/          # ~40 file test (node --test) + benchmark độ chính xác AI
+│   │   └── docs/           # Ghi chú kiến trúc (proactive-worker...)
+│   ├── frontend/           # Mobile App (React Native Expo)
+│   │   └── src/            # components, screens, navigation, context, services, theme
+│   └── data/               # Dataset & fixtures (dataFinance.csv, audio, ảnh hóa đơn)
+├── latex/                  # Báo cáo Niên luận song ngữ (XeLaTeX)
+│   ├── main.tex            # Entry point; chọn ngôn ngữ qua \doclang
+│   ├── metadata-vi.tex     # Thông tin SV, GVHD, tên đề tài (bản VI)
+│   ├── metadata-en.tex     # Metadata bản EN
+│   ├── Makefile            # make vi / make en / make all
+│   ├── config/             # preamble dùng chung + cấu hình ngôn ngữ
+│   ├── chapters/vi/        # chapter1–4, references, appendices (tiếng Việt)
+│   ├── chapters/en/        # bản tiếng Anh
+│   └── figures/            # hình minh họa
+├── archive/                # Tài liệu & sơ đồ giai đoạn phân tích thiết kế
+│   ├── requirements/       # 9 đặc tả yêu cầu REQ-01 → REQ-09 (Markdown)
+│   ├── diagrams/           # ERD, class/component/sequence/use-case, flow (.mmd, .drawio)
+│   ├── doc/                # Yêu cầu tính năng
+│   └── latex, latex_en/    # Bản báo cáo cũ (lưu trữ)
+├── log/                    # Nhật ký demo, kiểm chứng & kết quả thí nghiệm/benchmark
+└── resource/               # perfin_schema.sql, báo cáo tham khảo, guideline
 ```
 
 ---
 
-## 📝 5. Checklist Trạng thái & Quản lý các Task
+## 📝 5. Trạng thái Triển khai
 
-Dưới đây là bảng theo dõi tiến độ phát triển các cấu phần của dự án Niên luận PERFIN:
-
-### 📑 A. Tài liệu Đặc tả Yêu cầu (Requirements Specifications)
-* [x] **REQ-01:** Nhập liệu đa phương thức bằng AI (Văn bản, Giọng nói, Ảnh hóa đơn)
+### 📑 A. Đặc tả Yêu cầu (Requirements) — `archive/requirements/`
+* [x] **REQ-01:** Nhập liệu đa phương thức bằng AI (văn bản, giọng nói, ảnh hóa đơn)
 * [x] **REQ-02:** Phân loại thông minh (Auto-Categorization)
 * [x] **REQ-03:** Quản lý ngân sách (Budget Management)
 * [x] **REQ-04:** Phân tích và báo cáo cá nhân hóa (Personalized Insights)
@@ -113,92 +132,121 @@ Dưới đây là bảng theo dõi tiến độ phát triển các cấu phần 
 * [x] **REQ-08:** Quản lý chi phí cố định và nhắc nhở (Recurring Bills & Reminders)
 * [x] **REQ-09:** Nhân cách AI (AI Personalities)
 
-### ✍️ B. Báo cáo Niên luận bằng LaTeX
-* [x] Khởi tạo khung mẫu báo cáo, cấu hình metadata (`metadata.tex`, `cover.tex`)
-* [x] Viết script đồng bộ hóa tài liệu đặc tả Markdown sang LaTeX (`convert_reqs.py`)
-* [x] Chương 1: Giới thiệu đề tài (`chapters/introduction.tex`)
-* [x] Chương 2: Cơ sở lý thuyết (`chapters/theory.tex` - Đã có dự thảo chi tiết)
-* [/] Chương 3: Kết quả ứng dụng (`chapters/results.tex` - Đang bổ sung sơ đồ UML & thiết kế DB chi tiết)
-* [x] Chương 4: Kết luận & Hướng phát triển (`chapters/conclusion.tex`)
-* [x] Tài liệu tham khảo theo chuẩn IEEE (`chapters/references.tex`)
+### 💻 B. Mã nguồn Ứng dụng (Demo MVP)
+* [x] Backend Express đầy đủ với 12 nhóm route (chat, giao dịch, danh mục, ngân sách, tài khoản, báo cáo, dòng tiền, export, chi phí định kỳ, persona, mục tiêu, AI)
+* [x] Cơ sở dữ liệu PostgreSQL theo migration đánh số (001–008) + seed danh mục/ví mặc định
+* [x] Tích hợp Gemini function-calling làm intent router (8 tool) + local parser fallback
+* [x] Luồng OCR (PaddleOCR/Google Vision) & Speech-to-Text (PhoWhisper/Google STT)
+* [x] Worker chạy nền (BullMQ + Redis) cho nhắc nhở & thông báo chủ động
+* [x] Frontend React Native Expo với đầy đủ màn hình (Dashboard, Chat, Giao dịch, Ngân sách, Báo cáo, Mục tiêu, Dòng tiền, Chi phí định kỳ, Xuất dữ liệu, Cài đặt)
+* [x] Bộ test tự động (~40 file `node --test`) + benchmark độ chính xác phân loại và ablation parser vs LLM
+* [ ] Xác thực/đăng nhập nhiều người dùng thật (hiện dùng chung `default_user`)
+* [ ] Triển khai production, logging tập trung, giám sát
 
-### 💻 C. Mã nguồn Ứng dụng (Demo App)
-* [x] Khởi dựng dự án Frontend React Native Expo (Boilerplate)
-* [x] Khởi dựng RESTful API Server Express (Backend Boilerplate)
-* [x] Kết nối và kiểm thử truy vấn cơ sở dữ liệu PostgreSQL từ Backend
-* [x] Tích hợp kết nối API giữa Frontend và Backend thông qua môi trường mạng (mã hóa đường truyền)
-* [ ] Thiết kế Cơ sở dữ liệu chi tiết (Database Schema cho giao dịch, tài khoản, ví, ngân sách...)
-* [ ] Tích hợp API của mô hình ngôn ngữ lớn (Google Gemini API) vào Backend
-* [ ] Phát triển dịch vụ OCR & Speech-to-Text trích xuất thông tin
-* [ ] Xây dựng giao diện Chatbot UI và hiển thị hội thoại trên Mobile
-* [ ] Hoàn thiện giao diện quản lý ví, thống kê biểu đồ chi tiêu và thiết lập ngân sách
-* [ ] Tiến hành viết Test Cases và ghi nhận kết quả kiểm thử thực tế vào báo cáo
+### ✍️ C. Báo cáo Niên luận (LaTeX song ngữ) — `latex/`
+* [x] Khung báo cáo XeLaTeX song ngữ Việt/Anh, cấu hình metadata (`metadata-vi.tex`, `metadata-en.tex`)
+* [x] Chương 1–4 và tài liệu tham khảo (chuẩn IEEE, quản lý thủ công) cho cả hai ngôn ngữ
+* [x] Phụ lục (`appendices.tex`)
+
+> ⚠️ **Ghi chú:** Thư mục `archive/` (bao gồm các đặc tả REQ và báo cáo LaTeX cũ) lưu tài liệu giai đoạn phân tích — không phản ánh cấu trúc mã nguồn hiện tại. Báo cáo chính thức nằm trong `latex/`.
 
 ---
 
-## 🚀 6. Hướng dẫn Chạy Thử ứng dụng Demo (v1)
+## 🚀 6. Hướng dẫn Chạy Thử ứng dụng Demo
 
-### 🗄️ Bước 1: Khởi động Backend
-1. Di chuyển vào thư mục backend:
+> Hướng dẫn chi tiết (troubleshooting, chạy iOS qua tunnel trong WSL, danh sách endpoint) xem trong [demo/README.md](demo/README.md).
+
+### 🗄️ Bước 1: Chuẩn bị Backend
+1. Vào thư mục backend và cài dependency:
    ```bash
-   cd demo/v1/backend
-   ```
-2. Cài đặt các thư viện cần thiết:
-   ```bash
+   cd demo/backend
    npm install
    ```
-3. Tạo file cấu hình môi trường `.env` trong thư mục backend để cấu hình kết nối PostgreSQL:
+2. Tạo file `.env` (tối thiểu là cấu hình PostgreSQL; các khóa AI là tùy chọn):
    ```env
    PORT=3000
-   DB_USER=tên_user_postgres
+   DB_USER=postgres
    DB_HOST=localhost
    DB_NAME=demodb
-   DB_PASSWORD=mật_khẩu_của_bạn
+   DB_PASSWORD=postgres
    DB_PORT=5432
-   ```
-4. Chạy server ở chế độ phát triển:
-   ```bash
-   node index.js
-   ```
-   *Server sẽ khởi chạy tại cổng 3000 và hiển thị log kết nối thành công tới PostgreSQL.*
-5. Trước khi mở Expo Go, kiểm tra từ trình duyệt điện thoại bằng `http://IP_WIFI_CUA_MAY_TINH:3000`. Nếu không thấy thông báo API đang chạy, hãy cho phép Node.js qua Windows Firewall và đảm bảo điện thoại cùng mạng Wi-Fi với máy tính.
 
-### 📱 Bước 2: Khởi động Frontend (Expo React Native)
-1. Di chuyển vào thư mục frontend:
-   ```bash
-   cd demo/v1/frontend
+   # Tùy chọn — không có thì backend tự fallback sang local parser
+   GEMINI_API_KEY=
+   AI_PROVIDER=auto
+
+   # Tùy chọn cho OCR/Speech
+   OCR_PROVIDER=google          # google | paddle
+   SPEECH_PROVIDER=google       # google | phowhisper
+   GOOGLE_APPLICATION_CREDENTIALS=/đường/dẫn/service-account.json
    ```
-2. Cài đặt các thư viện phụ thuộc:
+   *Không commit khóa API hoặc file credential thật vào git.*
+3. Khởi tạo database (chạy migration + seed mặc định):
    ```bash
+   npm run migrate          # chạy các migration chưa áp dụng
+   npm run migrate:fresh    # reset toàn bộ schema và seed lại (nếu cần)
+   npm run seed:demo        # (tùy chọn) tạo 80–120 giao dịch demo trong 3 tháng
+   ```
+4. Chạy server:
+   ```bash
+   npm start          # hoặc npm run dev (node --watch)
+   ```
+   Kiểm tra: `curl http://localhost:3000/` và `curl http://localhost:3000/api/test-db` → JSON có `success: true`.
+
+### ⚙️ Bước 2 (tùy chọn): Worker nền & OCR/Speech local
+* Bật Redis rồi chạy worker cho các tác vụ chủ động:
+  ```bash
+  docker compose up -d          # từ thư mục demo/ — khởi động Redis
+  npm run worker                # từ demo/backend
+  ```
+* Cài môi trường Python cho OCR/Speech chạy offline (PaddleOCR + PhoWhisper):
+  ```bash
+  npm run setup:media-ai        # tạo .venv-ai và cài requirements-ai.txt
+  ```
+
+### 📱 Bước 3: Chạy Frontend (Expo React Native)
+1. Vào thư mục frontend và cài dependency:
+   ```bash
+   cd demo/frontend
    npm install
    ```
-3. Khởi chạy Expo ở chế độ LAN để điện thoại và máy tính cùng mạng Wi-Fi nhìn thấy nhau:
+2. Chạy Expo ở chế độ LAN (điện thoại và máy tính cùng mạng Wi-Fi):
    ```bash
    npm run start:lan
    ```
-4. Mở ứng dụng **Expo Go** trên điện thoại (iOS/Android), quét mã QR hiển thị ở terminal để trải nghiệm trực tiếp giao diện kết nối.
-5. Ứng dụng sẽ tự suy ra API backend theo IP LAN của máy đang chạy Metro, ví dụ `http://192.168.1.10:3000`. Nếu bắt buộc chạy Expo bằng tunnel, tạo file `.env.local` trong `demo/v1/frontend` và khai báo thủ công:
-   ```env
-   EXPO_PUBLIC_API_URL=http://IP_WIFI_CUA_MAY_TINH:3000
+3. Mở **Expo Go** trên điện thoại, quét mã QR ở terminal. App tự suy ra API backend theo IP LAN của máy chạy Metro. Nếu cần cấu hình thủ công (ví dụ dùng tunnel), đặt biến trước khi chạy:
+   ```bash
+   EXPO_PUBLIC_API_URL=http://IP_LAN_CUA_MAY:3000 npx expo start --lan --clear
    ```
-   Sau đó khởi động lại Expo bằng `npm start -- --clear`.
 
-### 📄 Bước 3: Đồng bộ và Biên dịch Báo cáo LaTeX
-1. Di chuyển vào thư mục LaTeX:
-   ```bash
-   cd doc/latex
-   ```
-2. Cập nhật các yêu cầu từ Markdown sang mã nguồn LaTeX:
-   ```bash
-   python3 convert_reqs.py
-   ```
-3. Thực hiện biên dịch bằng lệnh `pdflatex main.tex` hoặc nén thư mục `latex/` tải lên Overleaf để biên dịch trực tuyến.
+### ⚡ Chạy nhanh bằng script
+Từ thư mục `demo/`:
+```bash
+./start-app.sh lan               # chạy backend + frontend chế độ LAN
+./start-app.sh tunnel --migrate  # dùng tunnel (test iOS trong WSL) và migrate trước
+./stop-app.sh                    # dừng và dọn tiến trình
+```
+
+### 📄 Bước 4: Biên dịch Báo cáo LaTeX
+Từ thư mục `latex/` (yêu cầu XeLaTeX + TeX Live):
+```bash
+make vi     # -> main-vi.pdf (tiếng Việt)
+make en     # -> main-en.pdf (tiếng Anh)
+make all    # cả hai bản
+```
 
 ---
 
-## 📚 7. Tài liệu Tham khảo Chính
+## 🧪 7. Kiểm thử & Thí nghiệm
 
-Dự án có sử dụng và tham khảo một số tài liệu khoa học và công nghệ cốt lõi:
+* **Test tự động:** `npm test` (backend) chạy toàn bộ bộ test `node --test tests/*.test.js` — bao phủ giao dịch, ngân sách, danh mục, mục tiêu, dòng tiền, chi phí định kỳ, persona, export, jobs, ngữ cảnh chat...
+* **Benchmark AI:** `npm run test:ai` đo độ chính xác phân loại của bộ định tuyến ý định.
+* **Kết quả thí nghiệm** (lưu trong `log/`): so sánh **local parser vs LLM (Gemini)** trên tập `dataFinance.csv`, cùng benchmark phân loại và đánh giá tác động của feedback — dùng làm dữ liệu cho báo cáo.
+
+---
+
+## 📚 8. Tài liệu Tham khảo Chính
+
 1. **Kiến trúc LLM (Transformers):** Vaswani et al., *"Attention Is All You Need"* (NeurIPS, 2017).
 2. **Mô hình Ngôn ngữ Gemini:** Google DeepMind, *"Gemini: A Family of Highly Capable Multimodal Models"* (arXiv, 2024).
 3. **Giải thuật Nhận dạng Ký tự (OCR):** R. Smith, *"An Overview of the Tesseract OCR Engine"* (ICDAR, 2007).

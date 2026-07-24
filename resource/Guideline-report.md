@@ -49,7 +49,7 @@ Write a concise summary (150–200 words) that includes:
 
 ### 2.5 List of Abbreviations
 
-- Provide a list of abbreviations and their full forms for reader clarity and consistency.
+- A list of all the abbreviations and acronyms used in the report, along with their full forms. This table is used to: ensure that readers understand the shortened terms without confusion, especially if they are unfamiliar with the terminology; maintain consistency in the use of abbreviations, promoting uniformity in the report
 
 ## 3. Chapters
 
@@ -57,16 +57,16 @@ Write a concise summary (150–200 words) that includes:
 
 #### 1.1 Problem Statement
 
-Clearly articulate the problem and its real-world impact.
+Clearly articulate the problem your project aims to solve. Describe its real-world impact and why it needs a solution.
 
 #### 1.2 Objectives
 
-List specific, measurable, achievable, relevant, and time-bound objectives.
+Define what the project intends to achieve. Ensure the objectives are specific, achievabl, time-bound
 
 ### Chapter 2 — Theoretical Foundation
 
-- Summarize related research and the theoretical foundation.
-- List and justify chosen tools, programming languages, frameworks, or platforms.
+- Summarize the theoretical foundation applied to the project. Review existing research, tools, or technologies relevant to your project.
+- For example: Related to tools and technologies, list and explain the tools, programming languages, frameworks, or platforms used in the project. Justify your choices
 
 ### Chapter 3 — Application Results
 
@@ -92,18 +92,22 @@ Note: Accompany each diagram with a short explanation and document key algorithm
 
 #### 3.3 Testing
 
+Explain how you ensured the project works as intended.
+
 ##### 3.3.1 Test Plan
 
-- Describe test types (unit, integration, system, UAT), tools used, and test cases.
+- Detail the testing strategy, including: test types (unit, integration, system, and user acceptance testing); tools used for testing, if any; and test cases.
 
 ##### 3.3.2 Results and Analysis
 
-- Present results with charts/tables and provide interpretation.
+- Present the results. Use graphs, charts, or tables to illustrate outcomes. Provide an interpretation of the data.
 
 ### Chapter 4 — Conclusion
 
-- Summarize how objectives were achieved and present key outcomes.
-- Suggest future work or enhancements.
+- Summarize the project. Mention:
+- - How the objectives were achieved.
+- - The key outcomes or deliverables.
+- - Suggestions for future work or enhancements.
 
 ## References
 
@@ -111,11 +115,14 @@ Note: Accompany each diagram with a short explanation and document key algorithm
 
 ## Appendices
 
-- Include user manuals, additional diagrams, schematics, or supplementary material as needed.
+- Include additional information such as:
+- - User manuals or guides (if applicable).
+- - Additional diagrams or schematics.
+- - Any other supplementary material
 
 ---
 
- Một số **Lưu ý** từ giảng viên: 
+ Một số **Lưu ý** từ giảng viên:
 
 1. Đây Niên luận cơ sở ngành, các em sẽ tập trung vào dữ liệu, giải thuật (khác với Niên luận chuyên ngành: phát triển một ứng dụng web/mobile/desktop với đầy đủ chức năng cho nhiều nhóm người dùng).
 2. Việc lựa chọn sử dụng các công nghệ, mô hình, công thức phải có sự lý luận hợp lý cho lý do lựa chọn và tại sao phù hợp với bài toán đang giải quyế
