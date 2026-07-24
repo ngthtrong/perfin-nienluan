@@ -1,131 +1,48 @@
-\documentclass[12pt,a4paper]{report}
+\documentclass[12pt,a4paper,oneside]{report}
 
-% Tự động nhận diện trình biên dịch (pdfLaTeX hoặc XeLaTeX/LuaLaTeX)
-\usepackage{iftex}
+% Dùng chung cấu hình định dạng hiện hành, nhưng giữ toàn bộ nội dung archive
+% ở các tệp cục bộ để nhánh này vẫn có thể biên dịch độc lập.
+\input{../../latex/config/preamble}
+\input{metadata}
 
-\ifPDFTeX
-  % Cấu hình cho pdfLaTeX (Sử dụng VNTeX mặc định hỗ trợ 100% Tiếng Việt)
-  \usepackage[utf8]{vietnam}
-  \usepackage{amssymb}
-\else
-  % Cấu hình cho XeLaTeX / LuaLaTeX (Sử dụng trực tiếp font hệ thống Times New Roman và Arial)
-  \usepackage{fontspec}
-  \setmainfont{Times New Roman}
-  \setsansfont{Arial}
-  \usepackage{amssymb}
-\fi
-
-% Cấu hình canh lề (Margins) theo tiêu chuẩn
-\usepackage[a4paper, left=3.5cm, right=2.0cm, top=2.0cm, bottom=2.0cm]{geometry}
-
-% Các gói hỗ trợ định dạng bảng, ảnh và màu sắc
-\usepackage{tabularx}
-\usepackage{graphicx}
-\usepackage{xcolor}
-\usepackage{titlesec}
-\usepackage{indentfirst} % Thụt đầu dòng ở đầu chương/mục
-\usepackage{hyperref}
-
-% Cấu hình liên kết clickable trong PDF
-\hypersetup{
-    colorlinks=true,
-    linkcolor=black,
-    filecolor=magenta,      
-    urlcolor=blue,
-    pdftitle={Nien Luan PerFin Report},
-    pdfpagemode=FullScreen,
-}
-
-% Định nghĩa các icon cảnh báo và tích xanh thay thế emoji
-\newcommand{\warningicon}{\textcolor{red}{\textbf{[!]}}}
-\newcommand{\checkicon}{\textcolor{green}{\textbf{[\checkmark]}}}
-
-% Cấu hình định dạng tiêu đề (Headings) theo Guideline
-% Chapter (Heading 1): Font Arial (helvet), Size 14, Bold, Uppercase, Canh giữa
-\titleformat{\chapter}[block]
-  {\normalfont\sffamily\large\bfseries\centering}
-  {\MakeUppercase{\chaptertitlename}\ \thechapter: }
-  {0.5em}
-  {\large\MakeUppercase}
-
-% Section (Heading 2): Font Arial, Size 13, Bold, Uppercase
-\titleformat{\section}
-  {\normalfont\sffamily\large\bfseries}
-  {\thesection.\ }
-  {0.5em}
-  {\MakeUppercase}
-
-% Subsection (Heading 3): Font Arial, Size 13, Bold, Italic, Lowercase
-\titleformat{\subsection}
-  {\normalfont\sffamily\normalsize\bfseries\itshape}
-  {\thesubsection.\ }
-  {0.5em}
-  {}
-
-% Subsubsection (Heading 4): Font Arial, Size 13, Italic, Lowercase
-\titleformat{\subsubsection}
-  {\normalfont\sffamily\normalsize\itshape}
-  {\thesubsubsection.\ }
-  {0.5em}
-  {}
-
-% Điều chỉnh khoảng cách thụt đầu dòng và khoảng cách đoạn văn
-\setlength{\parindent}{1cm}
-\setlength{\parskip}{6pt}
-
-% Nạp file cấu hình Metadata
-\input{metadata.tex}
+% Bốn cấp tiêu đề trong mục lục: chương, mục, tiểu mục và mục cấp bốn.
+\setcounter{tocdepth}{3}
+\setcounter{secnumdepth}{3}
 
 \begin{document}
 
-% 1. TRANG BÌA
-\input{chapters/cover.tex}
+\input{chapters/cover}
 
 \pagenumbering{roman}
 \setcounter{page}{1}
+\input{chapters/abstract}
 
-% 2. TÓM TẮT (ABSTRACT)
-\input{chapters/abstract.tex}
-\newpage
-
-% 3. MỤC LỤC & DANH MỤC
+\cleardoublepage
+\phantomsection
+\addcontentsline{toc}{chapter}{Mục lục}
 \tableofcontents
-\newpage
 
-\listoftables
+\cleardoublepage
+\phantomsection
 \addcontentsline{toc}{chapter}{Danh mục bảng}
-\newpage
+\listoftables
 
-\listoffigures
+\cleardoublepage
+\phantomsection
 \addcontentsline{toc}{chapter}{Danh mục hình}
-\newpage
+\listoffigures
 
-% 4. DANH MỤC CÁC TỪ VIẾT TẮT
-\input{chapters/abbreviations.tex}
-\newpage
+\input{chapters/abbreviations}
 
-% Đổi sang đánh số trang Ả Rập cho phần nội dung chính
+\cleardoublepage
 \pagenumbering{arabic}
 \setcounter{page}{1}
 
-% 5. CÁC CHƯƠNG NỘI DUNG CHÍNH
-\input{chapters/introduction.tex}
-\newpage
-
-\input{chapters/theory.tex}
-\newpage
-
-\input{chapters/results.tex}
-\newpage
-
-\input{chapters/conclusion.tex}
-\newpage
-
-% 6. TÀI LIỆU THAM KHẢO
-\input{chapters/references.tex}
-\newpage
-
-% 7. PHỤ LỤC (APPENDICES) - Sơ đồ thiết kế và Hướng dẫn sử dụng
-\input{chapters/appendices.tex}
+\input{chapters/introduction}
+\input{chapters/theory}
+\input{chapters/results}
+\input{chapters/conclusion}
+\input{chapters/references}
+\input{chapters/appendices}
 
 \end{document}

@@ -180,3 +180,22 @@ test('media extraction falls back locally when provider returns prose without a 
   assert.equal(result.intent, 'transaction');
   assert.equal(result.transaction.amount, 45_000);
 });
+
+test('receipt extraction combines optional user context before the local fallback parses it', async () => {
+  const manager = new AIServiceManager();
+  manager.parseTransaction = async () => ({
+    success: true,
+    provider_used: 'gemini',
+    intent: 'question',
+  });
+
+  const result = await manager.parseFromMedia(
+    'TOTAL 100000',
+    categories,
+    'receipt',
+    'Phần của mình là 50k tiền ăn'
+  );
+  assert.equal(result.provider_used, 'local');
+  assert.equal(result.transaction.amount, 50_000);
+  assert.equal(result.transaction.category_name, 'Ăn uống');
+});

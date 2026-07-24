@@ -18,88 +18,89 @@ const TYPO = {
   label:   { fontSize: 11, fontWeight: '700', lineHeight: 14 },
 };
 
-// Category chart palette (shared, theme-independent)
+// Warm, restrained chart palette. Color differentiates data series without
+// turning ordinary surfaces and notifications into decorative color blocks.
 const CATEGORY_COLORS = [
-  '#6366F1', '#10B981', '#F59E0B', '#F43F5E',
-  '#06B6D4', '#8B5CF6', '#84CC16', '#EC4899',
+  '#A84B32', '#C3744F', '#D39A56', '#8B7651',
+  '#B35D62', '#7F675A', '#C88766', '#6E7A5C',
 ];
 
 const lightColors = {
   // Backgrounds
-  bg: '#F5F6FA',
+  bg: '#F7F4F1',
   bgElevated: '#FFFFFF',
   surface: '#FFFFFF',
-  surfaceAlt: '#F0F1F6',
-  overlay: 'rgba(15, 15, 35, 0.45)',
+  surfaceAlt: '#F2EDE9',
+  overlay: 'rgba(35, 27, 23, 0.48)',
 
   // Text
-  text: '#151625',
-  textSecondary: '#4E5065',
-  textMuted: '#73758B',
+  text: '#261F1B',
+  textSecondary: '#5E514A',
+  textMuted: '#7B6F68',
   onBrand: '#FFFFFF',
 
   // Borders
-  border: '#E2E4EC',
-  borderStrong: '#CDD0DC',
+  border: '#E7DED8',
+  borderStrong: '#D5C8C0',
 
   // Brand accent
-  brand: '#5758E6',
-  brandSoft: '#EEEEFF',
-  brandStrong: '#3F40C7',
-  brandText: '#4B4CCF',
+  brand: '#A84B32',
+  brandSoft: '#FBECE6',
+  brandStrong: '#833722',
+  brandText: '#8E3E29',
 
   // Semantic
-  income: '#078A58',
-  incomeSoft: '#DFF6EC',
-  expense: '#E8395F',
-  expenseSoft: '#FEE7EC',
-  warning: '#A96600',
-  warningSoft: '#FEF3D6',
-  info: '#087F9B',
-  infoSoft: '#DEF4FA',
+  income: '#287A55',
+  incomeSoft: '#E3F1E9',
+  expense: '#B33A4A',
+  expenseSoft: '#F8E7E9',
+  warning: '#936015',
+  warningSoft: '#F7EFD9',
+  info: '#8E5945',
+  infoSoft: '#F5EAE5',
 
   // Chat
-  chatUserBubble: '#5758E6',
+  chatUserBubble: '#A84B32',
   chatAiBubble: '#FFFFFF',
 };
 
 const darkColors = {
   // Backgrounds
-  bg: '#0C0D16',
-  bgElevated: '#15161F',
-  surface: '#181926',
-  surfaceAlt: '#20222F',
+  bg: '#151210',
+  bgElevated: '#1C1815',
+  surface: '#211C19',
+  surfaceAlt: '#2B2521',
   overlay: 'rgba(0, 0, 0, 0.6)',
 
   // Text
-  text: '#F3F3F8',
-  textSecondary: '#B4B5C9',
-  textMuted: '#999AAF',
+  text: '#F5F0EC',
+  textSecondary: '#C9BCB4',
+  textMuted: '#A89990',
   onBrand: '#FFFFFF',
 
   // Borders
-  border: '#282A38',
-  borderStrong: '#363849',
+  border: '#3A312C',
+  borderStrong: '#50433C',
 
   // Brand accent (slightly lighter for dark bg)
-  brand: '#8A8DFF',
-  brandSoft: '#23233A',
-  brandStrong: '#A5A7FF',
-  brandText: '#A5A7FF',
+  brand: '#B85B3C',
+  brandSoft: '#3A251E',
+  brandStrong: '#D77B59',
+  brandText: '#F0A080',
 
   // Semantic
-  income: '#3FD69A',
-  incomeSoft: '#12281F',
-  expense: '#FF6B85',
-  expenseSoft: '#2E1620',
-  warning: '#F5B342',
-  warningSoft: '#2C2312',
-  info: '#4CC7E4',
-  infoSoft: '#122730',
+  income: '#68C394',
+  incomeSoft: '#193126',
+  expense: '#F07C88',
+  expenseSoft: '#391E24',
+  warning: '#E0AE5B',
+  warningSoft: '#352A18',
+  info: '#D89A7E',
+  infoSoft: '#34241E',
 
   // Chat
-  chatUserBubble: '#6668EE',
-  chatAiBubble: '#181926',
+  chatUserBubble: '#B85B3C',
+  chatAiBubble: '#211C19',
 };
 
 function makeShadows(dark) {
@@ -112,9 +113,9 @@ function makeShadows(dark) {
     };
   }
   return {
-    sm: { shadowColor: '#20213D', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.045, shadowRadius: 6, elevation: 1 },
-    md: { shadowColor: '#20213D', shadowOffset: { width: 0, height: 5 }, shadowOpacity: 0.07, shadowRadius: 14, elevation: 3 },
-    lg: { shadowColor: '#20213D', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.1, shadowRadius: 26, elevation: 7 },
+    sm: { shadowColor: '#3B2B25', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.045, shadowRadius: 6, elevation: 1 },
+    md: { shadowColor: '#3B2B25', shadowOffset: { width: 0, height: 5 }, shadowOpacity: 0.07, shadowRadius: 14, elevation: 3 },
+    lg: { shadowColor: '#3B2B25', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.1, shadowRadius: 26, elevation: 7 },
   };
 }
 

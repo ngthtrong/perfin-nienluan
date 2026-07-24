@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="drawio" version="30.3.11">
+  <diagram id="07-conversation-state" name="Page-1">
+    <mxGraphModel grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1800" pageHeight="900" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="idle" value="IDLE&#10;chưa có intent" style="ellipse;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;strokeWidth=2;fontSize=21;fontFamily=Arial;align=center;" vertex="1" parent="1">
+          <mxGeometry x="60" y="360" width="240" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="parse" value="PARSE&#10;tạo draft" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;strokeWidth=2;fontSize=21;fontFamily=Arial;align=center;" vertex="1" parent="1">
+          <mxGeometry x="370" y="360" width="240" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="check" value="Đủ trường?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;strokeWidth=2;fontSize=21;fontFamily=Arial;align=center;" vertex="1" parent="1">
+          <mxGeometry x="700" y="350" width="240" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="collect" value="COLLECTING&#10;awaiting + candidates" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;strokeWidth=2;fontSize=21;fontFamily=Arial;align=center;" vertex="1" parent="1">
+          <mxGeometry x="670" y="90" width="300" height="105" as="geometry" />
+        </mxCell>
+        <mxCell id="preview" value="PREVIEW&#10;pending TTL 5 phút" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d9eaf7;strokeColor=#4f81bd;strokeWidth=2;fontSize=21;fontFamily=Arial;align=center;" vertex="1" parent="1">
+          <mxGeometry x="1050" y="350" width="300" height="115" as="geometry" />
+        </mxCell>
+        <mxCell id="confirmed" value="CONFIRMED&#10;claim một lần → commit" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;strokeWidth=2;fontSize=21;fontFamily=Arial;align=center;" vertex="1" parent="1">
+          <mxGeometry x="1430" y="355" width="300" height="105" as="geometry" />
+        </mxCell>
+        <mxCell id="cancel" value="CANCELLED&#10;không ghi dữ liệu" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;strokeWidth=2;fontSize=21;fontFamily=Arial;align=center;" vertex="1" parent="1">
+          <mxGeometry x="1050" y="650" width="300" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="expired" value="EXPIRED&#10;TTL hết hạn" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;strokeWidth=2;fontSize=21;fontFamily=Arial;align=center;" vertex="1" parent="1">
+          <mxGeometry x="400" y="650" width="300" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-1" value="" style="edgeStyle=orthogonalEdgeStyle;curved=0;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;endArrow=block;endSize=9;labelBackgroundColor=#ffffff;fontSize=20;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="1" source="idle" target="parse">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-2" value="draft" style="edgeStyle=orthogonalEdgeStyle;curved=0;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;endArrow=block;endSize=9;labelBackgroundColor=#ffffff;fontSize=20;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="1" source="parse" target="check">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-3" value="thiếu / bổ sung" style="edgeStyle=orthogonalEdgeStyle;curved=0;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;endArrow=block;endSize=9;labelBackgroundColor=#ffffff;fontSize=20;exitX=0.5;exitY=0;entryX=0.5;entryY=1;startArrow=block;startSize=9;" edge="1" parent="1" source="check" target="collect">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-4" value="đủ" style="edgeStyle=orthogonalEdgeStyle;curved=0;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;endArrow=block;endSize=9;labelBackgroundColor=#ffffff;fontSize=20;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="1" source="check" target="preview">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-5" value="" style="edgeStyle=orthogonalEdgeStyle;curved=0;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;endArrow=block;endSize=9;labelBackgroundColor=#ffffff;fontSize=20;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="1" source="preview" target="confirmed">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-6" value="hủy" style="edgeStyle=orthogonalEdgeStyle;curved=0;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;endArrow=block;endSize=9;labelBackgroundColor=#ffffff;fontSize=20;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="preview" target="cancel">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-7" value="hết TTL" style="edgeStyle=orthogonalEdgeStyle;curved=0;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;endArrow=block;endSize=9;labelBackgroundColor=#ffffff;fontSize=20;exitX=0;exitY=0.5;entryX=0.5;entryY=0;" edge="1" parent="1" source="preview" target="expired">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1000" y="408" />
+              <mxPoint x="1000" y="580" />
+              <mxPoint x="550" y="580" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

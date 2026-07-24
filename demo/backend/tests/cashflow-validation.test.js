@@ -17,3 +17,14 @@ test('transfer validation rejects invalid, incomplete, and same-wallet transfers
   assert.throws(() => validateTransferInput({ from_wallet_id: -1, to_wallet_id: 2, amount: 1000 }), /Ví nguồn không hợp lệ/);
   assert.throws(() => validateTransferInput({ to_wallet_id: 2, amount: 1000, transfer_type: 'unknown' }), /không hợp lệ/);
 });
+
+test('transfer validation rejects a future financial event date', () => {
+  assert.throws(() => validateTransferInput({
+    from_wallet_id: 1,
+    to_wallet_id: 2,
+    amount: 1000,
+    transaction_date: '2026-07-19',
+  }, {
+    today: new Date(2026, 6, 18, 23, 59),
+  }), /Ngày chuyển tiền không được nằm trong tương lai/);
+});

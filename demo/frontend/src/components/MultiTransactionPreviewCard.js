@@ -1,11 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useTheme } from '../theme/ThemeContext';
-import { formatVND } from '../utils/formatters';
+import { formatDate, formatMoneyValue, formatVND, parseMoneyInput, toDateInputValue } from '../utils/formatters';
 import AppIcon from './AppIcon';
+import { Chip, DatePickerField, MoneyInput } from './ui';
 
 export default function MultiTransactionPreviewCard({
   transactions = [],
+  categories = [],
   onConfirm,
   onCancel,
   onEdit,
@@ -29,8 +31,10 @@ export default function MultiTransactionPreviewCard({
     }
     setDraft({
       description: item.description || '',
-      amount: String(item.amount || ''),
+      amount: formatMoneyValue(item.amount),
       type: item.type === 'income' ? 'income' : 'expense',
+      category_id: item.category_id || null,
+      transaction_date: toDateInputValue(item.transaction_date),
     });
   }, [transactions, editingIndex]);
 
@@ -39,19 +43,24 @@ export default function MultiTransactionPreviewCard({
     setEditingIndex(index);
     setDraft({
       description: item.description || '',
-      amount: String(item.amount || ''),
+      amount: formatMoneyValue(item.amount),
       type: item.type === 'income' ? 'income' : 'expense',
+      category_id: item.category_id || null,
+      transaction_date: toDateInputValue(item.transaction_date),
     });
   }
 
   async function saveEdit() {
-    if (!draft?.description.trim() || !(Number(draft.amount) > 0)) return;
+    const amount = parseMoneyInput(draft?.amount);
+    if (!draft?.description.trim() || !(amount > 0) || !draft.category_id || !draft.transaction_date) return;
     setSaving(true);
     try {
       const updated = await onEdit?.(editingIndex, {
         description: draft.description.trim(),
-        amount: Number(draft.amount),
+        amount,
         type: draft.type,
+        category_id: draft.category_id,
+        transaction_date: draft.transaction_date,
       });
       if (updated !== false) {
         setEditingIndex(null);
@@ -102,11 +111,10 @@ export default function MultiTransactionPreviewCard({
                       placeholderTextColor={c.textMuted}
                     />
                     <Text style={styles.fieldLabel}>Số tiền (VND)</Text>
-                    <TextInput
+                    <MoneyInput
                       style={styles.input}
                       value={draft.amount}
                       onChangeText={(amount) => setDraft((prev) => ({ ...prev, amount }))}
-                      keyboardType="numeric"
                       placeholder="Số tiền"
                       placeholderTextColor={c.textMuted}
                     />
@@ -118,7 +126,11 @@ export default function MultiTransactionPreviewCard({
                         <TouchableOpacity
                           key={option.value}
                           style={[styles.typeChip, draft.type === option.value && styles.typeChipActive]}
-                          onPress={() => setDraft((prev) => ({ ...prev, type: option.value }))}
+                          onPress={() => setDraft((prev) => ({
+                            ...prev,
+                            type: option.value,
+                            category_id: categories.find((category) => category.type === option.value)?.id || null,
+                          }))}
                         >
                           <Text style={[styles.typeChipText, draft.type === option.value && styles.typeChipTextActive]}>
                             {option.label}
@@ -126,6 +138,32 @@ export default function MultiTransactionPreviewCard({
                         </TouchableOpacity>
                       ))}
                     </View>
+                    <Text style={styles.fieldLabel}>Ngày giao dịch</Text>
+                    <DatePickerField
+                      accessibilityLabel={`Chọn ngày giao dịch ${index + 1}`}
+                      clearable={false}
+                      maximumDate={new Date()}
+                      onChange={(transaction_date) => setDraft((prev) => ({ ...prev, transaction_date }))}
+                      style={styles.fieldControl}
+                      value={draft.transaction_date}
+                    />
+                    <Text style={styles.fieldLabel}>Danh mục</Text>
+                    <ScrollView
+                      horizontal
+                      showsHorizontalScrollIndicator={false}
+                      contentContainerStyle={styles.categoryList}
+                    >
+                      {categories
+                        .filter((category) => category.type === draft.type)
+                        .map((category) => (
+                          <Chip
+                            key={category.id}
+                            active={Number(draft.category_id) === Number(category.id)}
+                            label={category.name}
+                            onPress={() => setDraft((prev) => ({ ...prev, category_id: category.id }))}
+                          />
+                        ))}
+                    </ScrollView>
                     <View style={styles.editActions}>
                       <TouchableOpacity style={styles.saveButton} onPress={saveEdit} disabled={saving}>
                         {saving
@@ -151,7 +189,10 @@ export default function MultiTransactionPreviewCard({
                       <Text style={styles.description} numberOfLines={2}>
                         {transaction.category_icon ? `${transaction.category_icon} ` : ''}{transaction.description}
                       </Text>
-                      <Text style={styles.category}>{transaction.category_name || 'Chưa phân loại'}</Text>
+                      <Text style={styles.category}>
+                        {transaction.category_name || 'Chưa phân loại'}
+                        {transaction.transaction_date ? ` · ${formatDate(transaction.transaction_date)}` : ''}
+                      </Text>
                     </View>
                     <View style={styles.amountColumn}>
                       <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.68} style={[styles.amount, { color: income ? c.income : c.expense }]}>
@@ -236,6 +277,8 @@ const createStyles = (t) => StyleSheet.create({
     paddingHorizontal: 11, paddingVertical: 9, marginBottom: 9,
     color: t.colors.text, backgroundColor: t.colors.surfaceAlt, fontSize: 13,
   },
+  fieldControl: { marginBottom: 9 },
+  categoryList: { gap: 7, paddingBottom: 10 },
   typeRow: { flexDirection: 'row', gap: 7, marginBottom: 10 },
   typeChip: {
     flex: 1, alignItems: 'center', paddingVertical: 7, borderRadius: t.radius.sm,

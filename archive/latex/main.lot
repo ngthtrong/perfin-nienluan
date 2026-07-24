@@ -1,14 +1,55 @@
+\xpginauxfiletrue 
+\contentsline {table}{\numberline {1}{\ignorespaces Quy ước mức độ xác nhận thông tin trong báo cáo}}{ix}{table.0.1}%
+\addvspace {10\p@ }
+\setforeignlanguage {vietnamese}
+\setforeignlanguage {vietnamese}
+\contentsline {table}{\numberline {2}{\ignorespaces Mục tiêu và tiêu chí đánh giá của đề tài}}{3}{table.caption.11}%
+\setforeignlanguage {vietnamese}
+\contentsline {table}{\numberline {3}{\ignorespaces Phạm vi thực hiện và nội dung ngoài phạm vi}}{4}{table.caption.12}%
+\addvspace {10\p@ }
+\setforeignlanguage {vietnamese}
+\contentsline {table}{\numberline {4}{\ignorespaces Các giải thuật xác định và tính năng sử dụng}}{9}{table.caption.13}%
+\setforeignlanguage {vietnamese}
+\contentsline {table}{\numberline {5}{\ignorespaces Ranh giới trách nhiệm giữa lõi xác định và LLM}}{14}{table.caption.14}%
+\setforeignlanguage {vietnamese}
+\contentsline {table}{\numberline {6}{\ignorespaces Công nghệ, tiêu chí lựa chọn và phương án thay thế}}{15}{table.caption.15}%
+\setforeignlanguage {vietnamese}
+\contentsline {table}{\numberline {7}{\ignorespaces Khoảng trống và hướng giải quyết của PERFIN}}{16}{table.caption.16}%
+\addvspace {10\p@ }
+\setforeignlanguage {vietnamese}
+\contentsline {table}{\numberline {8}{\ignorespaces Tác nhân của hệ thống}}{18}{table.caption.17}%
+\setforeignlanguage {vietnamese}
+\contentsline {table}{\numberline {9}{\ignorespaces Phân nhóm chức năng theo mức ưu tiên học thuật}}{20}{table.caption.18}%
+\contentsline {table}{\numberline {10}{\ignorespaces Yêu cầu chức năng}}{20}{table.3.10}%
+\contentsline {table}{\numberline {11}{\ignorespaces Yêu cầu phi chức năng và cách đo}}{28}{table.3.11}%
+\setforeignlanguage {vietnamese}
+\setforeignlanguage {vietnamese}
+\contentsline {table}{\numberline {12}{\ignorespaces Thành phần kiến trúc và trách nhiệm}}{32}{table.caption.20}%
+\setforeignlanguage {vietnamese}
+\setforeignlanguage {vietnamese}
+\setforeignlanguage {vietnamese}
+\setforeignlanguage {vietnamese}
+\contentsline {table}{\numberline {13}{\ignorespaces Nhóm thực thể dữ liệu chính}}{38}{table.caption.24}%
+\setforeignlanguage {vietnamese}
+\setforeignlanguage {vietnamese}
+\setforeignlanguage {vietnamese}
+\setforeignlanguage {vietnamese}
+\setforeignlanguage {vietnamese}
+\setforeignlanguage {vietnamese}
+\setforeignlanguage {vietnamese}
+\setforeignlanguage {vietnamese}
+\contentsline {table}{\numberline {14}{\ignorespaces Điều kiện kiểm soát thao tác do LLM khởi tạo}}{47}{table.3.14}%
+\contentsline {table}{\numberline {15}{\ignorespaces Ma trận kiểm thử}}{48}{table.3.15}%
+\setforeignlanguage {vietnamese}
+\contentsline {table}{\numberline {16}{\ignorespaces Bộ chỉ số đánh giá}}{49}{table.caption.33}%
+\contentsline {table}{\numberline {17}{\ignorespaces Kết quả đã đo và phép đo còn thiếu}}{50}{table.3.17}%
+\contentsline {table}{\numberline {18}{\ignorespaces Trạng thái và hành vi đích của chức năng trọng yếu}}{52}{table.3.18}%
+\addvspace {10\p@ }
+\setforeignlanguage {vietnamese}
+\contentsline {table}{\numberline {19}{\ignorespaces Đối chiếu mục tiêu với bằng chứng}}{54}{table.caption.34}%
 \addvspace {10\p@ }
 \addvspace {10\p@ }
-\contentsline {table}{\numberline {2.1}{\ignorespaces Ưu điểm và hạn chế khi tích hợp LLM vào ứng dụng}}{8}{table.2.1}%
-\contentsline {table}{\numberline {2.2}{\ignorespaces So sánh PerFin với các ứng dụng quản lý tài chính liên quan}}{14}{table.2.2}%
-\addvspace {10\p@ }
-\contentsline {table}{\numberline {3.1}{\ignorespaces Các tác nhân trong hệ thống}}{16}{table.3.1}%
-\contentsline {table}{\numberline {3.2}{\ignorespaces Danh sách các yêu cầu hệ thống}}{17}{table.3.2}%
-\contentsline {table}{\numberline {3.3}{\ignorespaces Các yêu cầu phi chức năng}}{19}{table.3.3}%
-\contentsline {table}{\numberline {3.4}{\ignorespaces Kế hoạch kiểm thử}}{35}{table.3.4}%
-\contentsline {table}{\numberline {3.5}{\ignorespaces Các test case chính}}{36}{table.3.5}%
 \addvspace {10\p@ }
 \addvspace {10\p@ }
-\contentsline {table}{\numberline {A.1}{\ignorespaces Danh sách các sơ đồ thiết kế}}{41}{table.A.1}%
 \addvspace {10\p@ }
+\xpginauxfilefalse 

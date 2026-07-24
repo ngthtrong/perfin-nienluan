@@ -1,27 +1,46 @@
 import { useEffect, useState, useMemo } from 'react';
-import { ActivityIndicator, View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
+import { ActivityIndicator, ScrollView, View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
 import BalanceDisplay from './BalanceDisplay';
 import AppIcon from './AppIcon';
 import { useTheme } from '../theme/ThemeContext';
-import { formatDate } from '../utils/formatters';
+import { formatDate, formatMoneyValue, parseMoneyInput, toDateInputValue } from '../utils/formatters';
+import { Chip, DatePickerField, MoneyInput } from './ui';
 
-export default function TransactionPreviewCard({ transaction, onConfirm, onCancel, onEdit, busy = false, resolved = false }) {
+export default function TransactionPreviewCard({
+  transaction,
+  categories = [],
+  onConfirm,
+  onCancel,
+  onEdit,
+  busy = false,
+  resolved = false,
+}) {
   const { theme } = useTheme();
   const styles = useMemo(() => createStyles(theme), [theme]);
   const c = theme.colors;
 
   const [editing, setEditing] = useState(false);
-  const [amount, setAmount] = useState(String(transaction.amount || ''));
+  const [amount, setAmount] = useState(formatMoneyValue(transaction.amount));
   const [description, setDescription] = useState(transaction.description || '');
+  const [transactionDate, setTransactionDate] = useState(toDateInputValue(transaction.transaction_date));
+  const [categoryId, setCategoryId] = useState(transaction.category_id || null);
 
   useEffect(() => {
-    setAmount(String(transaction.amount || ''));
+    setAmount(formatMoneyValue(transaction.amount));
     setDescription(transaction.description || '');
-  }, [transaction.amount, transaction.description]);
+    setTransactionDate(toDateInputValue(transaction.transaction_date));
+    setCategoryId(transaction.category_id || null);
+  }, [transaction.amount, transaction.category_id, transaction.description, transaction.transaction_date]);
 
   async function saveEdit() {
-    if (!description.trim() || !(Number(amount) > 0)) return;
-    const updated = await onEdit?.({ description: description.trim(), amount: Number(amount) });
+    const parsedAmount = parseMoneyInput(amount);
+    if (!description.trim() || !(parsedAmount > 0) || !categoryId || !transactionDate) return;
+    const updated = await onEdit?.({
+      description: description.trim(),
+      amount: parsedAmount,
+      category_id: categoryId,
+      transaction_date: transactionDate,
+    });
     if (updated !== false) setEditing(false);
   }
 
@@ -54,14 +73,39 @@ export default function TransactionPreviewCard({ transaction, onConfirm, onCance
               placeholderTextColor={c.textMuted}
             />
             <Text style={styles.fieldLabel}>Số tiền (VND)</Text>
-            <TextInput
+            <MoneyInput
               style={styles.input}
               value={amount}
               onChangeText={setAmount}
-              keyboardType="numeric"
               placeholder="Nhập số tiền"
               placeholderTextColor={c.textMuted}
             />
+            <Text style={styles.fieldLabel}>Ngày giao dịch</Text>
+            <DatePickerField
+              accessibilityLabel="Chọn ngày giao dịch"
+              clearable={false}
+              maximumDate={new Date()}
+              onChange={setTransactionDate}
+              style={styles.fieldControl}
+              value={transactionDate}
+            />
+            <Text style={styles.fieldLabel}>Danh mục</Text>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.categoryList}
+            >
+              {categories
+                .filter((category) => category.type === transaction.type)
+                .map((category) => (
+                  <Chip
+                    key={category.id}
+                    active={Number(categoryId) === Number(category.id)}
+                    label={category.name}
+                    onPress={() => setCategoryId(category.id)}
+                  />
+                ))}
+            </ScrollView>
             <TouchableOpacity
               style={styles.saveBtn}
               onPress={saveEdit}
@@ -155,6 +199,8 @@ const createStyles = (t) => StyleSheet.create({
     borderWidth: 1.5, borderColor: t.colors.border, borderRadius: t.radius.md,
     padding: 12, marginBottom: 12, fontSize: 15, color: t.colors.text, backgroundColor: t.colors.surfaceAlt,
   },
+  fieldControl: { marginBottom: 12 },
+  categoryList: { gap: 7, paddingBottom: 12 },
   saveBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
     backgroundColor: t.colors.brand, padding: 13, borderRadius: t.radius.md, ...t.shadows.sm,

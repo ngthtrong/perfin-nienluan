@@ -10,6 +10,7 @@ const BudgetModel = require('../models/budget.model');
 const BudgetRecommendationService = require('../services/budgets');
 const { forecastBudgets } = require('../services/budgets/forecast');
 const { FeedbackService, CategoryRetagService } = require('../services/feedback');
+const { recordFeedbackAfterCommit } = require('../services/feedback/bestEffort');
 const ReportService = require('../services/report.service');
 const AnalyticsEngine = require('../services/analytics');
 const GoalService = require('../services/goals');
@@ -25,6 +26,10 @@ const ChatMessage = require('../models/chatMessage.model');
 const pending = require('../services/pendingTransaction.service');
 const { matchCategory, normalizeAmount, normalizeText } = require('../services/parser.service');
 const { isRecurringPaymentAcknowledgement } = require('../services/ai/localIntentRouter');
+const {
+  normalizePastOrPresentDate,
+  validateTransactionPayload,
+} = require('../services/transactions/validation');
 
 const router = express.Router();
 const userId = 'default_user';
@@ -42,6 +47,171 @@ async function applyPersona(text) {
 
 function previewResponse(transaction, pendingId, message = 'Mình hiểu bạn muốn ghi nhận giao dịch này:') {
   return { type: 'transaction_preview', message, transaction, pending_id: pendingId };
+}
+
+function editValidationError(message) {
+  const error = new Error(message);
+  error.status = 400;
+  error.code = 'VALIDATION_ERROR';
+  return error;
+}
+
+function hasOwn(value, key) {
+  return Object.prototype.hasOwnProperty.call(value, key);
+}
+
+async function preparePendingTransactionUpdates(currentTransaction, rawUpdates, {
+  categories = null,
+  today = new Date(),
+} = {}) {
+  if (!currentTransaction || typeof currentTransaction !== 'object') {
+    throw editValidationError('Giao dịch chờ sửa không hợp lệ');
+  }
+  if (!rawUpdates || typeof rawUpdates !== 'object' || Array.isArray(rawUpdates)) {
+    throw editValidationError('Nội dung chỉnh sửa giao dịch không hợp lệ');
+  }
+
+  const updates = { ...rawUpdates };
+  // Accept camelCase aliases from older/native clients while keeping the public
+  // response and stored draft in the canonical database field names.
+  if (hasOwn(updates, 'categoryId') && !hasOwn(updates, 'category_id')) {
+    updates.category_id = updates.categoryId;
+  }
+  if (hasOwn(updates, 'date') && !hasOwn(updates, 'transaction_date')) {
+    updates.transaction_date = updates.date;
+  }
+  delete updates.categoryId;
+  delete updates.date;
+
+  validateTransactionPayload(updates, {
+    partial: true,
+    rejectUnknown: true,
+    today,
+  });
+
+  if (hasOwn(updates, 'description')) updates.description = updates.description.trim();
+  if (hasOwn(updates, 'amount')) updates.amount = Number(updates.amount);
+  if (hasOwn(updates, 'wallet_id')) updates.wallet_id = Number(updates.wallet_id);
+  if (hasOwn(updates, 'transaction_date') && typeof updates.transaction_date === 'string') {
+    updates.transaction_date = updates.transaction_date.trim();
+  }
+
+  if (hasOwn(updates, 'category_id') || hasOwn(updates, 'type')) {
+    const categoryId = Number(updates.category_id ?? currentTransaction.category_id);
+    const transactionType = updates.type ?? currentTransaction.type;
+    const availableCategories = categories || await CategoryModel.getAll(userId);
+    const category = availableCategories.find((item) => Number(item.id) === categoryId);
+    if (!category) throw editValidationError('Danh mục không tồn tại hoặc không thuộc người dùng');
+    if (category.type !== transactionType) {
+      throw editValidationError('Danh mục không khớp với loại giao dịch');
+    }
+    updates.category_id = categoryId;
+    updates.category_name = category.name;
+    updates.category_icon = category.icon;
+  }
+
+  return updates;
+}
+
+function categorySnapshot(transaction = {}) {
+  const categoryId = Number(transaction.category_id);
+  return {
+    category_id: Number.isInteger(categoryId) && categoryId > 0 ? categoryId : null,
+    category_name: String(transaction.category_name || '').trim() || null,
+  };
+}
+
+function categorySnapshotKey(category) {
+  if (category?.category_id) return `id:${category.category_id}`;
+  return category?.category_name ? `name:${category.category_name.toLocaleLowerCase('vi')}` : null;
+}
+
+function updateClassificationCorrectionMetadata(metadata = {}, currentTransaction, updates, index = 0) {
+  if (!hasOwn(updates || {}, 'category_id')) return metadata;
+
+  const key = String(index);
+  const corrections = { ...(metadata.classification_corrections || {}) };
+  const existing = corrections[key];
+  const originalCategory = existing?.original_category || categorySnapshot(currentTransaction);
+  const correctedCategory = categorySnapshot({ ...currentTransaction, ...updates });
+
+  if (!categorySnapshotKey(originalCategory)
+      || categorySnapshotKey(originalCategory) === categorySnapshotKey(correctedCategory)) {
+    delete corrections[key];
+  } else {
+    corrections[key] = {
+      original_category: originalCategory,
+      corrected_category: correctedCategory,
+    };
+  }
+
+  const nextMetadata = { ...metadata };
+  if (Object.keys(corrections).length) nextMetadata.classification_corrections = corrections;
+  else delete nextMetadata.classification_corrections;
+  return nextMetadata;
+}
+
+async function recordPendingClassificationFeedback(item, savedTransactions, {
+  feedbackService = FeedbackService,
+  recordAfterCommit = recordFeedbackAfterCommit,
+} = {}) {
+  const corrections = item?.metadata?.classification_corrections;
+  if (!corrections || typeof corrections !== 'object') return 0;
+
+  const drafts = item.kind === 'transactions' ? item.data : [item.data];
+  const saved = Array.isArray(savedTransactions) ? savedTransactions : [savedTransactions];
+  let recorded = 0;
+  for (const [rawIndex, correction] of Object.entries(corrections)) {
+    const index = Number(rawIndex);
+    const draft = drafts?.[index];
+    const transaction = saved?.[index];
+    if (!Number.isInteger(index) || index < 0 || !draft || !transaction?.id) continue;
+    if (!['ai_chat', 'ocr', 'voice'].includes(draft.source) || !String(draft.original_text || '').trim()) continue;
+
+    const originalCategory = correction?.original_category;
+    const correctedCategory = categorySnapshot(transaction);
+    if (!categorySnapshotKey(originalCategory)
+        || categorySnapshotKey(originalCategory) === categorySnapshotKey(correctedCategory)) continue;
+
+    await recordAfterCommit('classification', () => feedbackService.recordClassificationCorrection({
+      userId,
+      transactionId: transaction.id,
+      originalText: draft.original_text,
+      aiResult: originalCategory,
+      correctedResult: correctedCategory,
+    }));
+    recorded += 1;
+  }
+  return recorded;
+}
+
+function validatePendingTransactionDates(item, today = new Date()) {
+  if (!item) return;
+  if (item.kind === 'transfer') {
+    normalizePastOrPresentDate(item.data?.transaction_date, {
+      label: 'Ngày chuyển tiền',
+      today,
+      optional: true,
+    });
+    return;
+  }
+  if (item.kind === 'investment_pnl') {
+    normalizePastOrPresentDate(item.data?.recorded_at, {
+      label: 'Ngày ghi nhận lãi/lỗ',
+      today,
+      optional: true,
+    });
+    return;
+  }
+  if (!['transaction', 'transactions', 'recurring_payment'].includes(item.kind)) return;
+  const drafts = item.kind === 'transactions' ? item.data : [item.data];
+  for (const draft of drafts || []) {
+    if (!draft || !hasOwn(draft, 'transaction_date')) continue;
+    validateTransactionPayload(
+      { transaction_date: draft.transaction_date },
+      { partial: true, rejectUnknown: true, today }
+    );
+  }
 }
 
 function messageMetadata(message) {
@@ -784,6 +954,7 @@ async function commitPendingItem(item) {
     };
   } else if (item.kind === 'transactions') {
     const transactions = await TransactionModel.createMany(item.data, userId);
+    await recordPendingClassificationFeedback(item, transactions);
     const proactive_job = await enqueueJob(JOB_NAMES.RUNWAY_SCAN, { userId, trigger: 'transactions_created' });
     const total = transactions.reduce((sum, tx) => sum + Number(tx.amount), 0);
     const budgetAlerts = await budgetAlertsForTransactions(transactions);
@@ -822,6 +993,7 @@ async function commitPendingItem(item) {
     data = { type: 'system_message', message: await applyPersona(`Đã ghi nhận ${Number(investment.amount) >= 0 ? 'lãi' : 'lỗ'} ${formatVND(Math.abs(investment.amount))}.`), investment };
   } else {
     const saved = await TransactionModel.create({ ...item.data, userId });
+    await recordPendingClassificationFeedback(item, [saved]);
     const proactive_job = await enqueueJob(JOB_NAMES.RUNWAY_SCAN, { userId, trigger: 'transaction_created' });
     const budgetAlerts = await budgetAlertsForTransactions([saved]);
     const categorySuggestions = await categorySuggestionsForTransactions([saved]);
@@ -859,6 +1031,12 @@ function pendingIdFromBody(body = {}) {
 }
 
 async function claimPendingRequest(expectedId = null) {
+  // Validate while the preview is still stored. A future date must not consume
+  // the pending item: the user can use /edit to correct it and confirm again.
+  const preview = await pending.get(userId);
+  if (preview && (!expectedId || String(preview.id) === String(expectedId))) {
+    validatePendingTransactionDates(preview);
+  }
   const item = await pending.claim(userId, expectedId);
   if (item) return { item };
 
@@ -1015,7 +1193,16 @@ router.post('/edit', async (req, res, next) => {
     let item;
     if (current?.kind === 'transactions' && Number.isInteger(Number(req.body.index))) {
       const index = Number(req.body.index);
-      item = await pending.updateAt(userId, index, req.body.transaction || req.body.updates || {}, expectedId);
+      const rawUpdates = req.body.transaction || req.body.updates || {};
+      const updates = await preparePendingTransactionUpdates(current.data?.[index], rawUpdates);
+      item = await pending.updateAt(userId, index, updates, expectedId, {
+        updateMetadata: (metadata) => updateClassificationCorrectionMetadata(
+          metadata,
+          current.data[index],
+          updates,
+          index
+        ),
+      });
     } else {
       const {
         pending_id: _pendingId,
@@ -1025,7 +1212,17 @@ router.post('/edit', async (req, res, next) => {
         updates,
         ...directUpdates
       } = req.body;
-      item = await pending.update(userId, transaction || updates || directUpdates, expectedId);
+      const rawUpdates = transaction || updates || directUpdates;
+      const preparedUpdates = ['transaction', 'recurring_payment'].includes(current?.kind)
+        ? await preparePendingTransactionUpdates(current.data, rawUpdates)
+        : rawUpdates;
+      item = await pending.update(userId, preparedUpdates, expectedId, {
+        updateMetadata: (metadata) => (
+          ['transaction', 'recurring_payment'].includes(current?.kind)
+            ? updateClassificationCorrectionMetadata(metadata, current.data, preparedUpdates, 0)
+            : metadata
+        ),
+      });
     }
     if (!item) {
       const latest = await pending.get(userId);
@@ -1066,3 +1263,7 @@ module.exports.transactionMonthWindow = transactionMonthWindow;
 module.exports.totalsFromTransactions = totalsFromTransactions;
 module.exports.handleRecurringPay = handleRecurringPay;
 module.exports.handleTransactionQuery = handleTransactionQuery;
+module.exports.preparePendingTransactionUpdates = preparePendingTransactionUpdates;
+module.exports.validatePendingTransactionDates = validatePendingTransactionDates;
+module.exports.updateClassificationCorrectionMetadata = updateClassificationCorrectionMetadata;
+module.exports.recordPendingClassificationFeedback = recordPendingClassificationFeedback;

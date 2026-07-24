@@ -22,6 +22,7 @@ function ReceiptOption({ active, icon, label, detail, onPress, styles, colors })
 export default function MediaConfirmationCard({
   kind,
   text,
+  context,
   receiptOptions,
   onConfirm,
   onCancel,
@@ -66,6 +67,15 @@ export default function MediaConfirmationCard({
             />
           ) : (
             <View style={{ gap: 8 }}>
+              {context ? (
+                <View style={styles.contextBox}>
+                  <AppIcon name="chat-bubble-outline" size={15} color={c.textMuted} />
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.contextLabel}>Ngữ cảnh bạn đã gửi cùng ảnh</Text>
+                    <Text style={styles.contextText}>{context}</Text>
+                  </View>
+                </View>
+              ) : null}
               {total && (
                 <ReceiptOption
                   active={mode === 'total'}
@@ -150,6 +160,13 @@ const createStyles = (t) => StyleSheet.create({
     borderRadius: t.radius.md, padding: 12, backgroundColor: t.colors.surfaceAlt,
     color: t.colors.text, fontSize: 14, lineHeight: 20, textAlignVertical: 'top',
   },
+  contextBox: {
+    flexDirection: 'row', alignItems: 'flex-start', gap: 8, padding: 10,
+    borderRadius: t.radius.sm, backgroundColor: t.colors.surfaceAlt,
+    borderWidth: 1, borderColor: t.colors.border,
+  },
+  contextLabel: { color: t.colors.textMuted, fontSize: 10, fontWeight: '700', marginBottom: 2 },
+  contextText: { color: t.colors.textSecondary, fontSize: 12, lineHeight: 17, fontWeight: '600' },
   option: {
     flexDirection: 'row', alignItems: 'center', gap: 9, padding: 11,
     borderRadius: t.radius.md, borderWidth: 1.5, borderColor: t.colors.border,

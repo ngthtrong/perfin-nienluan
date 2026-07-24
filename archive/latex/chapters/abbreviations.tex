@@ -1,37 +1,64 @@
-\chapter*{Danh mục các từ viết tắt}
-\addcontentsline{toc}{chapter}{Danh mục các từ viết tắt}
+\frontchapter{Danh mục các từ viết tắt}
 
-\begin{tabularx}{\textwidth}{|l|X|}
-\hline
-\textbf{Từ viết tắt} & \textbf{Giải thích đầy đủ} \\ \hline
-2FA & Two-Factor Authentication --- Xác thực hai yếu tố \\ \hline
-ACID & Atomicity, Consistency, Isolation, Durability --- Tính nguyên tử, nhất quán, cô lập, bền vững \\ \hline
-AES & Advanced Encryption Standard --- Tiêu chuẩn mã hóa nâng cao \\ \hline
-AI & Artificial Intelligence --- Trí tuệ nhân tạo \\ \hline
-API & Application Programming Interface --- Giao diện lập trình ứng dụng \\ \hline
-CRUD & Create, Read, Update, Delete --- Tạo, Đọc, Cập nhật, Xóa \\ \hline
-CSV & Comma-Separated Values --- Giá trị phân cách bằng dấu phẩy \\ \hline
-ERD & Entity Relationship Diagram --- Sơ đồ quan hệ thực thể \\ \hline
-FR & Functional Requirement --- Yêu cầu chức năng \\ \hline
-HTTP & Hypertext Transfer Protocol --- Giao thức truyền siêu văn bản \\ \hline
-HTTPS & Hypertext Transfer Protocol Secure --- Giao thức truyền siêu văn bản bảo mật \\ \hline
-IoC & Inversion of Control --- Đảo ngược điều khiển \\ \hline
-JWT & JSON Web Token \\ \hline
-LLM & Large Language Model --- Mô hình ngôn ngữ lớn \\ \hline
-MVP & Minimum Viable Product --- Sản phẩm khả thi tối thiểu \\ \hline
-NFR & Non-Functional Requirement --- Yêu cầu phi chức năng \\ \hline
-NLP & Natural Language Processing --- Xử lý ngôn ngữ tự nhiên \\ \hline
-OAuth & Open Authorization --- Ủy quyền mở \\ \hline
-OCR & Optical Character Recognition --- Nhận dạng ký tự quang học \\ \hline
-PDF & Portable Document Format \\ \hline
-RDBMS & Relational Database Management System --- Hệ quản trị cơ sở dữ liệu quan hệ \\ \hline
-REST & Representational State Transfer \\ \hline
-SDK & Software Development Kit --- Bộ công cụ phát triển phần mềm \\ \hline
-SQL & Structured Query Language --- Ngôn ngữ truy vấn có cấu trúc \\ \hline
-SRS & Software Requirement Specification --- Đặc tả yêu cầu phần mềm \\ \hline
-STT & Speech-to-Text --- Chuyển giọng nói thành văn bản \\ \hline
-TLS & Transport Layer Security --- Bảo mật tầng vận chuyển \\ \hline
-UAT & User Acceptance Testing --- Kiểm thử chấp nhận người dùng \\ \hline
-UI & User Interface --- Giao diện người dùng \\ \hline
-UX & User Experience --- Trải nghiệm người dùng \\ \hline
-\end{tabularx}
+\begin{longtable}{@{}L{2.8cm}L{11.5cm}@{}}
+  \toprule
+  \textbf{Từ viết tắt} & \textbf{Diễn giải} \\
+  \midrule
+  \endfirsthead
+  \toprule
+  \textbf{Từ viết tắt} & \textbf{Diễn giải} \\
+  \midrule
+  \endhead
+  AI & Artificial Intelligence --- trí tuệ nhân tạo \\
+  API & Application Programming Interface --- giao diện lập trình ứng dụng \\
+  ASR & Automatic Speech Recognition --- nhận dạng tiếng nói tự động \\
+  CRUD & Create, Read, Update, Delete --- tạo, đọc, cập nhật, xóa \\
+  CSV & Comma-Separated Values --- dữ liệu phân tách bằng dấu phẩy \\
+  DB & Database --- cơ sở dữ liệu \\
+  ERD & Entity--Relationship Diagram --- sơ đồ quan hệ thực thể \\
+  F1 & Trung bình điều hòa giữa precision và recall \\
+  IQR & Interquartile Range --- khoảng tứ phân vị \\
+  JSON & JavaScript Object Notation \\
+  KV & Key--Value --- khóa--giá trị \\
+  LLM & Large Language Model --- mô hình ngôn ngữ lớn \\
+  NFR & Non-Functional Requirement --- yêu cầu phi chức năng \\
+  NLP & Natural Language Processing --- xử lý ngôn ngữ tự nhiên \\
+  OCR & Optical Character Recognition --- nhận dạng ký tự quang học \\
+  PII & Personally Identifiable Information --- dữ liệu định danh cá nhân \\
+  REST & Representational State Transfer \\
+  SRS & Software Requirements Specification --- đặc tả yêu cầu phần mềm \\
+  STT & Speech-to-Text --- chuyển giọng nói thành văn bản \\
+  TTL & Time To Live --- thời gian tồn tại của dữ liệu tạm \\
+  UI & User Interface --- giao diện người dùng \\
+  UAT & User Acceptance Testing --- kiểm thử chấp nhận người dùng \\
+  VND & Đồng Việt Nam \\
+  \bottomrule
+\end{longtable}
+
+% Longtable không caption ở trên vẫn tăng bộ đếm; đặt lại để bảng nội dung đầu
+% tiên mang đúng số 1.
+\setcounter{table}{0}
+
+\frontchapter{Quy ước trạng thái và kết quả}
+
+Báo cáo phân biệt rõ thành phần đã hiện thực, kết quả đã đo và hành vi mới ở
+mức thiết kế. Quy ước này ngăn kỳ vọng hoặc smoke test bị trình bày như bằng
+chứng chất lượng đã hoàn tất.
+
+\begin{longtable}{@{}L{3.0cm}L{5.2cm}L{5.8cm}@{}}
+  \caption{Quy ước mức độ xác nhận thông tin trong báo cáo}\label{tab:report-status}\\
+  \toprule
+  \textbf{Nhãn} & \textbf{Ý nghĩa} & \textbf{Cách sử dụng} \\
+  \midrule
+  \endfirsthead
+  \toprule
+  \textbf{Nhãn} & \textbf{Ý nghĩa} & \textbf{Cách sử dụng} \\
+  \midrule
+  \endhead
+  Đã hiện thực & Có thành phần tương ứng trong mã nguồn, migration hoặc test. & Chứng minh sự tồn tại, chưa tự động chứng minh chất lượng. \\
+  Đã đo & Có lệnh, thời điểm và kết quả chạy có thể tái lập. & Được phép đưa số liệu vào phần kết quả. \\
+  Mục tiêu & Ngưỡng mong muốn dùng làm tiêu chí nghiệm thu. & Không được trình bày như kết quả đã đạt. \\
+  Thiết kế đích & Hành vi dự kiến sau khi hoàn tất sửa lỗi trong phạm vi. & Phải được kiểm thử trước khi chuyển thành ``đã đo''. \\
+  Ngoài phạm vi & Không phải mục tiêu của niên luận hiện tại. & Chỉ nêu ở hạn chế hoặc hướng phát triển. \\
+  \bottomrule
+\end{longtable}

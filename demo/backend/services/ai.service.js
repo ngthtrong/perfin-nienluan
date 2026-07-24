@@ -6,6 +6,7 @@ const { matchCategory, normalizeText, parseLocalTransaction } = require('./parse
 const { routeLocalIntent } = require('./ai/localIntentRouter');
 const { FINANCIAL_TOOL_DECLARATIONS, toolCallToIntent } = require('./ai/toolDeclarations');
 const KVStore = require('./store/kv.store');
+const { localDateKey } = require('./transactions/validation');
 
 // Danh sách model Gemini được phép sử dụng
 const ALLOWED_GEMINI_MODELS = [
@@ -48,7 +49,7 @@ function normalizeTransaction(tx, categories) {
     category_id: category ? category.id : tx.category_id,
     category_name: category ? category.name : tx.category_name,
     category_icon: category ? category.icon : '📦',
-    transaction_date: tx.transaction_date || tx.date || new Date().toISOString().slice(0, 10),
+    transaction_date: tx.transaction_date || tx.date || localDateKey(),
     confidence: Number(tx.confidence || 0.7),
   };
 }
@@ -67,6 +68,13 @@ function normalizeAIResponse(parsed, categories) {
     transactions,
     needs_clarification: transactions.some((tx) => !tx.description || !(tx.amount > 0)),
   };
+}
+
+function combineMediaContext(extractedText, contextText = '') {
+  const extracted = String(extractedText || '').trim();
+  const context = String(contextText || '').trim();
+  if (!context) return extracted;
+  return `Ngữ cảnh người dùng cung cấp cùng ảnh:\n${context}\n\nVăn bản OCR:\n${extracted}`;
 }
 
 function parseCacheKey(text, categories, userPrompt) {
@@ -163,10 +171,12 @@ class AIServiceManager {
 
   // Extract a transaction from OCR receipt text or a voice transcript using a specialized
   // prompt, falling back to the regex parser when no LLM provider is available.
-  async parseFromMedia(text, categories, sourceType = 'receipt') {
+  async parseFromMedia(text, categories, sourceType = 'receipt', contextText = '') {
     const cleanText = String(text || '').trim();
     if (!cleanText) return { success: true, provider_used: 'local', ...parseLocalTransaction('', categories) };
-    const userPrompt = sourceType === 'voice' ? getVoicePrompt(cleanText) : getReceiptPrompt(cleanText);
+    const context = sourceType === 'receipt' ? String(contextText || '').trim() : '';
+    const localExtractionText = context ? `${context}\n${cleanText}` : cleanText;
+    const userPrompt = sourceType === 'voice' ? getVoicePrompt(cleanText) : getReceiptPrompt(cleanText, context);
     const parsed = await this.parseTransaction(cleanText, categories, userPrompt);
     const transactions = parsed?.transactions || (parsed?.transaction ? [parsed.transaction] : []);
     const hasUsableTransaction = transactions.some((transaction) => (
@@ -179,7 +189,7 @@ class AIServiceManager {
     // A provider may answer the extraction prompt as ordinary prose instead of a
     // tool call. Media confirmation is transaction-only, so try the deterministic
     // parser before returning a structured clarification to the user.
-    const local = parseLocalTransaction(cleanText, categories);
+    const local = parseLocalTransaction(localExtractionText, categories);
     return {
       success: true,
       provider_used: 'local',
@@ -327,3 +337,4 @@ module.exports.AIServiceManager = AIServiceManager;
 module.exports.normalizeAIResponse = normalizeAIResponse;
 module.exports.enforceInsightUnits = enforceInsightUnits;
 module.exports.isPriorityLocalIntent = isPriorityLocalIntent;
+module.exports.combineMediaContext = combineMediaContext;

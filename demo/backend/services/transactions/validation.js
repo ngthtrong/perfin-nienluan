@@ -31,7 +31,46 @@ function isValidDateOnly(value) {
     && parsed.getUTCDate() === day;
 }
 
-function validateTransactionPayload(data, { partial = false, requireWallet = false, rejectUnknown = false } = {}) {
+// A transaction date is a local calendar date. Using toISOString() here can move
+// "today" to the previous day around midnight in Viet Nam, so compare normalized
+// calendar keys instead of UTC instants.
+function localDateKey(value = new Date()) {
+  if (typeof value === 'string' && isValidDateOnly(value)) return value;
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function isFutureDateOnly(value, today = new Date()) {
+  if (!isValidDateOnly(value)) return false;
+  const valueKey = localDateKey(value);
+  const todayKey = localDateKey(today);
+  return Boolean(valueKey && todayKey && valueKey > todayKey);
+}
+
+function normalizePastOrPresentDate(value, {
+  label = 'Ngày',
+  today = new Date(),
+  optional = false,
+} = {}) {
+  if (value === undefined || value === null || value === '') {
+    if (optional) return null;
+    throw bad(`${label} không hợp lệ`);
+  }
+  if (!isValidDateOnly(value)) throw bad(`${label} không hợp lệ`);
+  if (isFutureDateOnly(value, today)) throw bad(`${label} không được nằm trong tương lai`);
+  return localDateKey(value);
+}
+
+function validateTransactionPayload(data, {
+  partial = false,
+  requireWallet = false,
+  rejectUnknown = false,
+  today = new Date(),
+} = {}) {
   if (!data || typeof data !== 'object' || Array.isArray(data)) {
     throw bad('Dữ liệu giao dịch không hợp lệ');
   }
@@ -72,8 +111,8 @@ function validateTransactionPayload(data, { partial = false, requireWallet = fal
     if (!Number.isInteger(walletId) || walletId <= 0) throw bad('Ví không hợp lệ');
   }
 
-  if (hasOwn(data, 'transaction_date') && !isValidDateOnly(data.transaction_date)) {
-    throw bad('Ngày giao dịch không hợp lệ');
+  if (hasOwn(data, 'transaction_date')) {
+    normalizePastOrPresentDate(data.transaction_date, { label: 'Ngày giao dịch', today });
   }
 
   if (hasOwn(data, 'note') && data.note !== null && typeof data.note !== 'string') {
@@ -86,5 +125,8 @@ function validateTransactionPayload(data, { partial = false, requireWallet = fal
 module.exports = {
   EDITABLE_FIELDS,
   isValidDateOnly,
+  isFutureDateOnly,
+  localDateKey,
+  normalizePastOrPresentDate,
   validateTransactionPayload,
 };

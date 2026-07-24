@@ -178,24 +178,24 @@ async function readUriAsBase64(uri) {
   return readBlobAsBase64(blob);
 }
 
-async function uploadBase64(path, name, mimeType, asset) {
+async function uploadBase64(path, name, mimeType, asset, fields = {}) {
   const base64 = await readUriAsBase64(asset.uri);
   const response = await fetch(`${BASE_URL}${path}`, {
     method: 'POST',
     headers: { ...TUNNEL_HEADERS, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ fileName: name, mimeType, base64 }),
+    body: JSON.stringify({ fileName: name, mimeType, base64, ...fields }),
   });
   return unwrapResponse(response);
 }
 
-async function upload(path, fieldName, asset, fallbackMimeType) {
+async function upload(path, fieldName, asset, fallbackMimeType, fields = {}) {
   const formData = new FormData();
   const mimeType = getMimeType(asset, fallbackMimeType);
   const name = getUploadName(fieldName, asset, mimeType);
 
   if (Platform.OS !== 'web') {
     try {
-      return await uploadBase64(path, name, mimeType, asset);
+      return await uploadBase64(path, name, mimeType, asset, fields);
     } catch (error) {
       if (error.fromApi) throw error;
       console.warn(`[api.upload] base64 upload failed, falling back to multipart: ${error.message}`);
@@ -212,6 +212,11 @@ async function upload(path, fieldName, asset, fallbackMimeType) {
       type: mimeType,
     });
   }
+  Object.entries(fields).forEach(([key, value]) => {
+    if (value !== null && value !== undefined && String(value).trim()) {
+      formData.append(key, String(value));
+    }
+  });
 
   let response;
   try {
@@ -256,14 +261,16 @@ export const api = {
   getChatMessages: (limit = 20) => request(`/api/chat/messages?limit=${encodeURIComponent(limit)}`),
   sendChat: (text) => request('/api/chat/message', { method: 'POST', body: JSON.stringify({ text }) }),
   transcribeAudio: (asset) => upload('/api/speech', 'audio', asset, 'audio/m4a'),
-  extractImageText: (asset) => upload('/api/ocr', 'image', asset, 'image/jpeg'),
+  extractImageText: (asset, context = '') => upload('/api/ocr', 'image', asset, 'image/jpeg', {
+    context: String(context || '').trim(),
+  }),
   confirmSpeechTranscript: (transcript) => request('/api/ai/speech/confirm', {
     method: 'POST',
     body: JSON.stringify({ transcript }),
   }),
-  confirmReceiptText: (text, mode) => request('/api/ai/ocr/confirm', {
+  confirmReceiptText: (text, mode, context = '') => request('/api/ai/ocr/confirm', {
     method: 'POST',
-    body: JSON.stringify({ text, mode }),
+    body: JSON.stringify({ text, mode, context: String(context || '').trim() }),
   }),
   confirmChat: (pendingId) => request('/api/chat/confirm', {
     method: 'POST',

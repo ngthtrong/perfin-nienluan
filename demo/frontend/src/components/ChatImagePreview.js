@@ -213,7 +213,7 @@ const createStyles = (t) => StyleSheet.create({
   errorText: { color: t.colors.textMuted, fontSize: 11, lineHeight: 15, fontWeight: '700', textAlign: 'center' },
   receiptBadge: {
     position: 'absolute', top: 8, right: 8, flexDirection: 'row', alignItems: 'center', gap: 4,
-    paddingHorizontal: 8, paddingVertical: 5, borderRadius: 999, backgroundColor: 'rgba(15, 16, 36, 0.68)',
+    paddingHorizontal: 8, paddingVertical: 5, borderRadius: 999, backgroundColor: 'rgba(38, 31, 27, 0.72)',
   },
   receiptBadgeText: { color: '#fff', fontSize: 10, fontWeight: '800' },
   captionRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 6, paddingHorizontal: 8, paddingTop: 8, paddingBottom: 5 },

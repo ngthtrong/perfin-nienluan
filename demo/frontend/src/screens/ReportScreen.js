@@ -136,10 +136,10 @@ export default function ReportScreen() {
           </View>
         )}
 
-        <Text style={styles.sectionTitle}>Phân tích hiện tại</Text>
-        {!isCurrent && (
-          <Text style={styles.currentInsightNote}>Các insight bên dưới dùng số dư và dữ liệu gần đây, không phải riêng tháng đang xem.</Text>
-        )}
+        <Text style={styles.sectionTitle}>Phân tích tổng quan</Text>
+        <Text style={styles.currentInsightNote}>
+          Phần này tổng hợp nhiều cửa sổ lịch sử, không chỉ riêng tháng đang xem.
+        </Text>
         {loading ? (
           <Skeleton height={144} radius={18} style={{ marginBottom: 12 }} />
         ) : insights ? (
@@ -156,6 +156,19 @@ export default function ReportScreen() {
               </View>
               <Text style={styles.insightComment}>{insights.ai_comment}</Text>
             </View>
+
+            {insights.overall_advice ? (
+              <View style={styles.adviceCard}>
+                <View style={styles.adviceIcon}>
+                  <AppIcon name="tips-and-updates" size={18} color={c.brandText} />
+                </View>
+                <View style={{ flex: 1, minWidth: 0 }}>
+                  <Text style={styles.adviceTitle}>Lời khuyên tổng thể</Text>
+                  <Text style={styles.adviceText}>{insights.overall_advice}</Text>
+                  <Text style={styles.adviceScope}>Dựa trên các insight tài chính nhiều kỳ</Text>
+                </View>
+              </View>
+            ) : null}
 
             {insights.facts?.degraded_components?.length > 0 && (
               <View style={styles.insightNotice}>
@@ -361,6 +374,18 @@ const createStyles = (t) => StyleSheet.create({
   insightTitle: { color: t.colors.text, fontSize: 14, fontWeight: '900' },
   insightProvider: { color: t.colors.textMuted, fontSize: 10, fontWeight: '600', marginTop: 2 },
   insightComment: { color: t.colors.textSecondary, fontSize: 13, lineHeight: 19, fontWeight: '600' },
+  adviceCard: {
+    flexDirection: 'row', alignItems: 'flex-start', gap: 10, padding: 14,
+    backgroundColor: t.colors.surface, borderRadius: t.radius.lg,
+    borderWidth: 1, borderColor: t.colors.border, marginBottom: 10, ...t.shadows.sm,
+  },
+  adviceIcon: {
+    width: 36, height: 36, borderRadius: 12, alignItems: 'center', justifyContent: 'center',
+    backgroundColor: t.colors.brandSoft,
+  },
+  adviceTitle: { color: t.colors.text, fontSize: 13, fontWeight: '900', marginBottom: 4 },
+  adviceText: { color: t.colors.textSecondary, fontSize: 13, lineHeight: 19, fontWeight: '600' },
+  adviceScope: { color: t.colors.textMuted, fontSize: 10, fontWeight: '600', marginTop: 6 },
   insightNotice: {
     flexDirection: 'row', alignItems: 'flex-start', gap: 7, padding: 10,
     borderRadius: t.radius.md, backgroundColor: t.colors.warningSoft, marginBottom: 10,

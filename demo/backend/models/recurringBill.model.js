@@ -1,6 +1,7 @@
 const { pool, query } = require('../config/database');
 const { normalizeText } = require('../services/parser.service');
 const KVStore = require('../services/store/kv.store');
+const { normalizePastOrPresentDate } = require('../services/transactions/validation');
 
 const DEFAULT_USER = 'default_user';
 const RECURRING_FREQUENCIES = new Set(['weekly', 'monthly', 'quarterly', 'yearly']);
@@ -337,7 +338,13 @@ const RecurringBillModel = {
     categoryId,
     periodDueDate,
     period_due_date: periodDueDateSnake,
+    today = new Date(),
   } = {}) {
+    const formattedPaymentDate = paidDate == null ? formatDateOnly(today) : formatDateOnly(paidDate);
+    const paymentDate = normalizePastOrPresentDate(formattedPaymentDate, {
+      label: 'Ngày thanh toán',
+      today,
+    });
     const client = await pool.connect();
     let inTransaction = false;
     try {
@@ -382,8 +389,6 @@ const RecurringBillModel = {
       }
       const payWallet = walletId ?? bill.wallet_id;
       const payCategory = categoryId ?? bill.category_id;
-      const paymentDate = paidDate == null ? formatDateOnly(new Date()) : formatDateOnly(paidDate);
-
       const inserted = await client.query(
         `INSERT INTO transactions
            (user_id, description, amount, type, category_id, wallet_id, transaction_date, source, note)

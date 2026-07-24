@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="drawio" version="30.3.11">
+  <diagram id="03-deployment" name="Page-1">
+    <mxGraphModel grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="950" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="device" value="THIẾT BỊ / TRÌNH DUYỆT&#10;Expo app hoặc web build" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d9eaf7;strokeColor=#4f81bd;strokeWidth=2;fontSize=21;fontFamily=Arial;align=center;" vertex="1" parent="1">
+          <mxGeometry x="70" y="205" width="350" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="api" value="TIẾN TRÌNH API&#10;Node.js + Express&#10;port 3000" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;strokeWidth=2;fontSize=21;fontFamily=Arial;align=center;" vertex="1" parent="1">
+          <mxGeometry x="530" y="190" width="350" height="150" as="geometry" />
+        </mxCell>
+        <mxCell id="worker" value="TIẾN TRÌNH WORKER&#10;BullMQ handlers&#10;khởi chạy riêng" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;strokeWidth=2;fontSize=21;fontFamily=Arial;align=center;" vertex="1" parent="1">
+          <mxGeometry x="530" y="600" width="350" height="150" as="geometry" />
+        </mxCell>
+        <mxCell id="pg" value="POSTGRESQL&#10;18 bảng vật lý" style="shape=cylinder3;boundedLbl=1;backgroundOutline=1;size=15;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;strokeWidth=2;fontSize=21;fontFamily=Arial;align=center;" vertex="1" parent="1">
+          <mxGeometry x="1040" y="120" width="350" height="130" as="geometry" />
+        </mxCell>
+        <mxCell id="redis" value="REDIS&#10;state • cache • queue" style="shape=cylinder3;boundedLbl=1;backgroundOutline=1;size=15;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;strokeWidth=2;fontSize=21;fontFamily=Arial;align=center;" vertex="1" parent="1">
+          <mxGeometry x="1040" y="350" width="350" height="130" as="geometry" />
+        </mxCell>
+        <mxCell id="provider" value="PROVIDER NGOÀI&#10;Gemini / OCR / STT" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;strokeWidth=2;fontSize=21;fontFamily=Arial;align=center;" vertex="1" parent="1">
+          <mxGeometry x="70" y="600" width="350" height="130" as="geometry" />
+        </mxCell>
+        <mxCell id="limit" value="Docker Compose hiện chỉ hỗ trợ Redis; đây không phải cụm HA/production." style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;strokeWidth=2;fontSize=17;fontFamily=Arial;align=center;" vertex="1" parent="1">
+          <mxGeometry x="430" y="820" width="740" height="55" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-1" value="HTTPS" style="edgeStyle=orthogonalEdgeStyle;curved=0;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;endArrow=block;endSize=9;labelBackgroundColor=#ffffff;fontSize=20;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="1" source="device" target="api">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-2" value="SQL" style="edgeStyle=orthogonalEdgeStyle;curved=0;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;endArrow=block;endSize=9;labelBackgroundColor=#ffffff;fontSize=20;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="1" source="api" target="pg">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-3" value="KV/cache" style="edgeStyle=orthogonalEdgeStyle;curved=0;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;endArrow=block;endSize=9;labelBackgroundColor=#ffffff;fontSize=20;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="api" target="redis">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="705" y="390" />
+              <mxPoint x="1215" y="390" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge-4" value="TLS API" style="edgeStyle=orthogonalEdgeStyle;curved=0;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;endArrow=block;endSize=9;labelBackgroundColor=#ffffff;fontSize=20;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="api" target="provider">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="705" y="500" />
+              <mxPoint x="245" y="500" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge-5" value="query/write" style="edgeStyle=orthogonalEdgeStyle;curved=0;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;endArrow=block;endSize=9;labelBackgroundColor=#ffffff;fontSize=20;exitX=0.5;exitY=1;entryX=1;entryY=0.5;" edge="1" parent="1" source="worker" target="pg">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="705" y="780" />
+              <mxPoint x="1510" y="780" />
+              <mxPoint x="1510" y="185" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge-6" value="BullMQ" style="edgeStyle=orthogonalEdgeStyle;curved=0;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;endArrow=block;endSize=9;labelBackgroundColor=#ffffff;fontSize=20;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="1" source="worker" target="redis">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="960" y="675" />
+              <mxPoint x="960" y="415" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

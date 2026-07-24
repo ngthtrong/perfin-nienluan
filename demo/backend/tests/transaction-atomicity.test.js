@@ -174,6 +174,33 @@ test('create does not invite a duplicate retry when all post-commit helpers fail
   assert.equal(events.at(-1), 'RELEASE');
 });
 
+test('expense creation may take a wallet balance below zero', async () => {
+  const created = {
+    id: 10,
+    user_id: 'u1',
+    type: 'expense',
+    amount: 150_000,
+    wallet_id: 3,
+    description: 'Chi vượt số dư',
+    category_id: 4,
+    transaction_date: '2026-07-16',
+  };
+  const events = mockClient(async (sql, params) => {
+    const reference = ownedReferenceResult(sql, params, { walletBalance: '100000' });
+    if (reference) return reference;
+    if (/INSERT INTO transactions/.test(sql)) return { rows: [created], rowCount: 1 };
+    if (/UPDATE wallets/.test(sql)) return { rows: [{ balance: '-50000' }], rowCount: 1 };
+    return { rows: [], rowCount: 0 };
+  });
+  delImpl = async () => true;
+  rootQueryImpl = async () => ({ rows: [], rowCount: 0 });
+
+  const result = await TransactionModel.create({ ...created, userId: 'u1' });
+  assert.equal(result.wallet_balance, -50_000);
+  assert.ok(events.includes('COMMIT'));
+  assert.equal(events.includes('ROLLBACK'), false);
+});
+
 test('update atomically moves the financial effect when wallet, type, and amount change', async () => {
   const oldTransaction = {
     id: 21,

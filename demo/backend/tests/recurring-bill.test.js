@@ -97,6 +97,24 @@ test('update validates the merged schedule before issuing an UPDATE', async () =
   }
 });
 
+test('recordPayment rejects a future paid date before opening a database transaction', async () => {
+  let connections = 0;
+  connectImpl = async () => {
+    connections += 1;
+    throw new Error('must not connect');
+  };
+
+  await assert.rejects(
+    RecurringBillModel.recordPayment(5, {
+      paidDate: '2026-07-19',
+      periodDueDate: '2026-07-15',
+      today: new Date(2026, 6, 18, 23, 59),
+    }),
+    /Ngày thanh toán không được nằm trong tương lai/
+  );
+  assert.equal(connections, 0);
+});
+
 function createPaymentClient({ failWallet = false } = {}) {
   const events = [];
   const bill = {

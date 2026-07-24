@@ -5,10 +5,10 @@ import {
 } from 'react-native';
 import { api } from '../services/api.service';
 import { useTheme } from '../theme/ThemeContext';
-import { formatVND } from '../utils/formatters';
+import { formatMoneyValue, formatVND, parseMoneyInput } from '../utils/formatters';
 import { showAlert } from '../utils/alerts';
 import AppIcon from '../components/AppIcon';
-import { Button, EmptyState, ErrorState, Skeleton } from '../components/ui';
+import { Button, EmptyState, ErrorState, MoneyInput, Skeleton } from '../components/ui';
 
 const PERIODS = [
   { key: 'month', label: 'Tháng này' },
@@ -24,6 +24,14 @@ const WALLET_TYPES = [
   { key: 'investment', label: 'Đầu tư' },
   { key: 'savings', label: 'Tiết kiệm' },
 ];
+
+const EMPTY_TRANSFER_FORM = {
+  from_wallet_id: '', to_wallet_id: '', amount: '', transfer_type: 'transfer', note: '',
+};
+const EMPTY_PNL_FORM = { wallet_id: '', amount: '', note: '' };
+const EMPTY_WALLET_FORM = {
+  name: '', type: 'cash', balance: formatMoneyValue(0, { allowNegative: true }),
+};
 
 function CashflowBar({ label, value, maxValue, color, styles }) {
   const pct = maxValue > 0 ? Math.min(100, (Math.abs(value) / maxValue) * 100) : 0;
@@ -64,11 +72,9 @@ export default function CashflowScreen() {
   const [showWalletForm, setShowWalletForm] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  const [transferForm, setTransferForm] = useState({
-    from_wallet_id: '', to_wallet_id: '', amount: '', transfer_type: 'transfer', note: '',
-  });
-  const [pnlForm, setPnlForm] = useState({ wallet_id: '', amount: '', note: '' });
-  const [walletForm, setWalletForm] = useState({ name: '', type: 'cash', balance: '0' });
+  const [transferForm, setTransferForm] = useState(EMPTY_TRANSFER_FORM);
+  const [pnlForm, setPnlForm] = useState(EMPTY_PNL_FORM);
+  const [walletForm, setWalletForm] = useState(EMPTY_WALLET_FORM);
 
   const load = useCallback(async () => {
     try {
@@ -99,13 +105,14 @@ export default function CashflowScreen() {
 
   async function addTransfer() {
     const { from_wallet_id, to_wallet_id, amount, transfer_type, note } = transferForm;
-    if (!amount || Number(amount) <= 0) return showAlert('Lỗi', 'Nhập số tiền hợp lệ');
+    const parsedAmount = parseMoneyInput(amount);
+    if (!(parsedAmount > 0)) return showAlert('Lỗi', 'Nhập số tiền hợp lệ');
     if (!from_wallet_id && !to_wallet_id) return showAlert('Lỗi', 'Chọn ít nhất một ví');
     setSaving(true);
     try {
-      await api.createTransfer({ from_wallet_id: from_wallet_id || null, to_wallet_id: to_wallet_id || null, amount: Number(amount), transfer_type, note });
+      await api.createTransfer({ from_wallet_id: from_wallet_id || null, to_wallet_id: to_wallet_id || null, amount: parsedAmount, transfer_type, note });
       setShowTransferForm(false);
-      setTransferForm({ from_wallet_id: '', to_wallet_id: '', amount: '', transfer_type: 'transfer', note: '' });
+      setTransferForm(EMPTY_TRANSFER_FORM);
       await load();
     } catch (err) {
       showAlert('Lỗi', err.message);
@@ -116,13 +123,14 @@ export default function CashflowScreen() {
 
   async function addPnL() {
     const { wallet_id, amount, note } = pnlForm;
+    const parsedAmount = parseMoneyInput(amount);
     if (!wallet_id) return showAlert('Lỗi', 'Chọn tài khoản đầu tư');
-    if (!amount || isNaN(Number(amount))) return showAlert('Lỗi', 'Nhập số tiền (dương = lãi, âm = lỗ)');
+    if (!Number.isFinite(parsedAmount)) return showAlert('Lỗi', 'Nhập số tiền (dương = lãi, âm = lỗ)');
     setSaving(true);
     try {
-      await api.createInvestmentPnL({ wallet_id: Number(wallet_id), amount: Number(amount), note });
+      await api.createInvestmentPnL({ wallet_id: Number(wallet_id), amount: parsedAmount, note });
       setShowPnLForm(false);
-      setPnlForm({ wallet_id: '', amount: '', note: '' });
+      setPnlForm(EMPTY_PNL_FORM);
       await load();
     } catch (err) {
       showAlert('Lỗi', err.message);
@@ -133,13 +141,13 @@ export default function CashflowScreen() {
 
   async function addWallet() {
     const name = walletForm.name.trim();
-    const balance = Number(walletForm.balance || 0);
+    const balance = parseMoneyInput(walletForm.balance || 0);
     if (!name) return showAlert('Thiếu thông tin', 'Hãy nhập tên ví.');
     if (!Number.isFinite(balance)) return showAlert('Số dư không hợp lệ', 'Số dư ban đầu phải là một số hợp lệ.');
     setSaving(true);
     try {
       await api.createWallet({ name, type: walletForm.type, balance, currency: 'VND' });
-      setWalletForm({ name: '', type: 'cash', balance: '0' });
+      setWalletForm(EMPTY_WALLET_FORM);
       setShowWalletForm(false);
       await load();
     } catch (err) {
@@ -301,13 +309,13 @@ export default function CashflowScreen() {
               );
             })}
           </View>
-          <TextInput
+          <MoneyInput
             style={styles.input}
             placeholder="Số dư ban đầu"
             placeholderTextColor={c.textMuted}
             value={walletForm.balance}
             onChangeText={(balance) => setWalletForm((form) => ({ ...form, balance }))}
-            keyboardType="numbers-and-punctuation"
+            allowNegative
           />
           <Button label="Lưu ví" icon="save" onPress={addWallet} loading={saving} />
         </View>
@@ -338,8 +346,8 @@ export default function CashflowScreen() {
           <Text style={styles.formLabel}>Ví đích</Text>
           <WalletChips selected={transferForm.to_wallet_id} onSelect={(v) => setTransferForm((f) => ({ ...f, to_wallet_id: v }))} list={wallets} />
 
-          <TextInput style={styles.input} placeholder="Số tiền" placeholderTextColor={c.textMuted}
-            value={transferForm.amount} onChangeText={(v) => setTransferForm((f) => ({ ...f, amount: v }))} keyboardType="numeric" />
+          <MoneyInput style={styles.input} placeholder="Số tiền" placeholderTextColor={c.textMuted}
+            value={transferForm.amount} onChangeText={(v) => setTransferForm((f) => ({ ...f, amount: v }))} />
           <TextInput style={styles.input} placeholder="Ghi chú (tùy chọn)" placeholderTextColor={c.textMuted}
             value={transferForm.note} onChangeText={(v) => setTransferForm((f) => ({ ...f, note: v }))} />
 
@@ -359,9 +367,9 @@ export default function CashflowScreen() {
             <WalletChips selected={pnlForm.wallet_id} onSelect={(v) => setPnlForm((f) => ({ ...f, wallet_id: v }))} list={investmentWallets} />
           )}
 
-          <TextInput style={styles.input} placeholder="Số tiền (dương = lãi, âm = lỗ, VD: -500000)"
+          <MoneyInput style={styles.input} placeholder="Số tiền (dương = lãi, âm = lỗ, VD: -500,000)"
             placeholderTextColor={c.textMuted} value={pnlForm.amount}
-            onChangeText={(v) => setPnlForm((f) => ({ ...f, amount: v }))} keyboardType="numbers-and-punctuation" />
+            onChangeText={(v) => setPnlForm((f) => ({ ...f, amount: v }))} allowNegative />
           <TextInput style={styles.input} placeholder="Ghi chú (VD: lãi chứng khoán tháng 6)"
             placeholderTextColor={c.textMuted} value={pnlForm.note}
             onChangeText={(v) => setPnlForm((f) => ({ ...f, note: v }))} />

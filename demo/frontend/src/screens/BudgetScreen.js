@@ -6,12 +6,26 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { api } from '../services/api.service';
 import { useTheme } from '../theme/ThemeContext';
-import { currentPeriod, formatVND } from '../utils/formatters';
+import { currentPeriod, formatVND, parseMoneyInput } from '../utils/formatters';
 import { showAlert } from '../utils/alerts';
 import BudgetProgressBar from '../components/BudgetProgressBar';
 import AppIcon from '../components/AppIcon';
 import CategoryIcon from '../components/CategoryIcon';
-import { AppHeader, Button, EmptyState, ErrorState, Skeleton } from '../components/ui';
+import { AppHeader, Button, Chip, EmptyState, ErrorState, MoneyInput, Skeleton } from '../components/ui';
+
+const STATUS_FILTERS = [
+  { value: 'all', label: 'Tất cả' },
+  { value: 'stable', label: 'Ổn định' },
+  { value: 'warning', label: 'Cần chú ý' },
+  { value: 'exceeded', label: 'Vượt mức' },
+];
+
+const SORT_FILTERS = [
+  { value: 'usage', label: '% đã dùng' },
+  { value: 'spent', label: 'Đã chi' },
+  { value: 'limit', label: 'Hạn mức' },
+  { value: 'name', label: 'Tên A–Z' },
+];
 
 function getStatusMeta(status, c) {
   if (status === 'exceeded') return { label: 'Vượt mức', color: c.expense, bg: c.expenseSoft, icon: 'dangerous' };
@@ -24,7 +38,7 @@ export default function BudgetScreen() {
   const { theme } = useTheme();
   const styles = useMemo(() => createStyles(theme), [theme]);
   const c = theme.colors;
-  const period = currentPeriod();
+  const [period, setPeriod] = useState(() => currentPeriod());
 
   const [progress, setProgress] = useState([]);
   const [forecast, setForecast] = useState([]);
@@ -39,6 +53,9 @@ export default function BudgetScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
   const [showForm, setShowForm] = useState(false);
+  const [categorySearch, setCategorySearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [sortFilter, setSortFilter] = useState('usage');
 
   const load = useCallback(async () => {
     try {
@@ -76,13 +93,14 @@ export default function BudgetScreen() {
   }, [load]);
 
   async function add() {
-    if (!categoryId || !amount || Number(amount) <= 0) {
+    const parsedAmount = parseMoneyInput(amount);
+    if (!categoryId || !(parsedAmount > 0)) {
       showAlert('Thiếu thông tin', 'Vui lòng chọn danh mục và nhập số tiền ngân sách.');
       return;
     }
     setSaving(true);
     try {
-      await api.createBudget({ category_id: categoryId, amount_limit: Number(amount), month: period.month, year: period.year });
+      await api.createBudget({ category_id: categoryId, amount_limit: parsedAmount, month: period.month, year: period.year });
       setAmount('');
       setShowForm(false);
       await load();
@@ -131,6 +149,33 @@ export default function BudgetScreen() {
   const overspendForecasts = forecast
     .filter((item) => item.likely_to_exceed)
     .sort((left, right) => Number(right.projected_percentage) - Number(left.projected_percentage));
+  const visibleProgress = useMemo(() => {
+    const search = categorySearch.trim().toLocaleLowerCase('vi-VN');
+    const rows = progress.filter((item) => {
+      if (search && !String(item.category_name || '').toLocaleLowerCase('vi-VN').includes(search)) return false;
+      if (statusFilter === 'stable') return !['warning', 'danger', 'exceeded'].includes(item.status);
+      if (statusFilter === 'warning') return ['warning', 'danger'].includes(item.status);
+      if (statusFilter === 'exceeded') return item.status === 'exceeded';
+      return true;
+    });
+    return [...rows].sort((left, right) => {
+      if (sortFilter === 'name') return String(left.category_name || '').localeCompare(String(right.category_name || ''), 'vi');
+      if (sortFilter === 'spent') return Number(right.spent || 0) - Number(left.spent || 0);
+      if (sortFilter === 'limit') return Number(right.amount_limit || 0) - Number(left.amount_limit || 0);
+      return Number(right.percentage || 0) - Number(left.percentage || 0);
+    });
+  }, [categorySearch, progress, sortFilter, statusFilter]);
+
+  function changeMonth(delta) {
+    setLoading(true);
+    setPeriod((current) => {
+      let month = current.month + delta;
+      let year = current.year;
+      if (month > 12) { month = 1; year += 1; }
+      if (month < 1) { month = 12; year -= 1; }
+      return { month, year };
+    });
+  }
 
   if (loading) {
     return (
@@ -157,11 +202,24 @@ export default function BudgetScreen() {
       <AppHeader subtitle="Ngân sách" showAIStatus={false} />
       <FlatList
         contentContainerStyle={styles.content}
-        data={progress}
+        data={visibleProgress}
         keyExtractor={(item) => String(item.budget_id)}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={c.brand} />}
         ListHeaderComponent={
           <View>
+            <View style={styles.monthNav}>
+              <TouchableOpacity accessibilityLabel="Tháng trước" accessibilityRole="button" onPress={() => changeMonth(-1)} style={styles.monthNavButton}>
+                <AppIcon name="chevron-left" size={21} color={c.brandText} />
+              </TouchableOpacity>
+              <View style={styles.monthNavTitle}>
+                <AppIcon name="calendar-today" size={15} color={c.brandText} />
+                <Text style={styles.monthNavText}>Tháng {period.month} · {period.year}</Text>
+              </View>
+              <TouchableOpacity accessibilityLabel="Tháng sau" accessibilityRole="button" onPress={() => changeMonth(1)} style={styles.monthNavButton}>
+                <AppIcon name="chevron-right" size={21} color={c.brandText} />
+              </TouchableOpacity>
+            </View>
+
             <View style={styles.overviewCard}>
               <View style={{ flex: 1, minWidth: 0 }}>
                 <View style={styles.periodChip}>
@@ -320,17 +378,16 @@ export default function BudgetScreen() {
 
                 <Text style={styles.formLabel}>Mức ngân sách (VND)</Text>
                 <View style={styles.amountRow}>
-                  <TextInput
+                  <MoneyInput
                     style={[styles.input, { flexGrow: 1, flexBasis: 180, minWidth: 0, marginBottom: 0 }]}
                     value={amount}
                     onChangeText={setAmount}
-                    keyboardType="numeric"
                     placeholder="Ví dụ: 2,000,000"
                     placeholderTextColor={c.textMuted}
                   />
                   {amount.length > 0 && (
                     <View style={styles.amountPreview}>
-                      <Text style={styles.amountPreviewText}>{formatVND(Number(amount))}</Text>
+                      <Text style={styles.amountPreviewText}>{formatVND(parseMoneyInput(amount))}</Text>
                     </View>
                   )}
                 </View>
@@ -339,7 +396,52 @@ export default function BudgetScreen() {
               </View>
             )}
 
-            {progress.length > 0 && <Text style={styles.sectionTitle}>Theo danh mục</Text>}
+            {progress.length > 0 && (
+              <View style={styles.filterCard}>
+                <View style={styles.searchBox}>
+                  <AppIcon name="search" size={18} color={c.textMuted} />
+                  <TextInput
+                    accessibilityLabel="Tìm danh mục ngân sách"
+                    onChangeText={setCategorySearch}
+                    placeholder="Tìm theo danh mục..."
+                    placeholderTextColor={c.textMuted}
+                    style={styles.searchInput}
+                    value={categorySearch}
+                  />
+                  {categorySearch ? (
+                    <TouchableOpacity accessibilityLabel="Xóa từ khóa" onPress={() => setCategorySearch('')}>
+                      <AppIcon name="close" size={17} color={c.textMuted} />
+                    </TouchableOpacity>
+                  ) : null}
+                </View>
+                <Text style={styles.filterLabel}>Trạng thái</Text>
+                <View style={styles.filterRow}>
+                  {STATUS_FILTERS.map((option) => (
+                    <Chip
+                      key={option.value}
+                      active={statusFilter === option.value}
+                      label={option.label}
+                      onPress={() => setStatusFilter(option.value)}
+                    />
+                  ))}
+                </View>
+                <Text style={styles.filterLabel}>Sắp xếp</Text>
+                <View style={styles.filterRow}>
+                  {SORT_FILTERS.map((option) => (
+                    <Chip
+                      key={option.value}
+                      active={sortFilter === option.value}
+                      label={option.label}
+                      onPress={() => setSortFilter(option.value)}
+                    />
+                  ))}
+                </View>
+              </View>
+            )}
+
+            {progress.length > 0 && (
+              <Text style={styles.sectionTitle}>Theo danh mục · {visibleProgress.length}/{progress.length}</Text>
+            )}
           </View>
         }
         renderItem={({ item }) => {
@@ -371,14 +473,22 @@ export default function BudgetScreen() {
           );
         }}
         ListEmptyComponent={
-          <EmptyState
-            emoji="💰"
-            title="Chưa có ngân sách"
-            message="Thêm ngân sách để kiểm soát chi tiêu tốt hơn!"
-            actionLabel="Thêm ngân sách"
-            actionIcon="add-circle-outline"
-            onAction={() => setShowForm(true)}
-          />
+          progress.length > 0 ? (
+            <EmptyState
+              emoji="🔎"
+              title="Không có kết quả phù hợp"
+              message="Thử đổi từ khóa, trạng thái hoặc cách sắp xếp."
+            />
+          ) : (
+            <EmptyState
+              emoji="💰"
+              title="Chưa có ngân sách"
+              message="Thêm ngân sách để kiểm soát chi tiêu tốt hơn!"
+              actionLabel="Thêm ngân sách"
+              actionIcon="add-circle-outline"
+              onAction={() => setShowForm(true)}
+            />
+          )
         }
       />
     </SafeAreaView>
@@ -389,6 +499,18 @@ const createStyles = (t) => StyleSheet.create({
   safe: { flex: 1, backgroundColor: t.colors.bg },
   content: { width: '100%', maxWidth: 720, alignSelf: 'center', padding: 16, paddingBottom: 32 },
   loadingContent: { width: '100%', maxWidth: 720, alignSelf: 'center', padding: 16, gap: 10 },
+
+  monthNav: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    padding: 10, marginBottom: 12, borderRadius: t.radius.lg,
+    backgroundColor: t.colors.surface, borderWidth: 1, borderColor: t.colors.border, ...t.shadows.sm,
+  },
+  monthNavButton: {
+    width: 38, height: 38, alignItems: 'center', justifyContent: 'center',
+    borderRadius: 19, backgroundColor: t.colors.brandSoft,
+  },
+  monthNavTitle: { flexDirection: 'row', alignItems: 'center', gap: 7 },
+  monthNavText: { color: t.colors.text, fontSize: 15, fontWeight: '800' },
 
   overviewCard: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
@@ -479,6 +601,19 @@ const createStyles = (t) => StyleSheet.create({
   },
   amountPreview: { maxWidth: '100%', backgroundColor: t.colors.brandSoft, paddingHorizontal: 10, paddingVertical: 6, borderRadius: t.radius.pill },
   amountPreviewText: { color: t.colors.brandText, fontWeight: '800', fontSize: 13, flexShrink: 1 },
+
+  filterCard: {
+    padding: 14, marginBottom: 14, borderRadius: t.radius.lg,
+    backgroundColor: t.colors.surface, borderWidth: 1, borderColor: t.colors.border, ...t.shadows.sm,
+  },
+  searchBox: {
+    minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: 9,
+    paddingHorizontal: 12, marginBottom: 12, borderRadius: t.radius.md,
+    backgroundColor: t.colors.surfaceAlt, borderWidth: 1, borderColor: t.colors.border,
+  },
+  searchInput: { flex: 1, minWidth: 0, color: t.colors.text, fontSize: 14 },
+  filterLabel: { color: t.colors.textMuted, fontSize: 11, fontWeight: '700', marginBottom: 7 },
+  filterRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 7, marginBottom: 11 },
 
   sectionTitle: { fontSize: 16, fontWeight: '800', color: t.colors.text, marginBottom: 12 },
 

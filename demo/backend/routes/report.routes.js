@@ -4,6 +4,7 @@ const AnalyticsEngine = require('../services/analytics');
 const AIService = require('../services/ai.service');
 const Persona = require('../services/persona.service');
 const { resolveUserPayday } = require('../services/jobs/userScope');
+const { buildOverallAdvice } = require('../services/analytics/overallAdvice');
 
 const router = express.Router();
 const userId = 'default_user';
@@ -63,11 +64,18 @@ router.get('/insights', async (req, res, next) => {
       stylePrompt: persona.style_prompt,
       periodLabel: 'gần đây',
     });
+    const advice = buildOverallAdvice(facts);
+    const personaAdvice = typeof persona.decorate === 'function'
+      ? persona.decorate(advice.text)
+      : advice.text;
     res.json({
       success: true,
       data: {
         persona: { id: persona.id, name: persona.name },
         ai_comment: narration.text,
+        overall_advice: personaAdvice,
+        advice_basis: advice.basis,
+        advice_scope: advice.scope,
         provider_used: narration.provider_used,
         facts,
       },

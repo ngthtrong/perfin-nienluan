@@ -34,3 +34,31 @@
   VND & Đồng Việt Nam \\
   \bottomrule
 \end{longtable}
+
+% Longtable không caption ở trên vẫn tăng bộ đếm; đặt lại để bảng nội dung đầu
+% tiên mang đúng số 1.
+\setcounter{table}{0}
+
+\frontchapter{Quy ước trạng thái và kết quả}
+
+Báo cáo phân biệt rõ thành phần đã hiện thực, kết quả đã đo và hành vi mới ở
+mức thiết kế. Quy ước này ngăn kỳ vọng hoặc smoke test bị trình bày như bằng
+chứng chất lượng đã hoàn tất.
+
+\begin{longtable}{@{}L{3.0cm}L{5.2cm}L{5.8cm}@{}}
+  \caption{Quy ước mức độ xác nhận thông tin trong báo cáo}\label{tab:report-status}\\
+  \toprule
+  \textbf{Nhãn} & \textbf{Ý nghĩa} & \textbf{Cách sử dụng} \\
+  \midrule
+  \endfirsthead
+  \toprule
+  \textbf{Nhãn} & \textbf{Ý nghĩa} & \textbf{Cách sử dụng} \\
+  \midrule
+  \endhead
+  Đã hiện thực & Có thành phần tương ứng trong mã nguồn, migration hoặc test. & Chứng minh sự tồn tại, chưa tự động chứng minh chất lượng. \\
+  Đã đo & Có lệnh, thời điểm và kết quả chạy có thể tái lập. & Được phép đưa số liệu vào phần kết quả. \\
+  Mục tiêu & Ngưỡng mong muốn dùng làm tiêu chí nghiệm thu. & Không được trình bày như kết quả đã đạt. \\
+  Thiết kế đích & Hành vi dự kiến sau khi hoàn tất sửa lỗi trong phạm vi. & Phải được kiểm thử trước khi chuyển thành ``đã đo''. \\
+  Ngoài phạm vi & Không phải mục tiêu của niên luận hiện tại. & Chỉ nêu ở hạn chế hoặc hướng phát triển. \\
+  \bottomrule
+\end{longtable}

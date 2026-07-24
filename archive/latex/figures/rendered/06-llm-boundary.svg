@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="950" viewBox="0 0 1600 950">
+<defs><marker id="arrow" markerWidth="12" markerHeight="8" refX="10" refY="4" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L12,4 L0,8 z" fill="#374151"/></marker><marker id="arrow-start" markerWidth="12" markerHeight="8" refX="2" refY="4" orient="auto" markerUnits="strokeWidth"><path d="M12,0 L0,4 L12,8 z" fill="#374151"/></marker></defs>
+<rect width="100%" height="100%" fill="#ffffff"/>
+<text x="800.0" y="42" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="30" font-weight="700" fill="#0b4f6c">Ranh giới trách nhiệm của LLM</text>
+<polyline points="245.0,240.0 245.0,365.0" fill="none" stroke="#374151" stroke-width="3" stroke-linejoin="miter" stroke-linecap="square" marker-end="url(#arrow)"/>
+<rect x="145.0" y="273.5" width="200" height="30" rx="0" fill="#ffffff" opacity="0.96"/>
+<text x="245.0" y="294.5" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="20" fill="#374151">ngôn ngữ / media</text>
+<polyline points="410.0,430.0 520.0,430.0" fill="none" stroke="#374151" stroke-width="3" stroke-linejoin="miter" stroke-linecap="square" marker-end="url(#arrow)"/>
+<rect x="403.5" y="401.0" width="123" height="30" rx="0" fill="#ffffff" opacity="0.96"/>
+<text x="465.0" y="422.0" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="20" fill="#374151">tool call</text>
+<polyline points="850.0,430.0 960.0,430.0" fill="none" stroke="#374151" stroke-width="3" stroke-linejoin="miter" stroke-linecap="square" marker-end="url(#arrow)"/>
+<rect x="816.0" y="401.0" width="178" height="30" rx="0" fill="#ffffff" opacity="0.96"/>
+<text x="905.0" y="422.0" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="20" fill="#374151">đối số có kiểu</text>
+<polyline points="1140.0,495.0 1140.0,620.0" fill="none" stroke="#374151" stroke-width="3" stroke-linejoin="miter" stroke-linecap="square" marker-end="url(#arrow)"/>
+<rect x="1062.0" y="528.5" width="156" height="30" rx="0" fill="#ffffff" opacity="0.96"/>
+<text x="1140.0" y="549.5" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="20" fill="#374151">sau xác nhận</text>
+<polyline points="1320.0,680.0 1370.0,680.0" fill="none" stroke="#374151" stroke-width="3" stroke-linejoin="miter" stroke-linecap="square" marker-end="url(#arrow)" marker-start="url(#arrow-start)"/>
+<rect x="1300.0" y="651.0" width="90" height="30" rx="0" fill="#ffffff" opacity="0.96"/>
+<text x="1345.0" y="672.0" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="20" fill="#374151">SQL</text>
+<polyline points="960.0,680.0 850.0,680.0" fill="none" stroke="#374151" stroke-width="3" stroke-linejoin="miter" stroke-linecap="square" marker-end="url(#arrow)"/>
+<rect x="821.5" y="651.0" width="167" height="30" rx="0" fill="#ffffff" opacity="0.96"/>
+<text x="905.0" y="672.0" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="20" fill="#374151">dữ liệu chuẩn</text>
+<polyline points="520.0,680.0 410.0,680.0" fill="none" stroke="#374151" stroke-width="3" stroke-linejoin="miter" stroke-linecap="square" marker-end="url(#arrow)"/>
+<rect x="420.0" y="651.0" width="90" height="30" rx="0" fill="#ffffff" opacity="0.96"/>
+<text x="465.0" y="672.0" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="20" fill="#374151">facts</text>
+<polyline points="245.0,740.0 245.0,810.0" fill="none" stroke="#374151" stroke-width="3" stroke-linejoin="miter" stroke-linecap="square" marker-end="url(#arrow)" stroke-dasharray="10 7"/>
+<rect x="189.0" y="746.0" width="112" height="30" rx="0" fill="#ffffff" opacity="0.96"/>
+<text x="245.0" y="767.0" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="20" fill="#374151">response</text>
+<rect x="80" y="130" width="330" height="110" fill="#dae8fc" stroke="#6c8ebf" stroke-width="3"/>
+<text x="245.0" y="179.14" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="21" fill="#1f2937"><tspan x="245.0" dy="0" font-weight="700">Đầu vào tự nhiên</tspan><tspan x="245.0" dy="26" font-weight="400">text • ảnh • giọng nói</tspan></text>
+<rect x="80" y="365" width="330" height="130" fill="#e1d5e7" stroke="#9673a6" stroke-width="3"/>
+<text x="245.0" y="424.14" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="21" fill="#1f2937"><tspan x="245.0" dy="0" font-weight="700">LLM / parser</tspan><tspan x="245.0" dy="26" font-weight="400">hiểu ý định • điền tham số</tspan></text>
+<rect x="520" y="365" width="330" height="130" fill="#d9eaf7" stroke="#4f81bd" stroke-width="3"/>
+<text x="685.0" y="424.14" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="21" fill="#1f2937"><tspan x="685.0" dy="0" font-weight="700">Typed draft</tspan><tspan x="685.0" dy="26" font-weight="400">schema + provenance</tspan></text>
+<rect x="960" y="365" width="360" height="130" fill="#d5e8d4" stroke="#82b366" stroke-width="3"/>
+<text x="1140.0" y="424.14" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="21" fill="#1f2937"><tspan x="1140.0" dy="0" font-weight="700">Validation + preview</tspan><tspan x="1140.0" dy="26" font-weight="400">người dùng xác nhận</tspan></text>
+<rect x="960" y="620" width="360" height="120" fill="#d5e8d4" stroke="#82b366" stroke-width="3"/>
+<text x="1140.0" y="674.14" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="21" fill="#1f2937"><tspan x="1140.0" dy="0" font-weight="700">Core service</tspan><tspan x="1140.0" dy="26" font-weight="400">transaction • query</tspan></text>
+<path d="M 1370 636 C 1370 616, 1570 616, 1570 636 L 1570 724 C 1570 744, 1370 744, 1370 724 Z" fill="#fff2cc" stroke="#d6b656" stroke-width="3"/>
+<ellipse cx="1470.0" cy="636" rx="100.0" ry="16" fill="#fff2cc" stroke="#d6b656" stroke-width="3"/>
+<text x="1470.0" y="674.14" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="21" fill="#1f2937"><tspan x="1470.0" dy="0" font-weight="700">PostgreSQL</tspan><tspan x="1470.0" dy="26" font-weight="400">nguồn sự thật</tspan></text>
+<rect x="520" y="620" width="330" height="120" fill="#d5e8d4" stroke="#82b366" stroke-width="3"/>
+<text x="685.0" y="674.14" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="21" fill="#1f2937"><tspan x="685.0" dy="0" font-weight="700">Analytics Engine</tspan><tspan x="685.0" dy="26" font-weight="400">SQL → facts có cấu trúc</tspan></text>
+<rect x="80" y="620" width="330" height="120" fill="#e1d5e7" stroke="#9673a6" stroke-width="3"/>
+<text x="245.0" y="674.14" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="21" fill="#1f2937"><tspan x="245.0" dy="0" font-weight="700">Narrator LLM/template</tspan><tspan x="245.0" dy="26" font-weight="400">chỉ diễn đạt facts</tspan></text>
+<rect x="80" y="810" width="330" height="80" fill="#f8cecc" stroke="#b85450" stroke-width="3"/>
+<text x="245.0" y="845.12" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="18" fill="#1f2937"><tspan x="245.0" dy="0" font-weight="700">THIẾT KẾ ĐÍCH</tspan><tspan x="245.0" dy="22" font-weight="400">numeric grounding checker</tspan></text>
+<rect x="20.0" y="894" width="26" height="16" fill="#dae8fc" stroke="#6c8ebf"/>
+<text x="54.0" y="907" font-family="DejaVu Sans, Arial, sans-serif" font-size="14" fill="#374151">Người dùng</text>
+<rect x="286.6666666666667" y="894" width="26" height="16" fill="#e1d5e7" stroke="#9673a6"/>
+<text x="320.6666666666667" y="907" font-family="DejaVu Sans, Arial, sans-serif" font-size="14" fill="#374151">Lớp ngôn ngữ/AI</text>
+<rect x="553.3333333333334" y="894" width="26" height="16" fill="#d9eaf7" stroke="#4f81bd"/>
+<text x="587.3333333333334" y="907" font-family="DejaVu Sans, Arial, sans-serif" font-size="14" fill="#374151">Giao diện/API</text>
+<rect x="820.0" y="894" width="26" height="16" fill="#d5e8d4" stroke="#82b366"/>
+<text x="854.0" y="907" font-family="DejaVu Sans, Arial, sans-serif" font-size="14" fill="#374151">Lõi xác định</text>
+<rect x="1086.6666666666667" y="894" width="26" height="16" fill="#fff2cc" stroke="#d6b656"/>
+<text x="1120.6666666666667" y="907" font-family="DejaVu Sans, Arial, sans-serif" font-size="14" fill="#374151">Dữ liệu/trạng thái</text>
+<rect x="1353.3333333333335" y="894" width="26" height="16" fill="#f8cecc" stroke="#b85450"/>
+<text x="1387.3333333333335" y="907" font-family="DejaVu Sans, Arial, sans-serif" font-size="14" fill="#374151">Lỗi/giới hạn</text>
+<text x="800.0" y="942" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="13" fill="#6b7280">Không có đường nối trực tiếp từ LLM tới PostgreSQL; mọi thay đổi đi qua validation, preview và service.</text>
+</svg>

@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="980" viewBox="0 0 1600 980">
+<defs><marker id="arrow" markerWidth="12" markerHeight="8" refX="10" refY="4" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L12,4 L0,8 z" fill="#374151"/></marker><marker id="arrow-start" markerWidth="12" markerHeight="8" refX="2" refY="4" orient="auto" markerUnits="strokeWidth"><path d="M12,0 L0,4 L12,8 z" fill="#374151"/></marker></defs>
+<rect width="100%" height="100%" fill="#ffffff"/>
+<text x="800.0" y="42" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="30" font-weight="700" fill="#0b4f6c">Sơ đồ tuần tự tác vụ chủ động và chống trùng</text>
+<polyline points="121.0,210.5 460.0,210.5" fill="none" stroke="#374151" stroke-width="3" stroke-linejoin="miter" stroke-linecap="square" marker-end="url(#arrow)"/>
+<rect x="146.5" y="181.5" width="288" height="30" rx="0" fill="#ffffff" opacity="0.96"/>
+<text x="290.5" y="202.5" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="20" fill="#374151">1. Upsert repeatable job</text>
+<polyline points="461.0,282.5 800.0,282.5" fill="none" stroke="#374151" stroke-width="3" stroke-linejoin="miter" stroke-linecap="square" marker-end="url(#arrow)"/>
+<rect x="514.0" y="253.5" width="233" height="30" rx="0" fill="#ffffff" opacity="0.96"/>
+<text x="630.5" y="274.5" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="20" fill="#374151">2. job_id + payload</text>
+<polyline points="801.0,354.5 1480.0,354.5" fill="none" stroke="#374151" stroke-width="3" stroke-linejoin="miter" stroke-linecap="square" marker-end="url(#arrow)"/>
+<rect x="1007.5" y="325.5" width="266" height="30" rx="0" fill="#ffffff" opacity="0.96"/>
+<text x="1140.5" y="346.5" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="20" fill="#374151">3. Lấy đúng user scope</text>
+<polyline points="1480.0,426.5 801.0,426.5" fill="none" stroke="#374151" stroke-width="3" stroke-linejoin="miter" stroke-linecap="square" marker-end="url(#arrow)" stroke-dasharray="10 7"/>
+<rect x="1073.5" y="397.5" width="134" height="30" rx="0" fill="#ffffff" opacity="0.96"/>
+<text x="1140.5" y="418.5" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="20" fill="#374151">4. dữ liệu</text>
+<polyline points="801.0,498.5 1140.0,498.5" fill="none" stroke="#374151" stroke-width="3" stroke-linejoin="miter" stroke-linecap="square" marker-end="url(#arrow)"/>
+<rect x="804.5" y="469.5" width="332" height="30" rx="0" fill="#ffffff" opacity="0.96"/>
+<text x="970.5" y="490.5" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="20" fill="#374151">5. Tính facts / tạo nội dung</text>
+<polyline points="1140.0,570.5 801.0,570.5" fill="none" stroke="#374151" stroke-width="3" stroke-linejoin="miter" stroke-linecap="square" marker-end="url(#arrow)" stroke-dasharray="10 7"/>
+<rect x="832.0" y="541.5" width="277" height="30" rx="0" fill="#ffffff" opacity="0.96"/>
+<text x="970.5" y="562.5" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="20" fill="#374151">6. result + fingerprint</text>
+<polyline points="801.0,642.5 1480.0,642.5" fill="none" stroke="#374151" stroke-width="3" stroke-linejoin="miter" stroke-linecap="square" marker-end="url(#arrow)"/>
+<rect x="985.5" y="613.5" width="310" height="30" rx="0" fill="#ffffff" opacity="0.96"/>
+<text x="1140.5" y="634.5" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="20" fill="#374151">7. INSERT event_key UNIQUE</text>
+<polyline points="1480.0,714.5 801.0,714.5" fill="none" stroke="#374151" stroke-width="3" stroke-linejoin="miter" stroke-linecap="square" marker-end="url(#arrow)" stroke-dasharray="10 7"/>
+<rect x="1002.0" y="685.5" width="277" height="30" rx="0" fill="#ffffff" opacity="0.96"/>
+<text x="1140.5" y="706.5" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="20" fill="#374151">8. inserted / duplicate</text>
+<polyline points="800.0,786.5 461.0,786.5" fill="none" stroke="#374151" stroke-width="3" stroke-linejoin="miter" stroke-linecap="square" marker-end="url(#arrow)"/>
+<rect x="415.5" y="757.5" width="430" height="30" rx="0" fill="#ffffff" opacity="0.96"/>
+<text x="630.5" y="778.5" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="20" fill="#374151">9. complete hoặc retry cùng fingerprint</text>
+<polyline points="460.0,858.5 121.0,858.5" fill="none" stroke="#374151" stroke-width="3" stroke-linejoin="miter" stroke-linecap="square" marker-end="url(#arrow)" stroke-dasharray="10 7"/>
+<rect x="179.5" y="829.5" width="222" height="30" rx="0" fill="#ffffff" opacity="0.96"/>
+<text x="290.5" y="850.5" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="20" fill="#374151">10. trạng thái job</text>
+<rect x="15" y="80" width="210" height="70" fill="#ffe6cc" stroke="#d79b00" stroke-width="3"/>
+<text x="120.0" y="121.12" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="18" fill="#1f2937"><tspan x="120.0" dy="0" font-weight="700">Scheduler</tspan></text>
+<rect x="355" y="80" width="210" height="70" fill="#fff2cc" stroke="#d6b656" stroke-width="3"/>
+<text x="460.0" y="121.12" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="18" fill="#1f2937"><tspan x="460.0" dy="0" font-weight="700">Redis/BullMQ</tspan></text>
+<rect x="695" y="80" width="210" height="70" fill="#d5e8d4" stroke="#82b366" stroke-width="3"/>
+<text x="800.0" y="121.12" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="18" fill="#1f2937"><tspan x="800.0" dy="0" font-weight="700">Worker</tspan></text>
+<rect x="1035" y="80" width="210" height="70" fill="#d5e8d4" stroke="#82b366" stroke-width="3"/>
+<text x="1140.0" y="121.12" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="18" fill="#1f2937"><tspan x="1140.0" dy="0" font-weight="700">Handler/Analytics</tspan></text>
+<rect x="1375" y="80" width="210" height="70" fill="#fff2cc" stroke="#d6b656" stroke-width="3"/>
+<text x="1480.0" y="121.12" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="18" fill="#1f2937"><tspan x="1480.0" dy="0" font-weight="700">PostgreSQL</tspan></text>
+<line x1="120" y1="150" x2="120" y2="895" stroke="#9ca3af" stroke-width="2" stroke-dasharray="8 7"/>
+<line x1="460" y1="150" x2="460" y2="895" stroke="#9ca3af" stroke-width="2" stroke-dasharray="8 7"/>
+<line x1="800" y1="150" x2="800" y2="895" stroke="#9ca3af" stroke-width="2" stroke-dasharray="8 7"/>
+<line x1="1140" y1="150" x2="1140" y2="895" stroke="#9ca3af" stroke-width="2" stroke-dasharray="8 7"/>
+<line x1="1480" y1="150" x2="1480" y2="895" stroke="#9ca3af" stroke-width="2" stroke-dasharray="8 7"/>
+<rect x="20.0" y="924" width="26" height="16" fill="#ffe6cc" stroke="#d79b00"/>
+<text x="54.0" y="937" font-family="DejaVu Sans, Arial, sans-serif" font-size="14" fill="#374151">Điểm quyết định</text>
+<rect x="553.3333333333334" y="924" width="26" height="16" fill="#fff2cc" stroke="#d6b656"/>
+<text x="587.3333333333334" y="937" font-family="DejaVu Sans, Arial, sans-serif" font-size="14" fill="#374151">Dữ liệu/trạng thái</text>
+<rect x="1086.6666666666667" y="924" width="26" height="16" fill="#d5e8d4" stroke="#82b366"/>
+<text x="1120.6666666666667" y="937" font-family="DejaVu Sans, Arial, sans-serif" font-size="14" fill="#374151">Lõi xác định</text>
+<text x="800.0" y="972" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="13" fill="#6b7280">Trục thời gian đi từ trên xuống; mọi message dùng đoạn thẳng ngang, response dùng nét đứt.</text>
+</svg>

@@ -5,11 +5,11 @@ import {
 } from 'react-native';
 import { api } from '../services/api.service';
 import { useTheme } from '../theme/ThemeContext';
-import { formatVND } from '../utils/formatters';
+import { formatMoneyValue, formatVND, parseMoneyInput, toDateInputValue } from '../utils/formatters';
 import { showAlert } from '../utils/alerts';
 import TransactionCard from '../components/TransactionCard';
 import AppIcon from '../components/AppIcon';
-import { Button, Chip, EmptyState, ErrorState, Skeleton } from '../components/ui';
+import { Button, Chip, DatePickerField, EmptyState, ErrorState, MoneyInput, Skeleton } from '../components/ui';
 
 const TYPE_FILTERS = [
   { key: null, label: 'Tất cả', icon: 'apps' },
@@ -39,10 +39,9 @@ function dateInput(year, month, day) {
 function currentMonthRange(now = new Date()) {
   const year = now.getFullYear();
   const month = now.getMonth() + 1;
-  const lastDay = new Date(year, month, 0).getDate();
   return {
     from: dateInput(year, month, 1),
-    to: dateInput(year, month, lastDay),
+    to: dateInput(year, month, now.getDate()),
   };
 }
 
@@ -237,11 +236,11 @@ export default function TransactionScreen({ route, navigation }) {
     setEditingId(transaction.id);
     setForm({
       description: transaction.description || '',
-      amount: String(transaction.amount ?? ''),
+      amount: formatMoneyValue(transaction.amount),
       type: transaction.type || 'expense',
       category_id: transaction.category_id || null,
       wallet_id: transaction.wallet_id || null,
-      transaction_date: transaction.transaction_date ? String(transaction.transaction_date).slice(0, 10) : '',
+      transaction_date: toDateInputValue(transaction.transaction_date),
       note: transaction.note || '',
     });
     setCategoryEditingId(null);
@@ -250,7 +249,7 @@ export default function TransactionScreen({ route, navigation }) {
   }
 
   async function saveTransaction() {
-    const amount = Number(form.amount);
+    const amount = parseMoneyInput(form.amount);
     if (!form.description.trim() || !(amount > 0) || !Number.isFinite(amount) || !form.category_id || !form.wallet_id) {
       showAlert('Thiếu thông tin', 'Vui lòng nhập mô tả, số tiền dương, danh mục và ví.');
       return;
@@ -513,17 +512,16 @@ export default function TransactionScreen({ route, navigation }) {
             onChangeText={(v) => setForm((p) => ({ ...p, description: v }))}
           />
           <View style={styles.amountWrapper}>
-            <TextInput
+            <MoneyInput
               style={[styles.input, { flexGrow: 1, flexBasis: 180, minWidth: 0, marginBottom: 0 }]}
               placeholder="Số tiền (VND)"
               placeholderTextColor={c.textMuted}
               value={form.amount}
-              keyboardType="numeric"
               onChangeText={(v) => setForm((p) => ({ ...p, amount: v }))}
             />
             {form.amount.length > 0 && (
               <View style={styles.amountPreviewPill}>
-                <Text style={styles.amountPreviewText}>{formatVND(Number(form.amount))}</Text>
+                <Text style={styles.amountPreviewText}>{formatVND(parseMoneyInput(form.amount))}</Text>
               </View>
             )}
           </View>
@@ -572,13 +570,13 @@ export default function TransactionScreen({ route, navigation }) {
           <View style={styles.optionalFields}>
             <View style={styles.optionalColumn}>
               <Text style={styles.inputLabel}>Ngày giao dịch</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="YYYY-MM-DD (mặc định hôm nay)"
-                placeholderTextColor={c.textMuted}
+              <DatePickerField
+                accessibilityLabel="Chọn ngày giao dịch"
+                maximumDate={new Date()}
+                placeholder="Mặc định hôm nay"
+                style={{ marginBottom: 12 }}
                 value={form.transaction_date}
-                onChangeText={(value) => setForm((previous) => ({ ...previous, transaction_date: value }))}
-                autoCapitalize="none"
+                onChange={(value) => setForm((previous) => ({ ...previous, transaction_date: value }))}
               />
             </View>
             <View style={styles.optionalColumn}>
@@ -635,26 +633,23 @@ export default function TransactionScreen({ route, navigation }) {
               <View style={styles.dateRow}>
                 <View style={styles.dateColumn}>
                   <Text style={styles.smallLabel}>Từ ngày</Text>
-                  <TextInput
+                  <DatePickerField
                     accessibilityLabel="Lọc từ ngày"
-                    style={styles.filterInput}
-                    placeholder="YYYY-MM-DD"
-                    placeholderTextColor={c.textMuted}
+                    maximumDate={filterDraft.to || new Date()}
+                    placeholder="Chọn ngày bắt đầu"
                     value={filterDraft.from}
-                    onChangeText={(from) => setFilterDraft((current) => ({ ...current, from }))}
-                    autoCapitalize="none"
+                    onChange={(from) => setFilterDraft((current) => ({ ...current, from }))}
                   />
                 </View>
                 <View style={styles.dateColumn}>
                   <Text style={styles.smallLabel}>Đến ngày</Text>
-                  <TextInput
+                  <DatePickerField
                     accessibilityLabel="Lọc đến ngày"
-                    style={styles.filterInput}
-                    placeholder="YYYY-MM-DD"
-                    placeholderTextColor={c.textMuted}
+                    minimumDate={filterDraft.from || undefined}
+                    maximumDate={new Date()}
+                    placeholder="Chọn ngày kết thúc"
                     value={filterDraft.to}
-                    onChangeText={(to) => setFilterDraft((current) => ({ ...current, to }))}
-                    autoCapitalize="none"
+                    onChange={(to) => setFilterDraft((current) => ({ ...current, to }))}
                   />
                 </View>
               </View>

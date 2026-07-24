@@ -28,6 +28,18 @@ async function mutate(userId, expectedId, mutator) {
   }
 }
 
+function metadataAfterUpdate(item, options, context) {
+  if (typeof options?.updateMetadata !== 'function') return item.metadata;
+  const metadata = options.updateMetadata(item.metadata || {}, context);
+  if (metadata === undefined) return item.metadata;
+  if (!metadata || typeof metadata !== 'object' || Array.isArray(metadata)) {
+    const error = new Error('Metadata giao dịch chờ không hợp lệ');
+    error.status = 400;
+    throw error;
+  }
+  return metadata;
+}
+
 module.exports = {
   async set(userId, data, kind = 'transaction', metadata = {}) {
     const pendingId = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -43,14 +55,18 @@ module.exports = {
     return KVStore.take(keyFor(userId), pendingId);
   },
 
-  async update(userId, updates, pendingId = null) {
-    return mutate(userId, pendingId, (item) => ({
-      ...item,
-      data: { ...item.data, ...updates },
-    }));
+  async update(userId, updates, pendingId = null, options = {}) {
+    return mutate(userId, pendingId, (item) => {
+      const data = { ...item.data, ...updates };
+      return {
+        ...item,
+        data,
+        metadata: metadataAfterUpdate(item, options, { item, previous: item.data, next: data }),
+      };
+    });
   },
 
-  async updateAt(userId, index, updates, pendingId = null) {
+  async updateAt(userId, index, updates, pendingId = null, options = {}) {
     return mutate(userId, pendingId, (item) => {
       if (item.kind !== 'transactions' || !Array.isArray(item.data) || !item.data[index]) {
         const error = new Error('Vị trí giao dịch không hợp lệ');
@@ -59,7 +75,16 @@ module.exports = {
       }
       const next = [...item.data];
       next[index] = { ...next[index], ...updates };
-      return { ...item, data: next };
+      return {
+        ...item,
+        data: next,
+        metadata: metadataAfterUpdate(item, options, {
+          item,
+          index,
+          previous: item.data[index],
+          next: next[index],
+        }),
+      };
     });
   },
 

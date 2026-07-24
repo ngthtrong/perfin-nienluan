@@ -71,6 +71,31 @@ test('an editor cannot recreate a pending item after confirmation claimed it', a
   assert.equal(await PendingTransaction.get(userId), null);
 });
 
+test('pending edits can atomically update learning metadata without replacing existing metadata', async () => {
+  const userId = 'test-edit-metadata-user';
+  await PendingTransaction.clear(userId);
+  const pendingId = await PendingTransaction.set(
+    userId,
+    { amount: 100_000, category_id: 2 },
+    'transaction',
+    { follow_up: ['query'] }
+  );
+
+  const updated = await PendingTransaction.update(userId, { category_id: 3 }, pendingId, {
+    updateMetadata: (metadata) => ({
+      ...metadata,
+      classification_corrections: { 0: { from: 2, to: 3 } },
+    }),
+  });
+
+  assert.equal(updated.data.category_id, 3);
+  assert.deepEqual(updated.metadata, {
+    follow_up: ['query'],
+    classification_corrections: { 0: { from: 2, to: 3 } },
+  });
+  await PendingTransaction.clear(userId);
+});
+
 test('an edit cannot overwrite a newer pending preview', async () => {
   const userId = 'test-edit-newer-preview-user';
   await PendingTransaction.clear(userId);

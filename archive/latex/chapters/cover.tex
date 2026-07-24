@@ -1,43 +1,36 @@
-% Trang bìa niên luận
 \begin{titlepage}
-    \begin{center}
-        \large
-        \textbf{\university} \\
-        \textbf{\department} \\
-        
-        \vfill
-        
-        % Logo trường Đại học Cần Thơ
-        \begin{figure}[h]
-            \centering
-            \includegraphics[width=0.3\textwidth]{images/ctu_logo.png}
-        \end{figure}
-        
-        \vfill
-        
-        \Large
-        \textbf{\projecttype} \\
-        
-        \vspace{1cm}
-        
-        \huge
-        \textbf{\projecttitle} \\
-        
-        \vfill
-        
-        \large
-        \begin{tabular}{ll}
-            \textbf{Ngành:} & \major \\
-            \textbf{Khóa:} & \cohort \\
-            \textbf{Lớp:} & \classname \\
-            \textbf{Giảng viên hướng dẫn:} & \advisor \\
-            \textbf{Sinh viên thực hiện:} & \studentAname\ (\studentAid)
-        \end{tabular}
-        
-        \vfill
-        
-        \large
-        Học kỳ \semester, Năm học \academicyear
-        
-    \end{center}
+  \thispagestyle{empty}
+  \begin{center}
+    {\sffamily\fontsize{14pt}{18pt}\selectfont\bfseries
+      \university\\[0.25cm]
+      \college\par}
+
+    \vspace{0.8cm}
+    \IfFileExists{images/ctu_logo.png}{%
+      \includegraphics[width=0.20\textwidth]{images/ctu_logo.png}%
+    }{%
+      \fbox{\parbox[c][2.8cm][c]{2.8cm}{\centering\sffamily Logo CTU}}%
+    }
+
+    \vspace{0.8cm}
+    {\sffamily\fontsize{14pt}{18pt}\selectfont\bfseries \projecttype\par}
+
+    \vfill
+    {\sffamily\fontsize{18pt}{24pt}\selectfont\bfseries \projecttitle\par}
+    \vfill
+
+    \begin{tabular}{@{}L{5.2cm}L{8.2cm}@{}}
+      \textbf{Ngành:} & \major \\
+      \textbf{Khóa:} & \cohort \\
+      \textbf{Lớp học phần:} & \courseclass \\
+      \textbf{Giảng viên hướng dẫn:} & \advisor \\
+      \textbf{Sinh viên thực hiện:} & \studentname \\
+      \textbf{Mã số sinh viên:} & \studentid
+    \end{tabular}
+
+    \vfill
+    {\sffamily\bfseries Học kỳ \semester, năm học \academicyear\par}
+    \vspace{0.4cm}
+    {\sffamily Cần Thơ, 2026\par}
+  \end{center}
 \end{titlepage}

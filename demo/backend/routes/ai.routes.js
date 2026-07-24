@@ -13,6 +13,7 @@ const { FeedbackService } = require('../services/feedback');
 
 const router = express.Router();
 const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
+const MAX_IMAGE_CONTEXT_LENGTH = 1000;
 const imageExtensions = new Set(['.jpg', '.jpeg', '.png', '.heic', '.heif', '.webp']);
 const audioExtensions = new Set(['.m4a', '.mp4', '.aac', '.wav', '.mp3']);
 const uploadStorage = multer.diskStorage({
@@ -62,6 +63,21 @@ function httpError(status, message, code) {
   error.status = status;
   error.code = code;
   return error;
+}
+
+function readImageContext(body = {}, { allowTextAlias = false } = {}) {
+  const fields = ['context', 'context_text', 'message', 'caption', 'description'];
+  if (allowTextAlias) fields.push('text');
+  const field = fields.find((name) => body[name] !== undefined && body[name] !== null);
+  if (!field) return '';
+  if (typeof body[field] !== 'string') {
+    throw httpError(400, 'Ngữ cảnh kèm ảnh phải là văn bản', 'INVALID_IMAGE_CONTEXT');
+  }
+  const context = body[field].trim();
+  if (context.length > MAX_IMAGE_CONTEXT_LENGTH) {
+    throw httpError(400, `Ngữ cảnh kèm ảnh không được vượt quá ${MAX_IMAGE_CONTEXT_LENGTH} ký tự`, 'IMAGE_CONTEXT_TOO_LONG');
+  }
+  return context;
 }
 
 function uploadSingle(fieldName) {
@@ -194,6 +210,13 @@ router.post('/chat', async (req, res, next) => {
 async function handleOcr(req, res, next) {
   try {
     if (!req.file) return res.status(400).json({ success: false, error: 'Chưa có ảnh' });
+    let context;
+    try {
+      context = readImageContext(req.body || {}, { allowTextAlias: true });
+    } catch (error) {
+      fs.unlink(req.file.path, () => {});
+      throw error;
+    }
     console.log(`[ocr] received ${req.file.originalname || req.file.filename} (${req.file.mimetype}, ${req.file.size} bytes)`);
     let text = '';
     let provider = 'unavailable';
@@ -227,10 +250,19 @@ async function handleOcr(req, res, next) {
       });
     }
 
-    const parsed = await extractFromMedia(text, 'receipt');
+    const parsed = await extractFromMedia(text, 'receipt', context);
     const receiptOptions = buildReceiptOptions(parsed);
-    const data = receiptOptions ? null : await createMediaPendingPreview(parsed, text, 'ocr');
-    res.json({ success: true, text, provider, parsed, receipt_options: receiptOptions, data });
+    const originalText = AIService.combineMediaContext(text, context);
+    const data = receiptOptions ? null : await createMediaPendingPreview(parsed, originalText, 'ocr');
+    res.json({
+      success: true,
+      text,
+      context: context || null,
+      provider,
+      parsed,
+      receipt_options: receiptOptions,
+      data,
+    });
   } catch (error) {
     next(error);
   }
@@ -290,16 +322,19 @@ async function handleSpeech(req, res, next) {
 }
 
 // Extract a transaction from media text via the AI service; never throws (parsing is best-effort).
-async function extractFromMedia(text, sourceType) {
+async function extractFromMedia(text, sourceType, contextText = '') {
   if (!String(text || '').trim()) return null;
   try {
     const categories = await CategoryModel.getAll(userId);
-    const parsed = await AIService.parseFromMedia(text, categories, sourceType);
+    const parsed = await AIService.parseFromMedia(text, categories, sourceType, contextText);
     const source = sourceType === 'voice' ? 'voice' : 'ocr';
+    const originalText = sourceType === 'receipt'
+      ? AIService.combineMediaContext(text, contextText)
+      : text;
     const transactions = parsed.transactions || (parsed.transaction ? [parsed.transaction] : []);
     for (const transaction of transactions) {
       transaction.source = source;
-      transaction.original_text = text;
+      transaction.original_text = originalText;
     }
     if (transactions.length) {
       parsed.transaction = transactions[0];
@@ -344,9 +379,10 @@ router.post('/speech/confirm', async (req, res, next) => {
 router.post('/ocr/confirm', async (req, res, next) => {
   try {
     const text = String(req.body.text || '').trim();
+    const context = readImageContext(req.body || {});
     const mode = req.body.mode === 'items' ? 'items' : 'total';
     if (!text || text.length > 10000) return res.status(400).json({ success: false, error: 'Văn bản OCR không hợp lệ' });
-    const parsed = await extractFromMedia(text, 'receipt');
+    const parsed = await extractFromMedia(text, 'receipt', context);
     const options = buildReceiptOptions(parsed);
     let selected = parsed?.transactions || (parsed?.transaction ? [parsed.transaction] : []);
     if (options) selected = mode === 'items' ? options.items : (options.total ? [options.total] : options.items);
@@ -356,11 +392,13 @@ router.post('/ocr/confirm', async (req, res, next) => {
       transaction: selected[0] || null,
       transactions: selected,
     };
-    const data = await createMediaPendingPreview(selectedParsed, text, 'ocr');
+    const originalText = AIService.combineMediaContext(text, context);
+    const data = await createMediaPendingPreview(selectedParsed, originalText, 'ocr');
     res.json({
       success: true,
       confirmed: true,
       mode,
+      context: context || null,
       parsed: selectedParsed,
       data,
     });
@@ -428,3 +466,4 @@ router.post('/speech', acceptUpload('audio', handleSpeech));
 module.exports = router;
 module.exports.buildReceiptOptions = buildReceiptOptions;
 module.exports.createMediaPendingPreview = createMediaPendingPreview;
+module.exports.readImageContext = readImageContext;

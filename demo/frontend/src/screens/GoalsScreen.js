@@ -4,11 +4,14 @@ import {
 } from 'react-native';
 import { api } from '../services/api.service';
 import { useTheme } from '../theme/ThemeContext';
-import { formatDate, formatVND } from '../utils/formatters';
+import {
+  formatDate, formatMoneyValue, formatVND, parseMoneyInput,
+} from '../utils/formatters';
 import { showAlert } from '../utils/alerts';
 import AppIcon from '../components/AppIcon';
 import {
-  Button, Card, EmptyState, ErrorState, ProgressBar, Screen, SegmentedControl, Skeleton,
+  Button, Card, Chip, DatePickerField, EmptyState, ErrorState, MoneyInput, ProgressBar, Screen,
+  SegmentedControl, Skeleton,
 } from '../components/ui';
 
 const GOAL_TYPES = [
@@ -16,6 +19,32 @@ const GOAL_TYPES = [
   { value: 'purchase', label: 'Mua sắm' },
   { value: 'debt_payoff', label: 'Trả nợ' },
 ];
+
+const GOAL_TYPE_FILTERS = [{ value: 'all', label: 'Tất cả' }, ...GOAL_TYPES];
+const GOAL_PROGRESS_FILTERS = [
+  { value: 'all', label: 'Tất cả' },
+  { value: 'on_track', label: 'Đúng tiến độ' },
+  { value: 'delayed', label: 'Chậm tiến độ' },
+  { value: 'needs_contribution', label: 'Thiếu khoản góp' },
+  { value: 'infeasible', label: 'Chưa khả thi' },
+  { value: 'completed', label: 'Hoàn thành' },
+  { value: 'paused', label: 'Tạm dừng' },
+];
+
+const DELAYED_GOAL_STATUSES = new Set(['off_track', 'behind_schedule', 'overdue', 'deadline_reached']);
+
+function goalProgressFilterKey(status) {
+  if (['completed', 'achieved'].includes(status)) return 'completed';
+  if (['no_contribution', 'no_payment'].includes(status)) return 'needs_contribution';
+  if (['negative_amortization', 'horizon_exceeded'].includes(status)) return 'infeasible';
+  if (DELAYED_GOAL_STATUSES.has(status)) return 'delayed';
+  if (status === 'paused') return 'paused';
+  return 'on_track';
+}
+
+function goalProgressStatus(goal) {
+  return goal.progress?.status || goal.plan?.status || goal.status;
+}
 
 const EMPTY_FORM = {
   name: '',
@@ -95,6 +124,9 @@ export default function GoalsScreen() {
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
   const [error, setError] = useState(null);
+  const [goalSearch, setGoalSearch] = useState('');
+  const [goalStatusFilter, setGoalStatusFilter] = useState('all');
+  const [goalTypeFilter, setGoalTypeFilter] = useState('all');
 
   const load = useCallback(async () => {
     try {
@@ -130,12 +162,12 @@ export default function GoalsScreen() {
     return {
       name: form.name.trim(),
       goal_type: form.goal_type,
-      target_amount: Number(form.target_amount),
-      current_amount: Number(form.current_amount || 0),
+      target_amount: parseMoneyInput(form.target_amount),
+      current_amount: parseMoneyInput(form.current_amount || 0),
       target_date: form.target_date.trim() || null,
       monthly_contribution: form.monthly_contribution.trim() === ''
         ? null
-        : Number(form.monthly_contribution),
+        : parseMoneyInput(form.monthly_contribution),
       annual_interest_rate: form.goal_type === 'debt_payoff'
         ? Number(form.annual_interest_rate || 0)
         : 0,
@@ -145,9 +177,9 @@ export default function GoalsScreen() {
 
   function validateForm() {
     if (!form.name.trim()) return 'Vui lòng đặt tên cho mục tiêu.';
-    if (!(Number(form.target_amount) > 0)) return 'Số tiền mục tiêu phải lớn hơn 0.';
-    if (Number(form.current_amount || 0) < 0) return 'Số tiền hiện có không được âm.';
-    if (form.monthly_contribution && Number(form.monthly_contribution) < 0) return 'Khoản góp hàng tháng không được âm.';
+    if (!(parseMoneyInput(form.target_amount) > 0)) return 'Số tiền mục tiêu phải lớn hơn 0.';
+    if (parseMoneyInput(form.current_amount || 0) < 0) return 'Số tiền hiện có không được âm.';
+    if (form.monthly_contribution && parseMoneyInput(form.monthly_contribution) < 0) return 'Khoản góp hàng tháng không được âm.';
     if (form.target_date && !/^\d{4}-\d{2}-\d{2}$/.test(form.target_date)) return 'Ngày đích cần có định dạng YYYY-MM-DD.';
     return null;
   }
@@ -205,10 +237,10 @@ export default function GoalsScreen() {
     setForm({
       name: goal.name || '',
       goal_type: goal.goal_type || 'saving',
-      target_amount: String(goal.target_amount || ''),
-      current_amount: String(goal.current_amount || 0),
+      target_amount: formatMoneyValue(goal.target_amount),
+      current_amount: formatMoneyValue(goal.current_amount ?? 0),
       target_date: goal.target_date ? String(goal.target_date).slice(0, 10) : '',
-      monthly_contribution: goal.monthly_contribution == null ? '' : String(goal.monthly_contribution),
+      monthly_contribution: goal.monthly_contribution == null ? '' : formatMoneyValue(goal.monthly_contribution),
       annual_interest_rate: Number(goal.annual_interest_rate || 0) > 0 ? String(goal.annual_interest_rate) : '',
       note: goal.note || '',
     });
@@ -243,6 +275,12 @@ export default function GoalsScreen() {
     );
   }
 
+  function resetGoalFilters() {
+    setGoalSearch('');
+    setGoalStatusFilter('all');
+    setGoalTypeFilter('all');
+  }
+
   if (loading) {
     return (
       <Screen scroll edges={[]}>
@@ -265,6 +303,17 @@ export default function GoalsScreen() {
     planPreview?.plan
     && planPreviewFingerprint === payloadFingerprint(payloadFromForm())
   );
+  const normalizedGoalSearch = goalSearch.trim().toLocaleLowerCase('vi-VN');
+  const goalFiltersActive = Boolean(
+    normalizedGoalSearch || goalStatusFilter !== 'all' || goalTypeFilter !== 'all'
+  );
+  const filteredGoals = goals.filter((goal) => {
+    if (normalizedGoalSearch
+      && !String(goal.name || '').toLocaleLowerCase('vi-VN').includes(normalizedGoalSearch)) return false;
+    if (goalTypeFilter !== 'all' && goal.goal_type !== goalTypeFilter) return false;
+    return goalStatusFilter === 'all'
+      || goalProgressFilterKey(goalProgressStatus(goal)) === goalStatusFilter;
+  });
 
   return (
     <Screen
@@ -320,22 +369,20 @@ export default function GoalsScreen() {
           <View style={styles.twoColumns}>
             <View style={styles.fieldColumn}>
               <Text style={styles.label}>Số tiền mục tiêu</Text>
-              <TextInput
+              <MoneyInput
                 style={styles.input}
                 value={form.target_amount}
                 onChangeText={(value) => setField('target_amount', value)}
-                keyboardType="numeric"
-                placeholder="300000000"
+                placeholder="300,000,000"
                 placeholderTextColor={c.textMuted}
               />
             </View>
             <View style={styles.fieldColumn}>
               <Text style={styles.label}>Hiện đã có</Text>
-              <TextInput
+              <MoneyInput
                 style={styles.input}
                 value={form.current_amount}
                 onChangeText={(value) => setField('current_amount', value)}
-                keyboardType="numeric"
                 placeholder="0"
                 placeholderTextColor={c.textMuted}
               />
@@ -343,23 +390,21 @@ export default function GoalsScreen() {
           </View>
 
           <Text style={styles.label}>Góp mỗi tháng</Text>
-          <TextInput
+          <MoneyInput
             style={styles.input}
             value={form.monthly_contribution}
             onChangeText={(value) => setField('monthly_contribution', value)}
-            keyboardType="numeric"
             placeholder="Để trống để dùng dòng tiền có thể phân bổ"
             placeholderTextColor={c.textMuted}
           />
 
           <Text style={styles.label}>Ngày đích (không bắt buộc)</Text>
-          <TextInput
-            style={styles.input}
+          <DatePickerField
             value={form.target_date}
-            onChangeText={(value) => setField('target_date', value)}
-            placeholder="YYYY-MM-DD"
-            placeholderTextColor={c.textMuted}
-            autoCapitalize="none"
+            onChange={(value) => setField('target_date', value)}
+            minimumDate={new Date()}
+            placeholder="Chọn ngày đích"
+            accessibilityLabel="Chọn ngày đích"
           />
 
           {form.goal_type === 'debt_payoff' && (
@@ -418,8 +463,83 @@ export default function GoalsScreen() {
 
       <View style={styles.sectionHeadingRow}>
         <Text style={styles.sectionHeading}>Mục tiêu của bạn</Text>
-        <View style={styles.totalBadge}><Text style={styles.totalBadgeText}>{goals.length}</Text></View>
+        <View style={styles.totalBadge}>
+          <Text style={styles.totalBadgeText}>
+            {goalFiltersActive ? `${filteredGoals.length}/${goals.length}` : goals.length}
+          </Text>
+        </View>
       </View>
+
+      {goals.length > 0 && (
+        <View style={styles.filterPanel}>
+          <View style={styles.filterHeadingRow}>
+            <View style={styles.filterIcon}>
+              <AppIcon name="tune" size={18} color={c.brand} />
+            </View>
+            <View style={{ flex: 1, minWidth: 0 }}>
+              <Text style={styles.filterTitle}>Lọc mục tiêu</Text>
+              <Text style={styles.filterSummary}>Hiển thị {filteredGoals.length} / {goals.length} mục tiêu</Text>
+            </View>
+            {goalFiltersActive && (
+              <TouchableOpacity
+                accessibilityRole="button"
+                accessibilityLabel="Đặt lại bộ lọc mục tiêu"
+                onPress={resetGoalFilters}
+                style={styles.resetFilterButton}
+              >
+                <AppIcon name="restart-alt" size={15} color={c.brandText} />
+                <Text style={styles.resetFilterText}>Đặt lại</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+
+          <View style={styles.searchWrapper}>
+            <AppIcon name="search" size={18} color={c.textMuted} />
+            <TextInput
+              accessibilityLabel="Tìm mục tiêu theo tên"
+              style={styles.searchInput}
+              placeholder="Tìm theo tên mục tiêu..."
+              placeholderTextColor={c.textMuted}
+              value={goalSearch}
+              onChangeText={setGoalSearch}
+              returnKeyType="search"
+            />
+            {goalSearch.length > 0 && (
+              <TouchableOpacity
+                accessibilityRole="button"
+                accessibilityLabel="Xóa từ khóa tìm mục tiêu"
+                onPress={() => setGoalSearch('')}
+              >
+                <AppIcon name="close" size={17} color={c.textMuted} />
+              </TouchableOpacity>
+            )}
+          </View>
+
+          <Text style={styles.filterLabel}>Trạng thái tiến độ</Text>
+          <View style={styles.filterRow}>
+            {GOAL_PROGRESS_FILTERS.map((option) => (
+              <Chip
+                key={option.value}
+                label={option.label}
+                active={goalStatusFilter === option.value}
+                onPress={() => setGoalStatusFilter(option.value)}
+              />
+            ))}
+          </View>
+
+          <Text style={styles.filterLabel}>Loại mục tiêu</Text>
+          <View style={[styles.filterRow, styles.filterRowLast]}>
+            {GOAL_TYPE_FILTERS.map((option) => (
+              <Chip
+                key={option.value}
+                label={option.label}
+                active={goalTypeFilter === option.value}
+                onPress={() => setGoalTypeFilter(option.value)}
+              />
+            ))}
+          </View>
+        </View>
+      )}
 
       {goals.length === 0 ? (
         <EmptyState
@@ -430,8 +550,17 @@ export default function GoalsScreen() {
           actionIcon="add-circle-outline"
           onAction={() => setShowForm(true)}
         />
-      ) : goals.map((goal) => {
-        const status = goal.progress?.status || goal.plan?.status || goal.status;
+      ) : filteredGoals.length === 0 ? (
+        <EmptyState
+          emoji="🔎"
+          title="Không tìm thấy mục tiêu"
+          message="Thử đổi từ khóa hoặc đặt lại các bộ lọc đang chọn."
+          actionLabel="Đặt lại bộ lọc"
+          actionIcon="restart-alt"
+          onAction={resetGoalFilters}
+        />
+      ) : filteredGoals.map((goal) => {
+        const status = goalProgressStatus(goal);
         const meta = statusMeta(status, c);
         const percent = Number(goal.progress?.actualPercent ?? goal.plan?.progressPercent ?? 0);
         const remaining = Number(goal.progress?.remaining ?? goal.plan?.remaining ?? 0);
@@ -592,6 +721,31 @@ const createStyles = (t) => StyleSheet.create({
     alignItems: 'center', justifyContent: 'center', backgroundColor: t.colors.brandSoft,
   },
   totalBadgeText: { color: t.colors.brandText, fontSize: 11, fontWeight: '900' },
+  filterPanel: {
+    padding: 14, marginBottom: 14, backgroundColor: t.colors.surface,
+    borderWidth: 1, borderColor: t.colors.border, borderRadius: t.radius.lg, ...t.shadows.sm,
+  },
+  filterHeadingRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 12 },
+  filterIcon: {
+    width: 36, height: 36, borderRadius: 12, alignItems: 'center', justifyContent: 'center',
+    backgroundColor: t.colors.brandSoft,
+  },
+  filterTitle: { color: t.colors.text, fontSize: 14, fontWeight: '900' },
+  filterSummary: { color: t.colors.textMuted, fontSize: 11, fontWeight: '600', marginTop: 2 },
+  resetFilterButton: {
+    flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 9, paddingVertical: 7,
+    borderRadius: t.radius.pill, backgroundColor: t.colors.brandSoft,
+  },
+  resetFilterText: { color: t.colors.brandText, fontSize: 11, fontWeight: '800' },
+  searchWrapper: {
+    flexDirection: 'row', alignItems: 'center', gap: 9, paddingHorizontal: 12, paddingVertical: 10,
+    marginBottom: 13, backgroundColor: t.colors.surfaceAlt, borderWidth: 1.5,
+    borderColor: t.colors.border, borderRadius: t.radius.md,
+  },
+  searchInput: { flex: 1, minWidth: 0, color: t.colors.text, fontSize: 14 },
+  filterLabel: { color: t.colors.textSecondary, fontSize: 11, fontWeight: '800', marginBottom: 7 },
+  filterRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 7, marginBottom: 13 },
+  filterRowLast: { marginBottom: 0 },
   goalCard: { marginBottom: 11 },
   goalHeader: { flexDirection: 'row', alignItems: 'center', gap: 9, marginBottom: 14, minWidth: 0 },
   goalIcon: { width: 40, height: 40, borderRadius: 13, alignItems: 'center', justifyContent: 'center' },

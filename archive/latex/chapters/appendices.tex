@@ -1,28 +1,98 @@
 \appendix
 
-\chapter{Sơ đồ thiết kế}
-\label{ch:appendix_diagrams}
+\chapter{Danh mục sơ đồ Draw.io}
 
-Toàn bộ các sơ đồ thiết kế của hệ thống PerFin được xây dựng bằng PlantUML và Mermaid, lưu trữ trong thư mục \texttt{diagrams/} của dự án. Bảng dưới đây liệt kê các sơ đồ chính và đường dẫn tham chiếu tương ứng:
+Mỗi sơ đồ có nguồn chỉnh sửa chuẩn tại \path{archive/latex/figures/drawio} và bản render tại \path{archive/latex/figures/rendered}. Báo cáo liên kết bản PDF vector; PNG/SVG dùng cho xem nhanh và tài liệu web. Thuật ngữ trong sơ đồ phải đồng nhất với báo cáo và phân biệt lõi xác định, LLM, dữ liệu bền vững, state tạm cùng dịch vụ ngoài.
 
-\begin{table}[htbp]
-\centering
-\begin{tabularx}{\textwidth}{|l|X|X|}
-\hline
-\textbf{Sơ đồ} & \textbf{Đường dẫn Mermaid} & \textbf{Đường dẫn PlantUML} \\ \hline
-Use Case Diagram & \texttt{diagrams/mermaid/use-case-diagram.md} & \texttt{diagrams/puml/use-case-diagram.puml} \\ \hline
-Component Diagram & \texttt{diagrams/mermaid/component-diagram.md} & \texttt{diagrams/puml/component-diagram.puml} \\ \hline
-Class Diagram & \texttt{diagrams/mermaid/class-diagram.md} & \texttt{diagrams/puml/class-diagram.puml} \\ \hline
-Sequence Diagrams & \texttt{diagrams/mermaid/sequence-diagrams.md} & \texttt{diagrams/puml/sequence-diagrams.puml} \\ \hline
-Activity Diagrams & \texttt{diagrams/mermaid/activity-diagrams.md} & \texttt{diagrams/puml/activity-diagrams.puml} \\ \hline
-\end{tabularx}
-\caption{Danh sách các sơ đồ thiết kế}
-\label{tab:design_diagrams_list}
-\end{table}
+\begin{longtable}{@{}C{1.0cm}L{4.2cm}L{4.5cm}L{3.0cm}@{}}
+  \toprule
+  \textbf{STT} & \textbf{Tên hình} & \textbf{Basename} & \textbf{Vị trí trong báo cáo} \\
+  \midrule
+  \endfirsthead
+  \toprule
+  \textbf{STT} & \textbf{Tên hình} & \textbf{Basename} & \textbf{Vị trí trong báo cáo} \\
+  \midrule
+  \endhead
+  1 & Ngữ cảnh hệ thống & \path{01-system-context} & Hình~\ref{fig:system-context} \\
+  2 & Kiến trúc vận hành & \path{02-runtime-architecture} & Hình~\ref{fig:runtime-architecture} \\
+  3 & Triển khai nguyên mẫu & \path{03-deployment} & Hình~\ref{fig:deployment} \\
+  4 & Aggregate miền nghiệp vụ & \path{04-domain-class} & Hình~\ref{fig:domain-class} \\
+  5 & ERD vật lý & \path{05-physical-erd} & Hình~\ref{fig:physical-erd} \\
+  6 & Ranh giới LLM & \path{06-llm-boundary} & Hình~\ref{fig:llm-boundary} \\
+  7 & Trạng thái hội thoại & \path{07-conversation-state} & Hình~\ref{fig:conversation-state} \\
+  8 & Nhập giao dịch text & \path{08-text-sequence} & Hình~\ref{fig:text-sequence} \\
+  9 & Đầu vào đa phương thức & \path{09-multimodal-flow} & Hình~\ref{fig:multimodal-flow} \\
+  10 & Feedback và phân loại & \path{10-feedback-flow} & Hình~\ref{fig:feedback-flow} \\
+  11 & Insight có căn cứ & \path{11-insight-sequence} & Hình~\ref{fig:insight-sequence} \\
+  12 & Goal planner và what-if & \path{12-goal-flow} & Hình~\ref{fig:goal-flow} \\
+  13 & Tác vụ chủ động & \path{13-worker-sequence} & Hình~\ref{fig:worker-sequence} \\
+  \bottomrule
+\end{longtable}
 
+\chapter{Lệnh tái lập kiểm thử}
 
-\chapter{Hướng dẫn sử dụng}
-\label{ch:appendix_user_guide}
+Các lệnh dưới đây được chạy từ đúng thư mục thành phần. Người thực hiện phải ghi commit, phiên bản runtime, cấu hình provider và trạng thái dịch vụ; không chép secret vào biên bản.
 
-\textit{Phần hướng dẫn sử dụng sẽ được bổ sung sau khi ứng dụng PerFin hoàn thiện các chức năng chính, bao gồm ảnh chụp màn hình minh họa chi tiết từng bước thao tác.}
+\begin{verbatim}
+cd demo/backend
+npm test
+npm run test:ai
 
+cd ../frontend
+EXPO_PUBLIC_API_URL=http://127.0.0.1:3000 \
+  npx expo export --platform web \
+  --output-dir /tmp/perfin-web-final
+\end{verbatim}
+
+Để kiểm thử tích hợp, cần một PostgreSQL test riêng và Redis đang chạy. Migration phải được chạy trên database test; sau mỗi nhóm test phải kiểm tra rollback và dọn dữ liệu bằng fixture. Không dùng database phát triển cá nhân làm môi trường tự động.
+
+\chapter{Biên bản kết quả ngày 16/07/2026}
+
+\begin{longtable}{@{}L{4.0cm}L{10.5cm}@{}}
+  \toprule
+  \textbf{Trường} & \textbf{Giá trị đã ghi nhận} \\
+  \midrule
+  Commit nền & \code{8bebe83}; các thay đổi phiên ổn định hóa chưa commit. \\
+  Thời gian chạy & Ngày 16/07/2026, workspace phát triển. \\
+  Runtime & Node.js 24.16.0; PostgreSQL 16.14; Chromium 150.0.7871.46. \\
+  Backend test sau sửa & 100/100 test pass, 0 fail. \\
+  Local parser sau sửa & 31/31 strict pass, 0 partial, 0 fail; provider local. \\
+  Baseline trước sửa & 13/13 tệp backend; parser 27/31 strict, 2 partial, 2 fail. \\
+  API/DB/media smoke & 23/23 pass; PostgreSQL, chat preview/edit/cancel, OCR 2 ảnh và STT 1 M4A. \\
+  Frontend export/UI & Web 653 module; Android 960 module; mobile smoke 4/4 cổng đạt. \\
+  Dữ liệu live & 5.265 giao dịch, 0 reject, 420 thu/4.845 chi, net 594.000 VND. \\
+  PostgreSQL/Redis & PostgreSQL live đã đối soát; Redis không khả dụng, worker tắt có kiểm soát và readiness degraded. \\
+  OCR/STT ground truth & Chưa có phép đo được công bố. \\
+  LLM model/prompt benchmark & Chưa có phép đo được công bố. \\
+  Hồi quy parser & ``1 triệu 5'', phép nhân số lượng--đơn giá, quần jeans và đi ăn đều đã đạt. \\
+  Hồi quy dữ liệu & Transaction/post-commit, pending race, recurring period và time-series zero-fill đã được bổ sung. \\
+  \bottomrule
+\end{longtable}
+
+Khi chốt bản nghiệm thu, một biên bản mới phải khóa commit; phiên bản Node, PostgreSQL, Redis; provider, model, prompt; dataset, số mẫu, toàn bộ log và phân tích lỗi. Việc ghi ``chưa đo'' ở đây là kết quả audit hợp lệ, không phải giá trị ước lượng.
+
+\chapter{Nguyên tắc trình diễn}
+
+\begin{enumerate}
+  \item Bắt đầu bằng dữ liệu seed có kịch bản và công bố rõ là dữ liệu giả lập.
+  \item Trình diễn cùng một giao dịch qua form và chat để định lượng lợi ích nhập liệu.
+  \item Nhập câu thiếu số tiền để chứng minh clarification state và TTL.
+  \item Sửa category rồi lặp câu gần giống để chứng minh feedback retrieval.
+  \item Mở insight và hiển thị đồng thời facts với lời diễn giải persona.
+  \item Tắt provider hoặc Redis có kiểm soát để chứng minh fallback không sinh mock.
+  \item Không trình diễn auth, bank sync, push notification, PDF hay backup như tính năng hoàn thành khi điều kiện nghiệm thu chưa đạt.
+\end{enumerate}
+
+\chapter{Tiêu chí ổn định chức năng quan trọng}
+
+Ưu tiên sửa lỗi sau báo cáo được xác định theo tác động tới dữ liệu và khả năng demo học thuật:
+
+\begin{enumerate}
+  \item \textbf{P0 --- toàn vẹn dữ liệu:} transaction không rò connection, xác nhận pending nguyên tử, batch rollback đúng, ID có user scope.
+  \item \textbf{P1 --- pipeline đầu vào:} parser số tiền đúng, provider selector đúng trạng thái, clarification và history có thứ tự ổn định.
+  \item \textbf{P1 --- giải thuật:} trục thời gian giữ tháng thiếu, runway xử lý ngày không chi, báo cáo dùng đúng mẫu số kỳ lọc.
+  \item \textbf{P2 --- tác vụ và media:} recurring payment nguyên tử, worker dedup, adapter trả lỗi thật và có ground truth.
+  \item \textbf{P2 --- hỗ trợ demo:} tạo ví trên fresh install, export đúng định dạng và backup/restore không giữ khóa bí mật trong bundle.
+\end{enumerate}
+
+Mỗi sửa đổi phải có regression test thất bại trước khi sửa và pass sau khi sửa. Chỉ chức năng có cả test tự động và một luồng demo tái lập mới được chuyển từ ``thiết kế đích'' thành ``đã đo''.

@@ -201,16 +201,28 @@ async function selectImageFixture(client) {
     };
     return true;
   })()`);
-  const clicked = await client.evaluate(`(() => {
-    const target = document.querySelector('[aria-label="Chọn ảnh hóa đơn"]');
+  const opened = await client.evaluate(`(() => {
+    const target = document.querySelector('[aria-label="Thêm ảnh hóa đơn"]');
     if (!target) return false;
     target.click();
     return true;
   })()`);
-  if (!clicked) {
-    console.log('SKIP chat-image: chưa tìm thấy nút có accessibilityLabel "Chọn ảnh hóa đơn"');
+  if (!opened) {
+    console.log('SKIP chat-image: chưa tìm thấy nút có accessibilityLabel "Thêm ảnh hóa đơn"');
     return { skipped: true };
   }
+
+  const picked = await waitFor(
+    () => client.evaluate(`(() => {
+      const target = document.querySelector('[aria-label="Chọn ảnh hóa đơn từ thư viện"]');
+      if (!target) return false;
+      target.click();
+      return true;
+    })()`),
+    'image source options',
+    10000,
+  );
+  assert.equal(picked, true, 'Không mở được thư viện ảnh');
 
   const nodeId = await waitFor(async () => {
     const documentNode = await client.send('DOM.getDocument', { depth: 2, pierce: true });
@@ -221,6 +233,19 @@ async function selectImageFixture(client) {
     return result.nodeId || null;
   }, 'file input', 10000);
   await client.send('DOM.setFileInputFiles', { nodeId, files: [fixturePath] });
+
+  const sent = await waitFor(
+    () => client.evaluate(`(() => {
+      const pending = document.querySelector('[aria-label="Ảnh hóa đơn đang chờ gửi"]');
+      const send = document.querySelector('[aria-label="Gửi tin nhắn"]');
+      if (!pending || !send) return false;
+      send.click();
+      return true;
+    })()`),
+    'staged image composer',
+    10000,
+  );
+  assert.equal(sent, true, 'Không gửi được ảnh đã chọn');
 
   const preview = await waitFor(
     () => client.evaluate(`(() => {

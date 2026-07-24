@@ -5,11 +5,13 @@ import {
 } from 'react-native';
 import { api } from '../services/api.service';
 import { useTheme } from '../theme/ThemeContext';
-import { formatVND } from '../utils/formatters';
+import { formatMoneyValue, formatVND, parseMoneyInput } from '../utils/formatters';
 import { showAlert } from '../utils/alerts';
 import AppIcon from '../components/AppIcon';
 import CategoryIcon from '../components/CategoryIcon';
-import { Button, EmptyState, ErrorState } from '../components/ui';
+import {
+  Button, Chip, EmptyState, ErrorState, MoneyInput,
+} from '../components/ui';
 
 const FREQ_OPTIONS = [
   { key: 'weekly', label: 'Hàng tuần' },
@@ -18,6 +20,12 @@ const FREQ_OPTIONS = [
   { key: 'yearly', label: 'Hàng năm' },
 ];
 const FREQ_LABEL = Object.fromEntries(FREQ_OPTIONS.map((f) => [f.key, f.label]));
+const FREQ_FILTERS = [{ key: 'all', label: 'Tất cả' }, ...FREQ_OPTIONS];
+const STATUS_FILTERS = [
+  { key: 'all', label: 'Tất cả' },
+  { key: 'active', label: 'Đang hoạt động' },
+  { key: 'paused', label: 'Tạm dừng' },
+];
 const EMPTY_FORM = { id: null, name: '', amount: '', frequency: 'monthly', due_day: '1', category_id: null };
 
 export default function RecurringScreen() {
@@ -36,6 +44,9 @@ export default function RecurringScreen() {
   const [showForm, setShowForm] = useState(false);
   const [historyBill, setHistoryBill] = useState(null);
   const [history, setHistory] = useState(null);
+  const [billSearch, setBillSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [frequencyFilter, setFrequencyFilter] = useState('all');
 
   const load = useCallback(async () => {
     try {
@@ -70,21 +81,22 @@ export default function RecurringScreen() {
 
   function openEdit(bill) {
     setForm({
-      id: bill.id, name: bill.name, amount: String(Number(bill.amount)),
+      id: bill.id, name: bill.name, amount: formatMoneyValue(bill.amount),
       frequency: bill.frequency, due_day: String(bill.due_day), category_id: bill.category_id,
     });
     setShowForm(true);
   }
 
   async function save() {
-    if (!form.name.trim() || !form.amount || Number(form.amount) <= 0 || !form.due_day) {
+    const amount = parseMoneyInput(form.amount);
+    if (!form.name.trim() || !(amount > 0) || !form.due_day) {
       showAlert('Thiếu thông tin', 'Vui lòng nhập tên, số tiền dương và ngày thanh toán.');
       return;
     }
     setSaving(true);
     try {
       const payload = {
-        name: form.name.trim(), amount: Number(form.amount), frequency: form.frequency,
+        name: form.name.trim(), amount, frequency: form.frequency,
         due_day: Number(form.due_day), category_id: form.category_id,
       };
       if (form.id) await api.updateRecurringBill(form.id, payload);
@@ -157,6 +169,12 @@ export default function RecurringScreen() {
     } catch (_) {}
   }
 
+  function resetFilters() {
+    setBillSearch('');
+    setStatusFilter('all');
+    setFrequencyFilter('all');
+  }
+
   if (loading) {
     return <View style={styles.centered}><ActivityIndicator color={c.brand} size="large" /></View>;
   }
@@ -168,21 +186,49 @@ export default function RecurringScreen() {
   const totalMonthly = bills
     .filter((b) => b.status === 'active' && b.frequency === 'monthly')
     .reduce((s, b) => s + Number(b.amount), 0);
+  const normalizedBillSearch = billSearch.trim().toLocaleLowerCase('vi-VN');
+  const filtersActive = Boolean(
+    normalizedBillSearch || statusFilter !== 'all' || frequencyFilter !== 'all'
+  );
+  const filteredBills = bills.filter((bill) => {
+    if (normalizedBillSearch
+      && !String(bill.name || '').toLocaleLowerCase('vi-VN').includes(normalizedBillSearch)) return false;
+    if (statusFilter !== 'all' && bill.status !== statusFilter) return false;
+    return frequencyFilter === 'all' || bill.frequency === frequencyFilter;
+  });
 
   return (
     <View style={styles.container}>
       <FlatList
         contentContainerStyle={styles.content}
-        data={bills}
+        data={filteredBills}
         keyExtractor={(item) => String(item.id)}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={c.brand} />}
-        ListHeaderComponent={
-          <RecurringHeader
-            styles={styles} c={c}
-            totalMonthly={totalMonthly} count={bills.length} suggestions={suggestions}
-            onAccept={acceptSuggestion} onDismiss={dismissSuggestion} onCreate={openCreate}
-          />
-        }
+        ListHeaderComponent={(
+          <View>
+            <RecurringHeader
+              styles={styles} c={c}
+              totalMonthly={totalMonthly} count={bills.length} suggestions={suggestions}
+              onAccept={acceptSuggestion} onDismiss={dismissSuggestion} onCreate={openCreate}
+            />
+            {bills.length > 0 && (
+              <RecurringFilters
+                styles={styles}
+                c={c}
+                search={billSearch}
+                onSearchChange={setBillSearch}
+                status={statusFilter}
+                onStatusChange={setStatusFilter}
+                frequency={frequencyFilter}
+                onFrequencyChange={setFrequencyFilter}
+                resultCount={filteredBills.length}
+                totalCount={bills.length}
+                filtersActive={filtersActive}
+                onReset={resetFilters}
+              />
+            )}
+          </View>
+        )}
         renderItem={({ item }) => (
           <BillCard
             styles={styles} c={c} bill={item}
@@ -191,14 +237,25 @@ export default function RecurringScreen() {
           />
         )}
         ListEmptyComponent={
-          <EmptyState
-            emoji="🔔"
-            title="Chưa có chi phí cố định"
-            message="Thêm các khoản như tiền trọ, điện nước, internet để được nhắc đúng hạn."
-            actionLabel="Thêm khoản chi"
-            actionIcon="add-circle-outline"
-            onAction={openCreate}
-          />
+          filtersActive ? (
+            <EmptyState
+              emoji="🔎"
+              title="Không tìm thấy khoản định kỳ"
+              message="Thử đổi từ khóa hoặc đặt lại các bộ lọc đang chọn."
+              actionLabel="Đặt lại bộ lọc"
+              actionIcon="restart-alt"
+              onAction={resetFilters}
+            />
+          ) : (
+            <EmptyState
+              emoji="🔔"
+              title="Chưa có chi phí cố định"
+              message="Thêm các khoản như tiền trọ, điện nước, internet để được nhắc đúng hạn."
+              actionLabel="Thêm khoản chi"
+              actionIcon="add-circle-outline"
+              onAction={openCreate}
+            />
+          )
         }
       />
 
@@ -211,6 +268,82 @@ export default function RecurringScreen() {
         styles={styles} c={c}
         bill={historyBill} history={history} onClose={() => { setHistoryBill(null); setHistory(null); }}
       />
+    </View>
+  );
+}
+
+function RecurringFilters({
+  styles, c, search, onSearchChange, status, onStatusChange, frequency,
+  onFrequencyChange, resultCount, totalCount, filtersActive, onReset,
+}) {
+  return (
+    <View style={styles.filterPanel}>
+      <View style={styles.filterHeadingRow}>
+        <View style={styles.filterIcon}>
+          <AppIcon name="tune" size={18} color={c.brand} />
+        </View>
+        <View style={{ flex: 1, minWidth: 0 }}>
+          <Text style={styles.filterTitle}>Lọc chi phí định kỳ</Text>
+          <Text style={styles.filterSummary}>Hiển thị {resultCount} / {totalCount} khoản</Text>
+        </View>
+        {filtersActive && (
+          <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityLabel="Đặt lại bộ lọc chi phí định kỳ"
+            onPress={onReset}
+            style={styles.resetFilterButton}
+          >
+            <AppIcon name="restart-alt" size={15} color={c.brandText} />
+            <Text style={styles.resetFilterText}>Đặt lại</Text>
+          </TouchableOpacity>
+        )}
+      </View>
+
+      <View style={styles.searchWrapper}>
+        <AppIcon name="search" size={18} color={c.textMuted} />
+        <TextInput
+          accessibilityLabel="Tìm chi phí định kỳ theo tên"
+          style={styles.searchInput}
+          placeholder="Tìm theo tên khoản chi..."
+          placeholderTextColor={c.textMuted}
+          value={search}
+          onChangeText={onSearchChange}
+          returnKeyType="search"
+        />
+        {search.length > 0 && (
+          <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityLabel="Xóa từ khóa tìm chi phí định kỳ"
+            onPress={() => onSearchChange('')}
+          >
+            <AppIcon name="close" size={17} color={c.textMuted} />
+          </TouchableOpacity>
+        )}
+      </View>
+
+      <Text style={styles.filterLabel}>Trạng thái</Text>
+      <View style={styles.filterRow}>
+        {STATUS_FILTERS.map((option) => (
+          <Chip
+            key={option.key}
+            label={option.label}
+            active={status === option.key}
+            onPress={() => onStatusChange(option.key)}
+          />
+        ))}
+      </View>
+
+      <Text style={styles.filterLabel}>Tần suất</Text>
+      <View style={[styles.filterRow, styles.filterRowLast]}>
+        {FREQ_FILTERS.map((option) => (
+          <Chip
+            key={option.key}
+            label={option.label}
+            active={frequency === option.key}
+            onPress={() => onFrequencyChange(option.key)}
+          />
+        ))}
+      </View>
     </View>
   );
 }
@@ -328,7 +461,7 @@ function BillFormModal({ styles, c, visible, form, setForm, categories, saving, 
             <TextInput style={styles.input} value={form.name} onChangeText={set('name')} placeholder="Ví dụ: Tiền phòng trọ" placeholderTextColor={c.textMuted} />
 
             <Text style={styles.formLabel}>Số tiền (VND)</Text>
-            <TextInput style={styles.input} value={form.amount} onChangeText={set('amount')} keyboardType="numeric" placeholder="1500000" placeholderTextColor={c.textMuted} />
+            <MoneyInput style={styles.input} value={form.amount} onChangeText={set('amount')} placeholder="1,500,000" placeholderTextColor={c.textMuted} />
 
             <Text style={styles.formLabel}>Chu kỳ</Text>
             <View style={styles.freqRow}>
@@ -438,6 +571,32 @@ const createStyles = (t) => StyleSheet.create({
   suggestMeta: { fontSize: 12, color: t.colors.textMuted, marginTop: 2 },
   suggestAccept: { width: 32, height: 32, borderRadius: 16, backgroundColor: t.colors.brand, alignItems: 'center', justifyContent: 'center' },
   suggestDismiss: { width: 32, height: 32, borderRadius: 16, backgroundColor: t.colors.surfaceAlt, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: t.colors.border },
+
+  filterPanel: {
+    padding: 14, marginBottom: 14, backgroundColor: t.colors.surface,
+    borderWidth: 1, borderColor: t.colors.border, borderRadius: t.radius.lg, ...t.shadows.sm,
+  },
+  filterHeadingRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 12 },
+  filterIcon: {
+    width: 36, height: 36, borderRadius: 12, alignItems: 'center', justifyContent: 'center',
+    backgroundColor: t.colors.brandSoft,
+  },
+  filterTitle: { color: t.colors.text, fontSize: 14, fontWeight: '900' },
+  filterSummary: { color: t.colors.textMuted, fontSize: 11, fontWeight: '600', marginTop: 2 },
+  resetFilterButton: {
+    flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 9, paddingVertical: 7,
+    borderRadius: t.radius.pill, backgroundColor: t.colors.brandSoft,
+  },
+  resetFilterText: { color: t.colors.brandText, fontSize: 11, fontWeight: '800' },
+  searchWrapper: {
+    flexDirection: 'row', alignItems: 'center', gap: 9, paddingHorizontal: 12, paddingVertical: 10,
+    marginBottom: 13, backgroundColor: t.colors.surfaceAlt, borderWidth: 1.5,
+    borderColor: t.colors.border, borderRadius: t.radius.md,
+  },
+  searchInput: { flex: 1, minWidth: 0, color: t.colors.text, fontSize: 14 },
+  filterLabel: { color: t.colors.textSecondary, fontSize: 11, fontWeight: '800', marginBottom: 7 },
+  filterRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 7, marginBottom: 13 },
+  filterRowLast: { marginBottom: 0 },
 
   card: { backgroundColor: t.colors.surface, padding: 16, borderRadius: t.radius.lg, borderWidth: 1, borderColor: t.colors.border, marginBottom: 10, ...t.shadows.sm },
   cardPaused: { opacity: 0.7 },

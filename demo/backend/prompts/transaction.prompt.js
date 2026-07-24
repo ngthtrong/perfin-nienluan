@@ -1,10 +1,12 @@
+const { localDateKey } = require('../services/transactions/validation');
+
 function categoryList(categories, type) {
   return categories.filter((cat) => cat.type === type).map((cat) => cat.name).join(', ');
 }
 
 function getSystemPrompt(categories, today = new Date()) {
   return `Bạn là PERFIN AI, trợ lý tài chính cá nhân tiếng Việt.
-Hôm nay là ${today.toISOString().slice(0, 10)}.
+Hôm nay là ${localDateKey(today)}.
 Hãy chọn function phù hợp và điền đúng tham số. Function chỉ tạo bản xem trước;
 không khẳng định đã lưu hoặc đã chuyển tiền. Nếu chỉ là trò chuyện thông thường,
 trả lời ngắn gọn bằng tiếng Việt và không bịa dữ liệu tài chính.
@@ -29,11 +31,15 @@ Chỉ dùng số liệu trong context. Nếu context không đủ, nói rõ cầ
 
 // Specialized prompt to extract a transaction from messy OCR receipt text. Prioritizes the
 // grand total line ("Tổng/Total/Thành tiền"), store name, and date.
-function getReceiptPrompt(ocrText) {
+function getReceiptPrompt(ocrText, contextText = '') {
+  const context = String(contextText || '').trim();
+  const contextBlock = context
+    ? `\nNgữ cảnh bổ sung do người dùng nhập cùng ảnh:\n"""\n${context.slice(0, 1000)}\n"""\nHãy kết hợp ngữ cảnh này với OCR để giải thích giao dịch; ưu tiên thông tin người dùng nói rõ khi OCR mơ hồ.`
+    : '';
   return `Đây là văn bản OCR thô từ một hóa đơn/biên lai (có thể lộn xộn, nhiều dòng, lẫn ký tự nhiễu):
 """
 ${String(ocrText).slice(0, 2000)}
-"""
+"""${contextBlock}
 Nhiệm vụ: trích xuất hóa đơn thành giao dịch chi tiêu.
 - amount: lấy TỔNG TIỀN cuối cùng phải trả (ưu tiên dòng "Tổng cộng", "Thành tiền", "Tổng thanh toán", "Total"). Bỏ qua tiền thừa/tiền khách đưa.
 - description: tên cửa hàng/đơn vị bán nếu có, nếu không thì mô tả ngắn gọn.

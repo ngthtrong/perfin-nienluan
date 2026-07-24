@@ -2,7 +2,9 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 
 const {
+  isFutureDateOnly,
   isValidDateOnly,
+  normalizePastOrPresentDate,
   validateTransactionPayload,
 } = require('../services/transactions/validation');
 
@@ -41,4 +43,28 @@ test('transaction date validation rejects calendar-overflow dates', () => {
   assert.equal(isValidDateOnly('2026-02-28'), true);
   assert.equal(isValidDateOnly('2026-02-30'), false);
   assert.throws(() => validateTransactionPayload({ transaction_date: '2026-02-30' }, { partial: true }), /Ngày giao dịch/);
+});
+
+test('transaction date cannot be later than the current local calendar date', () => {
+  const today = new Date(2026, 6, 18, 0, 15, 0);
+  assert.equal(isFutureDateOnly('2026-07-18', today), false);
+  assert.equal(isFutureDateOnly('2026-07-19', today), true);
+  assert.doesNotThrow(() => validateTransactionPayload(
+    { transaction_date: '2026-07-18' },
+    { partial: true, today }
+  ));
+  assert.throws(() => validateTransactionPayload(
+    { transaction_date: '2026-07-19' },
+    { partial: true, today }
+  ), /không được nằm trong tương lai/);
+});
+
+test('shared financial event date normalization supports optional dates', () => {
+  const today = new Date(2026, 6, 18, 12);
+  assert.equal(normalizePastOrPresentDate(null, { optional: true, today }), null);
+  assert.equal(normalizePastOrPresentDate('2026-07-18', { label: 'Ngày ghi nhận', today }), '2026-07-18');
+  assert.throws(
+    () => normalizePastOrPresentDate('2026-07-19', { label: 'Ngày ghi nhận', today }),
+    /Ngày ghi nhận không được nằm trong tương lai/
+  );
 });

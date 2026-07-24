@@ -1,5 +1,6 @@
 const { pool, query } = require('../config/database');
 const KVStore = require('../services/store/kv.store');
+const { normalizePastOrPresentDate } = require('../services/transactions/validation');
 
 const DEFAULT_USER = 'default_user';
 
@@ -40,7 +41,7 @@ function optionalWalletId(value, label) {
   return id;
 }
 
-function validateTransferInput(data = {}) {
+function validateTransferInput(data = {}, { today = new Date() } = {}) {
   const amount = Number(data.amount);
   const type = data.transfer_type || 'transfer';
   const from_wallet_id = optionalWalletId(data.from_wallet_id, 'Ví nguồn');
@@ -55,6 +56,11 @@ function validateTransferInput(data = {}) {
   if (from_wallet_id && to_wallet_id && from_wallet_id === to_wallet_id) {
     throw Object.assign(new Error('Ví nguồn và ví nhận phải khác nhau'), { status: 400 });
   }
+  normalizePastOrPresentDate(data.transaction_date, {
+    label: 'Ngày chuyển tiền',
+    today,
+    optional: true,
+  });
   return { amount, transfer_type: type, from_wallet_id, to_wallet_id };
 }
 
@@ -66,8 +72,14 @@ const TransferModel = {
    * transfer_type: 'transfer' | 'investment_inflow' | 'investment_outflow'
    */
   async create(data) {
-    const validated = validateTransferInput(data);
-    const { userId = DEFAULT_USER, note, transaction_date } = data;
+    const today = new Date();
+    const validated = validateTransferInput(data, { today });
+    const { userId = DEFAULT_USER, note } = data;
+    const transactionDate = normalizePastOrPresentDate(data.transaction_date, {
+      label: 'Ngày chuyển tiền',
+      today,
+      optional: true,
+    });
     const { amount, transfer_type, from_wallet_id, to_wallet_id } = validated;
     const client = await pool.connect();
     let transactionClosed = false;
@@ -89,13 +101,6 @@ const TransferModel = {
         error.status = 400;
         throw error;
       }
-      const source = wallets.rows.find((wallet) => Number(wallet.id) === Number(from_wallet_id));
-      if (source && source.type !== 'credit_card' && Number(source.balance) < amount) {
-        const error = new Error(`Số dư ví ${source.name} không đủ`);
-        error.status = 409;
-        throw error;
-      }
-
       // Debit source wallet
       if (from_wallet_id) {
         await client.query(
@@ -117,7 +122,7 @@ const TransferModel = {
         `INSERT INTO wallet_transfers (user_id, from_wallet_id, to_wallet_id, amount, transfer_type, note, transaction_date)
          VALUES ($1, $2, $3, $4, $5, $6, COALESCE($7, CURRENT_DATE))
          RETURNING *`,
-        [userId, from_wallet_id || null, to_wallet_id || null, amount, transfer_type, note || null, transaction_date || null]
+        [userId, from_wallet_id || null, to_wallet_id || null, amount, transfer_type, note || null, transactionDate]
       );
 
       await client.query('COMMIT');
@@ -193,7 +198,11 @@ const TransferModel = {
 
 const InvestmentPnLModel = {
   async create(data) {
-    const { userId = DEFAULT_USER, note, recorded_at } = data;
+    const { userId = DEFAULT_USER, note } = data;
+    const recordedAt = normalizePastOrPresentDate(data.recorded_at, {
+      label: 'Ngày ghi nhận lãi/lỗ',
+      optional: true,
+    });
     const wallet_id = optionalWalletId(data.wallet_id, 'Ví đầu tư');
     const amount = Number(data.amount);
     if (!wallet_id) {
@@ -236,7 +245,7 @@ const InvestmentPnLModel = {
         `INSERT INTO investment_pnl (user_id, wallet_id, amount, note, recorded_at)
          VALUES ($1, $2, $3, $4, COALESCE($5, CURRENT_DATE))
          RETURNING *`,
-        [userId, wallet_id, amount, note || null, recorded_at || null]
+        [userId, wallet_id, amount, note || null, recordedAt]
       );
 
       await client.query('COMMIT');
@@ -254,6 +263,10 @@ const InvestmentPnLModel = {
   },
 
   async update(id, data, userId = DEFAULT_USER) {
+    const recordedAt = normalizePastOrPresentDate(data.recorded_at, {
+      label: 'Ngày ghi nhận lãi/lỗ',
+      optional: true,
+    });
     const amount = Number(data.amount);
     if (!Number.isFinite(amount) || amount === 0) {
       const error = new Error('Giá trị lãi/lỗ phải là số khác 0');
@@ -286,7 +299,7 @@ const InvestmentPnLModel = {
       const result = await client.query(
         `UPDATE investment_pnl SET amount = $2, note = $3, recorded_at = COALESCE($4, recorded_at), updated_at = NOW()
          WHERE id = $1 AND user_id = $5 RETURNING *`,
-        [id, amount, data.note ?? old.rows[0].note, data.recorded_at || null, userId]
+        [id, amount, data.note ?? old.rows[0].note, recordedAt, userId]
       );
 
       await client.query('COMMIT');

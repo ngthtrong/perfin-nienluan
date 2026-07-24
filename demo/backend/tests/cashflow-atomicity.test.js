@@ -101,6 +101,45 @@ test('a successful transfer debits and credits the same amount without changing 
   assert.equal(events.at(-1), 'RELEASE');
 });
 
+test('a transfer may take its source wallet balance below zero', async () => {
+  const balances = { 1: 50000, 2: 10000 };
+  const events = mockClient(async (sql, params) => {
+    if (/SELECT id, name, type, balance/.test(sql)) {
+      return {
+        rows: params[1].map((id) => ({ id, name: `Ví ${id}`, type: 'cash', balance: String(balances[id]) })),
+        rowCount: params[1].length,
+      };
+    }
+    if (/balance = balance -/.test(sql)) {
+      balances[params[1]] -= params[0];
+      return { rows: [], rowCount: 1 };
+    }
+    if (/balance = balance \+/.test(sql)) {
+      balances[params[1]] += params[0];
+      return { rows: [], rowCount: 1 };
+    }
+    if (/INSERT INTO wallet_transfers/.test(sql)) {
+      return { rows: [{ id: 32, user_id: params[0], amount: params[3] }], rowCount: 1 };
+    }
+    return { rows: [], rowCount: 0 };
+  });
+  rootQueryImpl = async () => ({ rows: [], rowCount: 0 });
+  delImpl = async () => true;
+
+  const before = balances[1] + balances[2];
+  await TransferModel.create({
+    userId: 'u1',
+    from_wallet_id: 1,
+    to_wallet_id: 2,
+    amount: 75000,
+  });
+
+  assert.deepEqual(balances, { 1: -25000, 2: 85000 });
+  assert.equal(balances[1] + balances[2], before);
+  assert.ok(events.includes('COMMIT'));
+  assert.equal(events.includes('ROLLBACK'), false);
+});
+
 test('fault injection before transfer-log insert rolls back both wallet updates', async () => {
   const balances = { 1: 200000, 2: 50000 };
   let snapshot;
@@ -197,4 +236,22 @@ test('investment P&L create remains successful when cache invalidation fails aft
   assert.ok(events.includes('COMMIT'));
   assert.equal(events.includes('ROLLBACK'), false);
   assert.equal(events.at(-1), 'RELEASE');
+});
+
+test('investment P&L rejects a future recorded date before opening a database transaction', async () => {
+  let connections = 0;
+  connectImpl = async () => {
+    connections += 1;
+    throw new Error('must not connect');
+  };
+
+  await assert.rejects(
+    InvestmentPnLModel.create({ userId: 'u1', wallet_id: 8, amount: 25000, recorded_at: '2099-01-01' }),
+    /Ngày ghi nhận lãi\/lỗ không được nằm trong tương lai/
+  );
+  await assert.rejects(
+    InvestmentPnLModel.update(51, { amount: 30000, recorded_at: '2099-01-01' }, 'u1'),
+    /Ngày ghi nhận lãi\/lỗ không được nằm trong tương lai/
+  );
+  assert.equal(connections, 0);
 });
