@@ -34,6 +34,8 @@
 \usepackage{tocloft}
 \usepackage{xurl}
 \usepackage[hidelinks,unicode]{hyperref}
+\usepackage{tikz}
+\usetikzlibrary{calc}
 
 % Cỡ chữ thân bài đúng 13 pt; các cỡ phụ được định nghĩa nhất quán.
 \makeatletter
@@ -138,3 +140,19 @@
 % tại archive/latex, đường dẫn thứ hai trỏ tới cùng bộ hình cục bộ.
 \graphicspath{{../archive/latex/figures/rendered/}{figures/rendered/}}
 \urlstyle{same}
+
+% Viền trang bìa: hai nét bao quanh toàn trang — nét ngoài đậm, nét trong nhạt.
+% Dùng overlay TikZ theo kích thước giấy để độc lập với lề nội dung.
+\newcommand{\coverborder}{%
+  \begin{tikzpicture}[remember picture,overlay]
+    % Nét ngoài đậm.
+    \draw[line width=1.5pt]
+      ($(current page.south west)+(1.2cm,1.2cm)$)
+      rectangle
+      ($(current page.north east)+(-1.2cm,-1.2cm)$);
+    % Nét trong nhạt.
+    \draw[line width=0.5pt]
+      ($(current page.south west)+(1.5cm,1.5cm)$)
+      rectangle
+      ($(current page.north east)+(-1.5cm,-1.5cm)$);
+  \end{tikzpicture}}

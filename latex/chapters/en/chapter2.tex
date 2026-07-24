@@ -324,7 +324,9 @@ level with a buffer $\beta=5\%$ are
 
 With monthly income $Y$, the default framework allots at most
 $C_{need}=0{,}50Y$ to needs, $C_{want}=0{,}30Y$ to wants and sets a target
-of $0{,}20Y$ for savings. Three strategies produce a raw limit $L_c$:
+of $0{,}20Y$ for savings. Let $g$ be the spending group (needs or wants),
+$C_g$ its allocation ceiling and $\sum_{k\in g}b_k$ the total base limit of
+the categories in that group. Three strategies produce a raw limit $L_c$:
 
 \begin{equation}
   L_c=
@@ -340,7 +342,7 @@ of $0{,}20Y$ for savings. Three strategies produce a raw limit $L_c$:
   \right.
 \end{equation}
 
-Here $g$ is the needs or wants group. The result is rounded to a step of
+The result is rounded to a step of
 10,000 VND; a positive value smaller than one step still becomes 10,000
 VND. Confidence follows the number of months in which the category had
 activity: high when at least 6, medium when 3--5, low when below 3; every
@@ -423,7 +425,8 @@ rules.
 
 Here $S$, $D$, $I$ are the number of substitutions, deletions and
 insertions respectively; $N$ is the number of characters or words in the
-ground truth:
+ground truth. The subscript $c$ denotes character-level counts (CER) and
+$w$ denotes word-level counts (WER):
 
 \begin{equation}
   CER=\frac{S_c+D_c+I_c}{N_c},\qquad

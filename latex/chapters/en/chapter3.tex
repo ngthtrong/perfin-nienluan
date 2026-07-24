@@ -555,7 +555,7 @@ On 16/07/2026, checks from unit to runtime level were run in the workspace. The 
   Expo web/Android export & Bundled 653/960 modules & \statusmeasured & Demonstrates the frontend bundles; not runtime performance. \\
   Financial CSV import & 5,265 rows, 0 rejects, full provenance & \statusmeasured & Run twice on a clone and reconciled against live PostgreSQL after backup. \\
   Category classification (local parser) & Acc 29.36\%; macro-F1 0.177 (12 classes) & \statusmeasured & 5,265 labeled rows; historical labels follow the money source, so only partially schema-independent. \\
-  Ablation parser vs LLM (Gemini) & Parser 21.6\%/0.192; LLM 54.3\%/0.561 & \statusmeasured & Stratified sample of 51 sentences; 51/51 Gemini calls succeeded; p50 897 ms. \\
+  Ablation parser vs LLM (Gemini) & Parser 22.2\%/0.204; LLM 59.5\%/0.607 & \statusmeasured & Stratified sample of 63 sentences; 63/63 Gemini calls succeeded; p50 964 ms. \\
   Feedback before/after & Acc $0\%\to68.19\%$; macro-F1 $0\to0.544$ & \statusmeasured & 3,502 parser-wrong sentences split seed/holdout; control-group non-regression checked. \\
   OCR/STT accuracy & Not yet published & \statusmissing & Requires images/audio with ground truth. \\
   Redis worker running & Not confirmed in this measurement round & \statusmissing & WSL has no Redis/Docker; API fallback and degraded readiness were checked. \\
@@ -582,7 +582,7 @@ The full smoke test demonstrates that the HTTP--PostgreSQL flow, Gemini structur
   Transactions and analytics & \statusmeasured & Transaction, post-commit, zero-fill and full DB smoke passed; 5,265 live rows reconciled. & Labeled dataset and broader DB fault-injection. \\
   Chat preview/confirm & \statusmeasured & One-time claim, stale ID, edit/cancel race, history and HTTP--DB smoke passed. & Measure TTL/claim with real Redis and higher concurrent load. \\
   Local parser & \statusmeasured{} on an independent set & 31/31 strict on the fixed gate; on 5,265 independent rows only 29.36\% acc / macro-F1 0.177. & Improve low-support categories and ambiguous money-source sentences. \\
-  LLM tool routing & \statusmeasured{} (ablation) & Gemini 54.3\% acc / macro-F1 0.561 vs parser 21.6\% / 0.192 on the same 51-sentence sample. & Expand the sample and lock cost/latency per provider. \\
+  LLM tool routing & \statusmeasured{} (ablation) & Gemini 59.5\% acc / macro-F1 0.607 vs parser 22.2\% / 0.204 on the same 63-sentence sample. & Expand the sample and lock cost/latency per provider. \\
   OCR/STT & \statusmeasured & Real-provider smoke passed with 2 images and 1 M4A; no ground truth yet. & Adapter failure tests, CER/WER and field accuracy on an anonymized set. \\
   Wallet/transfer & Partially implemented & Missing wallet-creation route/UI on a fresh install; no transfer integration test yet. & Minimal CRUD and balance-integrity testing. \\
   Recurring and worker & \statusmeasured & Payment locks rows, is atomic, has an expected period and chat preview; notification is still internal chat. & Live DB tests and an out-of-app reminder channel if expanded. \\
@@ -593,7 +593,7 @@ The full smoke test demonstrates that the HTTP--PostgreSQL flow, Gemini structur
 
 \subsubsection{Quantitative Experiments on the Labeled Set}
 
-Three experiments were run on 24/07/2026 against \code{dataFinance.csv} itself (5,265 rows, SHA-256 \code{a9b7cf1b...027ca94f}), commit \code{5f03476}, Node v24.16.0, provider \code{gemini}, model \code{gemini-3.1-flash-lite}. Code and reproducible artifacts (JSON + Markdown) live under \code{demo/backend/tests/experiments/} and \code{resource/report/evidence/}.
+The acceptance run of 16/07/2026 (above) confirmed that the system runs correctly at the runtime level but did not yet quantify algorithmic quality on an independent set; a second measurement round on 24/07/2026 therefore added three quantitative experiments over the full labeled set to answer the specific question of how accurate the algorithm is. These three experiments were run on 24/07/2026 against \code{dataFinance.csv} itself (5,265 rows, SHA-256 \code{a9b7cf1b...027ca94f}), commit \code{5f03476}, Node v24.16.0, provider \code{gemini}, model \code{gemini-3.1-flash-lite}. Code and reproducible artifacts (JSON + Markdown) live under \code{demo/backend/tests/experiments/} and \code{resource/report/evidence/}.
 
 \paragraph{a) Category-classification benchmark --- local parser on the full set.}
 Running \code{parseLocalTransaction} over all 5,265 labeled rows and comparing the predicted label with the gold label mapped from the historical taxonomy.
@@ -619,7 +619,7 @@ Running \code{parseLocalTransaction} over all 5,265 labeled rows and comparing t
 The low figure is a \textbf{meaningful finding, not a failure}: historical labels classify by \emph{money source} (e.g. ``mẹ cho tiền ăn'' $\to$ the family label ``Khác'') whereas the parser classifies by \emph{content} ($\to$ ``Ăn uống''). The two schemes use different axes, so 79.5\% (2,957/3,719) of misses revolve around the ``Khác'' class. This is precisely why the design chooses the LLM as the primary extraction layer and keeps the user in a confirmation loop rather than trusting alias matching.
 
 \paragraph{b) Local parser vs LLM (Gemini) ablation.}
-On a stratified sample of 51 sentences (4 per class, seed 42), comparing the two category-extraction arms; the LLM arm calls \code{parseWithGemini} directly, bypassing the cache and local routing.
+On a stratified sample of 63 sentences (5 per class, seed 42), comparing the two category-extraction arms; the LLM arm calls \code{parseWithGemini} directly, bypassing the cache and local routing.
 
 \begin{table}[H]
   \centering
@@ -629,13 +629,13 @@ On a stratified sample of 51 sentences (4 per class, seed 42), comparing the two
     \toprule
     \textbf{Arm} & \textbf{Acc} & \textbf{Macro-F1} & \textbf{Clarify} & \textbf{p50 (ms)} & \textbf{API calls} \\
     \midrule
-    Local parser & 21.6\% & 0.192 & 80.4\% & 0 & 0 \\
-    LLM (Gemini) & 54.3\% & 0.561 & 94.1\% & 897 & 51 \\
+    Local parser & 22.2\% & 0.204 & 84.1\% & 0 & 0 \\
+    LLM (Gemini) & 59.5\% & 0.607 & 95.2\% & 964 & 63 \\
     \bottomrule
   \end{tabularx}
 \end{table}
 
-The LLM generalizes 2.9$\times$ better on macro-F1 over free-form sentences, at the cost of a p50 latency of 897\,ms and per-call API cost. Both arms pass through the confirmation step before any write, so the LLM is an extraction-assist layer rather than a source of truth. Measured over 51/51 successful Gemini calls.
+The LLM generalizes roughly 3.0$\times$ better on macro-F1 over free-form sentences, at the cost of a p50 latency of 964\,ms and per-call API cost. Both arms pass through the confirmation step before any write, so the LLM is an extraction-assist layer rather than a source of truth. All 63 Gemini API calls succeeded (0 errors); of these, 42 sentences received a definite label and 21 returned empty and are counted as misclassifications. The accuracy above is computed over the full 63-sentence sample.
 
 \paragraph{c) Feedback before/after (correction retrieval).}
 Excluding the ``Khác'' class leaves 4,832 content sentences. The parser-wrong group (3,502 sentences) is split in half: seed (write corrections) and holdout (replay). Improvement is measured on the holdout, with a no-regression check on the control group (1,330 sentences the parser already got right).

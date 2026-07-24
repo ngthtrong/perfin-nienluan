@@ -14,7 +14,7 @@
     \textbf{Mục tiêu} & \textbf{Bằng chứng hiện có} & \textbf{Kết luận thận trọng} \\
     \midrule
     O1 --- Mô hình dữ liệu & Migration, model, validation và luồng transaction. & Đã hiện thực ở mức prototype; cần fault-injection trên DB thật. \\
-    O2 --- Pipeline đa phương thức & Tool schema, parser, media adapter, preview/state; ablation parser vs LLM trên tập gán nhãn. & Đã đo trích xuất danh mục: parser macro-F1 0,177, LLM (Gemini) 0,561; OCR/STT accuracy chưa khóa phiên bản. \\
+    O2 --- Pipeline đa phương thức & Tool schema, parser, media adapter, preview/state; ablation parser vs LLM trên tập gán nhãn. & Đã đo trích xuất danh mục: parser macro-F1 0,177, LLM (Gemini) 0,607; OCR/STT accuracy chưa khóa phiên bản. \\
     O3 --- Giải thuật phân tích & Hàm analytics, goal, budget, feedback và test tự động; correction retrieval before/after. & 100/100 test pass; feedback nâng accuracy holdout $0 \to 68{,}19\%$; vẫn cần dataset gán nhãn rộng hơn. \\
     O4 --- Ranh giới LLM & Tool declarations, facts--narrator flow và fallback. & Thiết kế rõ; numeric faithfulness chưa được đo hệ thống. \\
     O5 --- Đánh giá vận hành & Regression, parser, full API/DB/media smoke, mobile UI smoke và Expo export đã chạy. & Lõi demo có bằng chứng runtime; chưa đủ kết luận Redis worker, accuracy, hiệu năng hoặc UAT. \\
@@ -22,7 +22,7 @@
   \end{tabularx}
 \end{table}
 
-Baseline trước sửa ghi nhận 13/13 tệp backend đạt và local parser đạt 27/31 ca strict. Sau ổn định hóa, backend đạt 100/100 test, local-parser quality gate đạt 31/31 strict, full smoke đạt 23/23, Expo web/Android export xử lý 653/960 module. PostgreSQL demo chứa 5.265 giao dịch đã đối soát và mobile-web smoke xác nhận ảnh hiển thị trực tiếp trong chat. Ba thí nghiệm định lượng trên tập này đã trả lời câu hỏi ``giải thuật chính xác đến đâu'': parser cục bộ đạt macro-F1 0,177, LLM nâng lên 0,561, và correction retrieval nâng accuracy holdout lên 68,19\% --- vừa lượng hóa đóng góp lõi, vừa biện minh cho lựa chọn LLM-primary có người xác nhận. Các số này không được dùng để tuyên bố hệ thống đã sẵn sàng production.
+Baseline trước sửa ghi nhận 13/13 tệp backend đạt và local parser đạt 27/31 ca strict. Sau ổn định hóa, backend đạt 100/100 test, local-parser quality gate đạt 31/31 strict, full smoke đạt 23/23, Expo web/Android export xử lý 653/960 module. PostgreSQL demo chứa 5.265 giao dịch đã đối soát và mobile-web smoke xác nhận ảnh hiển thị trực tiếp trong chat. Ba thí nghiệm định lượng trên tập này đã trả lời câu hỏi ``giải thuật chính xác đến đâu'': parser cục bộ đạt macro-F1 0,177, LLM nâng lên 0,607, và correction retrieval nâng accuracy holdout lên 68,19\% --- vừa lượng hóa đóng góp lõi, vừa biện minh cho lựa chọn LLM-primary có người xác nhận. Các số này không được dùng để tuyên bố hệ thống đã sẵn sàng production.
 
 \section{Tác động của LLM}
 

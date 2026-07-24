@@ -14,7 +14,7 @@ At the design and prototype-implementation level, PERFIN has established an arch
     \textbf{Objective} & \textbf{Available Evidence} & \textbf{Cautious Conclusion} \\
     \midrule
     O1 --- Data model & Migrations, models, validation, and the transaction flow. & Implemented at prototype level; fault injection on a real database is still needed. \\
-    O2 --- Multimodal pipeline & Tool schema, parser, media adapters, preview/state, plus an ablation on a labeled set. & Flow implemented and now measured: local parser macro-F1 0.177, Gemini 0.561 on the same sample. \\
+    O2 --- Multimodal pipeline & Tool schema, parser, media adapters, preview/state, plus an ablation on a labeled set. & Flow implemented and now measured: local parser macro-F1 0.177, Gemini 0.607 on the same sample; OCR/STT accuracy not yet version-locked. \\
     O3 --- Analytics algorithms & Analytics, goal, budget, and feedback functions plus automated tests; feedback measured before/after. & 100/100 tests pass; correction retrieval lifts holdout accuracy 0\% $\to$ 68.19\%. Broader labeled data still needed. \\
     O4 --- LLM boundary & Tool declarations, the facts--narrator flow, and fallback. & The design is clear; numeric faithfulness has not yet been measured systematically. \\
     O5 --- Operational evaluation & Regression, parser, full API/DB/media smoke tests, mobile UI smoke tests, and Expo export have all run. & The demo core has runtime evidence; conclusions about the Redis worker, accuracy, performance, or UAT remain insufficient. \\
@@ -22,7 +22,7 @@ At the design and prototype-implementation level, PERFIN has established an arch
   \end{tabularx}
 \end{table}
 
-The baseline recorded before stabilization showed 13/13 backend files passing and the local parser reaching 27/31 strict cases. After stabilization, the backend reached 100/100 tests, the local-parser quality gate reached 31/31 strict cases, the full smoke suite reached 23/23, and the Expo web/Android export processed 653/960 modules. The demo PostgreSQL database contains 5,265 reconciled transactions, and the mobile-web smoke test confirmed that images display directly in the chat. Three quantitative experiments on this dataset (Section~3.3.2) answer the question of how accurate the algorithm is: the local parser reaches macro-F1 0.177, the LLM lifts it to 0.561, and correction retrieval raises holdout accuracy to 68.19\% --- quantifying the core contribution and justifying the human-in-the-loop, LLM-primary design. These figures should not be used to claim that the system is production-ready.
+The baseline recorded before stabilization showed 13/13 backend files passing and the local parser reaching 27/31 strict cases. After stabilization, the backend reached 100/100 tests, the local-parser quality gate reached 31/31 strict cases, the full smoke suite reached 23/23, and the Expo web/Android export processed 653/960 modules. The demo PostgreSQL database contains 5,265 reconciled transactions, and the mobile-web smoke test confirmed that images display directly in the chat. Three quantitative experiments on this dataset (Section~3.3.2) answer the question of how accurate the algorithm is: the local parser reaches macro-F1 0.177, the LLM lifts it to 0.607, and correction retrieval raises holdout accuracy to 68.19\% --- quantifying the core contribution and justifying the human-in-the-loop, LLM-primary design. These figures should not be used to claim that the system is production-ready.
 
 \section{Impact of the LLM}
 

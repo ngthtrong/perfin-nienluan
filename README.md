@@ -1,6 +1,6 @@
 # 📱 Ứng dụng Di động Quản lý Tài chính Cá nhân có hỗ trợ bởi Mô hình Ngôn ngữ Lớn — PERFIN
 
-> **Niên luận Cơ sở ngành - Ngành Kỹ thuật Phần mềm**  
+> **CT239H - Niên luận Cơ sở ngành (Project – Fundamental Topics) - Ngành Kỹ thuật Phần mềm**
 > **Trường Công nghệ Thông tin và Truyền thông - Đại học Cần Thơ (CTU)**
 
 ---
@@ -8,6 +8,7 @@
 ## 📌 1. Thông tin Chung & Ý tưởng Đề tài
 
 ### 👤 Thông tin Sinh viên & Giảng viên
+
 * **Sinh viên thực hiện:** Nguyễn Thanh Trọng (MSSV: **B2305615**)
 * **Lớp:** CT239H M01 — Khóa 49
 * **Ngành:** Kỹ thuật Phần mềm (Software Engineering)
@@ -15,7 +16,9 @@
 * **Học kỳ:** 3 — Năm học: 2025-2026
 
 ### 💡 Ý tưởng Đề tài
+
 **PERFIN** (Personal Finance) là ứng dụng di động quản lý tài chính cá nhân với **giao diện hội thoại (Chatbot) làm trung tâm**. Thay vì thực hiện nhiều thao tác thủ công (nhập số tiền, chọn ngày, chọn danh mục, tìm tài khoản...) như các ứng dụng truyền thống, người dùng giao tiếp bằng ngôn ngữ tự nhiên:
+
 * **Nhập liệu đa phương thức (Multi-modal Input):** Nhập giao dịch bằng văn bản chat tự nhiên (*"ăn sáng 30k"*), ghi âm giọng nói (*"mình mới chuyển khoản 500 nghìn đóng tiền điện bằng ví Momo"*), hoặc chụp ảnh/tải lên hóa đơn/biên lai chuyển tiền.
 * **Điều phối bằng LLM có kiểm soát:** Mô hình ngôn ngữ lớn đóng vai trò **bộ định tuyến ý định (intent router)** — chỉ chọn và điền một *lệnh có kiểu* (typed tool call), còn mọi tác vụ ghi dữ liệu vẫn nằm ở tầng nghiệp vụ, sau khi kiểm tra hợp lệ và (khi cần) người dùng xác nhận preview.
 * **Tương tác cá nhân hóa:** Trò chuyện và nhận lời khuyên tài chính từ các "Nhân cách AI" tùy chọn (ví dụ: *Bà mẹ nghiêm khắc* cằn nhằn khi tiêu hoang, hoặc *Chuyên gia tài chính* đưa ra phân tích chuyên nghiệp).
@@ -25,6 +28,7 @@
 ## 🎯 2. Yêu cầu của Niên luận Cơ sở ngành
 
 Với học phần **Niên luận Cơ sở ngành**, trọng tâm đề tài được phân biệt rõ với Niên luận chuyên ngành hoặc Luận văn tốt nghiệp:
+
 * **Tập trung vào Dữ liệu & Giải thuật:** Tổ chức cấu trúc dữ liệu giao dịch, giải thuật bóc tách thực thể từ ngôn ngữ tự nhiên, luồng OCR trích xuất văn bản từ hóa đơn, luồng Speech-to-Text và bài toán phân loại tự động (Auto-Categorization), cùng ranh giới rõ ràng giữa LLM và logic nghiệp vụ.
 * **Sản phẩm bàn giao yêu cầu:**
   1. **Mã nguồn ứng dụng (Source Code):** Hệ thống Client-Server hoàn chỉnh chạy được demo, kết nối cơ sở dữ liệu để kiểm chứng giải thuật.
@@ -122,31 +126,34 @@ perfin-nienluan/
 ## 📝 5. Trạng thái Triển khai
 
 ### 📑 A. Đặc tả Yêu cầu (Requirements) — `archive/requirements/`
-* [x] **REQ-01:** Nhập liệu đa phương thức bằng AI (văn bản, giọng nói, ảnh hóa đơn)
-* [x] **REQ-02:** Phân loại thông minh (Auto-Categorization)
-* [x] **REQ-03:** Quản lý ngân sách (Budget Management)
-* [x] **REQ-04:** Phân tích và báo cáo cá nhân hóa (Personalized Insights)
-* [x] **REQ-05:** Quản lý tài khoản đa nguồn (Multi-Account)
-* [x] **REQ-06:** Phân tách dòng tiền và tài sản (Cashflow & Asset Management)
-* [x] **REQ-07:** Xuất dữ liệu và sao lưu (Export & Backup)
-* [x] **REQ-08:** Quản lý chi phí cố định và nhắc nhở (Recurring Bills & Reminders)
-* [x] **REQ-09:** Nhân cách AI (AI Personalities)
+
+* [X] **REQ-01:** Nhập liệu đa phương thức bằng AI (văn bản, giọng nói, ảnh hóa đơn)
+* [X] **REQ-02:** Phân loại thông minh (Auto-Categorization)
+* [X] **REQ-03:** Quản lý ngân sách (Budget Management)
+* [X] **REQ-04:** Phân tích và báo cáo cá nhân hóa (Personalized Insights)
+* [X] **REQ-05:** Quản lý tài khoản đa nguồn (Multi-Account)
+* [X] **REQ-06:** Phân tách dòng tiền và tài sản (Cashflow & Asset Management)
+* [X] **REQ-07:** Xuất dữ liệu và sao lưu (Export & Backup)
+* [X] **REQ-08:** Quản lý chi phí cố định và nhắc nhở (Recurring Bills & Reminders)
+* [X] **REQ-09:** Nhân cách AI (AI Personalities)
 
 ### 💻 B. Mã nguồn Ứng dụng (Demo MVP)
-* [x] Backend Express đầy đủ với 12 nhóm route (chat, giao dịch, danh mục, ngân sách, tài khoản, báo cáo, dòng tiền, export, chi phí định kỳ, persona, mục tiêu, AI)
-* [x] Cơ sở dữ liệu PostgreSQL theo migration đánh số (001–008) + seed danh mục/ví mặc định
-* [x] Tích hợp Gemini function-calling làm intent router (8 tool) + local parser fallback
-* [x] Luồng OCR (PaddleOCR/Google Vision) & Speech-to-Text (PhoWhisper/Google STT)
-* [x] Worker chạy nền (BullMQ + Redis) cho nhắc nhở & thông báo chủ động
-* [x] Frontend React Native Expo với đầy đủ màn hình (Dashboard, Chat, Giao dịch, Ngân sách, Báo cáo, Mục tiêu, Dòng tiền, Chi phí định kỳ, Xuất dữ liệu, Cài đặt)
-* [x] Bộ test tự động (~40 file `node --test`) + benchmark độ chính xác phân loại và ablation parser vs LLM
+
+* [X] Backend Express đầy đủ với 12 nhóm route (chat, giao dịch, danh mục, ngân sách, tài khoản, báo cáo, dòng tiền, export, chi phí định kỳ, persona, mục tiêu, AI)
+* [X] Cơ sở dữ liệu PostgreSQL theo migration đánh số (001–008) + seed danh mục/ví mặc định
+* [X] Tích hợp Gemini function-calling làm intent router (8 tool) + local parser fallback
+* [X] Luồng OCR (PaddleOCR/Google Vision) & Speech-to-Text (PhoWhisper/Google STT)
+* [X] Worker chạy nền (BullMQ + Redis) cho nhắc nhở & thông báo chủ động
+* [X] Frontend React Native Expo với đầy đủ màn hình (Dashboard, Chat, Giao dịch, Ngân sách, Báo cáo, Mục tiêu, Dòng tiền, Chi phí định kỳ, Xuất dữ liệu, Cài đặt)
+* [X] Bộ test tự động (~40 file `node --test`) + benchmark độ chính xác phân loại và ablation parser vs LLM
 * [ ] Xác thực/đăng nhập nhiều người dùng thật (hiện dùng chung `default_user`)
 * [ ] Triển khai production, logging tập trung, giám sát
 
 ### ✍️ C. Báo cáo Niên luận (LaTeX song ngữ) — `latex/`
-* [x] Khung báo cáo XeLaTeX song ngữ Việt/Anh, cấu hình metadata (`metadata-vi.tex`, `metadata-en.tex`)
-* [x] Chương 1–4 và tài liệu tham khảo (chuẩn IEEE, quản lý thủ công) cho cả hai ngôn ngữ
-* [x] Phụ lục (`appendices.tex`)
+
+* [X] Khung báo cáo XeLaTeX song ngữ Việt/Anh, cấu hình metadata (`metadata-vi.tex`, `metadata-en.tex`)
+* [X] Chương 1–4 và tài liệu tham khảo (chuẩn IEEE, quản lý thủ công) cho cả hai ngôn ngữ
+* [X] Phụ lục (`appendices.tex`)
 
 > ⚠️ **Ghi chú:** Thư mục `archive/` (bao gồm các đặc tả REQ và báo cáo LaTeX cũ) lưu tài liệu giai đoạn phân tích — không phản ánh cấu trúc mã nguồn hiện tại. Báo cáo chính thức nằm trong `latex/`.
 
@@ -157,6 +164,7 @@ perfin-nienluan/
 > Hướng dẫn chi tiết (troubleshooting, chạy iOS qua tunnel trong WSL, danh sách endpoint) xem trong [demo/README.md](demo/README.md).
 
 ### 🗄️ Bước 1: Chuẩn bị Backend
+
 1. Vào thư mục backend và cài dependency:
    ```bash
    cd demo/backend
@@ -180,6 +188,7 @@ perfin-nienluan/
    SPEECH_PROVIDER=google       # google | phowhisper
    GOOGLE_APPLICATION_CREDENTIALS=/đường/dẫn/service-account.json
    ```
+
    *Không commit khóa API hoặc file credential thật vào git.*
 3. Khởi tạo database (chạy migration + seed mặc định):
    ```bash
@@ -191,9 +200,11 @@ perfin-nienluan/
    ```bash
    npm start          # hoặc npm run dev (node --watch)
    ```
+
    Kiểm tra: `curl http://localhost:3000/` và `curl http://localhost:3000/api/test-db` → JSON có `success: true`.
 
 ### ⚙️ Bước 2 (tùy chọn): Worker nền & OCR/Speech local
+
 * Bật Redis rồi chạy worker cho các tác vụ chủ động:
   ```bash
   docker compose up -d          # từ thư mục demo/ — khởi động Redis
@@ -205,6 +216,7 @@ perfin-nienluan/
   ```
 
 ### 📱 Bước 3: Chạy Frontend (Expo React Native)
+
 1. Vào thư mục frontend và cài dependency:
    ```bash
    cd demo/frontend
@@ -220,7 +232,9 @@ perfin-nienluan/
    ```
 
 ### ⚡ Chạy nhanh bằng script
+
 Từ thư mục `demo/`:
+
 ```bash
 ./start-app.sh lan               # chạy backend + frontend chế độ LAN
 ./start-app.sh tunnel --migrate  # dùng tunnel (test iOS trong WSL) và migrate trước
@@ -228,7 +242,9 @@ Từ thư mục `demo/`:
 ```
 
 ### 📄 Bước 4: Biên dịch Báo cáo LaTeX
+
 Từ thư mục `latex/` (yêu cầu XeLaTeX + TeX Live):
+
 ```bash
 make vi     # -> main-vi.pdf (tiếng Việt)
 make en     # -> main-en.pdf (tiếng Anh)

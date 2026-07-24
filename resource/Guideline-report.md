@@ -6,10 +6,10 @@ The report must follow the regulations below.
 
 ## 1. Formatting the Report
 
-- **Chapter title (Heading 1):** Font Arial, Size 14, Bold, Uppercase.
-- **Section title (Heading 2):** Font Arial, Size 13, Bold, Uppercase.
-- **Subsection title (Heading 3):** Font Arial, Size 13, Bold & Italic, Lowercase.
-- **Sub-subsection title (Heading 4):** Font Arial, Size 13, Italic, Lowercase.
+- **Chapter title (Heading 1):** Font Arial, Size 14, Bold, Uppercase, color #00B0F0.
+- **Section title (Heading 2):** Font Arial, Size 13, Bold, Uppercase, color #2F5496.
+- **Subsection title (Heading 3):** Font Arial, Size 13, Bold & Italic, Lowercase, color #2F5496.
+- **Sub-subsection title (Heading 4):** Font Arial, Size 13, Italic, Lowercase, color #2F5496.
 - **Normal text:** Times New Roman, Size 13, lowercase.
 - Use the "Format/Style" feature in your editor to define these styles.
 - The table of contents should include four levels (Heading 1–4) and be generated automatically.
@@ -29,6 +29,7 @@ Present the cover page formally and include:
 - Academic degree and full name of the advisor.
 - Student ID and full names of the students involved.
 - Semester and academic year.
+- có đường viên 2 nét 1 nét đậm bên ngoài 1 nét nhạt bên trong
 
 ### 2.2 Abstract
 

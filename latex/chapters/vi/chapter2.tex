@@ -306,7 +306,10 @@ $\beta=5\%$ là
 
 Với thu nhập tháng $Y$, khung mặc định dành tối đa
 $C_{need}=0{,}50Y$ cho nhu cầu, $C_{want}=0{,}30Y$ cho mong muốn và đặt
-mục tiêu $0{,}20Y$ cho tiết kiệm. Ba chiến lược tạo hạn mức thô $L_c$:
+mục tiêu $0{,}20Y$ cho tiết kiệm. Gọi $g$ là nhóm chi tiêu (nhu cầu hoặc
+mong muốn), $C_g$ là trần phân bổ của nhóm đó và $\sum_{k\in g}b_k$ là
+tổng hạn mức cơ sở của các danh mục thuộc nhóm. Ba chiến lược tạo hạn
+mức thô $L_c$:
 
 \begin{equation}
   L_c=
@@ -322,7 +325,7 @@ mục tiêu $0{,}20Y$ cho tiết kiệm. Ba chiến lược tạo hạn mức th
   \right.
 \end{equation}
 
-Trong đó $g$ là nhóm nhu cầu hoặc mong muốn. Kết quả được làm tròn theo
+Kết quả được làm tròn theo
 bước 10.000 đồng; giá trị dương nhỏ hơn một bước vẫn thành 10.000 đồng.
 Confidence theo số tháng có phát sinh của danh mục: cao khi ít nhất 6,
 trung bình khi 3--5, thấp khi dưới 3; toàn bộ đề xuất còn có cảnh báo
@@ -399,7 +402,9 @@ prompt hoặc quy tắc phát triển.
 \subsection{Sai số OCR, STT và tác động nghiệp vụ}
 
 Trong đó $S$, $D$, $I$ lần lượt là số phép thay thế, xóa và chèn; $N$ là
-số ký tự hoặc từ trong ground truth:
+số đơn vị trong ground truth. Chỉ số dưới $c$ tính trên đơn vị \emph{ký
+tự} (dùng cho CER) và chỉ số dưới $w$ tính trên đơn vị \emph{từ} (dùng
+cho WER):
 
 \begin{equation}
   CER=\frac{S_c+D_c+I_c}{N_c},\qquad
