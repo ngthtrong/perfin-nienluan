@@ -1,0 +1,97 @@
+<mxfile>
+  <diagram id="seqlayout" name="Nhập giao dịch văn bản có xác nhận">
+    <mxGraphModel dx="800" dy="600" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        <mxCell id="user" value="Người dùng" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;size=40;participant=umlActor;verticalAlign=bottom;spacingBottom=-14;labelBackgroundColor=#ffffff;" vertex="1" parent="1">
+          <mxGeometry x="40" y="40" width="100" height="1240" as="geometry"/>
+        </mxCell>
+        <mxCell id="app" value="Mobile App" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;size=40;" vertex="1" parent="1">
+          <mxGeometry x="270" y="40" width="100" height="1240" as="geometry"/>
+        </mxCell>
+        <mxCell id="chat" value="Chat Route" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;size=40;" vertex="1" parent="1">
+          <mxGeometry x="500" y="40" width="100" height="1240" as="geometry"/>
+        </mxCell>
+        <mxCell id="ai" value="AI Orchestrator" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;size=40;" vertex="1" parent="1">
+          <mxGeometry x="730" y="40" width="100" height="1240" as="geometry"/>
+        </mxCell>
+        <mxCell id="semantic" value="Gemini / Local Router" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;size=40;" vertex="1" parent="1">
+          <mxGeometry x="960" y="40" width="100" height="1240" as="geometry"/>
+        </mxCell>
+        <mxCell id="pending" value="Pending KV Store" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;size=40;" vertex="1" parent="1">
+          <mxGeometry x="1190" y="40" width="100" height="1240" as="geometry"/>
+        </mxCell>
+        <mxCell id="db" value="PostgreSQL" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;size=40;" vertex="1" parent="1">
+          <mxGeometry x="1420" y="40" width="100" height="1240" as="geometry"/>
+        </mxCell>
+        <mxCell id="m0" value="Nhập: ăn phở 50k" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;exitX=0.5;exitY=0.0726;entryX=0.5;entryY=0.0726;" edge="1" parent="1" source="user" target="app">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="m1" value="POST /api/chat/message" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;exitX=0.5;exitY=0.1129;entryX=0.5;entryY=0.1129;" edge="1" parent="1" source="app" target="chat">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="m2" value="Đọc danh mục + feedback" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;exitX=0.5;exitY=0.1532;entryX=0.5;entryY=0.1532;" edge="1" parent="1" source="chat" target="db">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="m3" value="Categories + corrections" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;curved=0;rounded=0;strokeColor=#999999;fontColor=#999999;exitX=0.5;exitY=0.1935;entryX=0.5;entryY=0.1935;" edge="1" parent="1" source="db" target="chat">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="m4" value="parseTransaction(text, context)" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;exitX=0.5;exitY=0.2339;entryX=0.5;entryY=0.2339;" edge="1" parent="1" source="chat" target="ai">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="m5" value="Function calling hoặc local rules" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;exitX=0.5;exitY=0.2742;entryX=0.5;entryY=0.2742;" edge="1" parent="1" source="ai" target="semantic">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="note6" value="LLM chỉ tạo lệnh có kiểu, chưa ghi dữ liệu" style="shape=note;whiteSpace=wrap;html=1;size=14;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+          <mxGeometry x="1030" y="410" width="170" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="m7" value="Typed candidate + confidence" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;curved=0;rounded=0;strokeColor=#999999;fontColor=#999999;exitX=0.5;exitY=0.3629;entryX=0.5;entryY=0.3629;" edge="1" parent="1" source="semantic" target="ai">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="m8" value="Normalized result" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;curved=0;rounded=0;strokeColor=#999999;fontColor=#999999;exitX=0.5;exitY=0.4032;entryX=0.5;entryY=0.4032;" edge="1" parent="1" source="ai" target="chat">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="m9" value="Lưu draft với TTL" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;exitX=0.5;exitY=0.4435;entryX=0.5;entryY=0.4435;" edge="1" parent="1" source="chat" target="pending">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="m10" value="pending_id" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;curved=0;rounded=0;strokeColor=#999999;fontColor=#999999;exitX=0.5;exitY=0.4839;entryX=0.5;entryY=0.4839;" edge="1" parent="1" source="pending" target="chat">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="m11" value="Transaction preview" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;curved=0;rounded=0;strokeColor=#999999;fontColor=#999999;exitX=0.5;exitY=0.5242;entryX=0.5;entryY=0.5242;" edge="1" parent="1" source="chat" target="app">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="m12" value="Hiển thị để sửa / xác nhận" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;curved=0;rounded=0;strokeColor=#999999;fontColor=#999999;exitX=0.5;exitY=0.5645;entryX=0.5;entryY=0.5645;" edge="1" parent="1" source="app" target="user">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="m13" value="Xác nhận" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;exitX=0.5;exitY=0.6048;entryX=0.5;entryY=0.6048;" edge="1" parent="1" source="user" target="app">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="m14" value="POST /api/chat/confirm" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;exitX=0.5;exitY=0.6452;entryX=0.5;entryY=0.6452;" edge="1" parent="1" source="app" target="chat">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="m15" value="Đọc và khóa draft" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;exitX=0.5;exitY=0.6855;entryX=0.5;entryY=0.6855;" edge="1" parent="1" source="chat" target="pending">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="m16" value="Validated draft" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;curved=0;rounded=0;strokeColor=#999999;fontColor=#999999;exitX=0.5;exitY=0.7258;entryX=0.5;entryY=0.7258;" edge="1" parent="1" source="pending" target="chat">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="m17" value="BEGIN; INSERT transaction; cập nhật ví; COMMIT" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;exitX=0.5;exitY=0.7661;entryX=0.5;entryY=0.7661;" edge="1" parent="1" source="chat" target="db">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="m18" value="Giao dịch đã lưu" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;curved=0;rounded=0;strokeColor=#999999;fontColor=#999999;exitX=0.5;exitY=0.8065;entryX=0.5;entryY=0.8065;" edge="1" parent="1" source="db" target="chat">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="m19" value="Xóa pending + invalidate cache" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;exitX=0.5;exitY=0.8468;entryX=0.5;entryY=0.8468;" edge="1" parent="1" source="chat" target="pending">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="m20" value="Kết quả xác nhận" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;curved=0;rounded=0;strokeColor=#999999;fontColor=#999999;exitX=0.5;exitY=0.8871;entryX=0.5;entryY=0.8871;" edge="1" parent="1" source="chat" target="app">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="m21" value="Thông báo thành công" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;curved=0;rounded=0;strokeColor=#999999;fontColor=#999999;exitX=0.5;exitY=0.9274;entryX=0.5;entryY=0.9274;" edge="1" parent="1" source="app" target="user">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

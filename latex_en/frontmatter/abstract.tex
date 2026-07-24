@@ -1,0 +1,24 @@
+\frontchapter{Abstract}
+
+PERFIN is a personal-finance prototype designed to reduce data-entry effort
+while preserving data correctness and verifiability. The system ingests
+transactions from text, voice, and receipt images; it normalizes input,
+extracts records, and requires user confirmation before writing to
+PostgreSQL. SQL queries and deterministic algorithms compute balances,
+budgets, trends, anomalies, cash-flow runway, recurring charges, and goals;
+the large language model (LLM) is confined to understanding intent, filling
+parameters, asking clarifying questions when input is ambiguous, and
+narrating facts that have already been computed. The contribution is an
+architecture that separates the language-generation layer from the financial
+core, using Redis for state management and BullMQ for task orchestration,
+together with an evaluation protocol for algorithmic correctness and numeric
+faithfulness. Measured results include 100/100 backend tests, a 31/31
+local-parser quality gate, and 23/23 full smoke tests; the application bundles
+on web and Android; the demo dataset contains 5,265 transactions with full
+provenance. However, the results do not yet establish Gemini/OCR/STT accuracy
+or production readiness; AI metrics must still be measured on a reproducible,
+labeled dataset.
+
+\vspace{0.5cm}
+\noindent\textbf{Keywords:} personal finance management, large language model,
+data analytics, entity extraction, PostgreSQL, Redis, verifiable systems.

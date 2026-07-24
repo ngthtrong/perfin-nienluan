@@ -1,0 +1,64 @@
+\chapter{Conclusion}
+\label{chap:conclusion}
+
+\section{Achieved Results}
+
+At the level of design and prototype implementation, PERFIN has formed an architecture that separates data, algorithms, and the LLM layer; it has migrations for 18 physical tables; it has analytics, feedback, budget, goal, state, and worker modules; and it has a runnable automated test suite. The most important contribution of this report is clarifying the role of the LLM: the model does not replace SQL or statistical algorithms, but instead turns natural language into typed commands and turns facts into explanations.
+
+\begin{table}[H]
+  \centering
+  \caption{Cross-check of objectives against evidence}
+  \label{tab:objective-evidence}
+  \begin{tabularx}{\textwidth}{@{}L{3.6cm}Y Y@{}}
+    \toprule
+    \textbf{Objective} & \textbf{Evidence available} & \textbf{Cautious conclusion} \\
+    \midrule
+    O1 --- Data model & Migrations, models, validation, and the transaction flow. & Implemented at the prototype level; fault injection on a real database is still needed. \\
+    O2 --- Multimodal pipeline & Tool schema, parser, media adapters, preview/state. & The source-code flow exists; version-locked accuracy has not yet been measured. \\
+    O3 --- Analytical algorithms & Analytics, goal, budget, and feedback functions, together with automated tests. & 100/100 tests pass; the calendar axis has been zero-filled, but a broader labeled dataset is still needed. \\
+    O4 --- LLM boundary & Tool declarations, the facts--narrator flow, and fallback. & The design is clear; numeric faithfulness has not yet been measured systematically. \\
+    O5 --- Operational evaluation & Regression, parser, full API/DB/media smoke, mobile UI smoke, and Expo export have been run. & The demo core has runtime evidence; there is not yet enough basis to draw conclusions about the Redis worker, accuracy, performance, or UAT. \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+The pre-fix baseline recorded 13/13 backend test files passing and the local parser passing 27/31 strict cases. After stabilization, the backend reached 100/100 tests, the local-parser quality gate reached 31/31 strict, full smoke testing reached 23/23, and the Expo web/Android export bundled 653/960 modules. The demo PostgreSQL database contains 5,265 reconciled transactions, and the mobile-web smoke test confirmed that images display directly in the chat. These figures must not be used to claim that the system is production-ready.
+
+\section{The Impact of the LLM}
+
+The LLM creates value in three respects. First, the model reduces input friction by understanding varied phrasing, relative dates, and multi-intent sentences. Second, function calling turns natural-language sentences into typed commands, allowing the form and the chat to share the same business service. Third, grounded narration interprets facts according to context and persona, making algorithmic results more accessible.
+
+This impact remains positive only when four guardrails are in place: the schema, validation, the preview/confirmation step, and facts grounding. Without these guardrails, the LLM increases the risk of incorrect data; if the entire computation is delegated to the model, the results lose reproducibility. The benefit of the LLM therefore needs to be measured in comparison with the parser and the form, using entity F1, completion rate, number of operations, latency, cost, and the unsupported-number rate.
+
+\section{Limitations}
+
+\begin{enumerate}
+  \item The runtime uses \code{default_user}; production authentication and authorization are not yet implemented.
+  \item Extraction quality depends on the provider, everyday phrasing, and image/audio quality; a labeled benchmark does not yet exist.
+  \item The anomaly, fuzzy-matching, recurring, and correlation thresholds are initial configuration values that have not yet been optimized on representative data.
+  \item Runway and trend have zero-filled days/months, but they remain simple extrapolations that do not yet model seasonality, future events, or irregular income.
+  \item The persona can make responses easier to read, but its behavioral effectiveness has not been demonstrated through UAT.
+  \item Several supporting features for the demo are not yet complete: wallet creation, real PDF generation, scheduled backup, restore, and push notifications.
+  \item The API--PostgreSQL flow and media providers have been smoke tested; the Redis worker, live retry/idempotency, and a range of mobile devices have not yet been verified.
+  \item The ERD includes a user scope, but some ID-based operations do not always include a user condition, creating risk when upgrading to multi-user support.
+\end{enumerate}
+
+\section{Future Work}
+
+The order of development must keep the focus on data and algorithms:
+
+\begin{enumerate}
+  \item \textbf{Verify core integration:} transactions, pending claims, recurring periods, and live PostgreSQL already have regression/smoke coverage; the next steps are the Redis worker, fault injection, and user scope.
+  \item \textbf{Expand the language baseline:} the 31-sentence quality gate has passed; an independent evaluation set is still needed, along with typos, multi-intent sentences, and a reported macro-F1.
+  \item \textbf{Verify the algorithms:} the time axis, zero-spend days, and the denominator have been fixed; a larger version-locked synthetic dataset, backtesting, and hand-computed expected values are still needed.
+  \item \textbf{Measure the LLM's impact:} build a labeled Vietnamese dataset, a parser--LLM ablation, and a numeric grounding checker.
+  \item \textbf{Verify media handling:} collect an anonymized image/audio set, measure CER/WER and transaction-field accuracy, and test provider failures.
+  \item \textbf{Complete the supporting features:} wallet creation, correctly formatted PDFs, safe backup/restore, and the scheduled worker; to be done only after the core has stabilized.
+  \item \textbf{Prepare for a real deployment:} authentication, authorization, audit logging, key management, and a media retention/deletion policy.
+\end{enumerate}
+
+Bank synchronization, shared wallets, and high availability should only be considered at a later stage. Expanding features before the correctness of the data and the stability of the experimental evidence would shift the focus away from this basic-level project.
+
+\section{Overall Conclusion}
+
+PERFIN carries academic value when presented as a financial data-processing system with an LLM communication layer, not as a chatbot that happens to do arithmetic. The appropriate structure is: relational data as the source of truth, deterministic algorithms that produce facts, the LLM assisting with understanding and interpretation, and the user retaining the authority to confirm every change. This report simultaneously shows what has been implemented, what results have been measured, and what gaps must still be closed; this is the basis for continued development without compromising the integrity of the results.

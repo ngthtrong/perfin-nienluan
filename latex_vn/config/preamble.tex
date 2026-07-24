@@ -1,7 +1,7 @@
 % Biên dịch bằng XeLaTeX để hỗ trợ Unicode tiếng Việt và font hệ thống.
+% Ngôn ngữ (polyglossia + chuỗi hiển thị) được nạp qua config/lang-\doclang.
 \usepackage{fontspec}
 \usepackage{polyglossia}
-\setdefaultlanguage{vietnamese}
 \defaultfontfeatures{Ligatures=TeX}
 
 \IfFontExistsTF{Times New Roman}
@@ -81,14 +81,7 @@
 \renewcommand{\cftchappagefont}{\sffamily\bfseries}
 \setlength{\cftbeforechapskip}{5pt}
 
-\renewcommand{\chaptername}{Chương}
-\renewcommand{\contentsname}{Mục lục}
-\renewcommand{\listfigurename}{Danh mục hình}
-\renewcommand{\listtablename}{Danh mục bảng}
-\renewcommand{\figurename}{Hình}
-\renewcommand{\tablename}{Bảng}
-\renewcommand{\bibname}{Tài liệu tham khảo}
-\renewcommand{\appendixname}{Phụ lục}
+% Tên khối (Chương/Mục lục/Hình/Bảng...) được đặt trong config/lang-\doclang.
 % Đánh số Hình 1..13 và bảng liên tục theo yêu cầu guideline.
 \counterwithout{figure}{chapter}
 \counterwithout{table}{chapter}

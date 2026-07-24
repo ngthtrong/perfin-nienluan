@@ -1,21 +1,32 @@
 {
   "env": {
-    "ANTHROPIC_AUTH_TOKEN": "sk-UMer7x7BTwV4cTK6Jd2xBy4aFYzwVpSEwVdXtnQsuIY",
-    "ANTHROPIC_BASE_URL": "https://api.xpiki.com/v1",
-    "ANTHROPIC_MODEL": "kr/claude-opus-4.8",
-    "ANTHROPIC_DEFAULT_OPUS_MODEL": "kr/claude-opus-4.8",
-    "ANTHROPIC_DEFAULT_SONNET_MODEL": "kr/claude-sonnet-5",
-    "ANTHROPIC_DEFAULT_HAIKU_MODEL": "kr/claude-opus-4.7",
+    "ANTHROPIC_AUTH_TOKEN": "sk-09b118cbc356ff4d4dd320c6f80cdb2ab2597a4d6bf28561d854720fdd023dbc",
+    "ANTHROPIC_BASE_URL": "https://api.vnteam.online",
+    "ANTHROPIC_MODEL": "claude-opus-4-8",
+    "ANTHROPIC_DEFAULT_OPUS_MODEL": "claude-opus-4-8",
+    "ANTHROPIC_DEFAULT_SONNET_MODEL": "claude-sonnet-5",
+    "ANTHROPIC_DEFAULT_HAIKU_MODEL": "claude-haiku-4-5",
+    "ANTHROPIC_DEFAULT_FABLE_MODEL": "claude-fable-5",
+    "CLAUDE_CODE_SUBAGENT_MODEL": "claude-sonnet-5",
+    "CLAUDE_CODE_ENABLE_TELEMETRY": "0",
     "CLAUDE_CODE_ENABLE_GATEWAY_MODEL_DISCOVERY": "1"
   },
   "permissions": {
+    "allow": [
+      "Bash(*)",
+      "PowerShell(*)",
+      "WebSearch",
+      "WebFetch(domain:github.com)"
+    ],
     "defaultMode": "bypassPermissions"
   },
   "model": "opus",
   "availableModels": [
-    "kr/claude-opus-4.8",
-    "kr/claude-opus-4.7",
-    "kr/claude-sonnet-5"
+    "claude-opus-4-8",
+    "claude-opus-4-7",
+    "claude-sonnet-5",
+    "claude-haiku-4-5",
+    "claude-fable-5"
   ],
   "hooks": {
     "PreToolUse": [
@@ -27,8 +38,21 @@
             "command": "rtk hook claude"
           }
         ]
+      },
+      {
+        "matcher": "PowerShell",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "rtk hook claude"
+          }
+        ]
       }
     ]
+  },
+  "statusLine": {
+    "type": "command",
+    "command": "powershell -ExecutionPolicy Bypass -File \"C:\\Users\\nhan\\.claude\\plugins\\cache\\ponytail\\ponytail\\4.8.4\\hooks\\ponytail-statusline.ps1\""
   },
   "enabledPlugins": {
     "frontend-design@claude-plugins-official": true,
@@ -40,13 +64,29 @@
     "feature-dev@claude-plugins-official": true,
     "commit-commands@claude-plugins-official": true,
     "skill-creator@claude-plugins-official": true,
-    "ponytail@ponytail": true
+    "ponytail@ponytail": true,
+    "backend-development@claude-code-workflows": true,
+    "api-scaffolding@claude-code-workflows": true,
+    "developer-essentials@claude-code-workflows": true,
+    "frontend-mobile-development@claude-code-workflows": true,
+    "database-design@claude-code-workflows": true,
+    "data-engineering@claude-code-workflows": true,
+    "cloud-infrastructure@claude-code-workflows": true,
+    "cicd-automation@claude-code-workflows": true,
+    "agent-orchestration@claude-code-workflows": true,
+    "context-management@claude-code-workflows": true
   },
   "extraKnownMarketplaces": {
     "ponytail": {
       "source": {
         "source": "github",
         "repo": "DietrichGebert/ponytail"
+      }
+    },
+    "claude-code-workflows": {
+      "source": {
+        "source": "github",
+        "repo": "wshobson/agents"
       }
     }
   },
@@ -56,7 +96,8 @@
   "theme": "dark",
   "switchModelsOnFlag": true,
   "fallbackModels": [
-    "kr/claude-sonnet-5",
-    "kr/claude-opus-4.7"
+    "claude-sonnet-5",
+    "claude-opus-4-7",
+    "claude-fable-5"
   ]
 }

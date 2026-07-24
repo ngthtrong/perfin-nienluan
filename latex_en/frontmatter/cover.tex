@@ -1,0 +1,36 @@
+\begin{titlepage}
+  \thispagestyle{empty}
+  \begin{center}
+    {\sffamily\fontsize{14pt}{18pt}\selectfont\bfseries
+      \university\\[0.25cm]
+      \college\par}
+
+    \vspace{0.8cm}
+    \IfFileExists{../archive/latex/images/ctu_logo.png}{%
+      \includegraphics[width=0.20\textwidth]{../archive/latex/images/ctu_logo.png}%
+    }{%
+      \fbox{\parbox[c][2.8cm][c]{2.8cm}{\centering\sffamily CTU Logo}}%
+    }
+
+    \vspace{0.8cm}
+    {\sffamily\fontsize{14pt}{18pt}\selectfont\bfseries \projecttype\par}
+
+    \vfill
+    {\sffamily\fontsize{18pt}{24pt}\selectfont\bfseries \projecttitle\par}
+    \vfill
+
+    \begin{tabular}{@{}L{5.2cm}L{8.2cm}@{}}
+      \textbf{Major:} & \major \\
+      \textbf{Cohort:} & \cohort \\
+      \textbf{Course class:} & \courseclass \\
+      \textbf{Advisor:} & \advisor \\
+      \textbf{Student:} & \studentname \\
+      \textbf{Student ID:} & \studentid
+    \end{tabular}
+
+    \vfill
+    {\sffamily\bfseries Semester \semester, Academic Year \academicyear\par}
+    \vspace{0.4cm}
+    {\sffamily Can Tho, 2026\par}
+  \end{center}
+\end{titlepage}

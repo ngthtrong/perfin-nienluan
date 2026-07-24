@@ -1,0 +1,150 @@
+% Compile with XeLaTeX for system fonts (Times New Roman / Arial).
+\usepackage{fontspec}
+\usepackage{polyglossia}
+\setdefaultlanguage{english}
+\defaultfontfeatures{Ligatures=TeX}
+
+\IfFontExistsTF{Times New Roman}
+  {\setmainfont{Times New Roman}}
+  {\setmainfont{TeX Gyre Termes}}
+\IfFontExistsTF{Arial}
+  {\setsansfont{Arial}}
+  {\setsansfont{TeX Gyre Heros}}
+\setmonofont{DejaVu Sans Mono}[Scale=0.84]
+
+\usepackage[a4paper,left=3.5cm,right=2cm,top=2cm,bottom=2cm]{geometry}
+\usepackage{setspace}
+\usepackage{indentfirst}
+\usepackage{microtype}
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{pdflscape}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{tabularx}
+\usepackage{array}
+\usepackage{makecell}
+\usepackage{threeparttable}
+\usepackage{enumitem}
+\usepackage{caption}
+\usepackage{chngcntr}
+\usepackage{xcolor}
+\usepackage{titlesec}
+\usepackage{tocloft}
+\usepackage{xurl}
+\usepackage[hidelinks,unicode]{hyperref}
+
+% Body text 13 pt per the report regulations; auxiliary sizes stay consistent.
+\makeatletter
+\renewcommand\normalsize{%
+  \@setfontsize\normalsize{13pt}{19.5pt}%
+  \abovedisplayskip 10pt plus 2pt minus 4pt
+  \belowdisplayskip 10pt plus 2pt minus 4pt
+  \abovedisplayshortskip 6pt plus 2pt
+  \belowdisplayshortskip 6pt plus 2pt minus 2pt}
+\renewcommand\small{\@setfontsize\small{11.5pt}{15pt}}
+\renewcommand\footnotesize{\@setfontsize\footnotesize{10.5pt}{13pt}}
+\makeatother
+\AtBeginDocument{\normalsize}
+
+\setlength{\parindent}{1cm}
+\setlength{\parskip}{0pt}
+\setlength{\emergencystretch}{2em}
+\setlist{topsep=4pt,itemsep=2pt,parsep=0pt,leftmargin=1.1cm}
+
+% Heading 1--4 per the report regulations.
+\titleformat{\chapter}[hang]
+  {\sffamily\fontsize{14pt}{17pt}\selectfont\bfseries}
+  {\MakeUppercase{\chaptername}\ \thechapter:}{0.6em}{\MakeUppercase}
+\titleformat{name=\chapter,numberless}[hang]
+  {\sffamily\fontsize{14pt}{17pt}\selectfont\bfseries}
+  {}{0pt}{\MakeUppercase}
+\titleformat{\section}
+  {\sffamily\fontsize{13pt}{16pt}\selectfont\bfseries}
+  {\thesection.}{0.5em}{\MakeUppercase}
+\titleformat{\subsection}
+  {\sffamily\fontsize{13pt}{16pt}\selectfont\bfseries\itshape}
+  {\thesubsection.}{0.5em}{}
+\titleformat{\subsubsection}
+  {\sffamily\fontsize{13pt}{16pt}\selectfont\itshape}
+  {\thesubsubsection.}{0.5em}{}
+\titlespacing*{\chapter}{0pt}{0pt}{18pt}
+\titlespacing*{\section}{0pt}{18pt}{8pt}
+\titlespacing*{\subsection}{0pt}{14pt}{6pt}
+\titlespacing*{\subsubsection}{0pt}{12pt}{5pt}
+
+% chapter + section + subsection + subsubsection = four levels in the ToC.
+\setcounter{tocdepth}{3}
+\setcounter{secnumdepth}{3}
+\renewcommand{\cftchapfont}{\sffamily\bfseries}
+\renewcommand{\cftchappagefont}{\sffamily\bfseries}
+\setlength{\cftbeforechapskip}{5pt}
+
+\renewcommand{\chaptername}{Chapter}
+\renewcommand{\contentsname}{Table of Contents}
+\renewcommand{\listfigurename}{List of Figures}
+\renewcommand{\listtablename}{List of Tables}
+\renewcommand{\figurename}{Figure}
+\renewcommand{\tablename}{Table}
+\renewcommand{\bibname}{References}
+\renewcommand{\appendixname}{Appendix}
+% Number figures 1..13 and tables continuously per the regulations.
+\counterwithout{figure}{chapter}
+\counterwithout{table}{chapter}
+
+\captionsetup{
+  font=normalsize,
+  labelfont=bf,
+  justification=centering,
+  singlelinecheck=false,
+  skip=6pt
+}
+
+\definecolor{PerfinBlue}{HTML}{0B4F6C}
+\definecolor{PerfinLight}{HTML}{EAF4F8}
+\definecolor{StatusGreen}{HTML}{1B6E3C}
+\definecolor{StatusAmber}{HTML}{8A5A00}
+\definecolor{StatusRed}{HTML}{9A1B1B}
+
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
+\newcolumntype{C}[1]{>{\centering\arraybackslash}p{#1}}
+\newcolumntype{R}[1]{>{\raggedleft\arraybackslash}p{#1}}
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
+
+\newcommand{\code}[1]{\texttt{\detokenize{#1}}}
+\newcommand{\statusmeasured}{\textcolor{StatusGreen}{\textbf{Measured}}}
+\newcommand{\statusimplemented}{\textcolor{PerfinBlue}{\textbf{Implemented}}}
+\newcommand{\statustarget}{\textcolor{StatusAmber}{\textbf{Target}}}
+\newcommand{\statusmissing}{\textcolor{StatusRed}{\textbf{Not measured}}}
+
+\newcommand{\frontchapter}[1]{%
+  \cleardoublepage
+  \phantomsection
+  \chapter*{#1}
+  \addcontentsline{toc}{chapter}{#1}}
+
+\newcommand{\reportfigure}[4][0.96\linewidth]{%
+  \begin{figure}[H]
+    \centering
+    \includegraphics[width=#1,height=0.72\textheight,keepaspectratio]{#2}
+    \caption{#3}
+    \label{#4}
+  \end{figure}}
+
+\newcommand{\widereportfigure}[3]{%
+  \clearpage
+  \begin{landscape}
+    \begin{figure}[p]
+      \centering
+      \includegraphics[width=0.96\linewidth,height=0.78\textheight,keepaspectratio]{#1}
+      \caption{#2}
+      \label{#3}
+    \end{figure}
+  \end{landscape}
+  \clearpage}
+
+% Prefer the corrected vector diagrams; the local path is used when building
+% inside this project directory.
+\graphicspath{{figures/rendered/}{../archive/latex/figures/rendered/}}
+\urlstyle{same}

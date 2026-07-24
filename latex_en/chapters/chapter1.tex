@@ -1,0 +1,163 @@
+\chapter{Introduction}
+\label{chap:introduction}
+
+\section{Problem Statement}
+
+\subsection{Context}
+
+Personal finance management requires users to record transactions
+consistently, categorize them correctly, and make sense of their
+income--expense history. Financial literacy is directly linked to the
+ability to plan and to make sound long-term decisions
+\cite{lusardi2014}. Traditional bookkeeping tools, however, usually
+demand many manual steps: choosing the transaction type, entering the
+amount, and selecting a category, a wallet, and a date. When data entry
+becomes a burden, records are easily left incomplete or mislabeled, and
+every downstream report becomes less trustworthy.
+
+Natural input such as ``ph\d{o} for breakfast today, 45k paid by Momo''
+reduces the number of steps, but it introduces a new engineering
+problem. The system must understand Vietnamese currency units, relative
+dates, several transactions in a single sentence, approximate wallet
+names, and the context needed for categorization. Receipt images and
+voice add further OCR/STT noise. If a speculative result is written
+straight into the database, a small model error can corrupt the
+balance, the budget, and every insight computed afterwards.
+
+\subsection{The Analysis and Interpretation Problem}
+
+Charts and filters answer well-defined questions such as ``how much did
+I spend this month.'' The research value of PERFIN does not lie in
+wrapping an SQL query inside a chatbot. The system must instead detect
+phenomena that a single number cannot reveal: a gradually rising trend,
+an abnormal spending day, the rate at which cash is being depleted, a
+small recurring charge, or a goal whose progress has drifted off track.
+
+These phenomena must be computed by algorithms that can be tested. An
+LLM can understand a question and interpret a result, but it is not a
+source of truth for financial computation. Delegating the entire
+analysis to an LLM makes results hard to reproduce and increases the
+risk of numbers that do not exist in the source data.
+
+\subsection{Research Questions}
+
+The project focuses on three questions:
+
+\begin{enumerate}
+  \item How can text, image, and voice input be turned into structured
+  transactions while still protecting data correctness?
+  \item Which deterministic algorithms are suitable for producing
+  explainable insights from a personal financial history?
+  \item Where should the LLM participate so that it increases
+  naturalness and personalization without seizing control of computation
+  or silently altering data?
+\end{enumerate}
+
+\widereportfigure{01-system-context.pdf}{System context and scope of
+PERFIN. The user interacts with the mobile application; the LLM, OCR,
+and STT providers are external supporting services only.}{fig:system-context}
+
+Figure~\ref{fig:system-context} positions PERFIN as a data- and
+algorithm-management system. Banking integration, shared wallets,
+production authentication, and high-availability infrastructure are out
+of scope for this basic-level project.
+
+\section{Objectives}
+
+The overall objective is to build and evaluate a personal finance
+prototype in which structured data and deterministic algorithms form the
+foundation, while the LLM acts as a controlled layer for language
+understanding and interpretation. The specific objectives in
+Table~\ref{tab:objectives} are written to be specific, measurable, and
+bounded, each paired with the evidence and the acceptance threshold that
+would let it be marked complete.
+
+\begin{table}[H]
+  \centering
+  \caption{Objectives and evaluation criteria of the project}
+  \label{tab:objectives}
+  \begin{tabularx}{\textwidth}{@{}L{1.1cm}Y Y@{}}
+    \toprule
+    \textbf{ID} & \textbf{Specific objective} & \textbf{Evidence and acceptance criteria} \\
+    \midrule
+    O1 & Build a financial data model with keys, constraints, indexes, and atomic transactions. & Migrations, ERD, and rollback tests; every critical update flow must either complete fully or leave the data unchanged. \\
+    O2 & Build a multimodal extraction pipeline with clarification and confirmation. & A labeled dataset and tool-call logs; no database write when a required field is missing. \\
+    O3 & Implement trend, anomaly, runway, recurring, correlation, budget, and goal algorithms. & Formula tests over ordinary data, boundary data, and hand-computed expected values. \\
+    O4 & Restrict the LLM to intent understanding, tool calling, and fact interpretation. & Tool schemas, numeric-faithfulness checks, and fallback tests; no number introduced beyond the supplied facts. \\
+    O5 & Evaluate the operational readiness of the prototype. & Integration tests, p50/p95 latency, provider errors, and UAT, each with reproducible logs before publication. \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+The thresholds in Table~\ref{tab:objectives} are \textbf{acceptance
+targets}, not results that have automatically been achieved. The report
+applies the label ``measured'' only when a reproducible command,
+environment, and output exist.
+
+\section{Scope}
+
+\subsection{Scope of Work}
+
+\begin{table}[H]
+  \centering
+  \caption{Scope of work and out-of-scope items}
+  \label{tab:scope}
+  \begin{tabularx}{\textwidth}{@{}Y Y@{}}
+    \toprule
+    \textbf{In scope} & \textbf{Out of scope} \\
+    \midrule
+    Income, expense, wallet-transfer, and investment profit/loss transactions at the prototype level. & Open Banking integration and real bank synchronization. \\
+    Text, receipt-image, and voice input; preview and confirmation. & Training new foundation, OCR, or STT models. \\
+    Categories, correction feedback, suggestions, and confirmed re-tagging. & Shared wallets, group debt splitting, and real-time collaboration. \\
+    Budgets, recurring bills, insights, and financial goals. & Investment advice, credit scoring, or decisions made on the user's behalf. \\
+    A single \code{default_user} demo profile and a data-upgrade path. & Registration, JWT, authorization, and production multi-user isolation. \\
+    Redis, worker, and fallbacks for demo and testing. & High availability, centralized monitoring, and uptime commitments. \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+The focus of the project is the data model, the correctness of data
+transformations, and the analytical algorithms. The mobile interface
+serves to capture input and to illustrate usability; exhaustive CRUD for
+every object is not the primary measure of academic contribution.
+
+\subsection{Assumptions and Limitations}
+
+\begin{itemize}
+  \item The default currency is VND; monetary data uses a decimal type
+  in PostgreSQL. Numbers generated by the LLM must not be used as a
+  source of truth.
+  \item Statistical conclusions are meaningful only when the number of
+  observations is large enough. The system must lower its confidence or
+  decline to conclude when the data is too sparse.
+  \item Personas change only the manner of expression, not the facts,
+  the computation, the access rights, or the confirmation conditions.
+  \item The prototype does not replace a financial professional;
+  suggestions only help the user organize and understand personal data.
+\end{itemize}
+
+\section{Contributions}
+
+The project targets five verifiable contributions:
+
+\begin{enumerate}
+  \item a constrained data model with atomic update flows;
+  \item a pipeline that combines an LLM, a local parser, fuzzy matching,
+  and a human in the loop;
+  \item a set of deterministic analytical algorithms, separated from the
+  language-generation layer;
+  \item a grounded-narration mechanism in which the LLM interprets only
+  facts that have already been computed;
+  \item an evaluation protocol that separates algorithmic correctness,
+  AI quality, performance, and the data-entry experience.
+\end{enumerate}
+
+\section{Report Structure}
+
+Chapter~\ref{chap:introduction} presents the problem, objectives, and
+scope. Chapter~\ref{chap:theory} builds the theoretical foundation on
+financial data, LLMs, OCR/STT, and analytical algorithms.
+Chapter~\ref{chap:results} specifies the requirements, the architectural
+design, the data model, the processing flows, and the testing.
+Chapter~\ref{chap:conclusion} maps objectives to evidence, states the
+limitations, and proposes future work.
