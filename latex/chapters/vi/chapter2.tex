@@ -442,7 +442,8 @@ và ghi rõ provider, phần cứng, số lượt.
 Transformer dùng attention để mô hình hóa quan hệ token và là nền tảng
 của LLM hiện đại \cite{vaswani2017}. PERFIN tận dụng khả năng hiểu cách
 diễn đạt đa dạng, nhưng không dùng mô hình để tính sổ cái hay thống kê.
-Tool được khai báo bằng schema; LLM đề xuất tên tool và đối số, còn ứng
+Tool được khai báo bằng schema theo cơ chế function calling của nhà cung
+cấp \cite{geminifunctioncalling}; LLM đề xuất tên tool và đối số, còn ứng
 dụng validation, tạo preview, chờ xác nhận rồi mới thực thi. Structured
 output chỉ bảo đảm hình dạng JSON, không bảo đảm danh mục đúng, hai ví
 khác nhau hoặc ngày thuộc miền hợp lệ.
@@ -509,12 +510,13 @@ còn LLM là lớp giao tiếp có kiểm soát.
     Node.js + Express & API hướng I/O; dùng chung JavaScript với hàm
     thuần và test; phù hợp modular monolith & Không cần chi phí vận hành
     microservice \\ \hline
-    PostgreSQL & Khóa ngoại, \texttt{DECIMAL}, transaction và truy vấn
-    tổng hợp phù hợp sổ cái & File hoặc NoSQL khó bảo đảm cùng mức ràng
+    PostgreSQL \cite{postgresql2026} & Khóa ngoại, \texttt{DECIMAL}, transaction
+    và truy vấn tổng hợp phù hợp sổ cái & File hoặc NoSQL khó bảo đảm cùng mức ràng
     buộc và rollback \\ \hline
-    Redis & TTL, cache-aside, pending state và queue & Không làm nguồn
+    Redis \cite{redisexpire} & TTL, cache-aside, pending state và queue & Không làm nguồn
     sự thật; memory fallback chỉ dùng phát triển \\ \hline
-    BullMQ & Lập lịch, retry và job ID cho tác vụ chủ động idempotent &
+    BullMQ \cite{bullmq2026} & Lập lịch, retry và job ID cho tác vụ chủ
+    động idempotent &
     Cron đơn giản không có cùng cơ chế queue/retry \\ \hline
     Gemini hoặc parser cục bộ & LLM mở rộng độ bao phủ ngôn ngữ; parser
     bảo đảm fallback kiểm thử được & Provider đặt sau adapter, không

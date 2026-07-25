@@ -7,10 +7,16 @@
       \college\par}
 
     \vspace{0.8cm}
-    \IfFileExists{../archive/latex/images/ctu_logo.png}{%
-      \includegraphics[width=0.20\textwidth]{../archive/latex/images/ctu_logo.png}%
+    % Guideline section 2.1 requires the university name WITH its logo. The logo
+    % file is not in the repository; see latex/images/README.md for how to add it.
+    % The fallback box states the omission so a draft print is not mistaken for
+    % a compliant cover.
+    \IfFileExists{images/ctu_logo.png}{%
+      \includegraphics[width=0.20\textwidth]{images/ctu_logo.png}%
     }{%
-      \fbox{\parbox[c][2.8cm][c]{2.8cm}{\centering\sffamily CTU Logo}}%
+      \fbox{\parbox[c][2.8cm][c]{3.4cm}{\centering\sffamily\bfseries\small
+        CTU LOGO MISSING\\[2pt]
+        \normalfont\scriptsize add \path{latex/images/ctu_logo.png}}}%
     }
 
     \vspace{0.8cm}

@@ -233,3 +233,29 @@ work; spawn agents sparingly and with tight, findings-only prompts.
 
 ## Anti-loop reminder
 Re-read THIS file after compaction. Check status. Resume. Don't re-derive from scratch.
+- loop13: DONE. Report at loop/loop13/report.md. Reviewed ch2 against Guideline note #2
+  (technology-choice justification) + verified every ch2 constant against real code.
+  FIXED L-18 (IEEE compliance): 4/18 bibliography entries were NEVER cited anywhere
+  (bullmq2026, geminifunctioncalling, postgresql2026, redisexpire). IEEE numbers refs by
+  order of first in-text citation, so an uncited entry has no valid position. All 4 are
+  the official docs of exactly the technologies tab:technology-rationale justifies —
+  i.e. the rationale table asserted technical properties (TTL, retry+jobID, transactions,
+  function calling) with no source. Added \cite at the point of assertion, bilingual.
+  Now vi/en both defined=18 cited=18. resource/Report.md ALREADY had all 4 inline
+  ([4],[7],[8],[9]) — LaTeX was the deficient copy, so this fix aligned LaTeX TO the
+  Markdown; no reverse sync needed.
+  VERIFIED PASS — ch2 formula fidelity, 27/27 constants match code exactly:
+  z>=2.5, IQR k=1.5, n<4 -> [], sd==0 -> z=0, iqr>0 guard, method z/iqr/z+iqr,
+  quantile 0.25/0.75, OLS slope/intercept/R2, ssTot==0 -> r2=0, forecast max(0,..),
+  trend gate (>=3 months, avgPctChange>=10, r2>=0.5, slope>0), runway W=14,
+  burn==0 -> null, similarity max(edit, 0.92*dice, contain), contain in [0.82,0.94],
+  smaller.size>=2, tau 0.82/0.90, margin 0.08, recurring tol 0.15 / 20-40d / >=3 occ /
+  <=500k / minOcc 2, pearson n<3 -> 0, den==0 -> 0, >=4 weeks, r>=0.6 max-r.
+  This is a genuine strength for a data+algorithms niên luận: the report's formulas ARE
+  the running code, including boundary guards.
+  ALSO PASS: §2.6 rationale table gives reason + alternative for all 7 technologies
+  (Guideline note #2 satisfied); 21 equations parallel vi/en; every equation has a
+  corresponding code constant (no decorative math).
+  NOTE: loop13 commit necessarily carries pre-existing uncommitted cover-border work
+  (config/preamble.tex TikZ \coverborder + frontmatter/{vi,en}/cover.tex) because the
+  rebuilt PDFs embed it. Not a loop13 change.

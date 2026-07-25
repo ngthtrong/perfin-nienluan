@@ -465,8 +465,9 @@ runs recorded.
 The transformer uses attention to model token relationships and is the
 foundation of modern LLMs \cite{vaswani2017}. PERFIN leverages the ability
 to understand varied phrasing, but does not use the model to compute the
-ledger or statistics. Tools are declared by schema; the LLM proposes the
-tool name and arguments, while the application validates, creates the
+ledger or statistics. Tools are declared by schema using the provider's
+function-calling mechanism \cite{geminifunctioncalling}; the LLM proposes
+the tool name and arguments, while the application validates, creates the
 preview, awaits confirmation and only then executes. Structured output only
 guarantees the JSON shape, not that the category is correct, that the two
 wallets are distinct or that the date is within the valid domain.
@@ -535,12 +536,13 @@ with the LLM as a controlled communication layer.
     Node.js + Express & I/O-oriented API; shares JavaScript with the pure
     functions and tests; suits a modular monolith & No need for the
     operational cost of microservices \\ \hline
-    PostgreSQL & Foreign keys, \texttt{DECIMAL}, transactions and aggregate
-    queries suit a ledger & Files or NoSQL struggle to guarantee the same
+    PostgreSQL \cite{postgresql2026} & Foreign keys, \texttt{DECIMAL},
+    transactions and aggregate queries suit a ledger & Files or NoSQL struggle to guarantee the same
     level of constraints and rollback \\ \hline
-    Redis & TTL, cache-aside, pending state and queue & Not a source of
+    Redis \cite{redisexpire} & TTL, cache-aside, pending state and queue & Not a source of
     truth; the memory fallback is used only in development \\ \hline
-    BullMQ & Scheduling, retry and job IDs for idempotent proactive tasks &
+    BullMQ \cite{bullmq2026} & Scheduling, retry and job IDs for idempotent
+    proactive tasks &
     A simple cron lacks the same queue/retry mechanism \\ \hline
     Gemini or local parser & The LLM extends language coverage; the parser
     guarantees a testable fallback & The provider sits behind an adapter and

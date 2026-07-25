@@ -7,10 +7,15 @@
       \college\par}
 
     \vspace{0.8cm}
-    \IfFileExists{../archive/latex/images/ctu_logo.png}{%
-      \includegraphics[width=0.20\textwidth]{../archive/latex/images/ctu_logo.png}%
+    % Guideline mục 2.1 yêu cầu bìa có tên trường KÈM logo. Tệp logo không nằm
+    % trong repo; xem latex/images/README.md để biết cách bổ sung. Khung dự phòng
+    % nói rõ đang thiếu để bản in thử không bị hiểu là đã đạt yêu cầu.
+    \IfFileExists{images/ctu_logo.png}{%
+      \includegraphics[width=0.20\textwidth]{images/ctu_logo.png}%
     }{%
-      \fbox{\parbox[c][2.8cm][c]{2.8cm}{\centering\sffamily Logo CTU}}%
+      \fbox{\parbox[c][2.8cm][c]{3.4cm}{\centering\sffamily\bfseries\small
+        THIẾU LOGO CTU\\[2pt]
+        \normalfont\scriptsize thêm \path{latex/images/ctu_logo.png}}}%
     }
 
     \vspace{0.8cm}
