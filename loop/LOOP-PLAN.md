@@ -44,6 +44,13 @@ Tone: constructive, calibrated to course level.
   reassess), ch1/ch2 prose critique, demo runtime bug hunt (needs care re credit),
   cosmetic diagram palette (low priority per loop2 finding), appendices/references check.
 
+- loop4: DONE. Report at loop/loop4/report.md. Fixed L-02 (abstract length: VI 290→211
+  syllable-tokens ~150 words, EN 243→166 words; synced vi+en+Report.md; both PDFs compile).
+  Verified PASS: cover double-border (1.5pt+0.5pt), IEEE refs (18=18), abbreviations (32),
+  metadata complete. Fix-list status: L-01/L-02/L-03/L-06/L-07 all resolved. Remaining:
+  L-04/L-05 (cosmetic palette on diagrams 03-13; straight-arrow rule already met).
+- loop5-6: pending. Options: demo bug pass (chat.routes.js), or diagram palette batch if credit allows.
+
 ## Credit note
 Subagent fan-out hit "credit limit exceeded" (429) in loop1. Prefer direct main-context
 work; spawn agents sparingly and with tight, findings-only prompts.
