@@ -2,8 +2,8 @@
   "env": {
     "ANTHROPIC_AUTH_TOKEN": "sk-09b118cbc356ff4d4dd320c6f80cdb2ab2597a4d6bf28561d854720fdd023dbc",
     "ANTHROPIC_BASE_URL": "https://api.vnteam.online",
-    "ANTHROPIC_MODEL": "claude-opus-4-8",
-    "ANTHROPIC_DEFAULT_OPUS_MODEL": "claude-opus-4-8",
+    "ANTHROPIC_MODEL": "claude-opus-5",
+    "ANTHROPIC_DEFAULT_OPUS_MODEL": "claude-opus-5",
     "ANTHROPIC_DEFAULT_SONNET_MODEL": "claude-sonnet-5",
     "ANTHROPIC_DEFAULT_HAIKU_MODEL": "claude-haiku-4-5",
     "ANTHROPIC_DEFAULT_FABLE_MODEL": "claude-fable-5",
@@ -22,6 +22,7 @@
   },
   "model": "opus",
   "availableModels": [
+    "claude-opus-5",
     "claude-opus-4-8",
     "claude-opus-4-7",
     "claude-sonnet-5",
