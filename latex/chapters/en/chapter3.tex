@@ -428,7 +428,7 @@ Voice goes through STT and a transcript-confirmation step. Image goes through pr
 
 \reportfigure[0.84\linewidth]{10-feedback-flow.pdf}{The classification feedback and personalization flow using correction retrieval, not fine-tuning.}{fig:feedback-flow}
 
-When the user edits a category, the system stores the AI-result--correct-result pair. Next time, the exact/fuzzy correction is considered first, then the matcher/LLM. Repeated transactions in ``Other'' can be clustered to suggest a category; creating a category and re-tagging is always a plan awaiting confirmation. Conflicting history must lower confidence instead of learning the most recent correction.
+As shown in Figure~\ref{fig:feedback-flow}, when the user edits a category, the system stores the AI-result--correct-result pair. Next time, the exact/fuzzy correction is considered first, then the matcher/LLM. Repeated transactions in ``Other'' can be clustered to suggest a category; creating a category and re-tagging is always a plan awaiting confirmation. Conflicting history must lower confidence instead of learning the most recent correction.
 
 \subsubsection{Grounded insight generation}
 
@@ -446,7 +446,7 @@ The LLM in Figure~\ref{fig:goal-flow} only extracts the goal, amount, deadline, 
 
 \widereportfigure{13-worker-sequence.pdf}{Sequence diagram for proactive tasks and the mechanism preventing duplicate effects on retry.}{fig:worker-sequence}
 
-The scheduler creates an identified job; the worker takes the correct user scope, calls the handler, computes facts and writes an internal message or export. A retry uses the same fingerprint; a unique event key and idempotent operations eliminate duplicate notifications. The current feature creates a message in \code{chat_messages}, not a push notification. Scheduled auto-backup has no corresponding worker yet and must not be described as operational.
+In Figure~\ref{fig:worker-sequence}, the scheduler creates an identified job; the worker takes the correct user scope, calls the handler, computes facts and writes an internal message or export. A retry uses the same fingerprint; a unique event key and idempotent operations eliminate duplicate notifications. The current feature creates a message in \code{chat_messages}, not a push notification. Scheduled auto-backup has no corresponding worker yet and must not be described as operational.
 
 \subsubsection{Control of LLM-initiated operations}
 
@@ -487,8 +487,8 @@ The prototype has no production authentication yet; therefore multi-user isolati
   \endhead
   \code{GET/PUT/DELETE /api/budgets/:id} & 404 & Another user's budget cannot be read, modified or deleted. \\
   \code{GET/PUT/DELETE /api/recurring/:id} & 404 & Same for recurring bills. \\
-  \code{POST /api/recurring/:id/pause|resume|pay} & 404 & No state change or payment can be written onto another user's record. \\
-  \code{GET /api/recurring/:id/payments} & 404 & Before the ownership check was added at the route, this returned 200 with an empty history: no data leak, but it still revealed that the id existed. \\
+  \code{POST} on \code{:id/pause}, \code{:id/resume}, \code{:id/pay} & 404 & No state change or payment can be written onto another user's record. \\
+  \code{GET} on \code{:id/payments} & 404 & Before the ownership check was added at the route, this returned 200 with an empty history: no data leak, but it still revealed that the id existed. \\
   Control: the caller's own records & 200 & Legitimate access is unaffected. \\
   \bottomrule
 \end{longtable}

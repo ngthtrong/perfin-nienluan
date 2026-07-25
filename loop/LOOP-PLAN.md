@@ -206,6 +206,27 @@ Tone: constructive, calibrated to course level.
   resolved in both .aux; vi/en parity exact (20/36/33/28/31/17/23), 23 tables each;
   backend 182/182.
 
+- loop12: DONE. Report at loop/loop12/report.md. Reviewed DIAGRAM QUALITY & NECESSITY
+  (never checked directly before — loop2 only saw 08, loop6 skipped with a false reason).
+  CONCLUSION: 13 diagrams are SUFFICIENT — all 13 have source+3 renders+bilingual labels,
+  numbered 1..13 sequentially in both .lof, none unreferenced (no surplus), each has an
+  explanatory paragraph (Guideline line 92). DO NOT propose new diagrams in later loops.
+  FIXED L-16 (severe, Guideline line 130): partially REVERSES loop2's L-04 downgrade.
+  loop2 checked only `curved=1` (0 hits) and concluded the straight-arrow rule was met.
+  But `edgeStyle=orthogonalEdgeStyle;rounded=1` on an EDGE rounds the corners at bends —
+  36 such edges across 01 (5), 02 (11), 10 (20). Set rounded=0 on those edges only
+  (vertex rounded=1 = rounded boxes, left alone deliberately). All 13 files now
+  edges_rounded=0, XML valid. Re-rendered 9 outputs, all images=0 (still true vector).
+  MEASURED ~2.4s/format — loop6's ">120s/hình" claim is wrong, never reuse it.
+  FIXED L-17 (self-inflicted in loop11): the new IDOR table overflowed 81pt (2.9cm)
+  because \code{} uses \detokenize so /api/recurring/:id/pause|resume|pay had no break
+  point. Split into several short \code{} spans + stated the base path. EN 2→0 overfull;
+  VI 5→2 (the 2 remaining are the pre-existing 1.9pt ones).
+  FIXED L-15 (cosmetic): figures 10 and 13 were the only 2 of 13 not named by number in
+  their own explanatory paragraph (only \ref'd from the appendix index). ref 31→33.
+  Verified: both PDFs exit 0, 13 distinct figures each, vi/en anchors identical
+  (20/36/33/28/33/17/23), lot=23 lof=13 both. No doc sync needed (presentation-only).
+
 ## Credit note
 Subagent fan-out hit "credit limit exceeded" (429) in loop1. Prefer direct main-context
 work; spawn agents sparingly and with tight, findings-only prompts.

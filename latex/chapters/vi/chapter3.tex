@@ -428,7 +428,7 @@ Voice đi qua STT và bước xác nhận transcript. Ảnh đi qua preprocessin
 
 \reportfigure[0.84\linewidth]{10-feedback-flow.pdf}{Luồng phản hồi và cá nhân hóa phân loại bằng correction retrieval, không phải fine-tuning.}{fig:feedback-flow}
 
-Khi người dùng sửa category, hệ thống lưu cặp kết quả AI--kết quả đúng. Lần sau, correction exact/fuzzy được xét trước, sau đó mới đến matcher/LLM. Giao dịch lặp trong ``Khác'' có thể được gom cụm để đề xuất category; tạo category và re-tag luôn là kế hoạch chờ xác nhận. Lịch sử mâu thuẫn phải hạ confidence thay vì học theo correction gần nhất.
+Theo Hình~\ref{fig:feedback-flow}, khi người dùng sửa category, hệ thống lưu cặp kết quả AI--kết quả đúng. Lần sau, correction exact/fuzzy được xét trước, sau đó mới đến matcher/LLM. Giao dịch lặp trong ``Khác'' có thể được gom cụm để đề xuất category; tạo category và re-tag luôn là kế hoạch chờ xác nhận. Lịch sử mâu thuẫn phải hạ confidence thay vì học theo correction gần nhất.
 
 \subsubsection{Sinh insight có căn cứ}
 
@@ -446,7 +446,7 @@ LLM trong Hình~\ref{fig:goal-flow} chỉ trích xuất mục tiêu, số tiền
 
 \widereportfigure{13-worker-sequence.pdf}{Sơ đồ tuần tự tác vụ chủ động và cơ chế chống hiệu ứng lặp khi retry.}{fig:worker-sequence}
 
-Scheduler tạo job có định danh; worker lấy đúng user scope, gọi handler, tính facts và ghi internal message hoặc export. Retry dùng cùng fingerprint; unique event key và thao tác idempotent loại thông báo trùng. Tính năng hiện tại tạo thông báo trong \code{chat_messages}, không phải push notification. Auto-backup theo lịch chưa có worker tương ứng nên không được mô tả là đã hoạt động.
+Trong Hình~\ref{fig:worker-sequence}, scheduler tạo job có định danh; worker lấy đúng user scope, gọi handler, tính facts và ghi internal message hoặc export. Retry dùng cùng fingerprint; unique event key và thao tác idempotent loại thông báo trùng. Tính năng hiện tại tạo thông báo trong \code{chat_messages}, không phải push notification. Auto-backup theo lịch chưa có worker tương ứng nên không được mô tả là đã hoạt động.
 
 \subsubsection{Kiểm soát thao tác do LLM khởi tạo}
 
@@ -487,8 +487,8 @@ Nguyên mẫu chưa có authentication production; vì vậy không được tuy
   \endhead
   \code{GET/PUT/DELETE /api/budgets/:id} & 404 & Không đọc, sửa hoặc xóa được ngân sách của người dùng khác. \\
   \code{GET/PUT/DELETE /api/recurring/:id} & 404 & Tương tự với khoản định kỳ. \\
-  \code{POST /api/recurring/:id/pause|resume|pay} & 404 & Không đổi trạng thái hoặc ghi thanh toán lên bản ghi người khác. \\
-  \code{GET /api/recurring/:id/payments} & 404 & Trước khi thêm kiểm tra sở hữu ở route, endpoint trả 200 kèm lịch sử rỗng: không rò dữ liệu nhưng vẫn tiết lộ id có tồn tại. \\
+  \code{POST} tới \code{:id/pause}, \code{:id/resume}, \code{:id/pay} & 404 & Không đổi trạng thái hoặc ghi thanh toán lên bản ghi người khác. \\
+  \code{GET} tới \code{:id/payments} & 404 & Trước khi thêm kiểm tra sở hữu ở route, endpoint trả 200 kèm lịch sử rỗng: không rò dữ liệu nhưng vẫn tiết lộ id có tồn tại. \\
   Nhóm chứng: bản ghi của chính mình & 200 & Quyền truy cập hợp lệ không bị ảnh hưởng. \\
   \bottomrule
 \end{longtable}
@@ -608,7 +608,7 @@ Full smoke chứng minh luồng HTTP--PostgreSQL, Gemini cấu trúc đầu ra, 
   Ví/chuyển ví & Hiện thực một phần & Thiếu route/UI tạo ví trên fresh install; chưa có integration test transfer. & CRUD tối thiểu và kiểm thử toàn vẹn số dư. \\
   Recurring và worker & \statusmeasured & Payment đã khóa hàng, nguyên tử, có kỳ dự kiến và chat preview; notification vẫn là chat nội bộ. & Live DB test và kênh nhắc ngoài ứng dụng nếu mở rộng. \\
   Export/backup & Chưa đúng tên gọi & Mẫu số/escaping đã sửa; ``PDF'' vẫn là HTML, backup còn thiếu. & PDF thật hoặc đổi nhãn; backup/restore an toàn. \\
-  Auth/multi-user & Ngoài phạm vi hiện tại & \code{default_user}; mọi thao tác theo ID đã scoped và có test truy cập chéo, nhưng chưa có xác thực. & Không demo như đã có; thêm authentication/authorization trước production. \\
+  Auth/multi-user & Ngoài phạm vi hiện tại & \code{default_user}; mọi thao tác theo ID đã scoped và có test truy cập chéo, nhưng chưa có xác thực. & Không demo như đã có; thêm xác thực và phân quyền trước production. \\
   \bottomrule
 \end{longtable}
 

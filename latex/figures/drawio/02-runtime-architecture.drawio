@@ -48,22 +48,22 @@
           <mxGeometry x="390" y="508" width="140" height="72" as="geometry" />
         </mxCell>
 
-        <mxCell id="e1" value="HTTPS" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#5B7290;fontColor=#3D4B5A;fontSize=11;labelBackgroundColor=#FFFFFF;" edge="1" parent="1" source="expo" target="api">
+        <mxCell id="e1" value="HTTPS" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#5B7290;fontColor=#3D4B5A;fontSize=11;labelBackgroundColor=#FFFFFF;" edge="1" parent="1" source="expo" target="api">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="e2" value="chat / media" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#5B7290;fontColor=#3D4B5A;fontSize=11;labelBackgroundColor=#FFFFFF;" edge="1" parent="1" source="api" target="conv">
+        <mxCell id="e2" value="chat / media" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#5B7290;fontColor=#3D4B5A;fontSize=11;labelBackgroundColor=#FFFFFF;" edge="1" parent="1" source="api" target="conv">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="e3" value="CRUD / query" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#5B7290;fontColor=#3D4B5A;fontSize=11;labelBackgroundColor=#FFFFFF;" edge="1" parent="1" source="api" target="core">
+        <mxCell id="e3" value="CRUD / query" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#5B7290;fontColor=#3D4B5A;fontSize=11;labelBackgroundColor=#FFFFFF;" edge="1" parent="1" source="api" target="core">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="e4" value="trạng thái job" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#5B7290;fontColor=#3D4B5A;fontSize=11;labelBackgroundColor=#FFFFFF;" edge="1" parent="1" source="api" target="worker">
+        <mxCell id="e4" value="trạng thái job" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#5B7290;fontColor=#3D4B5A;fontSize=11;labelBackgroundColor=#FFFFFF;" edge="1" parent="1" source="api" target="worker">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="e5" value="draft có kiểu" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#5B7290;fontColor=#3D4B5A;fontSize=11;labelBackgroundColor=#FFFFFF;" edge="1" parent="1" source="conv" target="ai">
+        <mxCell id="e5" value="draft có kiểu" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#5B7290;fontColor=#3D4B5A;fontSize=11;labelBackgroundColor=#FFFFFF;" edge="1" parent="1" source="conv" target="ai">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="e6" value="TTL state" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#5B7290;fontColor=#3D4B5A;fontSize=11;labelBackgroundColor=#FFFFFF;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="conv" target="redis">
+        <mxCell id="e6" value="TTL state" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#5B7290;fontColor=#3D4B5A;fontSize=11;labelBackgroundColor=#FFFFFF;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="conv" target="redis">
           <mxGeometry x="0.55" relative="1" as="geometry">
             <Array as="points">
               <mxPoint x="300" y="370" />
@@ -72,7 +72,7 @@
             <mxPoint as="offset" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="e7" value="transaction / SQL" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#5B7290;fontColor=#3D4B5A;fontSize=11;labelBackgroundColor=#FFFFFF;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="core" target="pg">
+        <mxCell id="e7" value="transaction / SQL" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#5B7290;fontColor=#3D4B5A;fontSize=11;labelBackgroundColor=#FFFFFF;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="core" target="pg">
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
               <mxPoint x="610" y="316" />
@@ -80,16 +80,16 @@
             </Array>
           </mxGeometry>
         </mxCell>
-        <mxCell id="e8" value="dữ liệu chuẩn" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#5B7290;fontColor=#3D4B5A;fontSize=11;labelBackgroundColor=#FFFFFF;" edge="1" parent="1" source="core" target="analytics">
+        <mxCell id="e8" value="dữ liệu chuẩn" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#5B7290;fontColor=#3D4B5A;fontSize=11;labelBackgroundColor=#FFFFFF;" edge="1" parent="1" source="core" target="analytics">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="e9" value="queue / fingerprint" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#5B7290;fontColor=#3D4B5A;fontSize=11;labelBackgroundColor=#FFFFFF;" edge="1" parent="1" source="worker" target="redis">
+        <mxCell id="e9" value="queue / fingerprint" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#5B7290;fontColor=#3D4B5A;fontSize=11;labelBackgroundColor=#FFFFFF;" edge="1" parent="1" source="worker" target="redis">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="e10" value="adapter" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#5B7290;fontColor=#3D4B5A;fontSize=11;labelBackgroundColor=#FFFFFF;" edge="1" parent="1" source="ai" target="provider">
+        <mxCell id="e10" value="adapter" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#5B7290;fontColor=#3D4B5A;fontSize=11;labelBackgroundColor=#FFFFFF;" edge="1" parent="1" source="ai" target="provider">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="e11" value="facts" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#5B7290;fontColor=#3D4B5A;fontSize=11;labelBackgroundColor=#FFFFFF;" edge="1" parent="1" source="analytics" target="pg">
+        <mxCell id="e11" value="facts" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#5B7290;fontColor=#3D4B5A;fontSize=11;labelBackgroundColor=#FFFFFF;" edge="1" parent="1" source="analytics" target="pg">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
 
