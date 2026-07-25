@@ -39,4 +39,5 @@ uploads/
 .vscode/
 *.swp
 kiro-cli.deb
+
 .claude/
