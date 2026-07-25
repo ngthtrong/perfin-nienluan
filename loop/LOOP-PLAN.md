@@ -259,3 +259,12 @@ Re-read THIS file after compaction. Check status. Resume. Don't re-derive from s
   NOTE: loop13 commit necessarily carries pre-existing uncommitted cover-border work
   (config/preamble.tex TikZ \coverborder + frontmatter/{vi,en}/cover.tex) because the
   rebuilt PDFs embed it. Not a loop13 change.
+
+## loop14 — ch3 SRS/FR-NFR traceability (2026-07-25)
+- L-19 FIXED: 15 hardcoded "mục 2.x.y"/"Section~2.x.y" cross-refs per language
+  replaced with \label/\ref (28 labels added to ch2, 4 intra-chapter refs in ch3/ch4).
+  All 15 resolved to exactly their former values -> numbers were correct but fragile.
+- Parity gap FIXED: EN ch4 cited Section~\ref{subsec:results}, VI did not.
+- PASS: 12 FRs, 10 NFRs, 48 TC ids identical vi/en, no numbering gaps.
+- PASS: TC ids correctly framed as specification-level (not execution claims).
+- Report.md hardcoded refs left as-is (Markdown has no \ref mechanism; all resolve).

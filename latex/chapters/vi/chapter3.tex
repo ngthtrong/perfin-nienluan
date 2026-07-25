@@ -27,7 +27,7 @@ Phiên bản hiện tại vận hành với một hồ sơ \texttt{default\_user
   \end{tabularx}
 \end{table}
 
-Các mã \texttt{TC-FRxx-yy} dưới đây là định danh ca kiểm thử ở mức đặc tả. Một ca chỉ được xem là ``đã đo'' khi có dữ liệu đầu vào, kết quả mong đợi, môi trường và log tương ứng tại mục 3.3.
+Các mã \texttt{TC-FRxx-yy} dưới đây là định danh ca kiểm thử ở mức đặc tả. Một ca chỉ được xem là ``đã đo'' khi có dữ liệu đầu vào, kết quả mong đợi, môi trường và log tương ứng tại mục~\ref{sec:testing}.
 
 \subsection{Yêu cầu cụ thể}
 
@@ -103,7 +103,7 @@ Các mã \texttt{TC-FRxx-yy} dưới đây là định danh ca kiểm thử ở 
 
 \textbf{Mục đích và kích hoạt.} Giảm nhập tay nhưng vẫn bảo đảm schema. Người dùng gửi một câu chat hoặc gọi endpoint phân tích; câu có thể chứa một hay nhiều giao dịch.
 
-\textbf{Đầu vào và xử lý.} Văn bản không rỗng; hồ sơ có ví và danh mục. Trường đích gồm mô tả, amount dương, loại \texttt{income/expense}, ngày không ở tương lai, danh mục và ví. Orchestrator chọn LLM structured output hoặc parser cục bộ, chuẩn hóa tiền/ngày theo mục 2.2.1 và ánh xạ danh mục/ví. Backend áp dụng quy tắc sổ cái mục 2.1; LLM chỉ đề xuất đối số. Batch chỉ được ghi nguyên tử sau bản xem trước FR-03.
+\textbf{Đầu vào và xử lý.} Văn bản không rỗng; hồ sơ có ví và danh mục. Trường đích gồm mô tả, amount dương, loại \texttt{income/expense}, ngày không ở tương lai, danh mục và ví. Orchestrator chọn LLM structured output hoặc parser cục bộ, chuẩn hóa tiền/ngày theo mục~\ref{subsec:amount-date-norm} và ánh xạ danh mục/ví. Backend áp dụng quy tắc sổ cái mục~\ref{sec:fin-data}; LLM chỉ đề xuất đối số. Batch chỉ được ghi nguyên tử sau bản xem trước FR-03.
 
 \textbf{Lỗi, đầu ra và hậu điều kiện.} Thiếu amount hoặc còn mơ hồ chuyển sang clarification; provider lỗi dùng fallback thật hoặc trả lỗi. Ngày tương lai, tham chiếu ngoài phạm vi hoặc một phần tử batch sai làm từ chối toàn bộ. Trước xác nhận chỉ trả dữ liệu chuẩn hóa, cảnh báo và \texttt{pending\_id}; sau xác nhận mới đổi PostgreSQL, tiêu thụ pending và vô hiệu cache best-effort.
 
@@ -119,7 +119,7 @@ Các mã \texttt{TC-FRxx-yy} dưới đây là định danh ca kiểm thử ở 
 
 \textbf{Mục đích và kích hoạt.} Chuyển ảnh hóa đơn hoặc âm thanh tiếng Việt thành văn bản có thể kiểm tra rồi tái sử dụng FR-01. Tệp phải thuộc loại backend hỗ trợ và không quá 10~MB.
 
-\textbf{Đầu vào và xử lý.} Adapter media phải được cấu hình hoặc có provider cục bộ. Provider trả raw OCR/transcript kèm tên provider; hệ thống hiển thị kết quả, trích xuất trường rồi tạo lựa chọn/bản xem trước. Nền tảng OCR/STT ở mục 2.2.4; CER/WER và độ đúng trường ở mục 2.4.2. Phiên bản hiện tại có thể cho chọn lưu tổng hóa đơn hoặc từng dòng, nhưng \textbf{chưa đối soát tổng mặt hàng với tổng hóa đơn}.
+\textbf{Đầu vào và xử lý.} Adapter media phải được cấu hình hoặc có provider cục bộ. Provider trả raw OCR/transcript kèm tên provider; hệ thống hiển thị kết quả, trích xuất trường rồi tạo lựa chọn/bản xem trước. Nền tảng OCR/STT ở mục~\ref{subsec:ocr-stt}; CER/WER và độ đúng trường ở mục~\ref{subsec:ocr-stt-error}. Phiên bản hiện tại có thể cho chọn lưu tổng hóa đơn hoặc từng dòng, nhưng \textbf{chưa đối soát tổng mặt hàng với tổng hóa đơn}.
 
 \textbf{Lỗi, đầu ra và hậu điều kiện.} File sai loại/quá cỡ hoặc upload lỗi bị từ chối. Provider không trả văn bản phải sinh lỗi thật, không tạo mock. API trả raw text/transcript, provider, ngữ cảnh và dữ liệu trích xuất; chỉ sau xác nhận media và FR-03 mới ghi giao dịch.
 
@@ -151,7 +151,7 @@ Các mã \texttt{TC-FRxx-yy} dưới đây là định danh ca kiểm thử ở 
 
 \textbf{Mục đích và kích hoạt.} Chọn danh mục có thể giải thích, thích nghi với sửa sai cá nhân nhưng không tự học từ tín hiệu không chắc chắn. Matcher nhận mô tả, loại thu/chi, danh mục/alias và correction thuộc cùng hồ sơ.
 
-\textbf{Đầu vào và xử lý.} Chuỗi được bỏ dấu, hạ chữ và chuẩn hóa khoảng trắng. Thứ tự là tên exact, alias exact rồi fuzzy theo mục 2.2.2; ngưỡng 0,90 cho input rất ngắn, 0,82 cho input còn lại và margin tối thiểu 0,08. Correction gần input có thể làm few-shot context; kết quả vẫn qua validation/xác nhận. Sửa category của giao dịch không-manual ghi cặp cũ--đúng best-effort sau commit.
+\textbf{Đầu vào và xử lý.} Chuỗi được bỏ dấu, hạ chữ và chuẩn hóa khoảng trắng. Thứ tự là tên exact, alias exact rồi fuzzy theo mục~\ref{subsec:text-similarity}; ngưỡng 0,90 cho input rất ngắn, 0,82 cho input còn lại và margin tối thiểu 0,08. Correction gần input có thể làm few-shot context; kết quả vẫn qua validation/xác nhận. Sửa category của giao dịch không-manual ghi cặp cũ--đúng best-effort sau commit.
 
 \textbf{Lỗi, đầu ra và hậu điều kiện.} Không đạt ngưỡng, hai ứng viên quá gần, alias xung đột hoặc correction không đồng thuận phải về ``Khác''/yêu cầu chọn. Lỗi ghi feedback không biến giao dịch đã commit thành thất bại. Kết quả gồm category, confidence, kiểu match và lý do fallback.
 
@@ -167,7 +167,7 @@ Các mã \texttt{TC-FRxx-yy} dưới đây là định danh ca kiểm thử ở 
 
 \textbf{Mục đích và kích hoạt.} Duy trì sổ cái có thể sửa, soft delete, khôi phục và truy vấn mà không làm sai số dư. Người dùng CRUD giao dịch, ví và danh mục; bộ lọc hỗ trợ kỳ ngày, loại, danh mục, ví và phân trang.
 
-\textbf{Đầu vào và xử lý.} Giao dịch thu--chi có amount dương, ngày không tương lai, category/wallet hợp lệ. Theo mục 2.1.1, income cộng và expense trừ số dư. Tạo, sửa amount/type/wallet, soft delete và restore đều áp phần chênh lệch trong cùng DB transaction; đổi category không đổi số dư; báo cáo loại bản ghi có \texttt{deleted\_at}.
+\textbf{Đầu vào và xử lý.} Giao dịch thu--chi có amount dương, ngày không tương lai, category/wallet hợp lệ. Theo mục~\ref{subsec:ledger-model}, income cộng và expense trừ số dư. Tạo, sửa amount/type/wallet, soft delete và restore đều áp phần chênh lệch trong cùng DB transaction; đổi category không đổi số dư; báo cáo loại bản ghi có \texttt{deleted\_at}.
 
 \textbf{Lỗi, đầu ra và hậu điều kiện.} Dữ liệu sai miền hoặc tham chiếu ngoài hồ sơ bị từ chối; \textbf{số dư sau chi được phép âm}. Lỗi cache sau commit chỉ ghi log. API trả giao dịch hydrate và số dư mới; restore chỉ áp lại tác động đúng một lần.
 
@@ -183,7 +183,7 @@ Các mã \texttt{TC-FRxx-yy} dưới đây là định danh ca kiểm thử ở 
 
 \textbf{Mục đích và kích hoạt.} Ghi transfer và dòng tiền đầu tư mà không tạo debit/credit dở dang. Amount phải dương, ngày không tương lai; transfer cần hai ví khác nhau, investment flow cần đầu ví phù hợp.
 
-\textbf{Đầu vào và xử lý.} Service khóa ví theo thứ tự, trừ $A$ ở nguồn, cộng $A$ ở đích và ghi \texttt{wallet\_transfers} trong cùng \texttt{BEGIN/COMMIT}. Chuyển nội bộ giữ bất biến tổng thay đổi bằng 0 theo mục 2.1.1. Lãi/lỗ đầu tư khác 0 chỉ áp dụng cho ví investment/savings.
+\textbf{Đầu vào và xử lý.} Service khóa ví theo thứ tự, trừ $A$ ở nguồn, cộng $A$ ở đích và ghi \texttt{wallet\_transfers} trong cùng \texttt{BEGIN/COMMIT}. Chuyển nội bộ giữ bất biến tổng thay đổi bằng 0 theo mục~\ref{subsec:ledger-model}. Lãi/lỗ đầu tư khác 0 chỉ áp dụng cho ví investment/savings.
 
 \textbf{Lỗi, đầu ra và hậu điều kiện.} Ví trùng/thiếu, amount/date sai hoặc ví ngoài hồ sơ làm rollback. \textbf{Không kiểm tra đủ số dư}; ví nguồn được phép âm. Trả lịch sử chuyển và hai số dư cùng phản ánh một lần chuyển hoặc cùng giữ nguyên.
 
@@ -199,7 +199,7 @@ Các mã \texttt{TC-FRxx-yy} dưới đây là định danh ca kiểm thử ở 
 
 \textbf{Mục đích và kích hoạt.} Biến lịch sử giao dịch thành dữ kiện định lượng về xu hướng, bất thường, nguy cơ cạn tiền, khoản chi lặp và liên hệ danh mục. Luồng chạy khi người dùng mở báo cáo/insight hoặc worker quét định kỳ.
 
-\textbf{Đầu vào và xử lý.} Chỉ dùng giao dịch chưa xóa và zero-fill trục thời gian khi cần. Analytics Engine áp dụng mục 2.3.1--2.3.5: (i) trend chỉ công bố tăng với ít nhất 3 tháng, slope dương, tăng trung bình ít nhất 10\% và $R^2\geq0{,}5$; (ii) anomaly cần ít nhất 4 điểm, cờ phía chi lớn khi $z\geq2{,}5$ hoặc vượt $Q_3+1{,}5IQR$; (iii) runway dùng đúng 14 ngày lịch kể cả ngày chi 0, số dư không dương trả 0 ngày và burn rate 0 không dự báo ngày cạn; (iv) recurring dùng cửa sổ 90 ngày, amount tối đa 500.000~VND, sai số 15\%, cadence 20--40 ngày; (v) correlation zero-fill 12 tuần, cần dữ liệu ở ít nhất 4 tuần và chỉ công bố tương quan \textbf{dương} $r\geq0{,}6$, không dùng $|r|$.
+\textbf{Đầu vào và xử lý.} Chỉ dùng giao dịch chưa xóa và zero-fill trục thời gian khi cần. Analytics Engine áp dụng mục~\ref{subsec:ols-trend}--\ref{subsec:correlation}: (i) trend chỉ công bố tăng với ít nhất 3 tháng, slope dương, tăng trung bình ít nhất 10\% và $R^2\geq0{,}5$; (ii) anomaly cần ít nhất 4 điểm, cờ phía chi lớn khi $z\geq2{,}5$ hoặc vượt $Q_3+1{,}5IQR$; (iii) runway dùng đúng 14 ngày lịch kể cả ngày chi 0, số dư không dương trả 0 ngày và burn rate 0 không dự báo ngày cạn; (iv) recurring dùng cửa sổ 90 ngày, amount tối đa 500.000~VND, sai số 15\%, cadence 20--40 ngày; (v) correlation zero-fill 12 tuần, cần dữ liệu ở ít nhất 4 tuần và chỉ công bố tương quan \textbf{dương} $r\geq0{,}6$, không dùng $|r|$.
 
 \textbf{Lỗi, đầu ra và hậu điều kiện.} Thiếu dữ liệu trả \texttt{null}; nhánh biên xử lý mẫu số/burn rate bằng 0. Thành phần lỗi được ghi trong \texttt{degraded\_components}; correlation không được diễn giải là nhân quả. Facts JSON có thời điểm, giá trị, kỳ, phương pháp và cảnh báo; cache insight TTL 10 phút.
 
@@ -215,7 +215,7 @@ Các mã \texttt{TC-FRxx-yy} dưới đây là định danh ca kiểm thử ở 
 
 \textbf{Mục đích và kích hoạt.} Diễn giải FR-07 bằng ngôn ngữ dễ hiểu mà không giao phép tính cho LLM. Luồng nhận facts, kỳ dữ liệu, \texttt{degraded\_components} và persona; endpoint facts thô phải dùng độc lập với narrator.
 
-\textbf{Đầu vào và xử lý.} Backend gửi facts có cấu trúc cho narrator, đồng thời tạo lời khuyên tổng quan bằng quy tắc xác định. Persona chỉ thay cách diễn đạt; response luôn kèm facts, provider và metadata để đối chiếu. Ranh giới ở mục 2.5.2, phép đo grounding ở mục 2.4.3.
+\textbf{Đầu vào và xử lý.} Backend gửi facts có cấu trúc cho narrator, đồng thời tạo lời khuyên tổng quan bằng quy tắc xác định. Persona chỉ thay cách diễn đạt; response luôn kèm facts, provider và metadata để đối chiếu. Ranh giới ở mục~\ref{subsec:llm-boundary-theory}, phép đo grounding ở mục~\ref{subsec:algo-grounding-perf}.
 
 \textbf{Lỗi, đầu ra và hậu điều kiện.} LLM không khả dụng thì dùng template fallback hoặc trả lỗi rõ ràng, không sinh số mock. \textbf{Checker bảo đảm mọi số trong narration thuộc facts mới là thiết kế đích}; chưa được tuyên bố numeric faithfulness đã đạt. Luồng đọc không ghi giao dịch, ngân sách hay mục tiêu.
 
@@ -230,7 +230,7 @@ Các mã \texttt{TC-FRxx-yy} dưới đây là định danh ca kiểm thử ở 
 
 \textbf{Mục đích và kích hoạt.} Theo dõi hạn mức, dự báo nguy cơ vượt và đề xuất dựa trên lịch sử thay vì để LLM tự chọn số. Người dùng CRUD ngân sách hoặc yêu cầu \texttt{category\_average}, \texttt{50-30-20}, \texttt{hybrid}.
 
-\textbf{Đầu vào và xử lý.} Category phải là loại chi, limit dương, tháng/năm hợp lệ. Progress tính spent, remaining và tỷ lệ; forecast dùng $\text{spent}/\text{elapsed\_days}\times\text{days\_in\_month}$. Recommender theo mục 2.3.6 lấy trung bình trên toàn bộ tháng trong cửa sổ kể cả tháng 0, buffer 5\%; needs/wants có trần 50\%/30\% income và saving 20\%. Hybrid chỉ co tỷ trọng khi tổng vượt trần. Dưới 3 tháng sinh cảnh báo; apply cần \texttt{confirmed=true} và upsert nguyên tử.
+\textbf{Đầu vào và xử lý.} Category phải là loại chi, limit dương, tháng/năm hợp lệ. Progress tính spent, remaining và tỷ lệ; forecast dùng $\text{spent}/\text{elapsed\_days}\times\text{days\_in\_month}$. Recommender theo mục~\ref{subsec:budget-forecast} lấy trung bình trên toàn bộ tháng trong cửa sổ kể cả tháng 0, buffer 5\%; needs/wants có trần 50\%/30\% income và saving 20\%. Hybrid chỉ co tỷ trọng khi tổng vượt trần. Dưới 3 tháng sinh cảnh báo; apply cần \texttt{confirmed=true} và upsert nguyên tử.
 
 \textbf{Lỗi, đầu ra và hậu điều kiện.} Thiếu income làm chiến lược tỷ lệ fallback về trung bình. Category/kỳ/limit sai, batch rỗng hoặc quá 50 phần tử hay thiếu xác nhận bị từ chối; một item sai rollback toàn batch. Chỉ endpoint apply đã xác nhận mới đổi \texttt{budgets}/\texttt{budget\_history}.
 
@@ -246,7 +246,7 @@ Các mã \texttt{TC-FRxx-yy} dưới đây là định danh ca kiểm thử ở 
 
 \textbf{Mục đích và kích hoạt.} Tính mức góp, thời gian hoàn thành và kịch bản cho mục tiêu tiết kiệm, mua sắm hoặc trả nợ bằng hàm xác định. Đầu vào có goal type, target dương, current/contribution không âm, ngày không quá khứ và lãi suất năm cho nợ.
 
-\textbf{Đầu vào và xử lý.} Goal Planner áp dụng mục 2.3.7 để tính phần thiếu, số tháng, mức góp đến hạn, tiến độ và cảnh báo. Với nợ, lãi suất tháng bằng lãi suất năm chia 12; công thức niên kim có nhánh lãi suất 0 và mô phỏng tháng để tính lãi/remaining balance; khoản trả không vượt lãi tháng đầu bị cờ negative amortization. What-if chạy lại cùng hàm. Endpoint plan không ghi DB, cấp token ký theo payload trong 15 phút; tạo/cập nhật trường kế hoạch chỉ nhận token còn hạn và fingerprint khớp.
+\textbf{Đầu vào và xử lý.} Goal Planner áp dụng mục~\ref{subsec:goal-planning} để tính phần thiếu, số tháng, mức góp đến hạn, tiến độ và cảnh báo. Với nợ, lãi suất tháng bằng lãi suất năm chia 12; công thức niên kim có nhánh lãi suất 0 và mô phỏng tháng để tính lãi/remaining balance; khoản trả không vượt lãi tháng đầu bị cờ negative amortization. What-if chạy lại cùng hàm. Endpoint plan không ghi DB, cấp token ký theo payload trong 15 phút; tạo/cập nhật trường kế hoạch chỉ nhận token còn hạn và fingerprint khớp.
 
 \textbf{Lỗi, đầu ra và hậu điều kiện.} Ngày/lãi suất/số tiền sai, token hết hạn hoặc payload bị đổi đều bị từ chối. Contribution 0 không có thời hạn; nợ không giảm trả cảnh báo. Preview trả plan, progress, cashflow, what-if và token nhưng không ghi dữ liệu; xác nhận hợp lệ mới lưu.
 
@@ -262,7 +262,7 @@ Các mã \texttt{TC-FRxx-yy} dưới đây là định danh ca kiểm thử ở 
 
 \textbf{Mục đích và kích hoạt.} Quản lý lịch chi lặp, ghi thanh toán nhất quán và tạo nhắc/insight không trùng khi retry. Bill có tên, amount dương, frequency weekly/monthly/quarterly/yearly và due day hợp lệ; payment mang \texttt{period\_due\_date} vừa đọc; worker nhận job name và user scope.
 
-\textbf{Đầu vào và xử lý.} Ngày đến hạn được tính theo chu kỳ và kẹp cuối tháng. Gợi ý recurring dùng mục 2.3.4. Payment khóa bill, kiểm tra kỳ, tạo expense, trừ ví, ghi payment và dời \texttt{next\_due\_date} trong một transaction; xóa plan vẫn giữ payment. Scheduler upsert lịch, thử tối đa 3 lần với exponential backoff; event key/fingerprint và unique index chống tạo message/export lặp.
+\textbf{Đầu vào và xử lý.} Ngày đến hạn được tính theo chu kỳ và kẹp cuối tháng. Gợi ý recurring dùng mục~\ref{subsec:recurring-mining}. Payment khóa bill, kiểm tra kỳ, tạo expense, trừ ví, ghi payment và dời \texttt{next\_due\_date} trong một transaction; xóa plan vẫn giữ payment. Scheduler upsert lịch, thử tối đa 3 lần với exponential backoff; event key/fingerprint và unique index chống tạo message/export lặp.
 
 \textbf{Lỗi, đầu ra và hậu điều kiện.} Kỳ thiếu/cũ, lịch/amount/reference sai làm rollback. Handler không hỗ trợ phải lỗi rõ; retry giữ cùng event key. Ví sau payment được phép âm. Trả bill, payment, giao dịch, kỳ kế tiếp và thống kê worker; một kỳ chỉ có một hiệu ứng.
 
@@ -292,7 +292,7 @@ Các mã \texttt{TC-FRxx-yy} dưới đây là định danh ca kiểm thử ở 
 
 \subsection{Yêu cầu phi chức năng}
 
-Các ngưỡng dưới đây là tiêu chí nghiệm thu hoặc thiết kế đích, không mặc nhiên là kết quả hiện tại. Kết quả thực đo và phép đo còn thiếu được tách tại mục 3.3.2.
+Các ngưỡng dưới đây là tiêu chí nghiệm thu hoặc thiết kế đích, không mặc nhiên là kết quả hiện tại. Kết quả thực đo và phép đo còn thiếu được tách tại mục~\ref{subsec:results}.
 
 \begin{longtable}{@{}L{1.2cm}L{2.8cm}L{3.5cm}L{5.2cm}@{}}
   \caption{Yêu cầu phi chức năng và cách đo}\label{tab:nfr}\\
@@ -553,6 +553,7 @@ Bộ dữ liệu văn bản phải tách tập phát triển và đánh giá, ba
 \end{table}
 
 \subsection{Kết quả và phân tích}
+\label{subsec:results}
 
 \subsubsection{Kết quả đã đo}
 

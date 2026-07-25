@@ -2,8 +2,10 @@
 \label{chap:theory}
 
 \section{Dữ liệu tài chính và tiền xử lý}
+\label{sec:fin-data}
 
 \subsection{Mô hình giao dịch, số dư và dòng tiền}
+\label{subsec:ledger-model}
 
 Một giao dịch hợp lệ tối thiểu có số tiền $A>0$, loại giao dịch, ngày,
 mô tả, danh mục và ví thuộc phạm vi người dùng. PERFIN phân biệt
@@ -42,6 +44,7 @@ credit và bản ghi lịch sử phải nằm trong cùng transaction
 bộ trạng thái.
 
 \subsection{Toàn vẹn và vòng đời dữ liệu}
+\label{subsec:integrity}
 
 PERFIN áp dụng bốn lớp bảo vệ:
 
@@ -65,6 +68,7 @@ hóa sau commit. Lỗi cache sau commit không được trả thành lỗi nghi�
 vì client có thể thử lại và tạo tác động lặp.
 
 \subsection{Chuẩn hóa trục thời gian và cửa sổ quan sát}
+\label{subsec:time-axis}
 
 Phân tích theo ngày, tuần hoặc tháng phải giữ đúng trục lịch. Gọi $x_j$
 là tổng chi của kỳ lịch thứ $j$ trong cửa sổ $W$. Nếu kỳ đó không có
@@ -79,6 +83,7 @@ của nguyên mẫu, không phải ngưỡng tối ưu đã được chứng min
 người dùng.
 
 \subsection{Dữ liệu bền vững và trạng thái tạm}
+\label{subsec:persist-state}
 
 PostgreSQL lưu dữ liệu nghiệp vụ cần kiểm toán. Redis lưu trạng thái
 ngắn hạn: giao dịch chờ xác nhận, trường đang hỏi lại, danh sách lựa chọn
@@ -87,8 +92,10 @@ theo cơ chế \texttt{EXPIRE}. Fallback bộ nhớ tiến trình chỉ phục v
 triển; dữ liệu mất khi khởi động lại và không phải cấu hình production.
 
 \section{Chuẩn hóa và phân loại đầu vào}
+\label{sec:normalize}
 
 \subsection{Chuẩn hóa số tiền, ngày và cấu trúc giao dịch}
+\label{subsec:amount-date-norm}
 
 Đầu vào tự nhiên được chuyển thành typed draft trước khi validation.
 Các hậu tố \texttt{k}, ``nghìn'', ``ngàn'' nhân giá trị với $10^3$;
@@ -101,6 +108,7 @@ kiểm tra số hữu hạn, miền ngày, danh mục, ví và quyền sở hữ
 tạo preview.
 
 \subsection{Độ tương đồng văn bản và chọn danh mục an toàn}
+\label{subsec:text-similarity}
 
 Chuỗi được bỏ dấu, chuyển chữ thường, loại ký tự ngoài chữ/số và thu gọn
 khoảng trắng. Với hai chuỗi chuẩn hóa $a,b$, điểm chỉnh sửa dùng khoảng
@@ -132,6 +140,7 @@ margin $m=0{,}08$. Nếu $s_1<\tau$ hoặc $s_1-s_2<m$, hệ thống chọn
 phục vụ FR-04 và không thay thế xác nhận của người dùng.
 
 \subsection{Học từ phản hồi}
+\label{subsec:feedback-learning}
 
 Khi người dùng sửa danh mục, hệ thống lưu cặp kết quả ban đầu--kết quả
 đúng cùng ngữ cảnh. Correction exact/fuzzy được xét trước alias và LLM ở
@@ -141,6 +150,7 @@ fine-tuning} mô hình. Tác dụng của feedback phải được đánh giá b
 accuracy hoặc macro-F1 trước và sau trên cùng tập phát lại.
 
 \subsection{OCR, Speech-to-Text và adapter nhà cung cấp}
+\label{subsec:ocr-stt}
 
 OCR gồm tiền xử lý ảnh, phát hiện vùng chữ, nhận dạng và hậu xử lý. STT
 chuyển âm thanh thành transcript. Trong PERFIN, provider chỉ trả raw
@@ -157,6 +167,7 @@ bằng provider cloud mà không sửa transaction service. Khi provider lỗi,
 hệ thống trả lỗi hoặc cho nhập tay, không sinh dữ liệu mẫu.
 
 \section{Các giải thuật phân tích và lập kế hoạch}
+\label{sec:algorithms}
 
 \begin{table}[htbp]
   \centering
@@ -185,6 +196,7 @@ hệ thống trả lỗi hoặc cho nhập tay, không sinh dữ liệu mẫu.
 \end{table}
 
 \subsection{Hồi quy tuyến tính và dự báo xu hướng}
+\label{subsec:ols-trend}
 
 Gọi $y_i$ là tổng chi của kỳ $i$, $x_i=i$ với
 $i=0,\ldots,n-1$, $\bar{x}$ và $\bar{y}$ là trung bình tương ứng.
@@ -212,6 +224,7 @@ có ít nhất ba tháng, $b>0$, $R^2\geq0{,}5$ và trung bình phần trăm tha
 hạn, không mô hình hóa mùa vụ hoặc sự kiện tương lai.
 
 \subsection{Phát hiện bất thường bằng z-score và IQR}
+\label{subsec:anomaly}
 
 Với $n\geq4$ giá trị chi $x_i$, trung bình, độ lệch chuẩn mẫu và z-score
 là
@@ -237,6 +250,7 @@ người dùng rà soát; nó không chứng minh gian lận và ngưỡng cần
 chỉnh trên dữ liệu đại diện.
 
 \subsection{Ước lượng thời gian cạn dòng tiền}
+\label{subsec:runway}
 
 Gọi $B=\sum_w B_w$ là tổng số dư hiện tại, $W=14$ là số ngày lịch quan
 sát và $e_j\geq0$ là chi tiêu ngày thứ $j$; ngày không chi có $e_j=0$.
@@ -256,6 +270,7 @@ $d=28$ ngày. Đây là ngoại suy giữ nguyên mức chi gần đây, chưa x
 thu hay chi bất thường sắp tới.
 
 \subsection{Khai phá khoản chi định kỳ}
+\label{subsec:recurring-mining}
 
 Chỉ các giao dịch \texttt{expense} không vượt 500.000 đồng được xét
 trong cấu hình hiện tại. Sau khi chuẩn hóa mô tả, các giao dịch có cùng
@@ -277,6 +292,7 @@ hạn chế false positive nhưng có thể bỏ sót mô tả biến thể. K�
 là ``dấu hiệu định kỳ'', không tự tạo recurring bill hay hủy dịch vụ.
 
 \subsection{Tương quan chi tiêu liên danh mục}
+\label{subsec:correlation}
 
 Với hai chuỗi chi theo tuần $X=(x_1,\ldots,x_n)$ và
 $Y=(y_1,\ldots,y_n)$ trên cùng trục tuần, tuần thiếu của một danh mục
@@ -294,6 +310,7 @@ thống chọn cặp có $r$ lớn nhất và phải diễn giải là ``đồng
 liệu quan sát'', không suy ra quan hệ nhân quả.
 
 \subsection{Đề xuất và dự báo ngân sách}
+\label{subsec:budget-forecast}
 
 Gọi $s_{c,j}$ là chi của danh mục $c$ ở tháng $j$ trong $m$ tháng lịch;
 tháng không phát sinh có $s_{c,j}=0$. Trung bình và mức nền có buffer
@@ -344,6 +361,7 @@ thức giả định tốc độ chi không đổi, nên chỉ là cảnh báo s
 hoặc thay đổi hạn mức luôn cần người dùng xác nhận.
 
 \subsection{Lập kế hoạch mục tiêu và trả nợ}
+\label{subsec:goal-planning}
 
 Với mục tiêu tiết kiệm hoặc mua sắm, gọi $T>0$ là số mục tiêu, $C\geq0$
 là số hiện có, $R=\max(0,T-C)$ là phần còn thiếu và $M\geq0$ là mức góp
@@ -382,8 +400,10 @@ phỏng mặc định 600 tháng thì kế hoạch không khả thi trong horizo
 Công thức giúp FR-10 tách rõ phép tính khỏi lời diễn giải của LLM.
 
 \section{Phương pháp đánh giá}
+\label{sec:eval-method}
 
 \subsection{Độ chính xác trích xuất và phân loại}
+\label{subsec:extract-accuracy}
 
 Với một trường cần trích xuất, $TP$ là giá trị dự đoán đúng, $FP$ là
 giá trị dự đoán sai hoặc thừa và $FN$ là giá trị chuẩn bị bỏ sót:
@@ -400,6 +420,7 @@ không che lớp ít mẫu. Các chỉ số phải tính trên tập đánh giá
 prompt hoặc quy tắc phát triển.
 
 \subsection{Sai số OCR, STT và tác động nghiệp vụ}
+\label{subsec:ocr-stt-error}
 
 Trong đó $S$, $D$, $I$ lần lượt là số phép thay thế, xóa và chèn; $N$ là
 số đơn vị trong ground truth. Chỉ số dưới $c$ tính trên đơn vị \emph{ký
@@ -416,6 +437,7 @@ có làm sai amount, date, merchant hoặc line item hay không. Vì vậy
 smoke test provider không được trình bày như accuracy.
 
 \subsection{Tính đúng giải thuật, grounding và hiệu năng}
+\label{subsec:algo-grounding-perf}
 
 Giải thuật xác định được kiểm tra bằng expected value tính tay, sai số
 tuyệt đối $AE=|\hat y-y|$ và bất biến như tổng tiền chuyển ví không đổi.
@@ -436,8 +458,10 @@ giá trị mà 95\% mẫu không vượt quá; phải tách text/media, cache hi
 và ghi rõ provider, phần cứng, số lượt.
 
 \section{Vai trò hỗ trợ có kiểm soát của LLM}
+\label{sec:llm-role}
 
 \subsection{Function calling thay cho trao quyền nghiệp vụ}
+\label{subsec:function-calling}
 
 Transformer dùng attention để mô hình hóa quan hệ token và là nền tảng
 của LLM hiện đại \cite{vaswani2017}. PERFIN tận dụng khả năng hiểu cách
@@ -449,6 +473,7 @@ output chỉ bảo đảm hình dạng JSON, không bảo đảm danh mục đú
 khác nhau hoặc ngày thuộc miền hợp lệ.
 
 \subsection{Ranh giới trách nhiệm và grounding}
+\label{subsec:llm-boundary-theory}
 
 \begin{table}[htbp]
   \centering
@@ -484,6 +509,7 @@ checker toàn diện vẫn là thiết kế đích cần đánh giá. LLM không
 trực tiếp PostgreSQL và không tự thực thi tool.
 
 \subsection{Điều kiện để việc dùng LLM có ý nghĩa}
+\label{subsec:llm-conditions}
 
 LLM chỉ có giá trị nếu cải thiện đo được so với form và parser cục bộ:
 field F1 hoặc exact match cao hơn, ít lượt hỏi lại hoặc thao tác hơn,
@@ -494,6 +520,7 @@ tiên. Cách tiếp cận này giữ trọng tâm niên luận ở dữ liệu v
 còn LLM là lớp giao tiếp có kiểm soát.
 
 \section{Hạ tầng, công nghệ và lý do lựa chọn}
+\label{sec:tech-rationale}
 
 \begin{table}[htbp]
   \centering
@@ -534,6 +561,7 @@ Auto-backup theo lịch chưa có worker tương ứng và không được xem l
 hoạt động.
 
 \section{Nghiên cứu và ứng dụng liên quan}
+\label{sec:related-work}
 
 Nghiên cứu về hiểu biết tài chính chỉ ra vai trò của năng lực lập kế
 hoạch và ra quyết định dài hạn~\cite{lusardi2014}. Hồi quy tuyến

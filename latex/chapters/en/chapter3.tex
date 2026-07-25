@@ -27,7 +27,7 @@ The current version operates with a single \texttt{default\_user} profile. Per-u
   \end{tabularx}
 \end{table}
 
-The \texttt{TC-FRxx-yy} codes below are test-case identifiers at the specification level. A case is considered ``measured'' only when it has input data, an expected result, an environment and a corresponding log in Section~3.3.
+The \texttt{TC-FRxx-yy} codes below are test-case identifiers at the specification level. A case is considered ``measured'' only when it has input data, an expected result, an environment and a corresponding log in Section~\ref{sec:testing}.
 
 \subsection{Specific Requirements}
 
@@ -103,7 +103,7 @@ The \texttt{TC-FRxx-yy} codes below are test-case identifiers at the specificati
 
 \textbf{Purpose and trigger.} Reduce manual entry while still enforcing the schema. The user sends a chat sentence or calls the analysis endpoint; the sentence may contain one or many transactions.
 
-\textbf{Input and processing.} Non-empty text; the profile has wallets and categories. Target fields include the description, a positive amount, the \texttt{income/expense} type, a date not in the future, a category and a wallet. The orchestrator selects LLM structured output or the local parser, normalizes amount/date per Section~2.2.1 and maps the category/wallet. The backend applies the ledger rules of Section~2.1; the LLM only proposes arguments. A batch is written atomically only after the FR-03 preview.
+\textbf{Input and processing.} Non-empty text; the profile has wallets and categories. Target fields include the description, a positive amount, the \texttt{income/expense} type, a date not in the future, a category and a wallet. The orchestrator selects LLM structured output or the local parser, normalizes amount/date per Section~\ref{subsec:amount-date-norm} and maps the category/wallet. The backend applies the ledger rules of Section~\ref{sec:fin-data}; the LLM only proposes arguments. A batch is written atomically only after the FR-03 preview.
 
 \textbf{Errors, output and postconditions.} A missing amount or remaining ambiguity moves to clarification; a provider error uses a real fallback or returns an error. A future date, an out-of-scope reference or a single wrong batch element rejects the whole. Before confirmation only normalized data, warnings and a \texttt{pending\_id} are returned; only after confirmation is PostgreSQL changed, the pending consumed and the cache invalidated best-effort.
 
@@ -119,7 +119,7 @@ The \texttt{TC-FRxx-yy} codes below are test-case identifiers at the specificati
 
 \textbf{Purpose and trigger.} Convert an invoice image or Vietnamese audio into checkable text and then reuse FR-01. The file must be of a backend-supported type and no larger than 10~MB.
 
-\textbf{Input and processing.} A media adapter must be configured or a local provider must exist. The provider returns raw OCR/transcript together with the provider name; the system displays the result, extracts fields and then creates the choices/preview. The OCR/STT foundation is in Section~2.2.4; CER/WER and field accuracy are in Section~2.4.2. The current version may allow choosing to save the invoice total or individual line items, but \textbf{does not yet reconcile the item total against the invoice total}.
+\textbf{Input and processing.} A media adapter must be configured or a local provider must exist. The provider returns raw OCR/transcript together with the provider name; the system displays the result, extracts fields and then creates the choices/preview. The OCR/STT foundation is in Section~\ref{subsec:ocr-stt}; CER/WER and field accuracy are in Section~\ref{subsec:ocr-stt-error}. The current version may allow choosing to save the invoice total or individual line items, but \textbf{does not yet reconcile the item total against the invoice total}.
 
 \textbf{Errors, output and postconditions.} A wrong-type/oversized file or a failed upload is rejected. A provider that returns no text must raise a real error, not create a mock. The API returns raw text/transcript, provider, context and extracted data; only after media confirmation and FR-03 is the transaction written.
 
@@ -151,7 +151,7 @@ The \texttt{TC-FRxx-yy} codes below are test-case identifiers at the specificati
 
 \textbf{Purpose and trigger.} Choose an explainable category that adapts to personal corrections but does not learn from uncertain signals. The matcher receives the description, income/expense type, categories/aliases and corrections within the same profile.
 
-\textbf{Input and processing.} Strings are stripped of diacritics, lowercased and whitespace-normalized. The order is exact name, exact alias, then fuzzy per Section~2.2.2; a threshold of 0.90 for very short input, 0.82 for the rest, and a minimum margin of 0.08. A correction close to the input may serve as few-shot context; the result still goes through validation/confirmation. Editing the category of a non-manual transaction records the old--correct pair best-effort after commit.
+\textbf{Input and processing.} Strings are stripped of diacritics, lowercased and whitespace-normalized. The order is exact name, exact alias, then fuzzy per Section~\ref{subsec:text-similarity}; a threshold of 0.90 for very short input, 0.82 for the rest, and a minimum margin of 0.08. A correction close to the input may serve as few-shot context; the result still goes through validation/confirmation. Editing the category of a non-manual transaction records the old--correct pair best-effort after commit.
 
 \textbf{Errors, output and postconditions.} Failing the threshold, two candidates too close, a conflicting alias or non-consensual corrections must fall back to ``Other''/a request to choose. A failure to record feedback must not turn a committed transaction into a failure. The result includes category, confidence, match type and fallback reason.
 
@@ -167,7 +167,7 @@ The \texttt{TC-FRxx-yy} codes below are test-case identifiers at the specificati
 
 \textbf{Purpose and trigger.} Maintain a ledger that can be edited, soft-deleted, restored and queried without corrupting balances. The user performs CRUD on transactions, wallets and categories; filters support date period, type, category, wallet and pagination.
 
-\textbf{Input and processing.} An income/expense transaction has a positive amount, a non-future date, and a valid category/wallet. Per Section~2.1.1, income adds to and expense subtracts from the balance. Create, edit of amount/type/wallet, soft delete and restore all apply the delta within the same DB transaction; changing the category does not change the balance; reports exclude records with \texttt{deleted\_at}.
+\textbf{Input and processing.} An income/expense transaction has a positive amount, a non-future date, and a valid category/wallet. Per Section~\ref{subsec:ledger-model}, income adds to and expense subtracts from the balance. Create, edit of amount/type/wallet, soft delete and restore all apply the delta within the same DB transaction; changing the category does not change the balance; reports exclude records with \texttt{deleted\_at}.
 
 \textbf{Errors, output and postconditions.} Data outside the valid domain or references outside the profile are rejected; \textbf{the balance after an expense is allowed to be negative}. A cache error after commit is only logged. The API returns the hydrated transaction and the new balance; a restore reapplies the correct effect exactly once.
 
@@ -183,7 +183,7 @@ The \texttt{TC-FRxx-yy} codes below are test-case identifiers at the specificati
 
 \textbf{Purpose and trigger.} Record transfers and investment cash flows without leaving a dangling debit/credit. The amount must be positive and the date not in the future; a transfer needs two distinct wallets, and an investment flow needs the appropriate wallet type.
 
-\textbf{Input and processing.} The service locks the wallets in order, subtracts $A$ from the source, adds $A$ to the destination and writes \texttt{wallet\_transfers} within the same \texttt{BEGIN/COMMIT}. An internal transfer preserves the zero-net-change invariant of Section~2.1.1. Non-zero investment profit/loss applies only to investment/savings wallets.
+\textbf{Input and processing.} The service locks the wallets in order, subtracts $A$ from the source, adds $A$ to the destination and writes \texttt{wallet\_transfers} within the same \texttt{BEGIN/COMMIT}. An internal transfer preserves the zero-net-change invariant of Section~\ref{subsec:ledger-model}. Non-zero investment profit/loss applies only to investment/savings wallets.
 
 \textbf{Errors, output and postconditions.} Duplicate/missing wallets, a wrong amount/date or a wallet outside the profile cause a rollback. \textbf{There is no sufficient-balance check}; the source wallet is allowed to go negative. The system returns the transfer history and two balances that both reflect one transfer or both remain unchanged.
 
@@ -199,7 +199,7 @@ The \texttt{TC-FRxx-yy} codes below are test-case identifiers at the specificati
 
 \textbf{Purpose and trigger.} Turn transaction history into quantitative facts about trends, anomalies, cash-depletion risk, recurring spending and category relationships. The flow runs when the user opens a report/insight or a worker scans periodically.
 
-\textbf{Input and processing.} Use only non-deleted transactions and zero-fill the time axis where needed. The Analytics Engine applies Sections~2.3.1--2.3.5: (i) trend reports an increase only with at least 3 months, a positive slope, at least a 10\% average increase and $R^2\geq0{,}5$; (ii) anomaly needs at least 4 points, flagging the high-spending side when $z\geq2{,}5$ or exceeding $Q_3+1{,}5IQR$; (iii) runway uses exactly 14 calendar days including zero-spend days, returns 0 days for a non-positive balance and forecasts no depletion date for a zero burn rate; (iv) recurring uses a 90-day window, a maximum amount of 500,000~VND, a 15\% tolerance and a 20--40 day cadence; (v) correlation zero-fills 12 weeks, requires data in at least 4 weeks and reports only \textbf{positive} correlation $r\geq0{,}6$, not $|r|$.
+\textbf{Input and processing.} Use only non-deleted transactions and zero-fill the time axis where needed. The Analytics Engine applies Sections~\ref{subsec:ols-trend}--\ref{subsec:correlation}: (i) trend reports an increase only with at least 3 months, a positive slope, at least a 10\% average increase and $R^2\geq0{,}5$; (ii) anomaly needs at least 4 points, flagging the high-spending side when $z\geq2{,}5$ or exceeding $Q_3+1{,}5IQR$; (iii) runway uses exactly 14 calendar days including zero-spend days, returns 0 days for a non-positive balance and forecasts no depletion date for a zero burn rate; (iv) recurring uses a 90-day window, a maximum amount of 500,000~VND, a 15\% tolerance and a 20--40 day cadence; (v) correlation zero-fills 12 weeks, requires data in at least 4 weeks and reports only \textbf{positive} correlation $r\geq0{,}6$, not $|r|$.
 
 \textbf{Errors, output and postconditions.} Missing data returns \texttt{null}; edge branches handle a zero denominator/burn rate. A failed component is recorded in \texttt{degraded\_components}; correlation must not be interpreted as causation. Facts JSON has a timestamp, values, period, method and warnings; the insight cache has a 10-minute TTL.
 
@@ -215,7 +215,7 @@ The \texttt{TC-FRxx-yy} codes below are test-case identifiers at the specificati
 
 \textbf{Purpose and trigger.} Interpret FR-07 in understandable language without delegating computation to the LLM. The flow receives facts, the data period, \texttt{degraded\_components} and the persona; the raw-facts endpoint must be usable independently of the narrator.
 
-\textbf{Input and processing.} The backend sends structured facts to the narrator while also generating overall advice via deterministic rules. The persona only changes the phrasing; the response always includes facts, provider and metadata for cross-checking. The boundary is in Section~2.5.2, the grounding measurement in Section~2.4.3.
+\textbf{Input and processing.} The backend sends structured facts to the narrator while also generating overall advice via deterministic rules. The persona only changes the phrasing; the response always includes facts, provider and metadata for cross-checking. The boundary is in Section~\ref{subsec:llm-boundary-theory}, the grounding measurement in Section~\ref{subsec:algo-grounding-perf}.
 
 \textbf{Errors, output and postconditions.} If the LLM is unavailable, a template fallback is used or a clear error is returned, with no mock numbers generated. \textbf{A checker ensuring every number in the narration belongs to the facts is a design target}; numeric faithfulness is not yet claimed as achieved. The read flow does not write transactions, budgets or goals.
 
@@ -230,7 +230,7 @@ The \texttt{TC-FRxx-yy} codes below are test-case identifiers at the specificati
 
 \textbf{Purpose and trigger.} Track limits, forecast overrun risk and recommend based on history rather than letting the LLM pick numbers. The user performs CRUD on budgets or requests \texttt{category\_average}, \texttt{50-30-20}, \texttt{hybrid}.
 
-\textbf{Input and processing.} The category must be an expense type, the limit positive, and the month/year valid. Progress computes spent, remaining and ratio; forecast uses $\text{spent}/\text{elapsed\_days}\times\text{days\_in\_month}$. The recommender per Section~2.3.6 averages over all months in the window including zero months, with a 5\% buffer; needs/wants are capped at 50\%/30\% of income and saving at 20\%. Hybrid only shrinks weights when the total exceeds the cap. Under 3 months generates a warning; apply requires \texttt{confirmed=true} and an atomic upsert.
+\textbf{Input and processing.} The category must be an expense type, the limit positive, and the month/year valid. Progress computes spent, remaining and ratio; forecast uses $\text{spent}/\text{elapsed\_days}\times\text{days\_in\_month}$. The recommender per Section~\ref{subsec:budget-forecast} averages over all months in the window including zero months, with a 5\% buffer; needs/wants are capped at 50\%/30\% of income and saving at 20\%. Hybrid only shrinks weights when the total exceeds the cap. Under 3 months generates a warning; apply requires \texttt{confirmed=true} and an atomic upsert.
 
 \textbf{Errors, output and postconditions.} Missing income makes ratio strategies fall back to the average. A wrong category/period/limit, an empty batch or one over 50 items, or a missing confirmation is rejected; one wrong item rolls back the whole batch. Only the confirmed apply endpoint changes \texttt{budgets}/\texttt{budget\_history}.
 
@@ -246,7 +246,7 @@ The \texttt{TC-FRxx-yy} codes below are test-case identifiers at the specificati
 
 \textbf{Purpose and trigger.} Compute contribution, completion time and scenarios for saving, purchase or debt goals using deterministic functions. Input includes goal type, positive target, non-negative current/contribution, a non-past date and an annual interest rate for debt.
 
-\textbf{Input and processing.} The Goal Planner applies Section~2.3.7 to compute the shortfall, number of months, contribution to deadline, progress and warnings. For debt, the monthly rate equals the annual rate divided by 12; the annuity formula has a zero-rate branch and monthly simulation to compute interest/remaining balance; a payment not exceeding the first month's interest is flagged for negative amortization. What-if reruns the same function. The plan endpoint does not write to the DB and issues a payload-signed token valid for 15 minutes; creating/updating a plan field accepts only an unexpired token whose fingerprint matches.
+\textbf{Input and processing.} The Goal Planner applies Section~\ref{subsec:goal-planning} to compute the shortfall, number of months, contribution to deadline, progress and warnings. For debt, the monthly rate equals the annual rate divided by 12; the annuity formula has a zero-rate branch and monthly simulation to compute interest/remaining balance; a payment not exceeding the first month's interest is flagged for negative amortization. What-if reruns the same function. The plan endpoint does not write to the DB and issues a payload-signed token valid for 15 minutes; creating/updating a plan field accepts only an unexpired token whose fingerprint matches.
 
 \textbf{Errors, output and postconditions.} A wrong date/interest/amount, an expired token or an altered payload is rejected. A zero contribution has no deadline; a non-decreasing debt returns a warning. The preview returns the plan, progress, cashflow, what-if and token but writes no data; only a valid confirmation saves.
 
@@ -262,7 +262,7 @@ The \texttt{TC-FRxx-yy} codes below are test-case identifiers at the specificati
 
 \textbf{Purpose and trigger.} Manage recurring-spending schedules, record payments consistently and create non-duplicate reminders/insights on retry. A bill has a name, a positive amount, a weekly/monthly/quarterly/yearly frequency and a valid due day; a payment carries the just-read \texttt{period\_due\_date}; the worker receives a job name and user scope.
 
-\textbf{Input and processing.} The due date is computed per cycle and clamped to end of month. Recurring suggestions use Section~2.3.4. A payment locks the bill, checks the period, creates an expense, subtracts from the wallet, records the payment and advances \texttt{next\_due\_date} within one transaction; deleting the plan still keeps the payments. The scheduler upserts the schedule, retries up to 3 times with exponential backoff; an event key/fingerprint and a unique index prevent duplicate message/export creation.
+\textbf{Input and processing.} The due date is computed per cycle and clamped to end of month. Recurring suggestions use Section~\ref{subsec:recurring-mining}. A payment locks the bill, checks the period, creates an expense, subtracts from the wallet, records the payment and advances \texttt{next\_due\_date} within one transaction; deleting the plan still keeps the payments. The scheduler upserts the schedule, retries up to 3 times with exponential backoff; an event key/fingerprint and a unique index prevent duplicate message/export creation.
 
 \textbf{Errors, output and postconditions.} A missing/stale period, a wrong schedule/amount/reference causes a rollback. An unsupported handler must raise a clear error; a retry keeps the same event key. The wallet after payment is allowed to go negative. The system returns the bill, payment, transaction, next period and worker statistics; a period has exactly one effect.
 
@@ -292,7 +292,7 @@ The \texttt{TC-FRxx-yy} codes below are test-case identifiers at the specificati
 
 \subsection{Nonfunctional Requirements}
 
-The thresholds below are acceptance criteria or design targets, not necessarily current results. Actual measurements and missing measurements are separated in Section~3.3.2.
+The thresholds below are acceptance criteria or design targets, not necessarily current results. Actual measurements and missing measurements are separated in Section~\ref{subsec:results}.
 
 \begin{longtable}{@{}L{1.2cm}L{2.8cm}L{3.5cm}L{5.2cm}@{}}
   \caption{Nonfunctional requirements and how to measure}\label{tab:nfr}\\
@@ -553,6 +553,7 @@ The text dataset must separate the development and evaluation sets, covering the
 \end{table}
 
 \subsection{Results and Analysis}
+\label{subsec:results}
 
 \subsubsection{Measured Results}
 

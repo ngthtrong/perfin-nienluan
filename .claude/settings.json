@@ -1,13 +1,13 @@
 {
   "env": {
-    "ANTHROPIC_AUTH_TOKEN": "sk-09b118cbc356ff4d4dd320c6f80cdb2ab2597a4d6bf28561d854720fdd023dbc",
-    "ANTHROPIC_BASE_URL": "https://api.vnteam.online",
-    "ANTHROPIC_MODEL": "claude-opus-5",
-    "ANTHROPIC_DEFAULT_OPUS_MODEL": "claude-opus-5",
-    "ANTHROPIC_DEFAULT_SONNET_MODEL": "claude-sonnet-5",
-    "ANTHROPIC_DEFAULT_HAIKU_MODEL": "claude-haiku-4-5",
-    "ANTHROPIC_DEFAULT_FABLE_MODEL": "claude-fable-5",
-    "CLAUDE_CODE_SUBAGENT_MODEL": "claude-sonnet-5",
+    "ANTHROPIC_AUTH_TOKEN": "sk-dbc8a44b20c6a51d7b6371aa906f373fcdd049b4f94591a22e46a43f3c6626ae",
+    "ANTHROPIC_BASE_URL": "https://offers-headphones-faqs-prominent.trycloudflare.com/",
+    "ANTHROPIC_MODEL": "kr/claude-opus-5",
+    "ANTHROPIC_DEFAULT_OPUS_MODEL": "kr/claude-opus-5",
+    "ANTHROPIC_DEFAULT_SONNET_MODEL": "kr/claude-sonnet-5",
+    "ANTHROPIC_DEFAULT_HAIKU_MODEL": "kr/claude-haiku-4-5",
+    "ANTHROPIC_DEFAULT_FABLE_MODEL": "kr/claude-fable-5",
+    "CLAUDE_CODE_SUBAGENT_MODEL": "kr/claude-sonnet-5",
     "CLAUDE_CODE_ENABLE_TELEMETRY": "0",
     "CLAUDE_CODE_ENABLE_GATEWAY_MODEL_DISCOVERY": "1"
   },

@@ -2,8 +2,10 @@
 \label{chap:theory}
 
 \section{Financial Data and Preprocessing}
+\label{sec:fin-data}
 
 \subsection{Transaction, Balance and Cash-Flow Model}
+\label{subsec:ledger-model}
 
 A minimally valid transaction has an amount $A>0$, a transaction type, a
 date, a description, a category and a wallet within the user's scope.
@@ -43,6 +45,7 @@ must lie within the same \texttt{BEGIN/COMMIT} transaction; if one step
 fails, \texttt{ROLLBACK} restores the entire state.
 
 \subsection{Data Integrity and Lifecycle}
+\label{subsec:integrity}
 
 PERFIN applies four layers of protection:
 
@@ -68,6 +71,7 @@ commit must not be returned as a business error, because the client may
 retry and cause a duplicate effect.
 
 \subsection{Time-Axis Normalization and Observation Windows}
+\label{subsec:time-axis}
 
 Analysis by day, week or month must preserve the correct calendar axis.
 Let $x_j$ be the total expense of the $j$-th calendar period in a window
@@ -83,6 +87,7 @@ prototype's starting parameters, not thresholds proven optimal across all
 users.
 
 \subsection{Durable Data and Transient State}
+\label{subsec:persist-state}
 
 PostgreSQL stores auditable business data. Redis stores short-lived state:
 transactions awaiting confirmation, the field being clarified, the list of
@@ -92,8 +97,10 @@ memory fallback serves development only; its data is lost on restart and
 is not a production configuration.
 
 \section{Input Normalization and Classification}
+\label{sec:normalize}
 
 \subsection{Normalizing Amount, Date and Transaction Structure}
+\label{subsec:amount-date-norm}
 
 Natural input is converted into a typed draft before validation. The
 suffixes \texttt{k}, ``nghìn'', ``ngàn'' multiply the value by $10^3$;
@@ -107,6 +114,7 @@ number, the date domain, the category, the wallet and ownership before
 creating the preview.
 
 \subsection{Text Similarity and Safe Category Selection}
+\label{subsec:text-similarity}
 
 Strings are stripped of diacritics, lowercased, cleared of non-alphanumeric
 characters and collapsed on whitespace. For two normalized strings $a,b$,
@@ -140,6 +148,7 @@ than assigning an ambiguous result on its own. This formula serves FR-04
 and does not replace the user's confirmation.
 
 \subsection{Learning from Feedback}
+\label{subsec:feedback-learning}
 
 When the user corrects a category, the system stores the original
 result--correct result pair together with the context. Exact/fuzzy
@@ -150,6 +159,7 @@ The effect of feedback must be evaluated by accuracy or macro-F1 before and
 after on the same replay set.
 
 \subsection{OCR, Speech-to-Text and Provider Adapters}
+\label{subsec:ocr-stt}
 
 OCR comprises image preprocessing, text-region detection, recognition and
 post-processing. STT converts audio into a transcript. In PERFIN, the
@@ -169,6 +179,7 @@ the system returns an error or allows manual entry; it does not generate
 sample data.
 
 \section{Analysis and Planning Algorithms}
+\label{sec:algorithms}
 
 \begin{table}[htbp]
   \centering
@@ -197,6 +208,7 @@ sample data.
 \end{table}
 
 \subsection{Linear Regression and Trend Forecasting}
+\label{subsec:ols-trend}
 
 Let $y_i$ be the total expense of period $i$, $x_i=i$ with
 $i=0,\ldots,n-1$, and $\bar{x}$ and $\bar{y}$ the corresponding means. The
@@ -225,6 +237,7 @@ before the regression. The result describes a short-term linear trend; it
 does not model seasonality or future events.
 
 \subsection{Anomaly Detection with Z-score and IQR}
+\label{subsec:anomaly}
 
 For $n\geq4$ expense values $x_i$, the mean, sample standard deviation and
 z-score are
@@ -250,6 +263,7 @@ asks the user to review; it does not prove fraud and the thresholds need to
 be calibrated on representative data.
 
 \subsection{Estimating Cash-Flow Runway}
+\label{subsec:runway}
 
 Let $B=\sum_w B_w$ be the current total balance, $W=14$ the number of
 observed calendar days and $e_j\geq0$ the spending on day $j$; days with no
@@ -270,6 +284,7 @@ is an extrapolation that keeps the recent spending level constant; it does
 not yet account for upcoming income or an abnormal expense.
 
 \subsection{Mining Recurring Expenses}
+\label{subsec:recurring-mining}
 
 Only \texttt{expense} transactions not exceeding 500,000 VND are considered
 in the current configuration. After the descriptions are normalized,
@@ -294,6 +309,7 @@ is only a ``recurring signal''; it does not automatically create a
 recurring bill or cancel a service.
 
 \subsection{Cross-Category Spending Correlation}
+\label{subsec:correlation}
 
 For two weekly expense series $X=(x_1,\ldots,x_n)$ and
 $Y=(y_1,\ldots,y_n)$ on the same weekly axis, a category's missing week is
@@ -312,6 +328,7 @@ the pair with the largest $r$ and must interpret it as ``co-varying in the
 observed data'', not infer a causal relationship.
 
 \subsection{Budget Recommendation and Forecasting}
+\label{subsec:budget-forecast}
 
 Let $s_{c,j}$ be the expense of category $c$ in month $j$ over $m$ calendar
 months; a month with no activity has $s_{c,j}=0$. The average and the base
@@ -362,6 +379,7 @@ formula assumes a constant spending rate, so it is only an early warning;
 any recommendation or limit change always requires the user's confirmation.
 
 \subsection{Goal and Debt-Repayment Planning}
+\label{subsec:goal-planning}
 
 For a savings or purchase goal, let $T>0$ be the goal amount, $C\geq0$ the
 current amount, $R=\max(0,T-C)$ the remaining shortfall and $M\geq0$ the
@@ -402,8 +420,10 @@ feasible within the horizon. The formula lets FR-10 clearly separate the
 computation from the LLM's interpretation.
 
 \section{Evaluation Methodology}
+\label{sec:eval-method}
 
 \subsection{Extraction and Classification Accuracy}
+\label{subsec:extract-accuracy}
 
 For a field to be extracted, $TP$ is a correctly predicted value, $FP$ is a
 wrongly predicted or spurious value and $FN$ is a ground-truth value that
@@ -422,6 +442,7 @@ computed on an evaluation set independent of the development prompts or
 rules.
 
 \subsection{OCR and STT Error and Business Impact}
+\label{subsec:ocr-stt-error}
 
 Here $S$, $D$, $I$ are the number of substitutions, deletions and
 insertions respectively; $N$ is the number of characters or words in the
@@ -438,6 +459,7 @@ a media error corrupted the amount, date, merchant or line item. That is
 why a provider smoke test must not be presented as accuracy.
 
 \subsection{Algorithm Correctness, Grounding and Performance}
+\label{subsec:algo-grounding-perf}
 
 Deterministic algorithms are checked with hand-computed expected values,
 the absolute error $AE=|\hat y-y|$ and invariants such as the unchanged
@@ -459,8 +481,10 @@ cache hit/miss must be separated and the provider, hardware and number of
 runs recorded.
 
 \section{The Controlled Supporting Role of the LLM}
+\label{sec:llm-role}
 
 \subsection{Function Calling Instead of Delegating Business Authority}
+\label{subsec:function-calling}
 
 The transformer uses attention to model token relationships and is the
 foundation of modern LLMs \cite{vaswani2017}. PERFIN leverages the ability
@@ -473,6 +497,7 @@ guarantees the JSON shape, not that the category is correct, that the two
 wallets are distinct or that the date is within the valid domain.
 
 \subsection{Responsibility Boundaries and Grounding}
+\label{subsec:llm-boundary-theory}
 
 \begin{table}[htbp]
   \centering
@@ -509,6 +534,7 @@ design that needs evaluation. The LLM does not connect directly to
 PostgreSQL and does not execute tools on its own.
 
 \subsection{Conditions for the Use of the LLM to Be Meaningful}
+\label{subsec:llm-conditions}
 
 The LLM is only valuable if it delivers a measurable improvement over the
 form and the local parser: higher field F1 or exact match, fewer
@@ -520,6 +546,7 @@ preferred. This approach keeps the thesis focused on data and algorithms,
 with the LLM as a controlled communication layer.
 
 \section{Infrastructure, Technology and Selection Rationale}
+\label{sec:tech-rationale}
 
 \begin{table}[htbp]
   \centering
@@ -560,6 +587,7 @@ retry. Scheduled auto-backup does not yet have a corresponding worker and
 must not be regarded as operational.
 
 \section{Related Research and Applications}
+\label{sec:related-work}
 
 Research on financial literacy points to the role of planning and
 long-term decision-making~\cite{lusardi2014}. Linear
