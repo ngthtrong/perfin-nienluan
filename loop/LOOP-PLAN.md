@@ -40,9 +40,6 @@ Tone: constructive, calibrated to course level.
   resource/Report.md carried a STALE 51-sentence ablation run (0.561/0.192/897ms) in 6 places;
   LaTeX had the newer authoritative 63-sentence run (0.607/0.204/964ms, verified vs log/*.json).
   Synced all 6 spots. Verified D-02: 0 hardcoded hex in 12 frontend screens (all use tokens).
-- loop6: pending (final). Candidates: cosmetic diagram palette (low priority per loop2),
-  ch1/ch2 prose polish, final holistic pass + grade summary.
-
 - loop4: DONE. Report at loop/loop4/report.md. Fixed L-02 (abstract length: VI 290→211
   syllable-tokens ~150 words, EN 243→166 words; synced vi+en+Report.md; both PDFs compile).
   Verified PASS: cover double-border (1.5pt+0.5pt), IEEE refs (18=18), abbreviations (32),
