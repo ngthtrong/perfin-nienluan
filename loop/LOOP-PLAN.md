@@ -86,6 +86,33 @@ Tone: constructive, calibrated to course level.
   PDF targets, so after re-rendering figures a plain `make` reports "up to date" and silently
   skips re-embedding them. Force it (touch config/preamble.tex, or rm main-{vi,en}.pdf).
 
+- loop8: DONE. Report at loop/loop8/report.md. Areas newly checked: TOC 4 levels, ch1
+  objectives, ch4 conclusion/limits, and evidence traceability to log/*.json.
+  FIXED P-01 (severe): commit c688762 DELETED the whole log/ directory — all 12 evidence
+  artifacts that every "measured" number must trace to. Same commit added loop/promt-loop.md
+  which mandates that traceability. Restored via `git checkout c688762^ -- log/`.
+  IMPORTANT: log/ is NOT in .gitignore; if it vanishes again, restore from c688762^.
+  FIXED L-11: report cited artifacts at `resource/report/evidence/`, a path that no longer
+  exists — loop1's commit d5c9eab renamed it (R100) to `log/` without updating the prose.
+  Fixed in ch3 vi+en:596 and Report.md:1149.
+  FIXED L-12 (stale number): report published "100/100" backend tests in 7 places; actual
+  run is 178/178 across 37 test files (suite grew, incl. loop7's user-scope tests). Created
+  log/backend-test-run_2026-07-25.json with a `supersedes` field so the 100/100 milestone
+  stays traceable rather than erased. Updated all 7 sites + latex/README.md.
+  FIXED L-13 (wrong-set comparison): abstract + ch4 said parser macro-F1 0.177 vs LLM 0.607
+  "on the same stratified sample". Wrong: 0.177 is the 5,265-row benchmark; the ablation's
+  own parser arm on the 63-sentence sample is 0.204. Ratio was inflated 3.4x vs the true
+  3.0x. §3.3.2.3's detail tables were already correct — only the summaries mixed the sets,
+  so this does NOT reverse loop3/loop6. Rewrote 6 sites to bind each number to its set.
+  Verified PASS (don't recheck): TOC depth is correct — tocdepth=3 yields exactly 4 printed
+  levels; the 4 `\contentsline{paragraph}` lines in .toc are suppressed at typeset time and
+  are NOT a 5th level. ch1 O1-O5 all have testable acceptance criteria. ch4 lists 8
+  self-declared limits (incl. admitting un-scoped ID lookups). Cover metadata 100% complete
+  per Guideline 2.1. Abstract still in range after edits: VI 219 syllable-tokens (~156
+  words), EN 172 words.
+  Verification: both PDFs exit 0, 0 overfull hboxes, 0 undefined refs, 13 figures each;
+  vi/en anchor counts identical (20/36/33/26/29/17); backend 178/178.
+
 ## Credit note
 Subagent fan-out hit "credit limit exceeded" (429) in loop1. Prefer direct main-context
 work; spawn agents sparingly and with tight, findings-only prompts.

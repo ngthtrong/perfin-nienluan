@@ -547,7 +547,7 @@ Ngày 16/07/2026, các phép kiểm tra từ unit đến runtime được chạy
   \textbf{Hạng mục} & \textbf{Kết quả} & \textbf{Phân loại} & \textbf{Phạm vi kết luận} \\
   \midrule
   \endhead
-  Backend \code{npm test} sau sửa & 100/100 test đạt, 0 thất bại & \statusmeasured & Unit/service; gồm transaction, concurrency, recurring, health, importer và time-series. \\
+  Backend \code{npm test} sau sửa & 178/178 test đạt, 0 thất bại & \statusmeasured & Unit/service trên 37 tệp test; gồm transaction, concurrency, recurring, health, importer, time-series và user scope. Mốc 16/07/2026 là 100/100 trước khi mở rộng bộ test. \\
   Local parser quality gate & 31/31 strict pass; 0 partial; 0 fail & \statusmeasured & Cục bộ, không dùng Gemini; strict exit code, 31 ca hard-coded. \\
   Baseline trước sửa & 13/13 tệp test; parser 27/31 strict & \statusmeasured & Giữ để phân tích lỗi và chứng minh tác động bản sửa. \\
   Full API/DB/media smoke & 23/23 kiểm tra đạt & \statusmeasured & PostgreSQL live, preview, sửa, hủy, OCR 2 ảnh và STT 1 M4A; không gồm Redis worker. \\
@@ -593,7 +593,7 @@ Full smoke chứng minh luồng HTTP--PostgreSQL, Gemini cấu trúc đầu ra, 
 
 \subsubsection{Thí nghiệm định lượng trên tập gán nhãn}
 
-Đợt nghiệm thu ngày 16/07/2026 (mục trên) xác nhận hệ thống chạy đúng ở mức runtime nhưng chưa lượng hóa chất lượng giải thuật trên tập độc lập; do đó một đợt đo thứ hai ngày 24/07/2026 bổ sung ba thí nghiệm định lượng trên toàn bộ tập gán nhãn để trả lời riêng câu hỏi ``giải thuật chính xác đến đâu''. Ba thí nghiệm được thực hiện ngày 24/07/2026 trên chính \code{dataFinance.csv} (5.265 dòng, SHA-256 \code{a9b7cf1b\ldots027ca94f}), commit \code{5f03476}, Node v24.16.0, provider \code{gemini}, model \code{gemini-3.1-flash-lite}. Mã và artifact tái lập (JSON + Markdown) nằm ở \code{demo/backend/tests/experiments/} và \code{resource/report/evidence/}.
+Đợt nghiệm thu ngày 16/07/2026 (mục trên) xác nhận hệ thống chạy đúng ở mức runtime nhưng chưa lượng hóa chất lượng giải thuật trên tập độc lập; do đó một đợt đo thứ hai ngày 24/07/2026 bổ sung ba thí nghiệm định lượng trên toàn bộ tập gán nhãn để trả lời riêng câu hỏi ``giải thuật chính xác đến đâu''. Ba thí nghiệm được thực hiện ngày 24/07/2026 trên chính \code{dataFinance.csv} (5.265 dòng, SHA-256 \code{a9b7cf1b\ldots027ca94f}), commit \code{5f03476}, Node v24.16.0, provider \code{gemini}, model \code{gemini-3.1-flash-lite}. Mã và artifact tái lập (JSON + Markdown) nằm ở \code{demo/backend/tests/experiments/} và \code{log/}.
 
 \paragraph{Benchmark phân loại danh mục.} Chạy \code{parseLocalTransaction} trên toàn bộ 5.265 dòng, so nhãn dự đoán với nhãn gold ánh xạ từ taxonomy lịch sử.
 

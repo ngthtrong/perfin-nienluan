@@ -547,7 +547,7 @@ On 16/07/2026, checks from unit to runtime level were run in the workspace. The 
   \textbf{Item} & \textbf{Result} & \textbf{Category} & \textbf{Scope of conclusion} \\
   \midrule
   \endhead
-  Backend \code{npm test} after fixes & 100/100 tests passed, 0 failures & \statusmeasured & Unit/service; includes transaction, concurrency, recurring, health, importer and time-series. \\
+  Backend \code{npm test} after fixes & 178/178 tests passed, 0 failures & \statusmeasured & Unit/service across 37 test files; includes transaction, concurrency, recurring, health, importer, time-series and user scope. The 16/07/2026 milestone was 100/100, before the suite was extended. \\
   Local parser quality gate & 31/31 strict pass; 0 partial; 0 fail & \statusmeasured & Local, without Gemini; strict exit code, 31 hard-coded cases. \\
   Baseline before fixes & 13/13 test files; parser 27/31 strict & \statusmeasured & Kept for error analysis and to demonstrate the impact of the fixes. \\
   Full API/DB/media smoke & 23/23 checks passed & \statusmeasured & Live PostgreSQL, preview, edit, cancel, OCR on 2 images and STT on 1 M4A; does not include the Redis worker. \\
@@ -593,7 +593,7 @@ The full smoke test demonstrates that the HTTP--PostgreSQL flow, Gemini structur
 
 \subsubsection{Quantitative Experiments on the Labeled Set}
 
-The acceptance run of 16/07/2026 (above) confirmed that the system runs correctly at the runtime level but did not yet quantify algorithmic quality on an independent set; a second measurement round on 24/07/2026 therefore added three quantitative experiments over the full labeled set to answer the specific question of how accurate the algorithm is. These three experiments were run on 24/07/2026 against \code{dataFinance.csv} itself (5,265 rows, SHA-256 \code{a9b7cf1b...027ca94f}), commit \code{5f03476}, Node v24.16.0, provider \code{gemini}, model \code{gemini-3.1-flash-lite}. Code and reproducible artifacts (JSON + Markdown) live under \code{demo/backend/tests/experiments/} and \code{resource/report/evidence/}.
+The acceptance run of 16/07/2026 (above) confirmed that the system runs correctly at the runtime level but did not yet quantify algorithmic quality on an independent set; a second measurement round on 24/07/2026 therefore added three quantitative experiments over the full labeled set to answer the specific question of how accurate the algorithm is. These three experiments were run on 24/07/2026 against \code{dataFinance.csv} itself (5,265 rows, SHA-256 \code{a9b7cf1b...027ca94f}), commit \code{5f03476}, Node v24.16.0, provider \code{gemini}, model \code{gemini-3.1-flash-lite}. Code and reproducible artifacts (JSON + Markdown) live under \code{demo/backend/tests/experiments/} and \code{log/}.
 
 \paragraph{a) Category-classification benchmark --- local parser on the full set.}
 Running \code{parseLocalTransaction} over all 5,265 labeled rows and comparing the predicted label with the gold label mapped from the historical taxonomy.

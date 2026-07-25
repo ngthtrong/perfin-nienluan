@@ -1,0 +1,199 @@
+{
+  "experiment": "ablation-parser-vs-llm",
+  "description": "So sánh local parser và LLM trên cùng tập câu gán nhãn (phân loại danh mục).",
+  "meta": {
+    "timestamp": "2026-07-24T14:24:54.925Z",
+    "commit": "5f03476",
+    "node": "v24.16.0",
+    "ai_provider": "gemini",
+    "gemini_model": "gemini-3.1-flash-lite",
+    "tz": "Asia/Ho_Chi_Minh"
+  },
+  "dataset": {
+    "file": "dataFinance.csv",
+    "sha256": "a9b7cf1b390227e532bf286623cd25d546b656bb7161e422079dd003027ca94f",
+    "raw_rows": 5265,
+    "labeled_rows": 5265,
+    "sampled": 63,
+    "per_class": 5,
+    "seed": 42
+  },
+  "llm_status": "measured",
+  "llm_note": "Đo trên 63/63 câu gọi Gemini thành công.",
+  "arms": {
+    "local_parser": {
+      "n": 63,
+      "answered": 63,
+      "accuracy": 0.2222,
+      "macroF1": 0.2039,
+      "weightedF1": 0.2045,
+      "clarification_rate": 0.8413,
+      "latency_ms_median": 0,
+      "api_calls": 0,
+      "errors": 0
+    },
+    "llm": {
+      "n": 63,
+      "answered": 42,
+      "accuracy": 0.5952,
+      "macroF1": 0.6068,
+      "weightedF1": 0.5927,
+      "clarification_rate": 0.9524,
+      "latency_ms_median": 964,
+      "api_calls": 63,
+      "errors": 0
+    }
+  },
+  "disagreements": [
+    {
+      "text": "chuối + đu đủ",
+      "gold": "Ăn uống",
+      "local": "Khác",
+      "llm": "Tạp hóa"
+    },
+    {
+      "text": "5h30-8h30",
+      "gold": "Lương",
+      "local": "Khác",
+      "llm": null
+    },
+    {
+      "text": "cầu lông",
+      "gold": "Thể thao",
+      "local": "Khác",
+      "llm": null
+    },
+    {
+      "text": "cầu lông",
+      "gold": "Thể thao",
+      "local": "Khác",
+      "llm": null
+    },
+    {
+      "text": "shopee",
+      "gold": "Lương",
+      "local": "Khác",
+      "llm": null
+    },
+    {
+      "text": "bida với ân",
+      "gold": "Giải trí",
+      "local": "Ăn uống",
+      "llm": "Giải trí"
+    },
+    {
+      "text": "thùng nước",
+      "gold": "Nhà cửa",
+      "local": "Khác",
+      "llm": "Tạp hóa"
+    },
+    {
+      "text": "vớ",
+      "gold": "Mua sắm",
+      "local": "Khác",
+      "llm": null
+    },
+    {
+      "text": "phí rút tiền",
+      "gold": "Hóa đơn & Dịch vụ",
+      "local": "Khác",
+      "llm": "Hóa đơn & Dịch vụ"
+    },
+    {
+      "text": "bida với béo",
+      "gold": "Giải trí",
+      "local": "Khác",
+      "llm": "Giải trí"
+    },
+    {
+      "text": "cf",
+      "gold": "Ăn uống",
+      "local": "Khác",
+      "llm": "Ăn uống"
+    },
+    {
+      "text": "bida với a thành, tiến",
+      "gold": "Giải trí",
+      "local": "Khác",
+      "llm": "Giải trí"
+    },
+    {
+      "text": "DNSE",
+      "gold": "Đầu tư",
+      "local": "Khác",
+      "llm": null
+    },
+    {
+      "text": "trà đá",
+      "gold": "Ăn uống",
+      "local": "Khác",
+      "llm": "Ăn uống"
+    },
+    {
+      "text": "ân: tân",
+      "gold": "Khác",
+      "local": "Ăn uống",
+      "llm": null
+    },
+    {
+      "text": "phsi thườn niên",
+      "gold": "Hóa đơn & Dịch vụ",
+      "local": "Khác",
+      "llm": null
+    },
+    {
+      "text": "bida với ân",
+      "gold": "Giải trí",
+      "local": "Ăn uống",
+      "llm": "Giải trí"
+    },
+    {
+      "text": "chapman",
+      "gold": "Khác",
+      "local": "Khác",
+      "llm": null
+    },
+    {
+      "text": "vệ sinh nam",
+      "gold": "Sức khỏe",
+      "local": "Khác",
+      "llm": "Sức khỏe"
+    },
+    {
+      "text": "bida với ân",
+      "gold": "Giải trí",
+      "local": "Ăn uống",
+      "llm": "Giải trí"
+    },
+    {
+      "text": "bia",
+      "gold": "Sức khỏe",
+      "local": "Khác",
+      "llm": "Ăn uống"
+    },
+    {
+      "text": "VNM",
+      "gold": "Đầu tư",
+      "local": "Khác",
+      "llm": null
+    },
+    {
+      "text": "shopee 02/02",
+      "gold": "Lương",
+      "local": "Khác",
+      "llm": "Mua sắm"
+    },
+    {
+      "text": "shopee",
+      "gold": "Lương",
+      "local": "Khác",
+      "llm": null
+    },
+    {
+      "text": "dép",
+      "gold": "Mua sắm",
+      "local": "Khác",
+      "llm": null
+    }
+  ]
+}

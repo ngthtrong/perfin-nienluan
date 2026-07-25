@@ -51,6 +51,6 @@ Trang bìa tái sử dụng logo CTU tại `../archive/latex/images/ctu_logo.png
 
 ## Quy ước bằng chứng
 
-Các nhãn “đã hiện thực”, “đã đo”, “mục tiêu”, “thiết kế đích” và “chưa đo” không được dùng thay thế cho nhau. Kết quả sau ổn định hóa được công bố là: backend 100/100 test pass; local-parser quality gate 31/31 strict; full smoke API--PostgreSQL--media 23/23; Expo web/Android export 653/960 module; mobile-web smoke không overflow và hiển thị ảnh thật trong chat. PostgreSQL demo có 5.265 giao dịch đã đối soát. Baseline 13/13 và 27/31 được giữ để phân tích tác động bản sửa. Báo cáo không tuyên bố Redis worker đã chạy live hoặc đã đo độ chính xác LLM, OCR, STT.
+Các nhãn “đã hiện thực”, “đã đo”, “mục tiêu”, “thiết kế đích” và “chưa đo” không được dùng thay thế cho nhau. Kết quả sau ổn định hóa được công bố là: backend 178/178 test pass; local-parser quality gate 31/31 strict; full smoke API--PostgreSQL--media 23/23; Expo web/Android export 653/960 module; mobile-web smoke không overflow và hiển thị ảnh thật trong chat. PostgreSQL demo có 5.265 giao dịch đã đối soát. Baseline 13/13 và 27/31 được giữ để phân tích tác động bản sửa. Báo cáo không tuyên bố Redis worker đã chạy live hoặc đã đo độ chính xác LLM, OCR, STT.
 
 Các PDF Draw.io được chèn trực tiếp bằng `graphicx` và đã được xuất lại ở chế độ crop/one-page để giữ trọn sơ đồ dưới dạng vector. Khi chỉnh sửa, cần tiếp tục xuất PDF với tùy chọn crop; không thay nguồn `.drawio` bằng ảnh raster.
