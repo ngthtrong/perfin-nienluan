@@ -3,7 +3,7 @@
 > **TRƯỜNG ĐẠI HỌC CẦN THƠ**  
 > **TRƯỜNG CÔNG NGHỆ THÔNG TIN VÀ TRUYỀN THÔNG**
 >
-> ![Logo Trường Đại học Cần Thơ](../../archive/latex/images/ctu_logo.png)
+> ![Logo Trường Đại học Cần Thơ](../latex/images/ctu_logo.png)
 >
 > **NIÊN LUẬN CƠ SỞ NGÀNH**
 >
@@ -155,7 +155,7 @@ Các hiện tượng trên phải được tính bằng giải thuật có thể
 2. Những giải thuật xác định nào phù hợp để tạo insight có thể giải thích từ lịch sử tài chính cá nhân?
 3. LLM nên tham gia ở đâu để tăng tính tự nhiên và cá nhân hóa mà không chiếm quyền tính toán hay tự ý thay đổi dữ liệu?
 
-![Hình 1. Sơ đồ ngữ cảnh và phạm vi hệ thống PERFIN](../../archive/latex/figures/rendered/01-system-context.png)
+![Hình 1. Sơ đồ ngữ cảnh và phạm vi hệ thống PERFIN](../latex/figures/rendered/01-system-context.png)
 
 **Hình 1. Sơ đồ ngữ cảnh và phạm vi hệ thống PERFIN.** Người dùng tương tác với ứng dụng di động; PERFIN quản lý dữ liệu và giải thuật nội bộ; các nhà cung cấp LLM, OCR và STT chỉ là dịch vụ hỗ trợ. Biên hệ thống loại trừ ngân hàng, ví dùng chung và hệ thống xác thực production khỏi phạm vi niên luận.
 
@@ -894,7 +894,7 @@ Các giới hạn nghiệm thu hiện tại gồm: chưa có authentication/auth
 
 PERFIN sử dụng modular monolith thay vì microservice. API server Express chứa các module nghiệp vụ độc lập ở mức mã nguồn nhưng cùng tiến trình triển khai. Worker là tiến trình riêng để xử lý job nền. Lựa chọn này phù hợp quy mô niên luận, giảm chi phí vận hành nhưng vẫn giữ ranh giới module để có thể tách sau này.
 
-![Hình 2. Kiến trúc vận hành của PERFIN](../../archive/latex/figures/rendered/02-runtime-architecture.png)
+![Hình 2. Kiến trúc vận hành của PERFIN](../latex/figures/rendered/02-runtime-architecture.png)
 
 **Hình 2. Kiến trúc vận hành của PERFIN.** Mobile gọi REST API; route chuyển sang service; service dùng model truy cập PostgreSQL. AI Orchestrator chỉ chọn tool và điều phối. Analytics Engine, Budget Engine và Goal Planner tạo kết quả xác định. Redis phục vụ cache/state/queue; worker xử lý tác vụ định kỳ. Các provider AI nằm ngoài biên tin cậy dữ liệu.
 
@@ -912,7 +912,7 @@ PERFIN sử dụng modular monolith thay vì microservice. API server Express ch
 | KV Store/Redis | TTL state, cache, rate count | Nguồn dữ liệu tài chính chuẩn |
 | BullMQ Worker | Job định kỳ, retry, dedup | Xử lý request tương tác trực tiếp |
 
-![Hình 3. Sơ đồ triển khai nguyên mẫu](../../archive/latex/figures/rendered/03-deployment.png)
+![Hình 3. Sơ đồ triển khai nguyên mẫu](../latex/figures/rendered/03-deployment.png)
 
 **Hình 3. Sơ đồ triển khai nguyên mẫu.** Frontend Expo chạy trên thiết bị; API, worker, PostgreSQL và Redis chạy trong môi trường demo cục bộ/container; provider AI được gọi qua HTTPS. Sơ đồ là triển khai nguyên mẫu, không mô tả cụm production hay cam kết sẵn sàng cao.
 
@@ -920,15 +920,15 @@ PERFIN sử dụng modular monolith thay vì microservice. API server Express ch
 
 #### 3.2.2.1. Mô hình miền
 
-![Hình 4. Mô hình miền theo aggregate nghiệp vụ](../../archive/latex/figures/rendered/04-domain-class.png)
+![Hình 4. Mô hình miền theo aggregate nghiệp vụ](../latex/figures/rendered/04-domain-class.png)
 
-**Hình 4. Mô hình miền theo aggregate nghiệp vụ.** Bốn cụm sổ cái, lập kế hoạch, khoản định kỳ và hội thoại–phản hồi được tách thành các aggregate dễ đọc. Hộp `User` được lặp làm neo bố cục nhưng cùng chỉ một thực thể; nhờ đó quan hệ sở hữu và luồng đọc facts đều là đường thẳng, không giao cắt. Analytics/Budget/Goal Services đọc aggregate để tính facts hoặc kế hoạch nhưng không sở hữu entity tài chính.
+**Hình 4. Mô hình miền theo aggregate nghiệp vụ.** Bốn cụm sổ cái, lập kế hoạch, khoản định kỳ và hội thoại–phản hồi được tách thành các aggregate dễ đọc. Thực thể `User` được vẽ một lần duy nhất và là gốc sở hữu của cả bốn aggregate; các quan hệ sở hữu cùng luồng đọc facts đều định tuyến vuông góc. Analytics/Budget/Goal Services đọc aggregate để tính facts hoặc kế hoạch nhưng không sở hữu entity tài chính.
 
 #### 3.2.2.2. Mô hình vật lý
 
-![Hình 5. Sơ đồ quan hệ thực thể vật lý](../../archive/latex/figures/rendered/05-physical-erd.png)
+![Hình 5. Sơ đồ quan hệ thực thể vật lý](../latex/figures/rendered/05-physical-erd.png)
 
-**Hình 5. Sơ đồ quan hệ thực thể vật lý.** ERD được đối chiếu với chuỗi migration runtime và dùng `users.user_key` làm cầu nối tương thích với `default_user`. Sơ đồ thể hiện đủ 18 bảng, PK, FK, unique và check. Bảng `users` được lặp thành bốn neo tham chiếu của cùng một bảng; các FK chéo mô-đun như wallet/category/personality được ghi ngay trong bảng con thay vì kéo đường dài, nhờ đó loại bỏ đường cong và phần lớn giao cắt mà không che giấu quan hệ.
+**Hình 5. Sơ đồ quan hệ thực thể vật lý.** ERD được đối chiếu với chuỗi migration runtime và dùng `users.user_key` làm cầu nối tương thích với `default_user`. Sơ đồ thể hiện đủ 18 bảng, PK, FK, unique và check. Mỗi bảng xuất hiện đúng một lần, kể cả `users`; các FK chéo mô-đun như wallet/category/personality được ghi ngay trong bảng con thay vì kéo đường dài, nhờ đó loại bỏ đường cong và phần lớn giao cắt mà không che giấu quan hệ.
 
 **Bảng 13. Nhóm thực thể dữ liệu chính**
 
@@ -955,25 +955,25 @@ PERFIN sử dụng modular monolith thay vì microservice. API server Express ch
 
 #### 3.2.3.1. Ranh giới LLM trong kiến trúc
 
-![Hình 6. Ranh giới trách nhiệm của LLM trong PERFIN](../../archive/latex/figures/rendered/06-llm-boundary.png)
+![Hình 6. Ranh giới trách nhiệm của LLM trong PERFIN](../latex/figures/rendered/06-llm-boundary.png)
 
 **Hình 6. Ranh giới trách nhiệm của LLM.** Vùng bên trái tạo dữ liệu và facts có thể kiểm chứng; vùng giữa là AI Orchestrator; vùng bên phải chỉ diễn giải. Mũi tên ngược từ người dùng biểu diễn bước xác nhận hoặc sửa sai. LLM không có kết nối trực tiếp tới PostgreSQL và không tự thực thi tool.
 
 #### 3.2.3.2. Máy trạng thái hội thoại
 
-![Hình 7. Máy trạng thái hội thoại và giao dịch chờ xác nhận](../../archive/latex/figures/rendered/07-conversation-state.png)
+![Hình 7. Máy trạng thái hội thoại và giao dịch chờ xác nhận](../latex/figures/rendered/07-conversation-state.png)
 
 **Hình 7. Máy trạng thái hội thoại và giao dịch chờ xác nhận.** Trạng thái chính gồm `idle`, `parse`, `collecting`, `preview`, `confirmed`, `cancelled` và `expired`; lựa chọn ứng viên được giữ trong `collecting`. Redis lưu `intent`, trường đang chờ, dữ liệu đã thu và candidates trong 5 phút. Mọi nhánh ghi dữ liệu phải đi qua `preview → confirmed`; ba trạng thái cuối kết thúc phiên hiện tại, còn yêu cầu mới tạo một phiên `idle` khác.
 
 #### 3.2.3.3. Nhập giao dịch bằng văn bản
 
-![Hình 8. Sơ đồ tuần tự nhập giao dịch bằng văn bản](../../archive/latex/figures/rendered/08-text-sequence.png)
+![Hình 8. Sơ đồ tuần tự nhập giao dịch bằng văn bản](../latex/figures/rendered/08-text-sequence.png)
 
 **Hình 8. Sơ đồ tuần tự nhập giao dịch bằng văn bản.** Trình tự gồm: nhận text; lấy categories/wallets và corrections đã cache; gọi LLM tool hoặc local router; chuẩn hóa và validation; hỏi lại nếu thiếu; tạo preview; người dùng sửa/xác nhận; service mở DB transaction; cập nhật số dư và kiểm tra ngân sách; trả kết quả. LLM không nằm trong transaction ghi dữ liệu.
 
 #### 3.2.3.4. Đầu vào đa phương thức
 
-![Hình 9. Luồng xử lý đầu vào đa phương thức](../../archive/latex/figures/rendered/09-multimodal-flow.png)
+![Hình 9. Luồng xử lý đầu vào đa phương thức](../latex/figures/rendered/09-multimodal-flow.png)
 
 **Hình 9. Luồng xử lý đầu vào đa phương thức.** Voice đi qua STT và bước xác nhận transcript. Ảnh đi qua preprocessing/OCR và lựa chọn tổng hóa đơn hoặc từng mặt hàng. Cả hai hội tụ tại pipeline text chung. Lỗi provider trả trạng thái lỗi; không được thay bằng raw text giả.
 
@@ -987,25 +987,25 @@ $$
 
 Matcher ưu tiên exact, alias exact rồi fuzzy. Input ngắn dùng ngưỡng cao hơn; ứng viên tốt nhất phải vượt ngưỡng và cách ứng viên thứ hai một margin an toàn. Correction cũ được gom theo category; hệ thống chỉ dùng khi có đủ mức đồng thuận, tránh học từ lịch sử mâu thuẫn. Các correction gần input mới được chọn làm few-shot context, nhưng vẫn phải qua validation và xác nhận.
 
-![Hình 10. Luồng phản hồi và cá nhân hóa phân loại](../../archive/latex/figures/rendered/10-feedback-flow.png)
+![Hình 10. Luồng phản hồi và cá nhân hóa phân loại](../latex/figures/rendered/10-feedback-flow.png)
 
 **Hình 10. Luồng phản hồi và cá nhân hóa phân loại.** Khi người dùng sửa category, hệ thống lưu cặp kết quả AI–kết quả đúng. Lần sau, correction exact/fuzzy được xét trước, sau đó mới đến LLM/matcher. Các giao dịch lặp trong “Khác” được gom cụm để đề xuất category; tạo category và re-tag luôn là một kế hoạch chờ xác nhận.
 
 #### 3.2.3.6. Sinh insight có căn cứ
 
-![Hình 11. Sơ đồ tuần tự sinh insight có căn cứ](../../archive/latex/figures/rendered/11-insight-sequence.png)
+![Hình 11. Sơ đồ tuần tự sinh insight có căn cứ](../latex/figures/rendered/11-insight-sequence.png)
 
 **Hình 11. Sơ đồ tuần tự sinh insight có căn cứ.** `query_financial_data` gọi model SQL, Analytics Engine tính facts và gắn metadata. Guard kiểm tra đơn vị/số quan sát trước khi facts được gửi cho narrator. LLM chỉ viết câu giải thích theo persona; narrator fallback tạo template khi LLM lỗi. Response trả cả thông điệp và facts để truy vết.
 
 #### 3.2.3.7. Lập kế hoạch mục tiêu
 
-![Hình 12. Luồng lập kế hoạch mục tiêu và mô phỏng what-if](../../archive/latex/figures/rendered/12-goal-flow.png)
+![Hình 12. Luồng lập kế hoạch mục tiêu và mô phỏng what-if](../latex/figures/rendered/12-goal-flow.png)
 
 **Hình 12. Luồng lập kế hoạch mục tiêu và mô phỏng what-if.** User nhập mục tiêu; LLM chỉ trích xuất tham số. Goal Planner kiểm tra ngày/số, tính surplus, thời hạn, mức góp, lãi và cảnh báo. What-if tạo kịch bản mới mà không sửa kế hoạch gốc. Chỉ sau xác nhận mới lưu `financial_goals`.
 
 #### 3.2.3.8. Tác vụ chủ động
 
-![Hình 13. Sơ đồ tuần tự tác vụ chủ động](../../archive/latex/figures/rendered/13-worker-sequence.png)
+![Hình 13. Sơ đồ tuần tự tác vụ chủ động](../latex/figures/rendered/13-worker-sequence.png)
 
 **Hình 13. Sơ đồ tuần tự tác vụ chủ động.** Scheduler tạo job có định danh; worker lấy đúng user scope, gọi handler, tính facts và ghi internal message/export nếu cần. Retry dùng cùng fingerprint; lớp lưu trữ và unique index loại thông báo lặp. Các handler gồm recurring reminder, runway scan, subscription scan, month-end insight và export cleanup.
 
@@ -1284,7 +1284,7 @@ Sau đợt ổn định hóa, các luồng tiền quan trọng đã có hàng r�
 
 ## PHỤ LỤC A: DANH MỤC SƠ ĐỒ DRAW.IO
 
-Mỗi hình có tệp nguồn `.drawio` và các bản render PNG, SVG, PDF cùng basename. Bản LaTeX sử dụng PDF tại `archive/latex/figures/rendered/`; tệp nguồn chỉnh sửa đặt tại `archive/latex/figures/drawio/`. Danh mục gồm:
+Mỗi hình có tệp nguồn `.drawio` và các bản render PNG, SVG, PDF cùng basename. Bản LaTeX sử dụng PDF tại `latex/figures/rendered/`; tệp nguồn chỉnh sửa đặt tại `latex/figures/drawio/`. Danh mục gồm:
 
 1. `01-system-context`
 2. `02-runtime-architecture`

@@ -295,3 +295,37 @@ Re-read THIS file after compaction. Check status. Resume. Don't re-derive from s
   ảnh chụp Dashboard xác nhận thẻ brand đúng.
 - Phương pháp: `node --check` cho dương tính giả trên JSX — không dùng lại.
 - loop17 — final holistic pass: all gates green (182/182, 31/31, 4/4, make exit 0); 13 defects over loops 8-16; recommend stopping automated loops, remaining work needs real measurement (OCR/STT ground truth, numeric checker, live Redis, p95/UAT).
+
+## loop18 — chất lượng 13 sơ đồ (vùng mới) + tính toàn vẹn artifact (25/07/2026)
+
+Vùng mới lần đầu kiểm: "chất lượng & tính cần thiết của 13 sơ đồ" ở mức ARTIFACT
+(so khớp .drawio nguồn ↔ png/pdf/svg đã render), không chỉ mức nguồn như loop2/4.
+
+- **L-22 FIXED (mức 2) — 7/13 sơ đồ render LỖI THỜI.** src mtime 20:14 > artifact
+  12:49 với 03,04,05,06,07,09,12 (21/39 tệp). PDF nhúng vào báo cáo là bản CŨ còn
+  đường cong, dù nguồn đã sửa `curved=0`. Đây là lý do loop trước "nhìn thấy" đường
+  cong: đọc PNG đã commit, không phải nguồn. Đã render lại 21 tệp → 39/39 tươi.
+  **Đảo một phần kết luận hạ cấp L-04 của loop2**: quy tắc đường thẳng đúng ở NGUỒN
+  nhưng sản phẩm giao ra thì không — nên là mức 2 (sai sản phẩm), không phải thẩm mỹ.
+- **L-23 FIXED (mức 2) — 14/14 liên kết ảnh trong `resource/Report.md` chết.** Trỏ
+  `../../archive/latex/figures/rendered/` → giải ra NGOÀI gốc repo; `archive/` không
+  tồn tại. Sửa thành `../latex/figures/rendered/` (+ `../latex/images/`) → 14/14 OK.
+  Kèm 1 đoạn văn Phụ lục A ghi sai cùng đường dẫn đó.
+- **L-24 FIXED (mức 2) — 2 khẳng định SAI trong cả vi+en+Report.md.** "Hộp User được
+  lặp làm neo bố cục" (thực tế: 04 có đúng 1 hộp `User` / 29 UserObject) và "bảng
+  `users` được lặp thành bốn neo tham chiếu" (thực tế: 05 có đúng 1 `USERS` / 18 bảng
+  vertex, đếm bằng XML parse). Con số 18 bảng thì ĐÚNG.
+- **P-02 (quy trình, đã giảm nhẹ)**: `latex/Makefile` không khai báo `figures/rendered/*.pdf`
+  là prerequisite ⇒ sửa sơ đồ không kích hoạt rebuild; không có script render trong repo
+  ⇒ lỗi thời âm thầm. Đã thêm `latex/figures/rerender-stale.sh` (tự so mtime, retry).
+  Chưa nối vào Makefile (cần cân nhắc: build LaTeX sẽ phụ thuộc snap drawio + xvfb).
+- **Đã kiểm và ĐẠT**: 13/13 sơ đồ đều được \ref và cần thiết (không hình thừa); 17/17
+  cạnh của 04 và 33/33 của 05 khai báo `orthogonalEdgeStyle`; 3 sequence 08/11/13 dùng
+  cạnh thẳng mặc định (đúng kiểu UML, không phải lỗi); 18 bảng ERD khớp văn bản.
+- **Còn mở (mức 5, thẩm mỹ)**: nhãn cạnh chồng nhau ở đỉnh ERD (`cactive_fon`,
+  `signatonverses`, `scheduleedabled`) do router tự đặt nhãn; cần sửa tay trong drawio.
+- Kiểm chứng: `make` exit 0; main-vi 80 trang / main-en 86 trang, cả hai mới hơn mọi
+  nguồn; parity 20/20 section · 36/36 subsection · 33/33 subsubsection · 56/56 label ·
+  50/50 ref · 8/8 widereportfigure · 13/13 reportfigure. Không chạm backend/frontend.
+- Ghi chú công cụ: `05-physical-erd.png` fail `UnknownVizError` ở scale 2 (ảnh lớn) —
+  render scale 1 vẫn cho 4034px, đủ dùng. PDF/SVG của nó scale 2 bình thường.

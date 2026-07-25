@@ -360,13 +360,13 @@ Hình~\ref{fig:deployment} là \textbf{thiết kế triển khai nguyên mẫu},
 
 \widereportfigure{04-domain-class.pdf}{Mô hình miền theo aggregate nghiệp vụ. Các cụm dữ liệu tách khỏi service phân tích và lớp ngôn ngữ.}{fig:domain-class}
 
-Hình~\ref{fig:domain-class} tách bốn aggregate sổ cái, lập kế hoạch, khoản định kỳ và hội thoại--phản hồi. Hộp User được lặp làm neo bố cục nhưng cùng chỉ một thực thể; vì vậy quan hệ sở hữu và luồng đọc facts đều là đường thẳng, không giao cắt. Analytics/Budget/Goal Services chỉ đọc aggregate để tính facts hoặc kế hoạch và không sở hữu entity tài chính.
+Hình~\ref{fig:domain-class} tách bốn aggregate sổ cái, lập kế hoạch, khoản định kỳ và hội thoại--phản hồi. Thực thể User được vẽ một lần duy nhất và là gốc sở hữu của cả bốn aggregate; các quan hệ sở hữu cùng luồng đọc facts đều định tuyến vuông góc. Analytics/Budget/Goal Services chỉ đọc aggregate để tính facts hoặc kế hoạch và không sở hữu entity tài chính.
 
 \subsubsection{Mô hình vật lý}
 
 \widereportfigure{05-physical-erd.pdf}{Sơ đồ quan hệ thực thể vật lý được đối chiếu với chuỗi migration runtime.}{fig:physical-erd}
 
-ERD ở Hình~\ref{fig:physical-erd} gồm 18 bảng vật lý: \code{users}, \code{ai_personalities}, \code{user_traits}, \code{categories}, \code{wallets}, \code{transactions}, \code{budgets}, \code{budget_history}, \code{chat_messages}, \code{investment_pnl}, \code{wallet_transfers}, \code{export_history}, \code{backup_config}, ba bảng recurring, \code{financial_goals} và \code{ai_feedback_logs}. Ba compatibility view không được đếm như bảng. Một bảng \code{users} được lặp thành bốn neo tham chiếu; FK chéo mô-đun được ghi trong hộp bảng con thay vì kéo đường dài. Cách trình bày này giữ PK/FK/UQ/CHECK nhưng loại đường cong và phần lớn giao cắt. Khóa \code{users.user_key} là cầu nối với \code{default_user}, không phải bằng chứng đã có authentication.
+ERD ở Hình~\ref{fig:physical-erd} gồm 18 bảng vật lý: \code{users}, \code{ai_personalities}, \code{user_traits}, \code{categories}, \code{wallets}, \code{transactions}, \code{budgets}, \code{budget_history}, \code{chat_messages}, \code{investment_pnl}, \code{wallet_transfers}, \code{export_history}, \code{backup_config}, ba bảng recurring, \code{financial_goals} và \code{ai_feedback_logs}. Ba compatibility view không được đếm như bảng. Mỗi bảng xuất hiện đúng một lần, kể cả \code{users}; FK chéo mô-đun được ghi trong hộp bảng con thay vì kéo đường dài. Cách trình bày này giữ PK/FK/UQ/CHECK nhưng loại đường cong và phần lớn giao cắt. Khóa \code{users.user_key} là cầu nối với \code{default_user}, không phải bằng chứng đã có authentication.
 
 \begin{table}[H]
   \centering

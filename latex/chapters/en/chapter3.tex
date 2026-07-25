@@ -360,13 +360,13 @@ Figure~\ref{fig:deployment} is a \textbf{prototype deployment design}, not a des
 
 \widereportfigure{04-domain-class.pdf}{Domain model by business aggregate. The data clusters are separated from the analytics services and the language layer.}{fig:domain-class}
 
-Figure~\ref{fig:domain-class} separates four aggregates: ledger, planning, recurring bills and conversation--feedback. The User box is repeated as a layout anchor but denotes a single entity; therefore the ownership relations and the fact-reading flow are all straight lines, without crossings. The Analytics/Budget/Goal Services only read aggregates to compute facts or plans and do not own financial entities.
+Figure~\ref{fig:domain-class} separates four aggregates: ledger, planning, recurring bills and conversation--feedback. The User entity is drawn exactly once and owns all four aggregates; the ownership relations and the fact-reading flow are routed orthogonally. The Analytics/Budget/Goal Services only read aggregates to compute facts or plans and do not own financial entities.
 
 \subsubsection{Physical model}
 
 \widereportfigure{05-physical-erd.pdf}{The physical entity--relationship diagram reconciled with the runtime migration chain.}{fig:physical-erd}
 
-The ERD in Figure~\ref{fig:physical-erd} has 18 physical tables: \code{users}, \code{ai_personalities}, \code{user_traits}, \code{categories}, \code{wallets}, \code{transactions}, \code{budgets}, \code{budget_history}, \code{chat_messages}, \code{investment_pnl}, \code{wallet_transfers}, \code{export_history}, \code{backup_config}, three recurring tables, \code{financial_goals} and \code{ai_feedback_logs}. Three compatibility views are not counted as tables. A single \code{users} table is repeated as four reference anchors; cross-module FKs are noted inside the child table box instead of drawing long lines. This presentation keeps PK/FK/UQ/CHECK but eliminates curves and most crossings. The \code{users.user_key} key is the bridge to \code{default_user}, not evidence of existing authentication.
+The ERD in Figure~\ref{fig:physical-erd} has 18 physical tables: \code{users}, \code{ai_personalities}, \code{user_traits}, \code{categories}, \code{wallets}, \code{transactions}, \code{budgets}, \code{budget_history}, \code{chat_messages}, \code{investment_pnl}, \code{wallet_transfers}, \code{export_history}, \code{backup_config}, three recurring tables, \code{financial_goals} and \code{ai_feedback_logs}. Three compatibility views are not counted as tables. Every table appears exactly once, including \code{users}; cross-module FKs are noted inside the child table box instead of drawing long lines. This presentation keeps PK/FK/UQ/CHECK but eliminates curves and most crossings. The \code{users.user_key} key is the bridge to \code{default_user}, not evidence of existing authentication.
 
 \begin{table}[H]
   \centering
