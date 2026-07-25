@@ -804,7 +804,7 @@ const createStyles = (t) => StyleSheet.create({
   },
   modelChipActive: { backgroundColor: t.colors.brand, borderColor: t.colors.brand },
   modelChipText: { fontSize: 12, color: t.colors.textMuted },
-  modelChipTextActive: { color: '#fff', fontWeight: '700' },
+  modelChipTextActive: { color: t.colors.onBrand, fontWeight: '700' },
 
   historyLoading: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 10 },
   historyLoadingText: { color: t.colors.textMuted, fontSize: 14 },

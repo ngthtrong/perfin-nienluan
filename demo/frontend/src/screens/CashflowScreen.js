@@ -306,7 +306,7 @@ export default function CashflowScreen() {
     >
       <View style={styles.netWorthCard}>
         <View style={styles.netWorthHeader}>
-          <AppIcon name="account-balance" size={18} color="#fff" />
+          <AppIcon name="account-balance" size={18} color={c.onBrand} />
           <Text style={styles.netWorthTitle}>Tài sản ròng (Net Worth)</Text>
         </View>
         <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.65} style={styles.netWorthValue}>{formatVND(netWorth?.net_worth || 0)}</Text>
@@ -436,8 +436,8 @@ export default function CashflowScreen() {
                   style={[styles.typeChip, active && { backgroundColor: t.color, borderColor: t.color }]}
                   onPress={() => setTransferForm((f) => ({ ...f, transfer_type: t.key }))}
                 >
-                  <AppIcon name={t.icon} size={13} color={active ? '#fff' : c.textMuted} />
-                  <Text style={[styles.typeChipText, active && { color: '#fff' }]}>{t.label}</Text>
+                  <AppIcon name={t.icon} size={13} color={active ? c.onBrand : c.textMuted} />
+                  <Text style={[styles.typeChipText, active && { color: c.onBrand }]}>{t.label}</Text>
                 </TouchableOpacity>
               );
             })}
@@ -646,11 +646,11 @@ const createStyles = (t) => StyleSheet.create({
 
   netWorthCard: { backgroundColor: t.colors.brand, borderRadius: t.radius.xl, padding: 20, marginBottom: 14, ...t.shadows.md },
   netWorthHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12, opacity: 0.9 },
-  netWorthTitle: { color: '#fff', fontWeight: '700', fontSize: 14 },
-  netWorthValue: { color: '#fff', fontSize: 32, fontWeight: '900', marginBottom: 16 },
+  netWorthTitle: { color: t.colors.onBrand, fontWeight: '700', fontSize: 14 },
+  netWorthValue: { color: t.colors.onBrand, fontSize: 32, fontWeight: '900', marginBottom: 16 },
   netWorthBreakdown: { flexDirection: 'row', backgroundColor: 'rgba(0,0,0,0.15)', borderRadius: t.radius.md, padding: 12 },
   nwLabel: { color: 'rgba(255,255,255,0.75)', fontSize: 12, marginBottom: 4 },
-  nwValue: { color: '#fff', fontWeight: '800', fontSize: 15 },
+  nwValue: { color: t.colors.onBrand, fontWeight: '800', fontSize: 15 },
 
   periodRow: { flexDirection: 'row', gap: 8, marginBottom: 14 },
   periodBtn: {

@@ -381,7 +381,7 @@ const createStyles = (t) => StyleSheet.create({
   },
   freqChipActive: { backgroundColor: t.colors.brand, borderColor: t.colors.brand },
   freqText: { fontSize: 12, color: t.colors.textMuted, fontWeight: '700' },
-  freqTextActive: { color: '#fff' },
+  freqTextActive: { color: t.colors.onBrand },
   lastBackupText: { marginTop: 10, color: t.colors.textMuted, fontSize: 12 },
 
   restoreRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, marginBottom: 14 },

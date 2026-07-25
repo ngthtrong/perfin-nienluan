@@ -396,7 +396,7 @@ function RecurringHeader({ styles, c, totalMonthly, count, suggestions, onAccept
                 accessibilityRole="button"
                 accessibilityLabel={`Thêm chi phí cố định ${s.name}`}
               >
-                <AppIcon name="add" size={16} color="#fff" />
+                <AppIcon name="add" size={16} color={c.onBrand} />
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.suggestDismiss}

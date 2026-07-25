@@ -209,7 +209,7 @@ const createStyles = (t) => StyleSheet.create({
     width: 42, height: 42, borderRadius: 14,
     backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center',
   },
-  primaryActionText: { color: '#fff', fontWeight: '800', fontSize: 16 },
+  primaryActionText: { color: t.colors.onBrand, fontWeight: '800', fontSize: 16 },
   primaryActionSub: { color: 'rgba(255,255,255,0.85)', fontSize: 12, fontWeight: '500', marginTop: 2 },
 
   quickNav: { flexDirection: 'row', gap: 10, marginBottom: 22 },

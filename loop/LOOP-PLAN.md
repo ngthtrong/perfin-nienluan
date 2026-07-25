@@ -282,3 +282,15 @@ Re-read THIS file after compaction. Check status. Resume. Don't re-derive from s
 - SECURITY (automated commit review): .claude/settings.json untracked in b09c2b6 (.gitignore:42
   already listed .claude/). Current token in unpushed bfe863c only; 4 older tokens already in
   PUSHED public history. User chose rotate-only, no history rewrite. All 5 tokens need rotation.
+
+## loop16 — UI/UX design-token consistency (25/07/2026)
+
+- D-13 (đã sửa): 12 vị trí `'#fff'` → token `onBrand` trên nền họ brand; 7 vị trí
+  còn lại giữ nguyên vì nền không thuộc họ brand (income/chatUserBubble/scrim/Switch).
+  Không đổi pixel hôm nay (`onBrand` = `#FFFFFF` ở cả hai palette); giá trị là bảo trì.
+- L-21 (ghi nhận, không sửa): token `spacing` chết — dùng 0 lần so với radius 147 /
+  typo 49 / shadows 49; 464/777 giá trị spacing hard-code nằm ngoài thang. Cần một
+  vòng riêng có ảnh before/after vì sửa sẽ dịch bố cục thật.
+- Kiểm chứng: bundle 200 (0 transform error), UI smoke 4/4, backend 182/182,
+  ảnh chụp Dashboard xác nhận thẻ brand đúng.
+- Phương pháp: `node --check` cho dương tính giả trên JSX — không dùng lại.

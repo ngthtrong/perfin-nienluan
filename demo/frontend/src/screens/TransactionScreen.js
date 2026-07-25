@@ -500,8 +500,8 @@ export default function TransactionScreen({ route, navigation }) {
                     setForm((prev) => ({ ...prev, type, category_id: defCat?.id || null }));
                   }}
                 >
-                  <AppIcon name={icon} size={16} color={active ? '#fff' : c.textMuted} />
-                  <Text style={[styles.segmentText, active && { color: '#fff' }]}>{label}</Text>
+                  <AppIcon name={icon} size={16} color={active ? c.onBrand : c.textMuted} />
+                  <Text style={[styles.segmentText, active && { color: c.onBrand }]}>{label}</Text>
                 </TouchableOpacity>
               );
             })}
