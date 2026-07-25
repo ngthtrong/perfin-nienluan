@@ -5,6 +5,7 @@ import {
 } from 'react-native';
 import { api } from '../services/api.service';
 import { useTheme } from '../theme/ThemeContext';
+import { HIT_SLOP } from '../theme/tokens';
 import { formatMoneyValue, formatVND, parseMoneyInput } from '../utils/formatters';
 import { showAlert } from '../utils/alerts';
 import AppIcon from '../components/AppIcon';
@@ -512,6 +513,7 @@ export default function CashflowScreen() {
                   <TouchableOpacity
                     accessibilityRole="button"
                     accessibilityLabel={`Đổi tên ví ${w.name}`}
+                    hitSlop={HIT_SLOP}
                     style={styles.iconButton}
                     onPress={() => startWalletEdit(w)}
                     disabled={rowBusy}
@@ -580,6 +582,7 @@ export default function CashflowScreen() {
                     <TouchableOpacity
                       accessibilityRole="button"
                       accessibilityLabel="Sửa lãi/lỗ"
+                      hitSlop={HIT_SLOP}
                       style={styles.iconButton}
                       onPress={() => startPnlEdit(row)}
                       disabled={rowBusy}
@@ -589,6 +592,7 @@ export default function CashflowScreen() {
                     <TouchableOpacity
                       accessibilityRole="button"
                       accessibilityLabel="Xóa lãi/lỗ"
+                      hitSlop={HIT_SLOP}
                       style={styles.iconButton}
                       onPress={() => removePnl(row)}
                       disabled={rowBusy}

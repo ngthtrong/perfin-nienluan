@@ -10,6 +10,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { api } from '../services/api.service';
 import { showAlert } from '../utils/alerts';
 import { useTheme } from '../theme/ThemeContext';
+import { HIT_SLOP } from '../theme/tokens';
 import TransactionPreviewCard from '../components/TransactionPreviewCard';
 import MultiTransactionPreviewCard from '../components/MultiTransactionPreviewCard';
 import MediaConfirmationCard from '../components/MediaConfirmationCard';
@@ -682,6 +683,7 @@ export default function ChatScreen() {
                 accessibilityLabel="Bỏ ảnh đã chọn"
                 accessibilityRole="button"
                 onPress={() => setPendingImage(null)}
+                hitSlop={HIT_SLOP}
                 style={styles.removeAttachment}
               >
                 <AppIcon name="close" size={18} color={c.textMuted} />

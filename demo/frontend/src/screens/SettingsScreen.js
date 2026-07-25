@@ -3,6 +3,7 @@ import { ActivityIndicator, Switch, Text, TextInput, TouchableOpacity, View } fr
 import { useTheme } from '../theme/ThemeContext';
 import { api } from '../services/api.service';
 import { showAlert } from '../utils/alerts';
+import { HIT_SLOP } from '../theme/tokens';
 import { Screen, Card, SegmentedControl, SectionHeader, Button } from '../components/ui';
 import AppIcon from '../components/AppIcon';
 
@@ -116,8 +117,7 @@ export default function SettingsScreen() {
     }
   }
 
-  async function removeTrait(traitType) {
-    if (removingTrait) return;
+  async function doRemoveTrait(traitType) {
     setRemovingTrait(traitType);
     try {
       await api.deletePersonalizationTrait(traitType);
@@ -128,6 +128,20 @@ export default function SettingsScreen() {
     } finally {
       setRemovingTrait(null);
     }
+  }
+
+  // Xoá đặc điểm là thao tác không hoàn tác được nên phải hỏi lại, giống mọi
+  // thao tác xoá khác trong ứng dụng (giao dịch, danh mục, ngân sách...).
+  function removeTrait(traitType, label) {
+    if (removingTrait) return;
+    showAlert(
+      'Xoá đặc điểm?',
+      `Xoá “${label}” khỏi hồ sơ cá nhân hoá? Trợ lý sẽ không dùng đặc điểm này nữa. Thao tác không thể hoàn tác.`,
+      [
+        { text: 'Huỷ', style: 'cancel' },
+        { text: 'Xoá', style: 'destructive', onPress: () => doRemoveTrait(traitType) },
+      ]
+    );
   }
 
   async function selectPersona(persona) {
@@ -277,8 +291,9 @@ export default function SettingsScreen() {
                   <TouchableOpacity
                     accessibilityRole="button"
                     accessibilityLabel={`Xóa đặc điểm ${suggestion?.label || trait.trait_type}`}
-                    onPress={() => removeTrait(trait.trait_type)}
+                    onPress={() => removeTrait(trait.trait_type, suggestion?.label || trait.trait_type)}
                     disabled={Boolean(removingTrait)}
+                    hitSlop={HIT_SLOP}
                     style={{ width: 34, height: 34, borderRadius: theme.radius.sm, alignItems: 'center', justifyContent: 'center' }}
                   >
                     {removing

@@ -6,6 +6,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { api } from '../services/api.service';
 import { useTheme } from '../theme/ThemeContext';
+import { HIT_SLOP } from '../theme/tokens';
 import { currentPeriod, formatVND, parseMoneyInput } from '../utils/formatters';
 import { showAlert } from '../utils/alerts';
 import BudgetProgressBar from '../components/BudgetProgressBar';
@@ -267,14 +268,14 @@ export default function BudgetScreen() {
         ListHeaderComponent={
           <View>
             <View style={styles.monthNav}>
-              <TouchableOpacity accessibilityLabel="Tháng trước" accessibilityRole="button" onPress={() => changeMonth(-1)} style={styles.monthNavButton}>
+              <TouchableOpacity accessibilityLabel="Tháng trước" accessibilityRole="button" onPress={() => changeMonth(-1)} hitSlop={HIT_SLOP} style={styles.monthNavButton}>
                 <AppIcon name="chevron-left" size={21} color={c.brandText} />
               </TouchableOpacity>
               <View style={styles.monthNavTitle}>
                 <AppIcon name="calendar-today" size={15} color={c.brandText} />
                 <Text style={styles.monthNavText}>Tháng {period.month} · {period.year}</Text>
               </View>
-              <TouchableOpacity accessibilityLabel="Tháng sau" accessibilityRole="button" onPress={() => changeMonth(1)} style={styles.monthNavButton}>
+              <TouchableOpacity accessibilityLabel="Tháng sau" accessibilityRole="button" onPress={() => changeMonth(1)} hitSlop={HIT_SLOP} style={styles.monthNavButton}>
                 <AppIcon name="chevron-right" size={21} color={c.brandText} />
               </TouchableOpacity>
             </View>

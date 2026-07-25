@@ -16,6 +16,8 @@ export default function ErrorState({ title = 'Không tải được dữ liệu'
       ]}
     >
       <View
+        accessibilityElementsHidden
+        importantForAccessibility="no-hide-descendants"
         style={{
           width: 64,
           height: 64,
@@ -28,12 +30,22 @@ export default function ErrorState({ title = 'Không tải được dữ liệu'
       >
         <MaterialIcons name="warning-amber" size={28} color={c.expense} />
       </View>
-      <Text style={{ ...theme.typo.heading, color: c.text, marginBottom: 6 }}>{title}</Text>
-      {message && (
-        <Text style={{ ...theme.typo.body, color: c.textMuted, textAlign: 'center', marginBottom: 20 }}>
-          {message}
-        </Text>
-      )}
+      {/* Gộp tiêu đề + mô tả thành MỘT vùng alert để trình đọc màn hình công bố
+          lỗi ngay khi xuất hiện. Nút "Thử lại" nằm ngoài vùng này để vẫn là một
+          phần tử focus riêng (bọc accessible sẽ làm nút bị bỏ qua trên iOS). */}
+      <View
+        accessible
+        accessibilityRole="alert"
+        accessibilityLiveRegion="polite"
+        style={{ alignItems: 'center' }}
+      >
+        <Text style={{ ...theme.typo.heading, color: c.text, marginBottom: 6 }}>{title}</Text>
+        {message && (
+          <Text style={{ ...theme.typo.body, color: c.textMuted, textAlign: 'center', marginBottom: 20 }}>
+            {message}
+          </Text>
+        )}
+      </View>
       {onRetry && <Button label="Thử lại" onPress={onRetry} fullWidth={false} />}
     </View>
   );

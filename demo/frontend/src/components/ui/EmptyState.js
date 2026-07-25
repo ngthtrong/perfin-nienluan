@@ -22,7 +22,11 @@ export default function EmptyState({ emoji = '📭', title, message, actionLabel
         style,
       ]}
     >
+      {/* Emoji chỉ là hình trang trí: ẩn khỏi cây trợ năng để trình đọc màn hình
+          không đọc tên emoji trước nội dung thật. */}
       <View
+        accessibilityElementsHidden
+        importantForAccessibility="no-hide-descendants"
         style={{
           width: 72,
           height: 72,

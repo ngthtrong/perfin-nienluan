@@ -141,6 +141,34 @@ Tone: constructive, calibrated to course level.
   `curl 'localhost:8081/index.bundle?platform=web&dev=true&hot=false'` (~11s) first.
   Verification: ui:smoke 4/4 PASS exit 0; backend 178/178.
 
+- loop10: DONE. Report at loop/loop10/report.md. Area newly checked: error handling, empty
+  states, destructive-action confirmation, plus a sweep for hit targets loop7 missed.
+  FIXED D-08: of 7 delete actions in the app, 6 confirm properly (transaction even offers
+  30s undo, category reports how many rows get reassigned) but SettingsScreen:119 deleted a
+  personalization trait immediately on tap — one-tap data loss on a 34pt button. Split into
+  doRemoveTrait/removeTrait with a destructive-style confirm naming the trait.
+  FIXED D-09: 8 real buttons at 34-40pt still lacked hitSlop after loop7 (BudgetScreen
+  month nav x2, CashflowScreen x3, CategoryScreen x2, ChatScreen remove-attachment,
+  SettingsScreen trait delete). Added HIT_SLOP + the missing imports in 4 files. IMPORTANT
+  distinction: 7 similarly-sized elements (forecastIcon, catIcon, aiAvatar, filterIcon,
+  infoIcon, headerIcon x2) are decorative <View>s — correctly have NO hitSlop, do not "fix".
+  FIXED D-10: ErrorState/EmptyState had zero a11y attrs. Wrapped ErrorState title+message in
+  accessibilityRole="alert" + accessibilityLiveRegion="polite"; hid the decorative warning
+  icon and EmptyState emoji from the a11y tree (screen readers were reading emoji names
+  before real content). DESIGN NOTE: the "Thử lại" button is deliberately OUTSIDE the
+  accessible wrapper — wrapping it would collapse the group into one element on iOS and cost
+  the button its own focus. Same root cause as D-07 but different components.
+  Verified PASS (don't recheck): 9/12 screens have ErrorState+onRetry and EmptyState. The 3
+  without (Chat/More/Settings) are CORRECT — Chat surfaces errors as system chat messages
+  (right pattern for conversational UI, all 20 catch blocks do this), Settings uses per-block
+  profileError, More is a static menu. api.service.js does not leak stack traces: network
+  errors become Vietnamese sentences with hints (:157/:229/:375), API errors use backend's
+  data.error (:140). The 6 other delete flows are high quality.
+  No LaTeX sync needed (same reasoning as loop9).
+  BUNDLE-GREP TRAP: grepping the Metro bundle for "SyntaxError|Failed to compile" matches
+  Metro's own BABEL_TRANSFORM_ERROR_FORMAT regex — NOT a build error. Check context first.
+  Verification: ui:smoke 4/4 PASS exit 0; backend 178/178; role="alert" confirmed in DOM.
+
 ## Credit note
 Subagent fan-out hit "credit limit exceeded" (429) in loop1. Prefer direct main-context
 work; spawn agents sparingly and with tight, findings-only prompts.

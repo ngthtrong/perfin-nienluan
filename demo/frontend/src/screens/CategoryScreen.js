@@ -5,6 +5,7 @@ import {
 import { useFocusEffect } from '@react-navigation/native';
 import { api } from '../services/api.service';
 import { useTheme } from '../theme/ThemeContext';
+import { HIT_SLOP } from '../theme/tokens';
 import { showAlert } from '../utils/alerts';
 import AppIcon from '../components/AppIcon';
 import CategoryIcon from '../components/CategoryIcon';
@@ -330,6 +331,7 @@ export default function CategoryScreen({ navigation }) {
                     <TouchableOpacity
                       accessibilityRole="button"
                       accessibilityLabel={`Đổi tên danh mục ${category.name}`}
+                      hitSlop={HIT_SLOP}
                       style={styles.iconButton}
                       disabled={busy}
                       onPress={() => beginRename(category)}
@@ -339,6 +341,7 @@ export default function CategoryScreen({ navigation }) {
                     <TouchableOpacity
                       accessibilityRole="button"
                       accessibilityLabel={`Xoá danh mục ${category.name}`}
+                      hitSlop={HIT_SLOP}
                       style={[styles.iconButton, styles.deleteButton]}
                       disabled={busy}
                       onPress={() => requestDelete(category)}
