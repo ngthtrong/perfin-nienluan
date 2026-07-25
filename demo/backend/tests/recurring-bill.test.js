@@ -216,7 +216,7 @@ test('recordPayment rejects a stale expected period with a 409 and rolls back', 
   const sqlEvents = events.filter((event) => event.type === 'query').map((event) => event.sql);
   assert.deepEqual(sqlEvents, [
     'BEGIN',
-    'SELECT b.* FROM recurring_bills b WHERE b.id = $1 FOR UPDATE OF b',
+    'SELECT b.* FROM recurring_bills b WHERE b.id = $1 AND b.user_id = $2 FOR UPDATE OF b',
     'ROLLBACK',
   ]);
   assert.equal(events.at(-1).type, 'release');
@@ -234,7 +234,7 @@ test('recordPayment requires an expected period so retries cannot pay the next c
   const sqlEvents = events.filter((event) => event.type === 'query').map((event) => event.sql);
   assert.deepEqual(sqlEvents, [
     'BEGIN',
-    'SELECT b.* FROM recurring_bills b WHERE b.id = $1 FOR UPDATE OF b',
+    'SELECT b.* FROM recurring_bills b WHERE b.id = $1 AND b.user_id = $2 FOR UPDATE OF b',
     'ROLLBACK',
   ]);
   assert.equal(events.at(-1).type, 'release');

@@ -25,7 +25,7 @@
 
 # TÓM TẮT
 
-PERFIN là nguyên mẫu quản lý tài chính cá nhân nhằm giảm thao tác nhập liệu, bảo toàn tính đúng đắn và khả năng kiểm chứng. Hệ thống tiếp nhận giao dịch từ văn bản, giọng nói và ảnh hóa đơn; chuẩn hóa, trích xuất bản ghi và yêu cầu xác nhận trước khi ghi PostgreSQL. SQL và các giải thuật xác định tính số dư, ngân sách, xu hướng, bất thường, dòng tiền, khoản định kỳ và mục tiêu; LLM chỉ hiểu ý định, điền tham số, hỏi lại khi mơ hồ và diễn giải facts đã tính. Đóng góp là kiến trúc tách lớp sinh ngôn ngữ khỏi lõi tài chính, dùng Redis quản lý trạng thái và BullMQ điều phối tác vụ, kèm giao thức đánh giá tính đúng và độ trung thực số liệu. Kết quả đạt 178/178 backend test, 31/31 local-parser quality gate (kiểm tra strict trên 31 câu cấu trúc rõ, đo tính đúng của luồng phân tích cú pháp, khác với đo chất lượng phân loại danh mục bên dưới) và 23/23 full smoke test; ứng dụng đóng gói trên web, Android; dữ liệu demo gồm 5.265 giao dịch có provenance. Trên chính tập gán nhãn này, ba thí nghiệm tái lập cho thấy: local parser đạt accuracy 29,36% / macro-F1 0,177 (khoảng cách phản ánh nhãn lịch sử theo nguồn tiền), LLM Gemini vượt parser khoảng 3,0× macro-F1 (0,607 so 0,204) trong ablation, và correction retrieval nâng accuracy holdout từ 0% lên 68,19%. Tuy nhiên, kết quả chưa chứng minh độ chính xác OCR/STT, numeric faithfulness hoặc mức sẵn sàng production; các chỉ số này vẫn phải được đo trên bộ dữ liệu tái lập.
+PERFIN là nguyên mẫu quản lý tài chính cá nhân nhằm giảm thao tác nhập liệu, bảo toàn tính đúng đắn và khả năng kiểm chứng. Hệ thống tiếp nhận giao dịch từ văn bản, giọng nói và ảnh hóa đơn; chuẩn hóa, trích xuất bản ghi và yêu cầu xác nhận trước khi ghi PostgreSQL. SQL và các giải thuật xác định tính số dư, ngân sách, xu hướng, bất thường, dòng tiền, khoản định kỳ và mục tiêu; LLM chỉ hiểu ý định, điền tham số, hỏi lại khi mơ hồ và diễn giải facts đã tính. Đóng góp là kiến trúc tách lớp sinh ngôn ngữ khỏi lõi tài chính, dùng Redis quản lý trạng thái và BullMQ điều phối tác vụ, kèm giao thức đánh giá tính đúng và độ trung thực số liệu. Kết quả đạt 182/182 backend test, 31/31 local-parser quality gate (kiểm tra strict trên 31 câu cấu trúc rõ, đo tính đúng của luồng phân tích cú pháp, khác với đo chất lượng phân loại danh mục bên dưới) và 23/23 full smoke test; ứng dụng đóng gói trên web, Android; dữ liệu demo gồm 5.265 giao dịch có provenance. Trên chính tập gán nhãn này, ba thí nghiệm tái lập cho thấy: local parser đạt accuracy 29,36% / macro-F1 0,177 (khoảng cách phản ánh nhãn lịch sử theo nguồn tiền), LLM Gemini vượt parser khoảng 3,0× macro-F1 (0,607 so 0,204) trong ablation, và correction retrieval nâng accuracy holdout từ 0% lên 68,19%. Tuy nhiên, kết quả chưa chứng minh độ chính xác OCR/STT, numeric faithfulness hoặc mức sẵn sàng production; các chỉ số này vẫn phải được đo trên bộ dữ liệu tái lập.
 
 **Từ khóa:** quản lý tài chính cá nhân, LLM, phân tích dữ liệu, trích xuất thực thể, PostgreSQL, Redis, hệ thống có kiểm chứng.
 
@@ -1026,7 +1026,7 @@ Matcher ưu tiên exact, alias exact rồi fuzzy. Input ngắn dùng ngưỡng c
 
 ### 3.2.4. Bảo mật, riêng tư và đạo đức
 
-Nguyên mẫu không có authentication production; vì vậy không được tuyên bố đã bảo đảm cô lập nhiều người dùng. Dù schema có FK theo `user_key`, mọi route demo vẫn phải được xem trong phạm vi một hồ sơ. Trước khi triển khai thật cần bổ sung xác thực, authorization ở mọi truy vấn và kiểm thử truy cập chéo.
+Nguyên mẫu không có authentication production; vì vậy không được tuyên bố đã bảo đảm cô lập nhiều người dùng. Dù schema có FK theo `user_key`, mọi route demo vẫn phải được xem trong phạm vi một hồ sơ. Mọi thao tác theo ID đã được rà soát để luôn kèm điều kiện `user_id` và có kiểm thử truy cập chéo (10/10 lượt truy cập chéo bị chặn, xem `log/idor-verification_2026-07-25.json`), nhưng điều kiện dữ liệu không thay cho xác thực: trước khi triển khai thật vẫn cần bổ sung authentication và authorization thực sự.
 
 Credential AI, service account và chuỗi kết nối không được ghi vào Git hoặc chat log. Raw ảnh/audio cần chính sách xóa sau xử lý. `user_traits` chỉ được lưu và dùng khi `personalization_consent=true`. Persona không được gây áp lực, miệt thị hoặc biến gợi ý thành tư vấn đầu tư chắc chắn. Mọi insight cần nêu khoảng thời gian và giới hạn dữ liệu.
 
@@ -1096,7 +1096,7 @@ EXPO_PUBLIC_API_URL=http://10.0.2.2:3000 npx expo export \
 npm run ui:smoke -- --output-dir /home/ngthtrong/perfin-ui-smoke-start-app
 ```
 
-Baseline trước sửa lỗi có **13/13 tệp kiểm thử đạt** và local parser đạt **27/31 strict**, 2 partial, 2 fail. Hai lỗi amount là “1 triệu 5” và phép nhân “3 cái áo, mỗi cái 200k”; hai ca partial là ánh xạ `quần jeans` và `đi ăn`. Sau ổn định hóa, Node test runner báo **178/178 test đạt**, 0 thất bại (100/100 tại mốc 16/07/2026, trước khi bộ test được mở rộng); harness local parser đạt **31/31 strict (100%)**, 0 partial, 0 fail. Full smoke qua REST API, PostgreSQL và provider media thật đạt **23/23**. Expo đóng gói web thành công **653 module** và Android **960 module**. UI smoke ở viewport 390×844 xác nhận Dashboard, Report và Chat không tràn ngang; ảnh 1184×2560 hiển thị trực tiếp trong bubble chat.
+Baseline trước sửa lỗi có **13/13 tệp kiểm thử đạt** và local parser đạt **27/31 strict**, 2 partial, 2 fail. Hai lỗi amount là “1 triệu 5” và phép nhân “3 cái áo, mỗi cái 200k”; hai ca partial là ánh xạ `quần jeans` và `đi ăn`. Sau ổn định hóa, Node test runner báo **182/182 test đạt**, 0 thất bại (100/100 tại mốc 16/07/2026, trước khi bộ test được mở rộng); harness local parser đạt **31/31 strict (100%)**, 0 partial, 0 fail. Full smoke qua REST API, PostgreSQL và provider media thật đạt **23/23**. Expo đóng gói web thành công **653 module** và Android **960 module**. UI smoke ở viewport 390×844 xác nhận Dashboard, Report và Chat không tràn ngang; ảnh 1184×2560 hiển thị trực tiếp trong bubble chat.
 
 Các test mới khóa các lỗi transaction/post-commit, pending race, recurring period, ngày local, parser, export và time-series zero-fill. Live smoke đã chứng minh luồng HTTP--PostgreSQL, chat preview/edit/cancel, OCR 2 ảnh và STT 1 tệp M4A hoạt động trong môi trường ghi nhận. Chúng **không** phải benchmark Gemini, không chứng minh độ chính xác OCR/STT, không đo API p95 và chưa kiểm chứng worker định kỳ với Redis thật. Tỷ lệ 100% của parser chỉ áp dụng cho 31 ca hard-coded, chưa phải kết quả khái quát hóa trên tập gán nhãn độc lập.
 
@@ -1104,7 +1104,7 @@ Các test mới khóa các lỗi transaction/post-commit, pending race, recurrin
 
 | Hạng mục | Kết quả | Phân loại | Ghi chú |
 |---|---|---|---|
-| `npm test` sau ổn định hóa | 178/178 test pass; 0 fail | **Đã đo** | Unit/service trên 37 tệp test; gồm transaction, concurrency, recurring, health, importer, time-series và user scope. Mốc 16/07/2026 là 100/100 trước khi mở rộng bộ test (`log/backend-test-run_2026-07-25.json`) |
+| `npm test` sau ổn định hóa | 182/182 test pass; 0 fail | **Đã đo** | Unit/service trên 38 tệp test; gồm transaction, concurrency, recurring, health, importer, time-series và user scope. Mốc 16/07/2026 là 100/100 trước khi mở rộng bộ test (`log/backend-test-run_2026-07-25.json`) |
 | Local parser trên harness cố định | 31/31 strict; 0 partial; 0 fail | **Đã đo sau sửa** | Không dùng Gemini; strict gate có exit code, nhưng 31 ca hard-coded chưa phải tập độc lập |
 | Baseline trước sửa | 13/13 tệp test; parser 27/31 strict | **Đã đo baseline** | Giữ để phân tích lỗi và chứng minh tác động của bản sửa |
 | Full API/DB/media smoke | 23/23 pass | **Đã đo** | PostgreSQL live, preview/edit/cancel, OCR 2 ảnh, STT 1 M4A; Redis worker không nằm trong kết quả này |
@@ -1136,7 +1136,7 @@ Kết quả tự động hiện có là bằng chứng cho việc tách giải t
 | Ví/chuyển ví | **Hiện thực một phần** | Thiếu route/UI tạo ví trên fresh install; chưa có integration test transfer | CRUD tối thiểu và kiểm thử invariant số dư, gồm trường hợp số dư âm |
 | Recurring và worker | **Đã đo một phần** | Payment đã khóa hàng, nguyên tử, có kỳ dự kiến và chat preview; notification vẫn là chat nội bộ | Live Redis/DB worker test và kênh nhắc ngoài ứng dụng nếu mở rộng |
 | Export/backup | **Chưa đúng tên gọi/thiếu bằng chứng** | “PDF” vẫn là HTML; backup/restore chưa đủ test toàn vẹn | PDF thật hoặc đổi nhãn; backup/restore an toàn, có rollback/checksum |
-| Auth/multi-user | **Ngoài phạm vi hiện tại** | `default_user`, ID chưa luôn scoped | Không demo như đã có; bổ sung trước production |
+| Auth/multi-user | **Ngoài phạm vi hiện tại** | `default_user`; mọi thao tác theo ID đã scoped và có test truy cập chéo (`log/idor-verification_2026-07-25.json`), nhưng chưa có xác thực | Không demo như đã có; bổ sung authentication/authorization trước production |
 
 1. commit hash, phiên bản Node/PostgreSQL/Redis và cấu hình provider;
 2. danh sách test case, dữ liệu đầu vào và log đầu ra;
@@ -1231,7 +1231,7 @@ Sau đợt ổn định hóa, các luồng tiền quan trọng đã có hàng r�
 ## 4.3. HƯỚNG PHÁT TRIỂN
 
 - Xây dựng tập dữ liệu tiếng Việt được gán nhãn, ẩn danh và có phiên bản để đánh giá extraction/classification.
-- Bổ sung authentication, authorization theo user và kiểm thử truy cập chéo trước khi deploy.
+- Bổ sung authentication và authorization theo user trước khi deploy; điều kiện `user_id` ở mọi thao tác theo ID và kiểm thử truy cập chéo đã có.
 - Hiệu chỉnh ngưỡng giải thuật theo dữ liệu thật; thêm khoảng tin cậy và giải thích mức độ chắc chắn.
 - Xây dựng bộ kiểm tra tự động numeric grounding và theo dõi drift khi thay model/prompt.
 - So sánh nhiều provider OCR/STT/LLM theo độ chính xác, độ trễ, chi phí và riêng tư.

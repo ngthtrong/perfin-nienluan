@@ -169,6 +169,43 @@ Tone: constructive, calibrated to course level.
   Metro's own BABEL_TRANSFORM_ERROR_FORMAT regex — NOT a build error. Check context first.
   Verification: ui:smoke 4/4 PASS exit 0; backend 178/178; role="alert" confirmed in DOM.
 
+- loop11: DONE. Report at loop/loop11/report.md. Area newly checked: per-user authorization
+  (IDOR) — the other half of security that loop5 (SQL injection) did not touch. Trigger was
+  ch4 limit #8's own admission; verified it instead of trusting it, and it was TRUE.
+  FIXED D-11 (security): 11 endpoints let any caller read/modify/delete another user's rows
+  by changing the id in the URL. 6 of 8 route files were already correct (transaction,
+  category, account, cashflow, export, goal all pass userId everywhere); budget (3 endpoints)
+  and recurring (8) did not, with no middleware compensating. Worst were 7 call sites in
+  chat.routes.js where bill_id comes from LLM-parsed user text — exactly the boundary the
+  report argues must hold. Scoped budget.model getById/update/delete and recurringBill's
+  getJoined (one fix covered 6 callers) + update/delete/pause/resume/recordPayment/
+  getPaymentHistory, including the FOR UPDATE lock in recordPayment.
+  FIXED D-12: after scoping the model, GET /recurring/:id/payments returned 200 with an empty
+  list instead of 404 — no data leak but it still revealed the id existed. Added an ownership
+  check at the route.
+  FIXED L-14: 5 places in the report became factually wrong after the fix (ch4 limit #8, ch3
+  security prose, ch3 status-table Auth row, ch4 future-work item 1, test counts). Synced
+  bilingually. Deliberately did NOT upgrade the claim to "has authorization" — a user_id
+  predicate is a multi-user upgrade path, not authentication, and ch4 still admits no auth.
+  Added table tab:idor-verification (both languages) because the new claim "cross-access was
+  tested" needs evidence; tabular data, so a table not a diagram. 13 figures still enough.
+  LIVE VERIFICATION (not inference): created a second user in the live PostgreSQL, inserted
+  a budget (id=56) and bill (id=7) owned by it, called the API as default_user with those
+  ids. 10/10 cross-access attempts → 404; 2/2 own-record controls → 200. Test rows deleted
+  afterwards (remaining victim rows = 0). Artifact: log/idor-verification_2026-07-25.json.
+  Added tests/user-idor-scope.test.js (4 cases). KEY DESIGN POINT: they assert on the EMITTED
+  SQL, not the return value — with a single demo profile, a query missing user_id still
+  returns the expected row, so a conventional test would pass falsely. Negative control run:
+  manually removing the predicate made the test fail, then reverted.
+  TWO PRE-EXISTING TESTS FAILED and were fixed correctly (not loosened): recurring-bill.test
+  cases pinned the literal old SQL 'WHERE b.id = $1 FOR UPDATE OF b' — i.e. they were locking
+  the vulnerability in. Updated the assertions to the scoped SQL.
+  Suite grew 178 → 182 (38 files). Updated that count in ch3 vi+en, ch4, Report.md,
+  latex/README.md, and both log artifacts.
+  Verification: both PDFs exit 0, 0 overfull, 0 undefined refs, 13 figures, idor label
+  resolved in both .aux; vi/en parity exact (20/36/33/28/31/17/23), 23 tables each;
+  backend 182/182.
+
 ## Credit note
 Subagent fan-out hit "credit limit exceeded" (429) in loop1. Prefer direct main-context
 work; spawn agents sparingly and with tight, findings-only prompts.

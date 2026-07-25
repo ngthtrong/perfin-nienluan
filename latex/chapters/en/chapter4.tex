@@ -15,14 +15,14 @@ At the design and prototype-implementation level, PERFIN has established an arch
     \midrule
     O1 --- Data model & Migrations, models, validation, and the transaction flow. & Implemented at prototype level; fault injection on a real database is still needed. \\
     O2 --- Multimodal pipeline & Tool schema, parser, media adapters, preview/state, plus an ablation on a labeled set. & Flow implemented and now measured: on a stratified 63-sentence sample, local parser macro-F1 0.204 and Gemini 0.607; OCR/STT accuracy not yet version-locked. \\
-    O3 --- Analytics algorithms & Analytics, goal, budget, and feedback functions plus automated tests; feedback measured before/after. & 178/178 tests pass; correction retrieval lifts holdout accuracy 0\% $\to$ 68.19\%. Broader labeled data still needed. \\
+    O3 --- Analytics algorithms & Analytics, goal, budget, and feedback functions plus automated tests; feedback measured before/after. & 182/182 tests pass; correction retrieval lifts holdout accuracy 0\% $\to$ 68.19\%. Broader labeled data still needed. \\
     O4 --- LLM boundary & Tool declarations, the facts--narrator flow, and fallback. & The design is clear; numeric faithfulness has not yet been measured systematically. \\
     O5 --- Operational evaluation & Regression, parser, full API/DB/media smoke tests, mobile UI smoke tests, and Expo export have all run. & The demo core has runtime evidence; conclusions about the Redis worker, accuracy, performance, or UAT remain insufficient. \\
     \bottomrule
   \end{tabularx}
 \end{table}
 
-The baseline recorded before stabilization showed 13/13 backend files passing and the local parser reaching 27/31 strict cases. After stabilization, the backend reached 178/178 tests, the local-parser quality gate reached 31/31 strict cases, the full smoke suite reached 23/23, and the Expo web/Android export processed 653/960 modules. The demo PostgreSQL database contains 5,265 reconciled transactions, and the mobile-web smoke test confirmed that images display directly in the chat. Three quantitative experiments on this dataset (Section~3.3.2) answer the question of how accurate the algorithm is: the local parser reaches macro-F1 0.177 over all 5,265 rows; in the ablation on a stratified 63-sentence sample, the LLM reaches 0.607 against the parser's 0.204 on the \emph{same sample} (about 3.0$\times$); and correction retrieval raises holdout accuracy to 68.19\% --- quantifying the core contribution and justifying the human-in-the-loop, LLM-primary design. These figures should not be used to claim that the system is production-ready.
+The baseline recorded before stabilization showed 13/13 backend files passing and the local parser reaching 27/31 strict cases. After stabilization, the backend reached 182/182 tests, the local-parser quality gate reached 31/31 strict cases, the full smoke suite reached 23/23, and the Expo web/Android export processed 653/960 modules. The demo PostgreSQL database contains 5,265 reconciled transactions, and the mobile-web smoke test confirmed that images display directly in the chat. Three quantitative experiments on this dataset (Section~3.3.2) answer the question of how accurate the algorithm is: the local parser reaches macro-F1 0.177 over all 5,265 rows; in the ablation on a stratified 63-sentence sample, the LLM reaches 0.607 against the parser's 0.204 on the \emph{same sample} (about 3.0$\times$); and correction retrieval raises holdout accuracy to 68.19\% --- quantifying the core contribution and justifying the human-in-the-loop, LLM-primary design. These figures should not be used to claim that the system is production-ready.
 
 \section{Impact of the LLM}
 
@@ -40,7 +40,7 @@ This impact is only positive when four safeguards are in place: schema, validati
   \item The persona may make responses easier to read, but its behavioral effectiveness has not been demonstrated through UAT.
   \item Several supporting demo features remain incomplete: wallet creation, genuine PDF generation, periodic backup, restore, and push notifications.
   \item The API--PostgreSQL flow and media providers have been smoke tested; the Redis worker, live retry/idempotency, and multiple mobile devices have not yet been verified.
-  \item The ERD includes a user scope, but some ID-based operations do not consistently include a user condition, creating risk when upgrading to multi-user support.
+  \item Every ID-based operation has now been audited and given a \code{user_id} predicate (see Section~\ref{sec:testing}), but the system still runs on a single \code{default_user} profile: that predicate is an upgrade path towards multi-user support, not an authenticated authorization mechanism.
 \end{enumerate}
 
 \section{Future Directions}
@@ -48,7 +48,7 @@ This impact is only positive when four safeguards are in place: schema, validati
 The development sequence must keep the focus on data and algorithms:
 
 \begin{enumerate}
-  \item \textbf{Verify core integration:} transactions, pending claims, recurring periods, and the live PostgreSQL database already have regression/smoke coverage; the next steps are the Redis worker, fault injection, and user scope.
+  \item \textbf{Verify core integration:} transactions, pending claims, recurring periods, the live PostgreSQL database, and per-ID user scope already have regression/smoke coverage; the next steps are the Redis worker and fault injection.
   \item \textbf{Expand the language baseline:} the 31-sentence quality gate has been achieved; an independent evaluation set, typos, multi-intent sentences, and macro-F1 reporting still need to be added.
   \item \textbf{Verify algorithms:} the time axis, zero-spend days, and denominators have been fixed; a larger synthetic dataset, backtesting, and hand-computed expected values are still needed.
   \item \textbf{Measure LLM impact:} build a labeled Vietnamese dataset, run a parser--LLM ablation study, and implement a numeric grounding checker.

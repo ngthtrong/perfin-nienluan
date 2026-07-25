@@ -165,14 +165,17 @@ function inferRecurringCadence(transactions) {
   };
 }
 
-async function getJoined(id, runQuery = query) {
+// userId = null nghĩa là tra cứu nội bộ do worker/hệ thống gọi (đã tự biết chủ
+// sở hữu). Mọi đường đi từ request phải truyền userId để id trên URL không thể
+// chạm vào bản ghi của người dùng khác.
+async function getJoined(id, runQuery = query, userId = null) {
   const result = await runQuery(
     `SELECT b.*, c.name AS category_name, c.icon AS category_icon, w.name AS wallet_name
      FROM recurring_bills b
      LEFT JOIN categories c ON c.id = b.category_id
      LEFT JOIN wallets w ON w.id = b.wallet_id
-     WHERE b.id = $1`,
-    [id]
+     WHERE b.id = $1 AND ($2::text IS NULL OR b.user_id = $2)`,
+    [id, userId]
   );
   return result.rows[0] || null;
 }
@@ -239,12 +242,12 @@ const RecurringBillModel = {
     return result.rows;
   },
 
-  getById(id) {
-    return getJoined(id);
+  getById(id, userId = DEFAULT_USER) {
+    return getJoined(id, query, userId);
   },
 
-  async update(id, data) {
-    const bill = await getJoined(id);
+  async update(id, data, userId = DEFAULT_USER) {
+    const bill = await getJoined(id, query, userId);
     if (!bill) return null;
     const schedule = assertRecurringSchedule(data.frequency ?? bill.frequency, data.due_day ?? bill.due_day);
     const frequency = schedule.frequency;
@@ -266,44 +269,47 @@ const RecurringBillModel = {
          is_variable_amount = COALESCE($10, is_variable_amount),
          note = COALESCE($11, note),
          updated_at = NOW()
-       WHERE id = $1`,
+       WHERE id = $1 AND user_id = $12`,
       [
         id, data.name || null, data.amount || null, data.category_id || null, data.wallet_id || null,
         frequency, dueDay, nextDue,
         data.remind_days_before != null ? Number(data.remind_days_before) : null,
         data.is_variable_amount != null ? Boolean(data.is_variable_amount) : null,
         data.note || null,
+        userId,
       ]
     );
-    return getJoined(id);
+    return getJoined(id, query, userId);
   },
 
   // Delete the bill but keep payment history (Constraint REQ-08). bill_id becomes NULL via FK.
-  async delete(id) {
-    const bill = await getJoined(id);
+  async delete(id, userId = DEFAULT_USER) {
+    const bill = await getJoined(id, query, userId);
     if (!bill) return null;
-    await query('DELETE FROM recurring_bills WHERE id = $1', [id]);
+    await query('DELETE FROM recurring_bills WHERE id = $1 AND user_id = $2', [id, userId]);
     return { success: true };
   },
 
-  async pause(id) {
+  async pause(id, userId = DEFAULT_USER) {
     const result = await query(
-      `UPDATE recurring_bills SET status = 'paused', updated_at = NOW() WHERE id = $1 RETURNING id`,
-      [id]
+      `UPDATE recurring_bills SET status = 'paused', updated_at = NOW()
+       WHERE id = $1 AND user_id = $2 RETURNING id`,
+      [id, userId]
     );
-    return result.rowCount ? getJoined(id) : null;
+    return result.rowCount ? getJoined(id, query, userId) : null;
   },
 
   // Reactivate: recompute next due based on cadence and current date (FR-08-07)
-  async resume(id) {
-    const bill = await getJoined(id);
+  async resume(id, userId = DEFAULT_USER) {
+    const bill = await getJoined(id, query, userId);
     if (!bill) return null;
     const nextDue = computeNextDueDate(bill.frequency, bill.due_day, new Date(), false);
     await query(
-      `UPDATE recurring_bills SET status = 'active', next_due_date = $2, updated_at = NOW() WHERE id = $1`,
-      [id, nextDue]
+      `UPDATE recurring_bills SET status = 'active', next_due_date = $2, updated_at = NOW()
+       WHERE id = $1 AND user_id = $3`,
+      [id, nextDue, userId]
     );
-    return getJoined(id);
+    return getJoined(id, query, userId);
   },
 
   // Active bills whose reminder window (next_due_date - remind_days_before) has arrived,
@@ -339,6 +345,7 @@ const RecurringBillModel = {
     periodDueDate,
     period_due_date: periodDueDateSnake,
     today = new Date(),
+    userId = DEFAULT_USER,
   } = {}) {
     const formattedPaymentDate = paidDate == null ? formatDateOnly(today) : formatDateOnly(paidDate);
     const paymentDate = normalizePastOrPresentDate(formattedPaymentDate, {
@@ -354,9 +361,9 @@ const RecurringBillModel = {
       const locked = await client.query(
         `SELECT b.*
          FROM recurring_bills b
-         WHERE b.id = $1
+         WHERE b.id = $1 AND b.user_id = $2
          FOR UPDATE OF b`,
-        [billId]
+        [billId, userId]
       );
       const bill = locked.rows[0];
       if (!bill) {
@@ -465,10 +472,12 @@ const RecurringBillModel = {
     }
   },
 
-  async getPaymentHistory(billId) {
+  async getPaymentHistory(billId, userId = DEFAULT_USER) {
     const result = await query(
-      `SELECT * FROM recurring_bill_payments WHERE bill_id = $1 ORDER BY period_due_date DESC`,
-      [billId]
+      `SELECT * FROM recurring_bill_payments
+       WHERE bill_id = $1 AND user_id = $2
+       ORDER BY period_due_date DESC`,
+      [billId, userId]
     );
     const paid = result.rows.filter((r) => r.status === 'paid');
     const overdue = result.rows.filter((r) => r.status === 'overdue');

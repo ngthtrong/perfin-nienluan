@@ -84,7 +84,7 @@ router.post('/', async (req, res, next) => {
 
 router.get('/:id', async (req, res, next) => {
   try {
-    const data = await RecurringBillModel.getById(req.params.id);
+    const data = await RecurringBillModel.getById(req.params.id, userId);
     if (!data) return res.status(404).json({ success: false, error: 'Không tìm thấy chi phí cố định' });
     res.json({ success: true, data });
   } catch (error) {
@@ -94,11 +94,11 @@ router.get('/:id', async (req, res, next) => {
 
 router.put('/:id', async (req, res, next) => {
   try {
-    const existing = await RecurringBillModel.getById(req.params.id);
+    const existing = await RecurringBillModel.getById(req.params.id, userId);
     if (!existing) return res.status(404).json({ success: false, error: 'Không tìm thấy chi phí cố định' });
     const errors = validateBillInput(req.body, { mode: 'update', existing });
     if (errors.length) return res.status(400).json({ success: false, error: errors.join('; ') });
-    const data = await RecurringBillModel.update(req.params.id, req.body);
+    const data = await RecurringBillModel.update(req.params.id, req.body, userId);
     if (!data) return res.status(404).json({ success: false, error: 'Không tìm thấy chi phí cố định' });
     res.json({ success: true, data });
   } catch (error) {
@@ -108,7 +108,7 @@ router.put('/:id', async (req, res, next) => {
 
 router.delete('/:id', async (req, res, next) => {
   try {
-    const data = await RecurringBillModel.delete(req.params.id);
+    const data = await RecurringBillModel.delete(req.params.id, userId);
     if (!data) return res.status(404).json({ success: false, error: 'Không tìm thấy chi phí cố định' });
     res.json({ success: true, message: 'Đã xóa chi phí cố định, lịch sử thanh toán được giữ nguyên' });
   } catch (error) {
@@ -118,7 +118,7 @@ router.delete('/:id', async (req, res, next) => {
 
 router.post('/:id/pause', async (req, res, next) => {
   try {
-    const data = await RecurringBillModel.pause(req.params.id);
+    const data = await RecurringBillModel.pause(req.params.id, userId);
     if (!data) return res.status(404).json({ success: false, error: 'Không tìm thấy chi phí cố định' });
     res.json({ success: true, data });
   } catch (error) {
@@ -128,7 +128,7 @@ router.post('/:id/pause', async (req, res, next) => {
 
 router.post('/:id/resume', async (req, res, next) => {
   try {
-    const data = await RecurringBillModel.resume(req.params.id);
+    const data = await RecurringBillModel.resume(req.params.id, userId);
     if (!data) return res.status(404).json({ success: false, error: 'Không tìm thấy chi phí cố định' });
     res.json({ success: true, data });
   } catch (error) {
@@ -138,7 +138,11 @@ router.post('/:id/resume', async (req, res, next) => {
 
 router.get('/:id/payments', async (req, res, next) => {
   try {
-    res.json({ success: true, data: await RecurringBillModel.getPaymentHistory(req.params.id) });
+    // Kiểm tra quyền sở hữu trước: nếu không, hóa đơn của người khác sẽ trả về
+    // "lịch sử rỗng" thay vì 404, tức là vẫn tiết lộ id đó có tồn tại hay không.
+    const bill = await RecurringBillModel.getById(req.params.id, userId);
+    if (!bill) return res.status(404).json({ success: false, error: 'Không tìm thấy chi phí cố định' });
+    res.json({ success: true, data: await RecurringBillModel.getPaymentHistory(req.params.id, userId) });
   } catch (error) {
     next(error);
   }
@@ -160,6 +164,7 @@ router.post('/:id/pay', async (req, res, next) => {
       paidDate: body.paid_date,
       categoryId: body.category_id,
       periodDueDate: expectedPeriod,
+      userId,
     });
     if (!result) return res.status(404).json({ success: false, error: 'Không tìm thấy chi phí cố định' });
     res.json({ success: true, data: result });

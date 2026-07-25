@@ -433,7 +433,9 @@ async function handleRecurringPay(parsed) {
       return startBillChoice('recurring_pay', due, 'Bạn vừa thanh toán khoản nào trong số này?');
     }
   }
-  if (parsed.recurring?.bill_id) target = await RecurringBillModel.getById(parsed.recurring.bill_id);
+  // bill_id đến từ văn bản người dùng do LLM bóc tách, nên bắt buộc phải giới
+  // hạn theo userId: không được để một id tùy ý chạm vào bản ghi của người khác.
+  if (parsed.recurring?.bill_id) target = await RecurringBillModel.getById(parsed.recurring.bill_id, userId);
   if (!target) return { type: 'chat_response', message: await applyPersona('Mình chưa thấy khoản chi cố định nào đến hạn để ghi nhận. Bạn nói rõ tên khoản chi nhé.') };
 
   // Use an overridden amount if AI extracted one (FR-08-04: "đã đóng nhưng
@@ -468,9 +470,9 @@ async function handleRecurringPay(parsed) {
 
 async function handleRecurringPause(parsed) {
   if (parsed.recurring?.bill_id) {
-    const target = await RecurringBillModel.getById(parsed.recurring.bill_id);
+    const target = await RecurringBillModel.getById(parsed.recurring.bill_id, userId);
     if (target) {
-      await RecurringBillModel.pause(target.id);
+      await RecurringBillModel.pause(target.id, userId);
       return { type: 'system_message', message: await applyPersona(`Đã tạm dừng nhắc "${target.name}". Bạn kích hoạt lại bất kỳ lúc nào nhé.`) };
     }
   }
@@ -481,13 +483,13 @@ async function handleRecurringPause(parsed) {
     }
     return { type: 'chat_response', message: await applyPersona('Mình không tìm thấy khoản chi cố định đó.') };
   }
-  await RecurringBillModel.pause(bill.id);
+  await RecurringBillModel.pause(bill.id, userId);
   return { type: 'system_message', message: await applyPersona(`Đã tạm dừng nhắc "${bill.name}". Bạn kích hoạt lại bất kỳ lúc nào nhé.`) };
 }
 
 async function handleRecurringHistory(parsed) {
   if (parsed.recurring?.bill_id) {
-    const target = await RecurringBillModel.getById(parsed.recurring.bill_id);
+    const target = await RecurringBillModel.getById(parsed.recurring.bill_id, userId);
     if (target) return recurringHistoryResponse(target);
   }
   const { bill, candidates } = await findBillByName(parsed.recurring?.name);
@@ -501,7 +503,7 @@ async function handleRecurringHistory(parsed) {
 }
 
 async function recurringHistoryResponse(bill) {
-  const { payments, summary } = await RecurringBillModel.getPaymentHistory(bill.id);
+  const { payments, summary } = await RecurringBillModel.getPaymentHistory(bill.id, userId);
   if (!payments.length) return { type: 'chat_response', message: await applyPersona(`"${bill.name}" chưa có lịch sử thanh toán nào.`) };
   const recent = payments.slice(0, 5).map((p) => `• ${p.period_due_date}: ${formatVND(p.amount)} (${p.status === 'paid' ? 'đã thanh toán' : p.status})`).join('\n');
   return { type: 'chat_response', message: await applyPersona(`Lịch sử "${bill.name}" (đã trả ${summary.paid_count} kỳ, tổng ${formatVND(summary.total_paid)}):\n${recent}`) };
@@ -936,6 +938,7 @@ async function commitPendingItem(item) {
       categoryId: item.data.category_id,
       paidDate: item.data.transaction_date,
       periodDueDate: item.data.period_due_date,
+      userId,
     });
     if (!result) {
       const error = new Error('Khoản chi cố định không còn tồn tại');

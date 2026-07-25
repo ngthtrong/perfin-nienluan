@@ -39,25 +39,33 @@ const BudgetModel = {
     return result.rows;
   },
 
-  async getById(id) {
+  // Mọi tra cứu theo id đều kèm điều kiện user_id: id là số tăng dần nên nếu
+  // thiếu điều kiện này, một người dùng có thể đọc/sửa/xóa ngân sách của người
+  // khác chỉ bằng cách đổi id trên URL.
+  async getById(id, userId = DEFAULT_USER) {
     const result = await query(
       `SELECT b.*, c.name AS category_name, c.icon AS category_icon
-       FROM budgets b JOIN categories c ON b.category_id = c.id WHERE b.id = $1`,
-      [id]
+       FROM budgets b JOIN categories c ON b.category_id = c.id
+       WHERE b.id = $1 AND b.user_id = $2`,
+      [id, userId]
     );
     return result.rows[0] || null;
   },
 
-  async update(id, { amount_limit }) {
-    const current = await this.getById(id);
+  async update(id, { amount_limit }, userId = DEFAULT_USER) {
+    const current = await this.getById(id, userId);
     if (!current) return null;
-    const result = await query('UPDATE budgets SET amount_limit = $2, updated_at = NOW() WHERE id = $1 RETURNING *', [id, amount_limit]);
+    const result = await query(
+      'UPDATE budgets SET amount_limit = $2, updated_at = NOW() WHERE id = $1 AND user_id = $3 RETURNING *',
+      [id, amount_limit, userId]
+    );
+    if (!result.rowCount) return null;
     await query('INSERT INTO budget_history (budget_id, change_type, old_value, new_value) VALUES ($1, $2, $3, $4)', [id, 'amount_limit', current.amount_limit, amount_limit]);
     return result.rows[0];
   },
 
-  async delete(id) {
-    const result = await query('DELETE FROM budgets WHERE id = $1 RETURNING id', [id]);
+  async delete(id, userId = DEFAULT_USER) {
+    const result = await query('DELETE FROM budgets WHERE id = $1 AND user_id = $2 RETURNING id', [id, userId]);
     return result.rowCount ? { success: true } : null;
   },
 

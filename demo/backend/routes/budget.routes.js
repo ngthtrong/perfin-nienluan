@@ -72,7 +72,7 @@ router.post('/', validateBudget, async (req, res, next) => {
 
 router.get('/:id', async (req, res, next) => {
   try {
-    const data = await BudgetModel.getById(req.params.id);
+    const data = await BudgetModel.getById(req.params.id, userId);
     if (!data) return res.status(404).json({ success: false, error: 'Không tìm thấy ngân sách' });
     res.json({ success: true, data });
   } catch (error) {
@@ -82,7 +82,7 @@ router.get('/:id', async (req, res, next) => {
 
 router.put('/:id', async (req, res, next) => {
   try {
-    const data = await BudgetModel.update(req.params.id, req.body);
+    const data = await BudgetModel.update(req.params.id, req.body, userId);
     if (!data) return res.status(404).json({ success: false, error: 'Không tìm thấy ngân sách' });
     res.json({ success: true, data });
   } catch (error) {
@@ -92,7 +92,7 @@ router.put('/:id', async (req, res, next) => {
 
 router.delete('/:id', async (req, res, next) => {
   try {
-    const data = await BudgetModel.delete(req.params.id);
+    const data = await BudgetModel.delete(req.params.id, userId);
     if (!data) return res.status(404).json({ success: false, error: 'Không tìm thấy ngân sách' });
     res.json({ success: true, message: 'Đã xóa ngân sách' });
   } catch (error) {

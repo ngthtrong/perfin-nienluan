@@ -1,28 +1,33 @@
 {
   "artifact": "backend-test-run",
-  "description": "Kết quả `npm test` của demo/backend sau khi bổ sung test ở loop7 (a11y/user-scope). Thay thế con số 100/100 của đợt 15/07/2026 vốn đã lỗi thời.",
+  "description": "Kết quả `npm test` của demo/backend sau các đợt bổ sung test ở loop7 (a11y/user-scope) và loop11 (IDOR scope). Thay thế con số 100/100 của đợt 16/07/2026 vốn đã lỗi thời.",
   "meta": {
     "date": "2026-07-25",
-    "commit": "c688762",
+    "commit": "f2e6e73",
     "node": "v24.16.0",
     "runner": "node --test (Node test runner)",
     "command": "cd demo/backend && npm test",
     "tz": "Asia/Ho_Chi_Minh"
   },
   "results": {
-    "tests": 178,
-    "pass": 178,
+    "tests": 182,
+    "pass": 182,
     "fail": 0,
     "cancelled": 0,
     "skipped": 0,
     "todo": 0,
-    "duration_ms": 2220.449061,
-    "test_files": 37
+    "duration_ms": 3397.459461,
+    "test_files": 38
   },
-  "scope": "Unit/service, không cần PostgreSQL live: transaction (create/update/delete/restore, rollback, post-commit), concurrency, recurring, health, importer, time-series, analytics, budget, goal, feedback, user-scope lookup, validation.",
+  "scope": "Unit/service, không cần PostgreSQL live: transaction (create/update/delete/restore, rollback, post-commit), concurrency, recurring, health, importer, time-series, analytics, budget, goal, feedback, user-scope lookup, IDOR scope, validation.",
+  "history": [
+    { "date": "2026-07-16", "tests": 100, "note": "Mốc nghiệm thu đầu tiên, giữ làm tham chiếu lịch sử." },
+    { "date": "2026-07-25", "tests": 178, "note": "Sau loop7 (test a11y + user-scope lookup)." },
+    { "date": "2026-07-25", "tests": 182, "note": "Sau loop11: thêm 4 ca hồi quy IDOR trong tests/user-idor-scope.test.js." }
+  ],
   "supersedes": {
     "artifact": "log/Demo_Verification_2026-07-16.md",
     "old_value": "100/100",
-    "reason": "Bộ test đã mở rộng từ 100 lên 178 ca sau các đợt sửa (bao gồm loop7). Số 100/100 vẫn đúng tại thời điểm 16/07/2026 và được giữ làm mốc lịch sử."
+    "reason": "Bộ test đã mở rộng từ 100 lên 182 ca sau các đợt sửa. Số 100/100 vẫn đúng tại thời điểm 16/07/2026 và được giữ làm mốc lịch sử."
   }
 }

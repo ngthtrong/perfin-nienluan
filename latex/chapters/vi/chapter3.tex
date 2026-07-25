@@ -473,11 +473,32 @@ Scheduler tạo job có định danh; worker lấy đúng user scope, gọi hand
 
 \subsection{Bảo mật, riêng tư và đạo đức}
 
-Nguyên mẫu chưa có authentication production; vì vậy không được tuyên bố đã cô lập nhiều người dùng. Các route dùng \code{default_user} và một số thao tác theo ID chưa kèm user scope. Trước triển khai thật cần bổ sung xác thực, authorization ở mọi truy vấn và test truy cập chéo.
+Nguyên mẫu chưa có authentication production; vì vậy không được tuyên bố đã cô lập nhiều người dùng. Các route dùng \code{default_user}. Mọi thao tác theo ID đã được rà soát để luôn kèm điều kiện \code{user_id} và có test truy cập chéo (Bảng~\ref{tab:idor-verification}), nhưng điều kiện dữ liệu không thay cho xác thực: trước triển khai thật vẫn cần bổ sung authentication và authorization thực sự.
+
+\begin{longtable}{@{}L{5.2cm}L{2.2cm}L{5.2cm}@{}}
+  \caption{Kiểm thử truy cập chéo theo ID (ngày 25/07/2026)}\label{tab:idor-verification}\\
+  \toprule
+  \textbf{Endpoint bị thử} & \textbf{Kết quả} & \textbf{Diễn giải} \\
+  \midrule
+  \endfirsthead
+  \toprule
+  \textbf{Endpoint bị thử} & \textbf{Kết quả} & \textbf{Diễn giải} \\
+  \midrule
+  \endhead
+  \code{GET/PUT/DELETE /api/budgets/:id} & 404 & Không đọc, sửa hoặc xóa được ngân sách của người dùng khác. \\
+  \code{GET/PUT/DELETE /api/recurring/:id} & 404 & Tương tự với khoản định kỳ. \\
+  \code{POST /api/recurring/:id/pause|resume|pay} & 404 & Không đổi trạng thái hoặc ghi thanh toán lên bản ghi người khác. \\
+  \code{GET /api/recurring/:id/payments} & 404 & Trước khi thêm kiểm tra sở hữu ở route, endpoint trả 200 kèm lịch sử rỗng: không rò dữ liệu nhưng vẫn tiết lộ id có tồn tại. \\
+  Nhóm chứng: bản ghi của chính mình & 200 & Quyền truy cập hợp lệ không bị ảnh hưởng. \\
+  \bottomrule
+\end{longtable}
+
+Phương pháp: tạo hồ sơ thứ hai, chèn bản ghi thuộc hồ sơ đó, rồi gọi API bằng \code{default_user} với đúng ID vừa tạo; 10/10 lượt truy cập chéo bị chặn và 2/2 lượt truy cập hợp lệ vẫn hoạt động. Bốn ca hồi quy trong \code{tests/user-idor-scope.test.js} kiểm tra trên \emph{câu SQL phát ra} chứ không chỉ giá trị trả về, vì khi hệ thống chỉ có một hồ sơ demo thì truy vấn thiếu điều kiện \code{user_id} vẫn trả đúng bản ghi. Artifact: \code{log/idor-verification_2026-07-25.json}.
 
 Credential AI, service account và chuỗi kết nối không được ghi vào Git hoặc chat log. Ảnh/audio cần chính sách xóa sau xử lý. \code{user_traits} chỉ được dùng khi consent bật. Persona không được gây áp lực, miệt thị hoặc biến gợi ý thành tư vấn đầu tư chắc chắn. Backup không được dùng khóa AES đóng gói sẵn trong client; khóa phải đến từ cơ chế quản lý bí mật bên ngoài ứng dụng.
 
 \section{Kiểm thử}
+\label{sec:testing}
 
 \subsection{Kế hoạch kiểm thử}
 
@@ -547,7 +568,7 @@ Ngày 16/07/2026, các phép kiểm tra từ unit đến runtime được chạy
   \textbf{Hạng mục} & \textbf{Kết quả} & \textbf{Phân loại} & \textbf{Phạm vi kết luận} \\
   \midrule
   \endhead
-  Backend \code{npm test} sau sửa & 178/178 test đạt, 0 thất bại & \statusmeasured & Unit/service trên 37 tệp test; gồm transaction, concurrency, recurring, health, importer, time-series và user scope. Mốc 16/07/2026 là 100/100 trước khi mở rộng bộ test. \\
+  Backend \code{npm test} sau sửa & 182/182 test đạt, 0 thất bại & \statusmeasured & Unit/service trên 38 tệp test; gồm transaction, concurrency, recurring, health, importer, time-series và user scope. Mốc 16/07/2026 là 100/100 trước khi mở rộng bộ test. \\
   Local parser quality gate & 31/31 strict pass; 0 partial; 0 fail & \statusmeasured & Cục bộ, không dùng Gemini; strict exit code, 31 ca hard-coded. \\
   Baseline trước sửa & 13/13 tệp test; parser 27/31 strict & \statusmeasured & Giữ để phân tích lỗi và chứng minh tác động bản sửa. \\
   Full API/DB/media smoke & 23/23 kiểm tra đạt & \statusmeasured & PostgreSQL live, preview, sửa, hủy, OCR 2 ảnh và STT 1 M4A; không gồm Redis worker. \\
@@ -587,7 +608,7 @@ Full smoke chứng minh luồng HTTP--PostgreSQL, Gemini cấu trúc đầu ra, 
   Ví/chuyển ví & Hiện thực một phần & Thiếu route/UI tạo ví trên fresh install; chưa có integration test transfer. & CRUD tối thiểu và kiểm thử toàn vẹn số dư. \\
   Recurring và worker & \statusmeasured & Payment đã khóa hàng, nguyên tử, có kỳ dự kiến và chat preview; notification vẫn là chat nội bộ. & Live DB test và kênh nhắc ngoài ứng dụng nếu mở rộng. \\
   Export/backup & Chưa đúng tên gọi & Mẫu số/escaping đã sửa; ``PDF'' vẫn là HTML, backup còn thiếu. & PDF thật hoặc đổi nhãn; backup/restore an toàn. \\
-  Auth/multi-user & Ngoài phạm vi hiện tại & \code{default_user}, ID chưa luôn scoped. & Không demo như đã có; thêm trước production. \\
+  Auth/multi-user & Ngoài phạm vi hiện tại & \code{default_user}; mọi thao tác theo ID đã scoped và có test truy cập chéo, nhưng chưa có xác thực. & Không demo như đã có; thêm authentication/authorization trước production. \\
   \bottomrule
 \end{longtable}
 

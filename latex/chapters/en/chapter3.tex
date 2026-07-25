@@ -473,11 +473,32 @@ The scheduler creates an identified job; the worker takes the correct user scope
 
 \subsection{Security, Privacy and Ethics}
 
-The prototype has no production authentication yet; therefore multi-user isolation must not be claimed. The routes use \code{default_user} and some ID-based operations do not yet carry a user scope. Before a real deployment, authentication, authorization on every query and cross-access tests must be added.
+The prototype has no production authentication yet; therefore multi-user isolation must not be claimed. The routes use \code{default_user}. Every ID-based operation has been audited so that it always carries a \code{user_id} predicate, and cross-access tests now exist (Table~\ref{tab:idor-verification}); but a data predicate is not a substitute for authentication: real authentication and authorization must still be added before a real deployment.
+
+\begin{longtable}{@{}L{5.2cm}L{2.2cm}L{5.2cm}@{}}
+  \caption{Cross-access (IDOR) testing on ID-based endpoints, 25/07/2026}\label{tab:idor-verification}\\
+  \toprule
+  \textbf{Endpoint under test} & \textbf{Result} & \textbf{Interpretation} \\
+  \midrule
+  \endfirsthead
+  \toprule
+  \textbf{Endpoint under test} & \textbf{Result} & \textbf{Interpretation} \\
+  \midrule
+  \endhead
+  \code{GET/PUT/DELETE /api/budgets/:id} & 404 & Another user's budget cannot be read, modified or deleted. \\
+  \code{GET/PUT/DELETE /api/recurring/:id} & 404 & Same for recurring bills. \\
+  \code{POST /api/recurring/:id/pause|resume|pay} & 404 & No state change or payment can be written onto another user's record. \\
+  \code{GET /api/recurring/:id/payments} & 404 & Before the ownership check was added at the route, this returned 200 with an empty history: no data leak, but it still revealed that the id existed. \\
+  Control: the caller's own records & 200 & Legitimate access is unaffected. \\
+  \bottomrule
+\end{longtable}
+
+Method: create a second profile, insert records owned by it, then call the API as \code{default_user} using exactly those IDs; 10/10 cross-access attempts were blocked and 2/2 legitimate accesses still worked. The four regression cases in \code{tests/user-idor-scope.test.js} assert on the \emph{emitted SQL} rather than only the return value, because with a single demo profile a query missing the \code{user_id} predicate still returns the expected record. Artifact: \code{log/idor-verification_2026-07-25.json}.
 
 AI credentials, service accounts and connection strings must not be written to Git or chat logs. Images/audio need a delete-after-processing policy. \code{user_traits} may be used only when consent is enabled. The persona must not pressure, disparage or turn suggestions into definitive investment advice. Backup must not use an AES key packaged inside the client; the key must come from a secret-management mechanism external to the application.
 
 \section{Testing}
+\label{sec:testing}
 
 \subsection{Test Plan}
 
@@ -547,7 +568,7 @@ On 16/07/2026, checks from unit to runtime level were run in the workspace. The 
   \textbf{Item} & \textbf{Result} & \textbf{Category} & \textbf{Scope of conclusion} \\
   \midrule
   \endhead
-  Backend \code{npm test} after fixes & 178/178 tests passed, 0 failures & \statusmeasured & Unit/service across 37 test files; includes transaction, concurrency, recurring, health, importer, time-series and user scope. The 16/07/2026 milestone was 100/100, before the suite was extended. \\
+  Backend \code{npm test} after fixes & 182/182 tests passed, 0 failures & \statusmeasured & Unit/service across 38 test files; includes transaction, concurrency, recurring, health, importer, time-series and user scope. The 16/07/2026 milestone was 100/100, before the suite was extended. \\
   Local parser quality gate & 31/31 strict pass; 0 partial; 0 fail & \statusmeasured & Local, without Gemini; strict exit code, 31 hard-coded cases. \\
   Baseline before fixes & 13/13 test files; parser 27/31 strict & \statusmeasured & Kept for error analysis and to demonstrate the impact of the fixes. \\
   Full API/DB/media smoke & 23/23 checks passed & \statusmeasured & Live PostgreSQL, preview, edit, cancel, OCR on 2 images and STT on 1 M4A; does not include the Redis worker. \\
@@ -587,7 +608,7 @@ The full smoke test demonstrates that the HTTP--PostgreSQL flow, Gemini structur
   Wallet/transfer & Partially implemented & Missing wallet-creation route/UI on a fresh install; no transfer integration test yet. & Minimal CRUD and balance-integrity testing. \\
   Recurring and worker & \statusmeasured & Payment locks rows, is atomic, has an expected period and chat preview; notification is still internal chat. & Live DB tests and an out-of-app reminder channel if expanded. \\
   Export/backup & Misnamed & Denominator/escaping fixed; ``PDF'' is still HTML, backup still missing. & Real PDF or relabel; safe backup/restore. \\
-  Auth/multi-user & Out of current scope & \code{default_user}, IDs not always scoped. & Do not demo as present; add before production. \\
+  Auth/multi-user & Out of current scope & \code{default_user}; every ID-based operation is now scoped and covered by cross-access tests, but there is no authentication. & Do not demo as present; add authentication/authorization before production. \\
   \bottomrule
 \end{longtable}
 
