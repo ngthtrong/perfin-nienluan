@@ -6,6 +6,10 @@ const RADIUS = { xs: 6, sm: 10, md: 14, lg: 18, xl: 24, pill: 999 };
 
 const SPACING = { xs: 4, sm: 8, md: 12, lg: 16, xl: 20, xxl: 28 };
 
+// Vùng chạm mở rộng cho nút chỉ có icon. Nút 32--38 px cộng thêm hitSlop này
+// đạt ngưỡng chạm 44 px mà không phải nới rộng bố cục.
+const HIT_SLOP = { top: 6, bottom: 6, left: 6, right: 6 };
+
 // Font scale — role → { size, weight, lineHeight }
 const TYPO = {
   display: { fontSize: 32, fontWeight: '800', lineHeight: 38 },
@@ -130,4 +134,4 @@ export function buildTheme(dark) {
   };
 }
 
-export { RADIUS, SPACING, TYPO, CATEGORY_COLORS, lightColors, darkColors };
+export { RADIUS, SPACING, TYPO, HIT_SLOP, CATEGORY_COLORS, lightColors, darkColors };

@@ -52,8 +52,39 @@ Tone: constructive, calibrated to course level.
   query (transaction.model.js:226 where.join + :228 SORT_EXPRESSIONS) verified SAFE —
   clauses hard-coded, sort_by whitelisted via hasOwnProperty on frozen obj, sort_order in
   [asc,desc]. No SQL injection. Backend genuinely solid.
-- loop6: pending (final). Candidates: cosmetic diagram palette (low priority per loop2),
-  ch1/ch2 prose polish, final holistic pass + grade summary.
+- loop6: DONE. Report at loop/loop6/report.md. Final holistic pass + grade summary: text
+  sources verified clean of stale numbers, both PDFs current, vi/en parallel. NOTE: loop6
+  justified skipping diagram work with "render headless >120s/hình" — that claim is WRONG
+  (measured 4.1s/figure in loop7). Don't reuse it as a reason to skip figure fixes.
+- loop7: DONE. Report at loop/loop7/report.md. Opened two areas never checked directly in
+  loops 1-6 and both yielded real defects.
+  FIXED L-08 (severe, formatting compliance): Guideline lines 9-12 mandate heading colors
+  #00B0F0 (H1) / #2F5496 (H2-H4); grep across latex/ returned ZERO hits — all headings were
+  black. Added \definecolor{HeadingOne}/{HeadingTwo} + \color{} on all 5 \titleformat blocks
+  in config/preamble.tex. Preamble is in COMMON so one edit covers vi+en (bilingual rule met).
+  Also removed a dead \graphicspath entry pointing at the deleted archive/ tree.
+  FIXED L-09 (figure typography): 7/13 .drawio files declared
+  fontFamily=Trebuchet MS,...; the other 6 declare none (per RESTYLE-PLAN "Body font:
+  default"). Stripped the declaration from those 7 (785→0 occurrences, XML still well-formed)
+  so all 13 inherit one font; re-rendered all 21 pdf/png/svg outputs. Verified: all 13 SVGs
+  now report one uniform font-family; all 13 figure PDFs images=0 (still true vector).
+  CAUTION on verification: drawio PDF export converts text to vector outlines, so pdffonts
+  reports NONE and pdftotext returns 0 words for ALL 13 figures — that is NOT a defect.
+  Verify figure fonts on the SVGs, which retain real text.
+  FIXED L-10 (margin overflow): EN build had 22 overfull hboxes (worst 43pt ≈ 1.5cm of text
+  outside the margin) vs 3 in VI, because fixed L{} column widths were tuned for the shorter
+  Vietnamese strings. Widened 3 ch3 tables (mirrored in both languages), narrowed the EN
+  feedback table's first column, and raised \emergencystretch 2em→3em. Result: EN 22→0,
+  VI 3→2 (both remaining are 1.9pt ≈ 0.07mm, below visual threshold).
+  FIXED D-04/D-05 (demo a11y): 14 icon-only buttons had no accessible name — added
+  accessibilityRole + Vietnamese accessibilityLabel across 6 files; touch targets were
+  32-38pt with hitSlop grep = 0 app-wide — added a shared HIT_SLOP token in theme/tokens.js
+  reaching ≥44pt without changing layout geometry.
+  Verified no regressions: backend 178/178, mobile-web UI smoke PASS, both PDFs build with
+  exit 0, 0 warnings, 13 figures embedded each, heading colors present.
+  MAKEFILE TRAP (cost time — remember): figures/rendered/*.pdf are NOT prerequisites of the
+  PDF targets, so after re-rendering figures a plain `make` reports "up to date" and silently
+  skips re-embedding them. Force it (touch config/preamble.tex, or rm main-{vi,en}.pdf).
 
 ## Credit note
 Subagent fan-out hit "credit limit exceeded" (429) in loop1. Prefer direct main-context

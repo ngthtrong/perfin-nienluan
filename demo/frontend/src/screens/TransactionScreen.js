@@ -5,6 +5,7 @@ import {
 } from 'react-native';
 import { api } from '../services/api.service';
 import { useTheme } from '../theme/ThemeContext';
+import { HIT_SLOP } from '../theme/tokens';
 import { formatMoneyValue, formatVND, parseMoneyInput, toDateInputValue } from '../utils/formatters';
 import { showAlert } from '../utils/alerts';
 import TransactionCard from '../components/TransactionCard';
@@ -854,7 +855,12 @@ export default function TransactionScreen({ route, navigation }) {
                       : 'Lựa chọn này giúp PERFIN học cách phân loại của bạn.'}
                   </Text>
                 </View>
-                <TouchableOpacity onPress={() => setCategoryEditingId(null)}>
+                <TouchableOpacity
+                  onPress={() => setCategoryEditingId(null)}
+                  hitSlop={HIT_SLOP}
+                  accessibilityRole="button"
+                  accessibilityLabel="Đóng bảng đổi danh mục"
+                >
                   <AppIcon name="close" size={18} color={c.textMuted} />
                 </TouchableOpacity>
               </View>

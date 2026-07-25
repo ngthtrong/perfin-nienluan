@@ -5,6 +5,7 @@ import {
 } from 'react-native';
 import { api } from '../services/api.service';
 import { useTheme } from '../theme/ThemeContext';
+import { HIT_SLOP } from '../theme/tokens';
 import { showAlert } from '../utils/alerts';
 import AppIcon from '../components/AppIcon';
 import { EmptyState, ErrorState, Skeleton } from '../components/ui';
@@ -37,11 +38,23 @@ function ExportHistoryItem({ item, onDelete, onDownload, styles, c }) {
       </View>
       <View style={styles.historyActions}>
         {item.file_available && (
-          <TouchableOpacity onPress={() => onDownload(item.id)} style={styles.dlBtn}>
+          <TouchableOpacity
+            onPress={() => onDownload(item.id)}
+            style={styles.dlBtn}
+            hitSlop={HIT_SLOP}
+            accessibilityRole="button"
+            accessibilityLabel={`Tải xuống bản xuất ${meta.label}`}
+          >
             <AppIcon name="download" size={18} color={c.brand} />
           </TouchableOpacity>
         )}
-        <TouchableOpacity onPress={() => onDelete(item.id)} style={styles.delBtn}>
+        <TouchableOpacity
+          onPress={() => onDelete(item.id)}
+          style={styles.delBtn}
+          hitSlop={HIT_SLOP}
+          accessibilityRole="button"
+          accessibilityLabel={`Xóa bản xuất ${meta.label}`}
+        >
           <AppIcon name="delete-outline" size={18} color={c.expense} />
         </TouchableOpacity>
       </View>

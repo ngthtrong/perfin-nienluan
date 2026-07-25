@@ -450,7 +450,7 @@ The scheduler creates an identified job; the worker takes the correct user scope
 
 \subsubsection{Control of LLM-initiated operations}
 
-\begin{longtable}{@{}L{3.0cm}L{5.0cm}L{1.5cm}L{3.2cm}@{}}
+\begin{longtable}{@{}L{3.0cm}L{4.6cm}L{2.1cm}L{4.0cm}@{}}
   \caption{Control conditions for LLM-initiated operations}\label{tab:llm-actions}\\
   \toprule
   \textbf{Operation} & \textbf{Required validation} & \textbf{Confirm} & \textbf{Atomic/idempotent} \\
@@ -537,7 +537,7 @@ The text dataset must separate the development and evaluation sets, covering the
 
 On 16/07/2026, checks from unit to runtime level were run in the workspace. The results are presented within the scope of their evidence, without extending into conclusions about model accuracy or production readiness.
 
-\begin{longtable}{@{}L{3.3cm}L{4.2cm}L{1.8cm}L{3.4cm}@{}}
+\begin{longtable}{@{}L{3.3cm}L{4.2cm}L{2.4cm}L{3.4cm}@{}}
   \caption{Measured results and missing measurements}\label{tab:measured-results}\\
   \toprule
   \textbf{Item} & \textbf{Result} & \textbf{Category} & \textbf{Scope of conclusion} \\
@@ -569,7 +569,7 @@ The full smoke test demonstrates that the HTTP--PostgreSQL flow, Gemini structur
 
 \subsubsection{Status of Critical Features}
 
-\begin{longtable}{@{}L{3.2cm}L{2.5cm}L{3.5cm}L{3.5cm}@{}}
+\begin{longtable}{@{}L{3.2cm}L{2.5cm}L{4.3cm}L{3.5cm}@{}}
   \caption{Status and target behavior of critical features}\label{tab:feature-status}\\
   \toprule
   \textbf{Feature} & \textbf{Current status} & \textbf{Main gap} & \textbf{Completion condition} \\
@@ -644,9 +644,9 @@ Excluding the ``Khác'' class leaves 4,832 content sentences. The parser-wrong g
   \centering
   \caption{Feedback before/after on the holdout set}
   \label{tab:feedback}
-  \begin{tabularx}{\textwidth}{@{}L{4cm}YYY@{}}
+  \begin{tabularx}{\textwidth}{@{}L{3cm}YYY@{}}
     \toprule
-    \textbf{Metric} & \textbf{Before (parser)} & \textbf{After (correction$\to$parser)} & \textbf{$\Delta$} \\
+    \textbf{Metric} & \textbf{Before (parser)} & \textbf{After} \textbf{(correction $\to$ parser)} & \textbf{$\Delta$} \\
     \midrule
     Accuracy & 0.00\% & 68.19\% & +68.19 pts \\
     Macro-F1 & 0.0000 & 0.5440 & +0.5440 \\

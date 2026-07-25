@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback, useMemo } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { api } from '../services/api.service';
-import { CATEGORY_COLORS } from '../theme/tokens';
+import { CATEGORY_COLORS, HIT_SLOP } from '../theme/tokens';
 import { useTheme } from '../theme/ThemeContext';
 import { currentPeriod, formatDate, formatVND } from '../utils/formatters';
 import AppIcon from '../components/AppIcon';
@@ -93,7 +93,13 @@ export default function ReportScreen() {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={c.brand} />}
       >
         <View style={styles.monthNav}>
-          <TouchableOpacity style={styles.monthNavBtn} onPress={() => changeMonth(-1)}>
+          <TouchableOpacity
+            style={styles.monthNavBtn}
+            onPress={() => changeMonth(-1)}
+            hitSlop={HIT_SLOP}
+            accessibilityRole="button"
+            accessibilityLabel="Xem tháng trước"
+          >
             <AppIcon name="chevron-left" size={22} color={c.brandText} />
           </TouchableOpacity>
           <View style={styles.monthTitle}>
@@ -104,6 +110,10 @@ export default function ReportScreen() {
             style={[styles.monthNavBtn, isCurrent && styles.monthNavBtnDisabled]}
             onPress={() => changeMonth(1)}
             disabled={isCurrent}
+            hitSlop={HIT_SLOP}
+            accessibilityRole="button"
+            accessibilityLabel="Xem tháng sau"
+            accessibilityState={{ disabled: isCurrent }}
           >
             <AppIcon name="chevron-right" size={22} color={isCurrent ? c.border : c.brandText} />
           </TouchableOpacity>

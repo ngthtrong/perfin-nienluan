@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useTheme } from '../theme/ThemeContext';
+import { HIT_SLOP } from '../theme/tokens';
 import { formatDate, formatMoneyValue, formatVND, parseMoneyInput, toDateInputValue } from '../utils/formatters';
 import AppIcon from './AppIcon';
 import { Chip, DatePickerField, MoneyInput } from './ui';
@@ -230,7 +231,14 @@ export default function MultiTransactionPreviewCard({
                 : <AppIcon name="done-all" size={17} color={c.onBrand} />}
               <Text style={styles.confirmText}>Xác nhận tất cả</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.cancelButton} onPress={onCancel} disabled={busy}>
+            <TouchableOpacity
+              style={styles.cancelButton}
+              onPress={onCancel}
+              disabled={busy}
+              hitSlop={HIT_SLOP}
+              accessibilityRole="button"
+              accessibilityLabel="Bỏ qua tất cả giao dịch đề xuất"
+            >
               <AppIcon name="close" size={17} color={c.textMuted} />
             </TouchableOpacity>
           </View>

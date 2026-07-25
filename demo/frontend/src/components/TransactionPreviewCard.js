@@ -3,6 +3,7 @@ import { ActivityIndicator, ScrollView, View, Text, TextInput, TouchableOpacity,
 import BalanceDisplay from './BalanceDisplay';
 import AppIcon from './AppIcon';
 import { useTheme } from '../theme/ThemeContext';
+import { HIT_SLOP } from '../theme/tokens';
 import { formatDate, formatMoneyValue, parseMoneyInput, toDateInputValue } from '../utils/formatters';
 import { Chip, DatePickerField, MoneyInput } from './ui';
 
@@ -142,7 +143,14 @@ export default function TransactionPreviewCard({
               <AppIcon name="edit" size={16} color={c.brand} />
               <Text style={styles.editText}>Sửa</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.cancelBtn} onPress={onCancel} disabled={busy}>
+            <TouchableOpacity
+              style={styles.cancelBtn}
+              onPress={onCancel}
+              disabled={busy}
+              hitSlop={HIT_SLOP}
+              accessibilityRole="button"
+              accessibilityLabel="Bỏ qua giao dịch đề xuất"
+            >
               <AppIcon name="close" size={16} color={c.textMuted} />
             </TouchableOpacity>
           </View>

@@ -5,6 +5,7 @@ import {
 } from 'react-native';
 import { api } from '../services/api.service';
 import { useTheme } from '../theme/ThemeContext';
+import { HIT_SLOP } from '../theme/tokens';
 import { formatMoneyValue, formatVND, parseMoneyInput } from '../utils/formatters';
 import { showAlert } from '../utils/alerts';
 import AppIcon from '../components/AppIcon';
@@ -377,10 +378,22 @@ function RecurringHeader({ styles, c, totalMonthly, count, suggestions, onAccept
                   {s.is_variable_amount ? ' · số tiền thay đổi' : ''}
                 </Text>
               </View>
-              <TouchableOpacity style={styles.suggestAccept} onPress={() => onAccept(s)}>
+              <TouchableOpacity
+                style={styles.suggestAccept}
+                onPress={() => onAccept(s)}
+                hitSlop={HIT_SLOP}
+                accessibilityRole="button"
+                accessibilityLabel={`Thêm chi phí cố định ${s.name}`}
+              >
                 <AppIcon name="add" size={16} color="#fff" />
               </TouchableOpacity>
-              <TouchableOpacity style={styles.suggestDismiss} onPress={() => onDismiss(s)}>
+              <TouchableOpacity
+                style={styles.suggestDismiss}
+                onPress={() => onDismiss(s)}
+                hitSlop={HIT_SLOP}
+                accessibilityRole="button"
+                accessibilityLabel={`Bỏ qua gợi ý ${s.name}`}
+              >
                 <AppIcon name="close" size={16} color={c.textMuted} />
               </TouchableOpacity>
             </View>
@@ -431,16 +444,40 @@ function BillCard({ styles, c, bill, onPay, onEdit, onDelete, onTogglePause, onH
             <Text style={styles.payBtnText}>Đã trả</Text>
           </TouchableOpacity>
         )}
-        <TouchableOpacity style={styles.iconAction} onPress={onHistory}>
+        <TouchableOpacity
+          style={styles.iconAction}
+          onPress={onHistory}
+          hitSlop={HIT_SLOP}
+          accessibilityRole="button"
+          accessibilityLabel={`Lịch sử thanh toán ${bill.name}`}
+        >
           <AppIcon name="history" size={18} color={c.textSecondary} />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.iconAction} onPress={onTogglePause}>
+        <TouchableOpacity
+          style={styles.iconAction}
+          onPress={onTogglePause}
+          hitSlop={HIT_SLOP}
+          accessibilityRole="button"
+          accessibilityLabel={paused ? `Tiếp tục ${bill.name}` : `Tạm dừng ${bill.name}`}
+        >
           <AppIcon name={paused ? 'play-arrow' : 'pause'} size={18} color={c.textSecondary} />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.iconAction} onPress={onEdit}>
+        <TouchableOpacity
+          style={styles.iconAction}
+          onPress={onEdit}
+          hitSlop={HIT_SLOP}
+          accessibilityRole="button"
+          accessibilityLabel={`Sửa ${bill.name}`}
+        >
           <AppIcon name="edit" size={17} color={c.textSecondary} />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.iconAction} onPress={onDelete}>
+        <TouchableOpacity
+          style={styles.iconAction}
+          onPress={onDelete}
+          hitSlop={HIT_SLOP}
+          accessibilityRole="button"
+          accessibilityLabel={`Xóa ${bill.name}`}
+        >
           <AppIcon name="delete-outline" size={18} color={c.expense} />
         </TouchableOpacity>
       </View>

@@ -52,24 +52,31 @@
 
 \setlength{\parindent}{1cm}
 \setlength{\parskip}{0pt}
-\setlength{\emergencystretch}{2em}
+% 3em cho phép TeX giãn dòng cuối nhiều hơn khi đoạn có định danh mã dài
+% (\code{...}) hoặc từ ghép nối bằng dấu gạch chéo không thể ngắt dòng.
+\setlength{\emergencystretch}{3em}
 \setlist{topsep=4pt,itemsep=2pt,parsep=0pt,leftmargin=1.1cm}
+
+% Màu tiêu đề theo Guideline-report.md: Heading 1 dùng #00B0F0,
+% Heading 2--4 dùng #2F5496.
+\definecolor{HeadingOne}{HTML}{00B0F0}
+\definecolor{HeadingTwo}{HTML}{2F5496}
 
 % Heading 1--4 theo Guideline-report.md.
 \titleformat{\chapter}[hang]
-  {\sffamily\fontsize{14pt}{17pt}\selectfont\bfseries}
+  {\sffamily\fontsize{14pt}{17pt}\selectfont\bfseries\color{HeadingOne}}
   {\MakeUppercase{\chaptername}\ \thechapter:}{0.6em}{\MakeUppercase}
 \titleformat{name=\chapter,numberless}[hang]
-  {\sffamily\fontsize{14pt}{17pt}\selectfont\bfseries}
+  {\sffamily\fontsize{14pt}{17pt}\selectfont\bfseries\color{HeadingOne}}
   {}{0pt}{\MakeUppercase}
 \titleformat{\section}
-  {\sffamily\fontsize{13pt}{16pt}\selectfont\bfseries}
+  {\sffamily\fontsize{13pt}{16pt}\selectfont\bfseries\color{HeadingTwo}}
   {\thesection.}{0.5em}{\MakeUppercase}
 \titleformat{\subsection}
-  {\sffamily\fontsize{13pt}{16pt}\selectfont\bfseries\itshape}
+  {\sffamily\fontsize{13pt}{16pt}\selectfont\bfseries\itshape\color{HeadingTwo}}
   {\thesubsection.}{0.5em}{}
 \titleformat{\subsubsection}
-  {\sffamily\fontsize{13pt}{16pt}\selectfont\itshape}
+  {\sffamily\fontsize{13pt}{16pt}\selectfont\itshape\color{HeadingTwo}}
   {\thesubsubsection.}{0.5em}{}
 \titlespacing*{\chapter}{0pt}{0pt}{18pt}
 \titlespacing*{\section}{0pt}{18pt}{8pt}
@@ -136,9 +143,8 @@
   \end{landscape}
   \clearpage}
 
-% Ưu tiên bộ sơ đồ vector đã hiệu chỉnh trong archive; khi biên dịch trực tiếp
-% tại archive/latex, đường dẫn thứ hai trỏ tới cùng bộ hình cục bộ.
-\graphicspath{{../archive/latex/figures/rendered/}{figures/rendered/}}
+% Bộ sơ đồ vector đã render (pdf/png/svg) nằm trong latex/figures/rendered/.
+\graphicspath{{figures/rendered/}}
 \urlstyle{same}
 
 % Viền trang bìa: hai nét bao quanh toàn trang — nét ngoài đậm, nét trong nhạt.
