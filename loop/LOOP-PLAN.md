@@ -40,16 +40,23 @@ Tone: constructive, calibrated to course level.
   resource/Report.md carried a STALE 51-sentence ablation run (0.561/0.192/897ms) in 6 places;
   LaTeX had the newer authoritative 63-sentence run (0.607/0.204/964ms, verified vs log/*.json).
   Synced all 6 spots. Verified D-02: 0 hardcoded hex in 12 frontend screens (all use tokens).
-- loop4-6: pending. Candidates: L-02 (abstract density — but adding L-01 clause grew it,
-  reassess), ch1/ch2 prose critique, demo runtime bug hunt (needs care re credit),
-  cosmetic diagram palette (low priority per loop2 finding), appendices/references check.
+- loop6: pending (final). Candidates: cosmetic diagram palette (low priority per loop2),
+  ch1/ch2 prose polish, final holistic pass + grade summary.
 
 - loop4: DONE. Report at loop/loop4/report.md. Fixed L-02 (abstract length: VI 290→211
   syllable-tokens ~150 words, EN 243→166 words; synced vi+en+Report.md; both PDFs compile).
   Verified PASS: cover double-border (1.5pt+0.5pt), IEEE refs (18=18), abbreviations (32),
   metadata complete. Fix-list status: L-01/L-02/L-03/L-06/L-07 all resolved. Remaining:
   L-04/L-05 (cosmetic palette on diagrams 03-13; straight-arrow rule already met).
-- loop5-6: pending. Options: demo bug pass (chat.routes.js), or diagram palette batch if credit allows.
+- loop5: DONE. Report at loop/loop5/report.md. Demo verification pass (no code changes):
+  ran pure-function tests — goal planner 12/12, analytics+budget 34/34 pass; code constants
+  (z>=2.5, IQR_MULT 1.5) match ch2 formulas exactly. Security: 131 parameterized $1
+  placeholders, atomic BEGIN/COMMIT/ROLLBACK, global error middleware; the 1 interpolated
+  query (transaction.model.js:226 where.join + :228 SORT_EXPRESSIONS) verified SAFE —
+  clauses hard-coded, sort_by whitelisted via hasOwnProperty on frozen obj, sort_order in
+  [asc,desc]. No SQL injection. Backend genuinely solid.
+- loop6: pending (final). Candidates: cosmetic diagram palette (low priority per loop2),
+  ch1/ch2 prose polish, final holistic pass + grade summary.
 
 ## Credit note
 Subagent fan-out hit "credit limit exceeded" (429) in loop1. Prefer direct main-context
