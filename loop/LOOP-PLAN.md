@@ -30,11 +30,19 @@ Tone: constructive, calibrated to course level.
 ## Status
 - loop1: DONE. Report at loop/loop1/report.md. Fixes applied: L-01 (abstract parser-metric
   clarification, synced vi+en+Report.md, both PDFs compile). L-03 verified NOT a defect
-  (18 tables is correct across migrations 001-008). Deferred to later loops: L-04 (restyle
-  11 remaining diagrams 03-13), L-05 (regen 3 sequence diagrams via seqlayout.py),
-  L-02 (abstract density), L-06/L-07 (vi↔en + Report.md sync audit from 3.2 on).
-- loop2: pending. Start with L-04 diagram restyle (highest-value, lecturer named it explicitly).
-- loop3-6: pending.
+  (18 tables is correct across migrations 001-008).
+- loop2: DONE. Report at loop/loop2/report.md. Reviewed ch3 §3.2 (design). vi↔en verified
+  parallel (46/46 anchors, 12/12 fig refs). L-04 DOWNGRADED to cosmetic: inspected
+  08-text-sequence directly — straight arrows, aligned lifelines, no overlap already met
+  (guideline line 130 satisfied); only color palette differs on 03-13. Not a legibility defect.
+- loop3: DONE. Report at loop/loop3/report.md. Reviewed ch2 algorithms (strong: OLS/z-score/
+  IQR/Pearson w/ citations, guards, worked examples) + ch3 testing. FIXED L-07 concretely:
+  resource/Report.md carried a STALE 51-sentence ablation run (0.561/0.192/897ms) in 6 places;
+  LaTeX had the newer authoritative 63-sentence run (0.607/0.204/964ms, verified vs log/*.json).
+  Synced all 6 spots. Verified D-02: 0 hardcoded hex in 12 frontend screens (all use tokens).
+- loop4-6: pending. Candidates: L-02 (abstract density — but adding L-01 clause grew it,
+  reassess), ch1/ch2 prose critique, demo runtime bug hunt (needs care re credit),
+  cosmetic diagram palette (low priority per loop2 finding), appendices/references check.
 
 ## Credit note
 Subagent fan-out hit "credit limit exceeded" (429) in loop1. Prefer direct main-context
