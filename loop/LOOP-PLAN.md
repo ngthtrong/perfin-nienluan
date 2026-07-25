@@ -268,3 +268,17 @@ Re-read THIS file after compaction. Check status. Resume. Don't re-derive from s
 - PASS: 12 FRs, 10 NFRs, 48 TC ids identical vi/en, no numbering gaps.
 - PASS: TC ids correctly framed as specification-level (not execution claims).
 - Report.md hardcoded refs left as-is (Markdown has no \ref mechanism; all resolve).
+
+## loop15 — frontmatter compliance (abbreviations/TOC/lists)
+- L-20 FIXED: abbreviations list violated Guideline §2.5 both ways — 9 used-but-unlisted
+  acronyms added (FR 43x, PERFIN 18x, CER/WER 10x, PDF, SQL, IEEE, HTML, HTTP) + TC (49x);
+  4 listed-but-never-used removed (ASR, NLP, PII, SRS). 23 -> 29 entries per language.
+- Self-inflicted regression caught: sed spliced 3 status-convention rows (3-col) into the
+  2-col abbreviations table in en/abbreviations.tex. Repaired. LaTeX would NOT have errored.
+- PASS: tocdepth=3 -> 4 displayed levels (§2.3); tables 1-23 + figures 1-13 sequential (§2.4);
+  alphabetical order; vi/en parity 57 labels / 50 refs / 23 captions.
+- Tooling note: no latexmk, no pdftotext, and no main-vi.tex — build via `make vi en` (single
+  main.tex + -jobname). Page counts / .aux / .toc are the reliable evidence.
+- SECURITY (automated commit review): .claude/settings.json untracked in b09c2b6 (.gitignore:42
+  already listed .claude/). Current token in unpushed bfe863c only; 4 older tokens already in
+  PUSHED public history. User chose rotate-only, no history rewrite. All 5 tokens need rotation.
