@@ -21,6 +21,9 @@ xelatex -interaction=nonstopmode -halt-on-error -jobname=main-en \
 
 Chạy ba lượt để mục lục, trích dẫn và tham chiếu ổn định (target `make` đã tự lặp ba lượt).
 
+Lệnh cụ thể cho máy hiện tại (MiKTeX trên Windows, draw.io snap trong WSL) và các
+lỗi thường gặp: xem [TOOLING.md](TOOLING.md).
+
 Không cần `--shell-escape`, Python, `minted`, BibTeX hoặc Biber. Tài liệu tham khảo IEEE được quản lý thủ công trong `chapters/<lang>/references.tex`.
 
 ## Font và quy chuẩn

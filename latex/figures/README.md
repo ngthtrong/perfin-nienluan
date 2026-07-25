@@ -1,8 +1,9 @@
 # Bộ sơ đồ PERFIN
 
-Thư mục `drawio/` chứa 13 tệp nguồn chỉnh sửa được bằng draw.io. Thư mục
-`rendered/` chứa bản xuất PDF, PNG và SVG cùng basename; dự án LaTeX ưu tiên
-dùng PDF để giữ chất lượng vector.
+Thư mục `drawio/` chứa 26 tệp nguồn chỉnh sửa được bằng draw.io: 13 sơ đồ
+kiến trúc/luồng/dữ liệu (`01`--`13`) và 13 sơ đồ ca sử dụng (`14`--`26`). Thư
+mục `rendered/` chứa bản xuất PDF, PNG và SVG cùng basename; dự án LaTeX ưu
+tiên dùng PDF để giữ chất lượng vector.
 
 | Tệp | Nội dung | Mức |
 |---|---|---|
@@ -19,6 +20,19 @@ dùng PDF để giữ chất lượng vector.
 | `11-insight-sequence` | Facts xác định và grounded narration | Tuần tự |
 | `12-goal-flow` | Saving/purchase/debt payoff và what-if | Giải thuật |
 | `13-worker-sequence` | Scheduler, queue, worker và thông báo nội bộ | Tuần tự |
+| `14-usecase-overview` | Ca sử dụng tổng thể FR-01--FR-12 theo tác nhân | Ca sử dụng |
+| `15-usecase-fr01` | Ca sử dụng chi tiết FR-01 (nhập văn bản) | Ca sử dụng |
+| `16-usecase-fr02` | Ca sử dụng chi tiết FR-02 (ảnh và giọng nói) | Ca sử dụng |
+| `17-usecase-fr03` | Ca sử dụng chi tiết FR-03 (clarification/pending) | Ca sử dụng |
+| `18-usecase-fr04` | Ca sử dụng chi tiết FR-04 (phân loại/phản hồi) | Ca sử dụng |
+| `19-usecase-fr05` | Ca sử dụng chi tiết FR-05 (quản lý dữ liệu) | Ca sử dụng |
+| `20-usecase-fr06` | Ca sử dụng chi tiết FR-06 (chuyển ví) | Ca sử dụng |
+| `21-usecase-fr07` | Ca sử dụng chi tiết FR-07 (phân tích) | Ca sử dụng |
+| `22-usecase-fr08` | Ca sử dụng chi tiết FR-08 (insight/persona) | Ca sử dụng |
+| `23-usecase-fr09` | Ca sử dụng chi tiết FR-09 (ngân sách/dự báo) | Ca sử dụng |
+| `24-usecase-fr10` | Ca sử dụng chi tiết FR-10 (mục tiêu/what-if) | Ca sử dụng |
+| `25-usecase-fr11` | Ca sử dụng chi tiết FR-11 (khoản định kỳ/worker) | Ca sử dụng |
+| `26-usecase-fr12` | Ca sử dụng chi tiết FR-12 (xuất dữ liệu/dọn tệp) | Ca sử dụng |
 
 Nguồn sự thật kỹ thuật của ERD là chuỗi migration trong
 `demo/backend/migrations/`, không phải các schema hoặc sơ đồ cũ trong
@@ -31,5 +45,12 @@ Màu dùng xuyên suốt:
 - xanh lá: dữ liệu và giải thuật xác định;
 - tím: LLM, parser hoặc thành phần xác suất;
 - vàng: kho trạng thái, queue, quyết định hoặc hạ tầng;
+- đỏ: nhánh từ chối hoặc rollback;
+- xám: tác nhân/thành phần phụ trợ (ví dụ quản trị viên phát triển);
 - viền nét đứt: dịch vụ nằm ngoài biên tin cậy của hệ thống.
+
+Trong sơ đồ ca sử dụng, liên kết association là đường thẳng không mũi tên;
+`<<include>>` là bước bắt buộc và `<<extend>>` là nhánh tùy chọn/ngoại lệ, cả hai
+vẽ bằng nét đứt mũi tên mở. Mọi liên kết `<<include>>/<<extend>>` toả ra từ một
+điểm chung trên cạnh phải của ca sử dụng chính nên không cắt chéo nhau.
 

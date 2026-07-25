@@ -99,6 +99,10 @@ The \texttt{TC-FRxx-yy} codes below are test-case identifiers at the specificati
   \bottomrule
 \end{longtable}
 
+\widereportfigure{14-usecase-overview.pdf}{PERFIN's overall use case diagram. The User is the primary actor of all twelve functions; External AI services, the Background worker and the Development administrator take part only in the related use cases and sit outside the data trust boundary.}{fig:usecase-overview}
+
+Figure~\ref{fig:usecase-overview} summarizes the twelve functions FR-01--FR-12 from the actor viewpoint. The User initiates every business flow; External AI services only assist extraction and interpretation in the entry, analysis and insight use cases; the Background worker handles the periodic analysis, recurring-bill and export-cleanup use cases; the Development administrator only configures the system. The detailed use cases for each FR are broken out into separate diagrams in the sections below.
+
 \subsubsection{FR-01 --- Enter transactions via natural-language text}
 
 \textbf{Purpose and trigger.} Reduce manual entry while still enforcing the schema. The user sends a chat sentence or calls the analysis endpoint; the sentence may contain one or many transactions.
@@ -114,6 +118,8 @@ The \texttt{TC-FRxx-yy} codes below are test-case identifiers at the specificati
   \item \texttt{TC-FR01-03}: a missing amount creates a clarification, not a pending that could be written wrong.
   \item \texttt{TC-FR01-04}: a future date or an out-of-scope reference does not change balances.
 \end{itemize}
+
+\widereportfigure{15-usecase-fr01.pdf}{Detailed use case for FR-01 --- entering transactions via natural-language text.}{fig:usecase-fr01}
 
 \subsubsection{FR-02 --- Enter transactions via image and voice}
 
@@ -131,6 +137,8 @@ The \texttt{TC-FRxx-yy} codes below are test-case identifiers at the specificati
   \item \texttt{TC-FR02-04}: a wrong-type file or one larger than 10~MB is blocked before the business logic.
 \end{itemize}
 
+\widereportfigure{16-usecase-fr02.pdf}{Detailed use case for FR-02 --- entering transactions via image and voice.}{fig:usecase-fr02}
+
 \subsubsection{FR-03 --- Clarification and pending transactions}
 
 \textbf{Purpose and trigger.} Collect missing fields across multiple turns and prevent writing speculative data. FR-01/FR-02 create state when a field is missing, when there are multiple choices or when there is enough data to preview.
@@ -146,6 +154,8 @@ The \texttt{TC-FRxx-yy} codes below are test-case identifiers at the specificati
   \item \texttt{TC-FR03-03}: a stale ID does not consume a new preview.
   \item \texttt{TC-FR03-04}: a failed edit or expired TTL does not change PostgreSQL.
 \end{itemize}
+
+\widereportfigure{17-usecase-fr03.pdf}{Detailed use case for FR-03 --- clarification and pending transactions.}{fig:usecase-fr03}
 
 \subsubsection{FR-04 --- Category classification and learning from feedback}
 
@@ -163,6 +173,8 @@ The \texttt{TC-FRxx-yy} codes below are test-case identifiers at the specificati
   \item \texttt{TC-FR04-04}: a valid correction serves as an example; a conflicting correction does not force classification.
 \end{itemize}
 
+\widereportfigure{18-usecase-fr04.pdf}{Detailed use case for FR-04 --- category classification and learning from feedback.}{fig:usecase-fr04}
+
 \subsubsection{FR-05 --- Manage transactions, wallets and categories}
 
 \textbf{Purpose and trigger.} Maintain a ledger that can be edited, soft-deleted, restored and queried without corrupting balances. The user performs CRUD on transactions, wallets and categories; filters support date period, type, category, wallet and pagination.
@@ -178,6 +190,8 @@ The \texttt{TC-FRxx-yy} codes below are test-case identifiers at the specificati
   \item \texttt{TC-FR05-03}: an expense larger than the balance is still valid and the wallet may go negative.
   \item \texttt{TC-FR05-04}: soft delete/restore reverses and applies the balance correctly exactly once.
 \end{itemize}
+
+\widereportfigure{19-usecase-fr05.pdf}{Detailed use case for FR-05 --- managing transactions, wallets and categories.}{fig:usecase-fr05}
 
 \subsubsection{FR-06 --- Wallet transfers and special cash flows}
 
@@ -195,6 +209,8 @@ The \texttt{TC-FRxx-yy} codes below are test-case identifiers at the specificati
   \item \texttt{TC-FR06-04}: an error between debit, credit and insert rolls back all three effects.
 \end{itemize}
 
+\widereportfigure{20-usecase-fr06.pdf}{Detailed use case for FR-06 --- wallet transfers and special cash flows.}{fig:usecase-fr06}
+
 \subsubsection{FR-07 --- Financial data analysis}
 
 \textbf{Purpose and trigger.} Turn transaction history into quantitative facts about trends, anomalies, cash-depletion risk, recurring spending and category relationships. The flow runs when the user opens a report/insight or a worker scans periodically.
@@ -211,6 +227,8 @@ The \texttt{TC-FRxx-yy} codes below are test-case identifiers at the specificati
   \item \texttt{TC-FR07-04}: recurring obeys the count, amount and cadence; \texttt{TC-FR07-05}: only pairs with $r\geq0{,}6$ are returned, negative pairs are not reported.
 \end{itemize}
 
+\widereportfigure{21-usecase-fr07.pdf}{Detailed use case for FR-07 --- financial data analysis.}{fig:usecase-fr07}
+
 \subsubsection{FR-08 --- Grounded insight and persona}
 
 \textbf{Purpose and trigger.} Interpret FR-07 in understandable language without delegating computation to the LLM. The flow receives facts, the data period, \texttt{degraded\_components} and the persona; the raw-facts endpoint must be usable independently of the narrator.
@@ -225,6 +243,8 @@ The \texttt{TC-FRxx-yy} codes below are test-case identifiers at the specificati
   \item \texttt{TC-FR08-02}: a provider error uses a real fallback, keeps the facts and inserts no sample data.
   \item \texttt{TC-FR08-03} (design target): the checker detects numbers/units not supported by the facts.
 \end{itemize}
+
+\widereportfigure{22-usecase-fr08.pdf}{Detailed use case for FR-08 --- grounded insight and persona.}{fig:usecase-fr08}
 
 \subsubsection{FR-09 --- Budget, recommendation and forecast}
 
@@ -242,6 +262,8 @@ The \texttt{TC-FRxx-yy} codes below are test-case identifiers at the specificati
   \item \texttt{TC-FR09-04}: a missing confirmation is blocked; a wrong item rolls back the batch.
 \end{itemize}
 
+\widereportfigure{23-usecase-fr09.pdf}{Detailed use case for FR-09 --- budget, recommendation and forecast.}{fig:usecase-fr09}
+
 \subsubsection{FR-10 --- Financial goals and what-if simulation}
 
 \textbf{Purpose and trigger.} Compute contribution, completion time and scenarios for saving, purchase or debt goals using deterministic functions. Input includes goal type, positive target, non-negative current/contribution, a non-past date and an annual interest rate for debt.
@@ -257,6 +279,8 @@ The \texttt{TC-FRxx-yy} codes below are test-case identifiers at the specificati
   \item \texttt{TC-FR10-03}: the preview creates no row; an expired token/different payload is blocked.
   \item \texttt{TC-FR10-04}: what-if does not change the saved goal.
 \end{itemize}
+
+\widereportfigure{24-usecase-fr10.pdf}{Detailed use case for FR-10 --- financial goals and what-if simulation.}{fig:usecase-fr10}
 
 \subsubsection{FR-11 --- Recurring bills and proactive tasks}
 
@@ -274,6 +298,8 @@ The \texttt{TC-FRxx-yy} codes below are test-case identifiers at the specificati
   \item \texttt{TC-FR11-04}: rerunning the same event key does not increase the message/file a second time.
 \end{itemize}
 
+\widereportfigure{25-usecase-fr11.pdf}{Detailed use case for FR-11 --- recurring bills and proactive tasks.}{fig:usecase-fr11}
+
 \subsubsection{FR-12 --- Data export, file history and cleanup}
 
 \textbf{Purpose and trigger.} Let the user retrieve data by filter, track created files and clean up expired files. Only non-soft-deleted transactions belonging to the profile and matching the format/date-range/filter are exported.
@@ -289,6 +315,8 @@ The \texttt{TC-FRxx-yy} codes below are test-case identifiers at the specificati
   \item \texttt{TC-FR12-03}: a file past TTL is cleaned up and the history reports it as unavailable.
   \item \texttt{TC-FR12-04}: only announce backup/restore after tests of integrity, checksum, rollback and table reconciliation.
 \end{itemize}
+
+\widereportfigure{26-usecase-fr12.pdf}{Detailed use case for FR-12 --- data export, file history and cleanup.}{fig:usecase-fr12}
 
 \subsection{Nonfunctional Requirements}
 

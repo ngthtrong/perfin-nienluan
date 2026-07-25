@@ -127,4 +127,4 @@ Explain how you ensured the project works as intended.
 
 1. Đây Niên luận cơ sở ngành, các em sẽ tập trung vào dữ liệu, giải thuật (khác với Niên luận chuyên ngành: phát triển một ứng dụng web/mobile/desktop với đầy đủ chức năng cho nhiều nhóm người dùng).
 2. Việc lựa chọn sử dụng các công nghệ, mô hình, công thức phải có sự lý luận hợp lý cho lý do lựa chọn và tại sao phù hợp với bài toán đang giải quyế
-3. Sơ đồ phải sử dụng mũi tên liên kết dạng đường thẳng chứ không phải đường cong như hiện tại và hạn chế việc các mũi tên liên kết chòng chéo lên nhau, rõ dễ hình
+3. Sơ đồ phải sử dụng mũi tên liên kết dạng đường thẳng chứ không phải đường cong như hiện tại và hạn chế việc các mũi tên liên kết chòng chéo lên nhau, rõ dễ nhìn

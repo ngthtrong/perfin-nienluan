@@ -99,6 +99,10 @@ Các mã \texttt{TC-FRxx-yy} dưới đây là định danh ca kiểm thử ở 
   \bottomrule
 \end{longtable}
 
+\widereportfigure{14-usecase-overview.pdf}{Sơ đồ ca sử dụng tổng thể của PERFIN. Người dùng là tác nhân chính của toàn bộ mười hai chức năng; Dịch vụ AI ngoài, Worker nền và Quản trị viên phát triển chỉ tham gia các ca liên quan và nằm ngoài biên tin cậy dữ liệu.}{fig:usecase-overview}
+
+Hình~\ref{fig:usecase-overview} tổng hợp mười hai chức năng FR-01--FR-12 dưới góc nhìn tác nhân. Người dùng khởi tạo mọi luồng nghiệp vụ; Dịch vụ AI ngoài chỉ hỗ trợ trích xuất và diễn giải ở các ca nhập liệu, phân tích và insight; Worker nền phụ trách các ca phân tích định kỳ, khoản định kỳ và dọn export; Quản trị viên phát triển chỉ cấu hình hệ thống. Các ca sử dụng chi tiết của từng FR được tách thành sơ đồ riêng ở các mục dưới đây.
+
 \subsubsection{FR-01 --- Nhập giao dịch bằng văn bản tự nhiên}
 
 \textbf{Mục đích và kích hoạt.} Giảm nhập tay nhưng vẫn bảo đảm schema. Người dùng gửi một câu chat hoặc gọi endpoint phân tích; câu có thể chứa một hay nhiều giao dịch.
@@ -115,6 +119,8 @@ Các mã \texttt{TC-FRxx-yy} dưới đây là định danh ca kiểm thử ở 
   \item \texttt{TC-FR01-04}: ngày tương lai hoặc tham chiếu ngoài phạm vi không đổi số dư.
 \end{itemize}
 
+\widereportfigure{15-usecase-fr01.pdf}{Ca sử dụng chi tiết FR-01 --- nhập giao dịch bằng văn bản tự nhiên.}{fig:usecase-fr01}
+
 \subsubsection{FR-02 --- Nhập giao dịch bằng ảnh và giọng nói}
 
 \textbf{Mục đích và kích hoạt.} Chuyển ảnh hóa đơn hoặc âm thanh tiếng Việt thành văn bản có thể kiểm tra rồi tái sử dụng FR-01. Tệp phải thuộc loại backend hỗ trợ và không quá 10~MB.
@@ -128,8 +134,10 @@ Các mã \texttt{TC-FRxx-yy} dưới đây là định danh ca kiểm thử ở 
   \item \texttt{TC-FR02-01}: ảnh hợp lệ trả raw OCR và provider, không tuyên bố tổng dòng hàng đã khớp.
   \item \texttt{TC-FR02-02}: transcript được hiển thị, sửa/xác nhận rồi mới vào parser.
   \item \texttt{TC-FR02-03}: provider lỗi không tạo mock hoặc pending.
-  \item \texttt{TC-FR02-04}: file sai loại hoặc lớn hơn 10~MB bị chặn trước nghiệp vụ.
+  \item \texttt{TC-FR02-04}: file sai loại hoособ lớn hơn 10~MB bị chặn trước nghiệp vụ.
 \end{itemize}
+
+\widereportfigure{16-usecase-fr02.pdf}{Ca sử dụng chi tiết FR-02 --- nhập giao dịch bằng ảnh và giọng nói.}{fig:usecase-fr02}
 
 \subsubsection{FR-03 --- Clarification và giao dịch chờ xác nhận}
 
@@ -147,6 +155,8 @@ Các mã \texttt{TC-FRxx-yy} dưới đây là định danh ca kiểm thử ở 
   \item \texttt{TC-FR03-04}: sửa sai hoặc hết TTL không đổi PostgreSQL.
 \end{itemize}
 
+\widereportfigure{17-usecase-fr03.pdf}{Ca sử dụng chi tiết FR-03 --- clarification và giao dịch chờ xác nhận.}{fig:usecase-fr03}
+
 \subsubsection{FR-04 --- Phân loại danh mục và học từ phản hồi}
 
 \textbf{Mục đích và kích hoạt.} Chọn danh mục có thể giải thích, thích nghi với sửa sai cá nhân nhưng không tự học từ tín hiệu không chắc chắn. Matcher nhận mô tả, loại thu/chi, danh mục/alias và correction thuộc cùng hồ sơ.
@@ -162,6 +172,8 @@ Các mã \texttt{TC-FRxx-yy} dưới đây là định danh ca kiểm thử ở 
   \item \texttt{TC-FR04-03}: input ngắn dưới 0,90 không được tự gán.
   \item \texttt{TC-FR04-04}: correction hợp lệ làm ví dụ; correction xung đột không ép phân loại.
 \end{itemize}
+
+\widereportfigure{18-usecase-fr04.pdf}{Ca sử dụng chi tiết FR-04 --- phân loại danh mục và học từ phản hồi.}{fig:usecase-fr04}
 
 \subsubsection{FR-05 --- Quản lý giao dịch, ví và danh mục}
 
@@ -179,6 +191,8 @@ Các mã \texttt{TC-FRxx-yy} dưới đây là định danh ca kiểm thử ở 
   \item \texttt{TC-FR05-04}: soft delete/restore đảo và áp số dư đúng một lần.
 \end{itemize}
 
+\widereportfigure{19-usecase-fr05.pdf}{Ca sử dụng chi tiết FR-05 --- quản lý giao dịch, ví và danh mục.}{fig:usecase-fr05}
+
 \subsubsection{FR-06 --- Chuyển ví và dòng tiền đặc biệt}
 
 \textbf{Mục đích và kích hoạt.} Ghi transfer và dòng tiền đầu tư mà không tạo debit/credit dở dang. Amount phải dương, ngày không tương lai; transfer cần hai ví khác nhau, investment flow cần đầu ví phù hợp.
@@ -194,6 +208,8 @@ Các mã \texttt{TC-FRxx-yy} dưới đây là định danh ca kiểm thử ở 
   \item \texttt{TC-FR06-03}: hai ví trùng/ngoài hồ sơ bị từ chối trước commit.
   \item \texttt{TC-FR06-04}: lỗi giữa debit, credit và insert rollback cả ba hiệu ứng.
 \end{itemize}
+
+\widereportfigure{20-usecase-fr06.pdf}{Ca sử dụng chi tiết FR-06 --- chuyển ví và dòng tiền đặc biệt.}{fig:usecase-fr06}
 
 \subsubsection{FR-07 --- Phân tích dữ liệu tài chính}
 
@@ -211,6 +227,8 @@ Các mã \texttt{TC-FRxx-yy} dưới đây là định danh ca kiểm thử ở 
   \item \texttt{TC-FR07-04}: recurring tuân số lần, amount và cadence; \texttt{TC-FR07-05}: chỉ cặp $r\geq0{,}6$ được trả, cặp âm không được công bố.
 \end{itemize}
 
+\widereportfigure{21-usecase-fr07.pdf}{Ca sử dụng chi tiết FR-07 --- phân tích dữ liệu tài chính.}{fig:usecase-fr07}
+
 \subsubsection{FR-08 --- Insight có căn cứ và persona}
 
 \textbf{Mục đích và kích hoạt.} Diễn giải FR-07 bằng ngôn ngữ dễ hiểu mà không giao phép tính cho LLM. Luồng nhận facts, kỳ dữ liệu, \texttt{degraded\_components} và persona; endpoint facts thô phải dùng độc lập với narrator.
@@ -225,6 +243,8 @@ Các mã \texttt{TC-FRxx-yy} dưới đây là định danh ca kiểm thử ở 
   \item \texttt{TC-FR08-02}: provider lỗi dùng fallback thật, giữ facts và không chèn dữ liệu mẫu.
   \item \texttt{TC-FR08-03} (thiết kế đích): checker phát hiện số/đơn vị không được facts hỗ trợ.
 \end{itemize}
+
+\widereportfigure{22-usecase-fr08.pdf}{Ca sử dụng chi tiết FR-08 --- insight có căn cứ và persona.}{fig:usecase-fr08}
 
 \subsubsection{FR-09 --- Ngân sách, đề xuất và dự báo}
 
@@ -242,6 +262,8 @@ Các mã \texttt{TC-FRxx-yy} dưới đây là định danh ca kiểm thử ở 
   \item \texttt{TC-FR09-04}: thiếu xác nhận bị chặn; item sai rollback batch.
 \end{itemize}
 
+\widereportfigure{23-usecase-fr09.pdf}{Ca sử dụng chi tiết FR-09 --- ngân sách, đề xuất và dự báo.}{fig:usecase-fr09}
+
 \subsubsection{FR-10 --- Mục tiêu tài chính và mô phỏng what-if}
 
 \textbf{Mục đích và kích hoạt.} Tính mức góp, thời gian hoàn thành và kịch bản cho mục tiêu tiết kiệm, mua sắm hoặc trả nợ bằng hàm xác định. Đầu vào có goal type, target dương, current/contribution không âm, ngày không quá khứ và lãi suất năm cho nợ.
@@ -257,6 +279,8 @@ Các mã \texttt{TC-FRxx-yy} dưới đây là định danh ca kiểm thử ở 
   \item \texttt{TC-FR10-03}: preview không tạo row; token hết hạn/payload khác bị chặn.
   \item \texttt{TC-FR10-04}: what-if không thay goal đã lưu.
 \end{itemize}
+
+\widereportfigure{24-usecase-fr10.pdf}{Ca sử dụng chi tiết FR-10 --- mục tiêu tài chính và mô phỏng what-if.}{fig:usecase-fr10}
 
 \subsubsection{FR-11 --- Khoản định kỳ và tác vụ chủ động}
 
@@ -274,6 +298,8 @@ Các mã \texttt{TC-FRxx-yy} dưới đây là định danh ca kiểm thử ở 
   \item \texttt{TC-FR11-04}: chạy lặp event key không tăng message/file lần hai.
 \end{itemize}
 
+\widereportfigure{25-usecase-fr11.pdf}{Ca sử dụng chi tiết FR-11 --- khoản định kỳ và tác vụ chủ động.}{fig:usecase-fr11}
+
 \subsubsection{FR-12 --- Xuất dữ liệu, lịch sử tệp và dọn dẹp}
 
 \textbf{Mục đích và kích hoạt.} Cho người dùng lấy dữ liệu theo bộ lọc, theo dõi tệp đã tạo và dọn tệp hết hạn. Chỉ giao dịch chưa soft delete, thuộc hồ sơ và thỏa format/khoảng ngày/filter được xuất.
@@ -289,6 +315,8 @@ Các mã \texttt{TC-FRxx-yy} dưới đây là định danh ca kiểm thử ở 
   \item \texttt{TC-FR12-03}: file quá TTL bị dọn và history báo không khả dụng.
   \item \texttt{TC-FR12-04}: chỉ công bố backup/restore sau test toàn vẹn, checksum, rollback và đối soát bảng.
 \end{itemize}
+
+\widereportfigure{26-usecase-fr12.pdf}{Ca sử dụng chi tiết FR-12 --- xuất dữ liệu, lịch sử tệp và dọn dẹp.}{fig:usecase-fr12}
 
 \subsection{Yêu cầu phi chức năng}
 
