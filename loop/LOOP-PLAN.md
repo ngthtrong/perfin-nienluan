@@ -113,6 +113,34 @@ Tone: constructive, calibrated to course level.
   Verification: both PDFs exit 0, 0 overfull hboxes, 0 undefined refs, 13 figures each;
   vi/en anchor counts identical (20/36/33/26/29/17); backend 178/178.
 
+- loop9: DONE. Report at loop/loop9/report.md. Area newly checked: perceived performance
+  (loading/skeleton) across all 12 screens. First loop to run the demo LIVE (PostgreSQL +
+  backend :3000 + Expo web :8081) instead of only reading code.
+  FIXED D-06: RecurringScreen was the only screen using a bare centered ActivityIndicator
+  for full-screen load (8 others use content-shaped skeletons) — caused a layout jump and
+  broke system-wide consistency. Replaced with a skeleton matching the real layout.
+  FIXED D-07: ALL skeletons were invisible to screen readers — grep for
+  accessibilityElementsHidden / importantForAccessibility / role=progressbar returned ZERO
+  app-wide. Added those attrs to each Skeleton (decorative, hidden) plus a new
+  <SkeletonGroup> wrapper announcing exactly one busy state with a Vietnamese label; wired
+  into all 9 loading blocks. Verified attrs reach the DOM: bundle contains role="progressbar"
+  and aria-busy (RN-web maps them). This completes loop7's a11y work (loop7 did icon-button
+  labels + hit targets, not loading states) — NOT a reversal of loop7.
+  Verified PASS (don't recheck): Skeleton.js is well-built (useNativeDriver, loop.stop on
+  unmount, token color — no hardcoded hex). The 16 remaining ActivityIndicator uses are all
+  small INLINE spinners (in-button/in-row/in-modal) — correct pattern, do NOT convert to
+  skeletons. Chat/Settings/More correctly have no full-screen skeleton. Backend readiness
+  live-verified: database ok, redis unavailable → in_memory_fallback, exactly as NFR-05 and
+  ch4 limit #7 already state (report is honest here).
+  No LaTeX sync needed: report makes no claim about loading states or a11y, and the NFR
+  table deliberately has no UX entry (consistent with ch1 scope line 77).
+  SMOKE TEST TRAP (cost 2 failed runs — remember): `npm run ui:smoke` needs backend + Expo
+  running AND a pre-warmed Metro bundle. waitFor defaults to 20s
+  (scripts/mobile-web-smoke.js:117) which a cold Metro compile exceeds → misleading
+  "render timeout"/"page load timeout" that is NOT a code defect. Pre-warm with
+  `curl 'localhost:8081/index.bundle?platform=web&dev=true&hot=false'` (~11s) first.
+  Verification: ui:smoke 4/4 PASS exit 0; backend 178/178.
+
 ## Credit note
 Subagent fan-out hit "credit limit exceeded" (429) in loop1. Prefer direct main-context
 work; spawn agents sparingly and with tight, findings-only prompts.

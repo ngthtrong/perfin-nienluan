@@ -8,7 +8,7 @@ import { useTheme } from '../theme/ThemeContext';
 import { HIT_SLOP } from '../theme/tokens';
 import { showAlert } from '../utils/alerts';
 import AppIcon from '../components/AppIcon';
-import { EmptyState, ErrorState, Skeleton } from '../components/ui';
+import { EmptyState, ErrorState, Skeleton, SkeletonGroup } from '../components/ui';
 
 function ExportHistoryItem({ item, onDelete, onDownload, styles, c }) {
   const typeMeta = {
@@ -203,11 +203,11 @@ export default function ExportScreen() {
 
   if (loading) {
     return (
-      <View style={styles.loadingScreen}>
+      <SkeletonGroup label="Đang tải trang xuất dữ liệu" style={styles.loadingScreen}>
         <Skeleton height={128} radius={20} style={{ marginBottom: 16 }} />
         <Skeleton height={112} radius={18} style={{ marginBottom: 16 }} />
         <Skeleton height={72} radius={16} />
-      </View>
+      </SkeletonGroup>
     );
   }
 

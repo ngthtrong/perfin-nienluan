@@ -4,13 +4,15 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { api } from '../services/api.service';
 import { currentPeriod, formatVND } from '../utils/formatters';
 import { useTheme } from '../theme/ThemeContext';
-import { StatCard, SectionHeader, EmptyState, ErrorState, Skeleton, AppHeader } from '../components/ui';
+import {
+  StatCard, SectionHeader, EmptyState, ErrorState, Skeleton, SkeletonGroup, AppHeader,
+} from '../components/ui';
 import TransactionCard from '../components/TransactionCard';
 import AppIcon from '../components/AppIcon';
 
 function DashboardSkeleton({ styles }) {
   return (
-    <View style={styles.skeletonContent}>
+    <SkeletonGroup label="Đang tải tổng quan" style={styles.skeletonContent}>
       <View style={[styles.balanceCard, { marginBottom: 14 }]}>
         <Skeleton height={12} width="35%" />
         <Skeleton height={40} style={{ marginTop: 12 }} />
@@ -22,7 +24,7 @@ function DashboardSkeleton({ styles }) {
       {[1, 2, 3].map((i) => (
         <Skeleton key={i} height={66} radius={14} style={{ marginBottom: 8 }} />
       ))}
-    </View>
+    </SkeletonGroup>
   );
 }
 

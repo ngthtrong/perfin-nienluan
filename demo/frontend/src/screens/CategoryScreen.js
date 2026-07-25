@@ -8,7 +8,9 @@ import { useTheme } from '../theme/ThemeContext';
 import { showAlert } from '../utils/alerts';
 import AppIcon from '../components/AppIcon';
 import CategoryIcon from '../components/CategoryIcon';
-import { Button, Chip, EmptyState, ErrorState, Screen, Skeleton } from '../components/ui';
+import {
+  Button, Chip, EmptyState, ErrorState, Screen, Skeleton, SkeletonGroup,
+} from '../components/ui';
 
 const TYPE_OPTIONS = [
   { key: null, label: 'Tất cả' },
@@ -169,7 +171,9 @@ export default function CategoryScreen({ navigation }) {
   if (loading) {
     return (
       <Screen scroll>
-        {[1, 2, 3, 4].map((item) => <Skeleton key={item} height={82} radius={14} style={{ marginBottom: 10 }} />)}
+        <SkeletonGroup label="Đang tải danh mục">
+          {[1, 2, 3, 4].map((item) => <Skeleton key={item} height={82} radius={14} style={{ marginBottom: 10 }} />)}
+        </SkeletonGroup>
       </Screen>
     );
   }

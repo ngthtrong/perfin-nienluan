@@ -10,7 +10,9 @@ import { formatMoneyValue, formatVND, parseMoneyInput, toDateInputValue } from '
 import { showAlert } from '../utils/alerts';
 import TransactionCard from '../components/TransactionCard';
 import AppIcon from '../components/AppIcon';
-import { Button, Chip, DatePickerField, EmptyState, ErrorState, MoneyInput, Skeleton } from '../components/ui';
+import {
+  Button, Chip, DatePickerField, EmptyState, ErrorState, MoneyInput, Skeleton, SkeletonGroup,
+} from '../components/ui';
 
 const TYPE_FILTERS = [
   { key: null, label: 'Tất cả', icon: 'apps' },
@@ -779,9 +781,9 @@ export default function TransactionScreen({ route, navigation }) {
 
   if (loading) {
     return (
-      <View style={[styles.container, { padding: 16, gap: 8 }]}>
+      <SkeletonGroup label="Đang tải giao dịch" style={[styles.container, { padding: 16, gap: 8 }]}>
         {[1, 2, 3, 4].map((i) => <Skeleton key={i} height={66} radius={14} />)}
-      </View>
+      </SkeletonGroup>
     );
   }
 

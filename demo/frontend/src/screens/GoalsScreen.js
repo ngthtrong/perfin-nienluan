@@ -11,7 +11,7 @@ import { showAlert } from '../utils/alerts';
 import AppIcon from '../components/AppIcon';
 import {
   Button, Card, Chip, DatePickerField, EmptyState, ErrorState, MoneyInput, ProgressBar, Screen,
-  SegmentedControl, Skeleton,
+  SegmentedControl, Skeleton, SkeletonGroup,
 } from '../components/ui';
 
 const GOAL_TYPES = [
@@ -284,9 +284,11 @@ export default function GoalsScreen() {
   if (loading) {
     return (
       <Screen scroll edges={[]}>
-        <Skeleton height={96} radius={18} style={{ marginBottom: 12 }} />
-        <Skeleton height={180} radius={18} style={{ marginBottom: 12 }} />
-        <Skeleton height={180} radius={18} />
+        <SkeletonGroup label="Đang tải mục tiêu">
+          <Skeleton height={96} radius={18} style={{ marginBottom: 12 }} />
+          <Skeleton height={180} radius={18} style={{ marginBottom: 12 }} />
+          <Skeleton height={180} radius={18} />
+        </SkeletonGroup>
       </Screen>
     );
   }

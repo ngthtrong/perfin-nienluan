@@ -11,7 +11,9 @@ import { showAlert } from '../utils/alerts';
 import BudgetProgressBar from '../components/BudgetProgressBar';
 import AppIcon from '../components/AppIcon';
 import CategoryIcon from '../components/CategoryIcon';
-import { AppHeader, Button, Chip, EmptyState, ErrorState, MoneyInput, Skeleton } from '../components/ui';
+import {
+  AppHeader, Button, Chip, EmptyState, ErrorState, MoneyInput, Skeleton, SkeletonGroup,
+} from '../components/ui';
 
 const STATUS_FILTERS = [
   { value: 'all', label: 'Tất cả' },
@@ -238,9 +240,9 @@ export default function BudgetScreen() {
     return (
       <SafeAreaView style={styles.safe} edges={['top']}>
         <AppHeader subtitle="Ngân sách" showAIStatus={false} />
-        <View style={styles.loadingContent}>
+        <SkeletonGroup label="Đang tải ngân sách" style={styles.loadingContent}>
           {[1, 2, 3].map((i) => <Skeleton key={i} height={96} radius={18} />)}
-        </View>
+        </SkeletonGroup>
       </SafeAreaView>
     );
   }

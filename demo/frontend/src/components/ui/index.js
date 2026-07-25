@@ -8,7 +8,7 @@ export { default as StatCard } from './StatCard';
 export { default as ProgressBar } from './ProgressBar';
 export { default as EmptyState } from './EmptyState';
 export { default as ErrorState } from './ErrorState';
-export { default as Skeleton } from './Skeleton';
+export { default as Skeleton, SkeletonGroup } from './Skeleton';
 export { default as ListRow } from './ListRow';
 export { default as AppHeader } from './AppHeader';
 export { default as MoneyInput } from './MoneyInput';

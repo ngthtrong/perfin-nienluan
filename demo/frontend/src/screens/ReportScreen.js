@@ -6,7 +6,9 @@ import { CATEGORY_COLORS, HIT_SLOP } from '../theme/tokens';
 import { useTheme } from '../theme/ThemeContext';
 import { currentPeriod, formatDate, formatVND } from '../utils/formatters';
 import AppIcon from '../components/AppIcon';
-import { AppHeader, StatCard, ProgressBar, ErrorState, Skeleton } from '../components/ui';
+import {
+  AppHeader, StatCard, ProgressBar, ErrorState, Skeleton, SkeletonGroup,
+} from '../components/ui';
 
 const MONTHS_VI = ['T1','T2','T3','T4','T5','T6','T7','T8','T9','T10','T11','T12'];
 
@@ -120,10 +122,10 @@ export default function ReportScreen() {
         </View>
 
         {loading ? (
-          <View style={styles.statsRow}>
+          <SkeletonGroup label="Đang tải báo cáo tháng" style={styles.statsRow}>
             <Skeleton height={96} radius={18} style={{ flex: 1 }} />
             <Skeleton height={96} radius={18} style={{ flex: 1 }} />
-          </View>
+          </SkeletonGroup>
         ) : (
           <View style={styles.statsRow}>
             <StatCard label="Thu nhập" value={formatVND(summary.total_income)} icon="trending-up" tone="income" />

@@ -11,7 +11,7 @@ import { showAlert } from '../utils/alerts';
 import AppIcon from '../components/AppIcon';
 import CategoryIcon from '../components/CategoryIcon';
 import {
-  Button, Chip, EmptyState, ErrorState, MoneyInput,
+  Button, Chip, EmptyState, ErrorState, MoneyInput, Skeleton, SkeletonGroup,
 } from '../components/ui';
 
 const FREQ_OPTIONS = [
@@ -177,7 +177,18 @@ export default function RecurringScreen() {
   }
 
   if (loading) {
-    return <View style={styles.centered}><ActivityIndicator color={c.brand} size="large" /></View>;
+    // Skeleton dạng khối theo bố cục thật (tổng quan + danh sách bill) để
+    // tránh nhảy layout khi dữ liệu về, đồng nhất với các màn hình còn lại.
+    return (
+      <View style={styles.container}>
+        <SkeletonGroup label="Đang tải khoản định kỳ" style={styles.content}>
+          <Skeleton height={104} radius={18} style={{ marginBottom: 12 }} />
+          {[1, 2, 3].map((i) => (
+            <Skeleton key={i} height={88} radius={14} style={{ marginBottom: 10 }} />
+          ))}
+        </SkeletonGroup>
+      </View>
+    );
   }
 
   if (error) {

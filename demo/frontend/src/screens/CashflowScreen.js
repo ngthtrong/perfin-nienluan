@@ -8,7 +8,9 @@ import { useTheme } from '../theme/ThemeContext';
 import { formatMoneyValue, formatVND, parseMoneyInput } from '../utils/formatters';
 import { showAlert } from '../utils/alerts';
 import AppIcon from '../components/AppIcon';
-import { Button, EmptyState, ErrorState, MoneyInput, Skeleton } from '../components/ui';
+import {
+  Button, EmptyState, ErrorState, MoneyInput, Skeleton, SkeletonGroup,
+} from '../components/ui';
 
 const PERIODS = [
   { key: 'month', label: 'Tháng này' },
@@ -278,11 +280,11 @@ export default function CashflowScreen() {
 
   if (loading) {
     return (
-      <View style={styles.loadingScreen}>
+      <SkeletonGroup label="Đang tải dòng tiền" style={styles.loadingScreen}>
         <Skeleton height={160} radius={24} style={{ marginBottom: 12 }} />
         <Skeleton height={180} radius={18} style={{ marginBottom: 12 }} />
         <Skeleton height={64} radius={16} />
-      </View>
+      </SkeletonGroup>
     );
   }
 
