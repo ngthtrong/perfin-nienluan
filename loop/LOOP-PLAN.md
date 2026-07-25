@@ -294,3 +294,4 @@ Re-read THIS file after compaction. Check status. Resume. Don't re-derive from s
 - Kiểm chứng: bundle 200 (0 transform error), UI smoke 4/4, backend 182/182,
   ảnh chụp Dashboard xác nhận thẻ brand đúng.
 - Phương pháp: `node --check` cho dương tính giả trên JSX — không dùng lại.
+- loop17 — final holistic pass: all gates green (182/182, 31/31, 4/4, make exit 0); 13 defects over loops 8-16; recommend stopping automated loops, remaining work needs real measurement (OCR/STT ground truth, numeric checker, live Redis, p95/UAT).
