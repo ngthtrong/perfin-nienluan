@@ -99,7 +99,7 @@ The \texttt{TC-FRxx-yy} codes below are test-case identifiers at the specificati
   \bottomrule
 \end{longtable}
 
-\widereportfigure{14-usecase-overview.pdf}{PERFIN's overall use case diagram. The User is the primary actor of all twelve functions; External AI services, the Background worker and the Development administrator take part only in the related use cases and sit outside the data trust boundary.}{fig:usecase-overview}
+\widereportfigure{14-usecase-overview.pdf}{PERFIN's overall use case diagram. The User is the primary actor of all twelve functions; External AI services and the Background worker take part only in the related use cases and sit outside the data trust boundary.}{fig:usecase-overview}
 
 Figure~\ref{fig:usecase-overview} summarizes the twelve functions FR-01--FR-12 from the actor viewpoint. The User initiates every business flow; External AI services only assist extraction and interpretation in the entry, analysis and insight use cases; the Background worker handles the periodic analysis, recurring-bill and export-cleanup use cases; the Development administrator only configures the system. The detailed use cases for each FR are broken out into separate diagrams in the sections below.
 
@@ -430,13 +430,13 @@ The ERD in Figure~\ref{fig:physical-erd} has 18 physical tables: \code{users}, \
 
 \subsubsection{LLM boundary in the architecture}
 
-\reportfigure[0.88\linewidth]{06-llm-boundary.pdf}{The LLM's responsibility boundary: data and facts are created in the deterministic core; the LLM only performs semantic conversion and interpretation.}{fig:llm-boundary}
+\widereportfigure{06-llm-boundary.pdf}{The LLM's responsibility boundary: data and facts are created in the deterministic core; the LLM only performs semantic conversion and interpretation.}{fig:llm-boundary}
 
 Figure~\ref{fig:llm-boundary} is the most important diagram for explaining the LLM's role. Natural input is turned into a typed command; the service validates and creates a preview. For an analytical question, SQL and algorithms create facts before the narrator receives the data. The LLM has no direct connection to PostgreSQL and does not execute tools itself. The LLM's benefit is evaluated by entity accuracy, clarification rate, saved actions and interpretation quality, not by replacing formulas.
 
 \subsubsection{Conversation state machine}
 
-\reportfigure[0.86\linewidth]{07-conversation-state.pdf}{The conversation and pending-transaction state machine.}{fig:conversation-state}
+\widereportfigure{07-conversation-state.pdf}{The conversation and pending-transaction state machine.}{fig:conversation-state}
 
 The main states in Figure~\ref{fig:conversation-state} are idle, parse, collecting, preview, confirmed, cancelled and expired; candidate choices are held in collecting. Redis keeps the intent, pending fields, collected data and candidates within a limited TTL. The data-writing branch must go through preview then confirmed. The last three states end the current session; a new request creates another idle session. The design target uses an atomic claim operation on confirmation so two simultaneous requests do not both create a transaction.
 
@@ -448,13 +448,13 @@ The sequence in Figure~\ref{fig:text-sequence} consists of receiving text, fetch
 
 \subsubsection{Multimodal input}
 
-\reportfigure[0.84\linewidth]{09-multimodal-flow.pdf}{The multimodal input processing flow. Voice and image converge into the shared text pipeline after the confirmation step.}{fig:multimodal-flow}
+\widereportfigure{09-multimodal-flow.pdf}{The multimodal input processing flow. Voice and image converge into the shared text pipeline after the confirmation step.}{fig:multimodal-flow}
 
 Voice goes through STT and a transcript-confirmation step. Image goes through preprocessing/OCR and then allows choosing the invoice total or individual line items. The two branches converge at the text pipeline. A provider error must be represented as an error or a request for manual entry; no fake raw text is used. The report currently has no media ground truth, so Figure~\ref{fig:multimodal-flow} describes the \textbf{design target}, not evidence of OCR/STT accuracy.
 
 \subsubsection{Classification and feedback loop}
 
-\reportfigure[0.84\linewidth]{10-feedback-flow.pdf}{The classification feedback and personalization flow using correction retrieval, not fine-tuning.}{fig:feedback-flow}
+\widereportfigure{10-feedback-flow.pdf}{The classification feedback and personalization flow using correction retrieval, not fine-tuning.}{fig:feedback-flow}
 
 As shown in Figure~\ref{fig:feedback-flow}, when the user edits a category, the system stores the AI-result--correct-result pair. Next time, the exact/fuzzy correction is considered first, then the matcher/LLM. Repeated transactions in ``Other'' can be clustered to suggest a category; creating a category and re-tagging is always a plan awaiting confirmation. Conflicting history must lower confidence instead of learning the most recent correction.
 
@@ -466,7 +466,7 @@ In Figure~\ref{fig:insight-sequence}, the SQL model retrieves data; the Analytic
 
 \subsubsection{Goal planning}
 
-\reportfigure[0.86\linewidth]{12-goal-flow.pdf}{The goal-planning and what-if simulation flow.}{fig:goal-flow}
+\widereportfigure{12-goal-flow.pdf}{The goal-planning and what-if simulation flow.}{fig:goal-flow}
 
 The LLM in Figure~\ref{fig:goal-flow} only extracts the goal, amount, deadline, contribution and interest rate. The Goal Planner checks the data domain, computes surplus, deadline, contribution and warnings. What-if creates a new scenario without changing the original plan. Only a confirmation saves to \code{financial_goals}.
 

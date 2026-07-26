@@ -1,7 +1,10 @@
 #!/usr/bin/env bash
-# Re-render stale draw.io diagrams to pdf+png+svg.
-# Usage: ./rerender-stale.sh [diagram-basename ...]
-# With no args, re-renders every diagram whose .drawio is newer than its rendered output.
+# Re-render draw.io diagrams to pdf+png+svg.
+# Usage:
+#   ./rerender-stale.sh                  # Render stale diagrams only
+#   ./rerender-stale.sh --all            # Render all numbered diagrams
+#   ./rerender-stale.sh BASE [BASE ...]  # Render selected diagrams
+#   ./rerender-stale.sh --help
 set -uo pipefail
 
 cd "$(dirname "$0")" || exit 1
@@ -12,6 +15,30 @@ LOG=/tmp/rerender.log
 : >"$LOG"
 
 log() { printf '%s %s\n' "$(date +%H:%M:%S)" "$*" | tee -a "$LOG"; }
+
+usage() {
+  cat <<'EOF'
+Render Draw.io diagrams to PDF, PNG and SVG.
+
+Usage:
+  ./rerender-stale.sh
+      Render diagrams whose .drawio source is newer than at least one output.
+
+  ./rerender-stale.sh --all
+      Render all numbered diagrams in drawio/.
+
+  ./rerender-stale.sh BASE [BASE ...]
+      Render selected diagrams. BASE is the filename without .drawio,
+      for example: 03-deployment 14-usecase-overview.
+
+  ./rerender-stale.sh --help
+      Show this help.
+
+Environment:
+  DRAWIO=/path/to/drawio
+      Override the Draw.io executable. Default: /snap/bin/drawio
+EOF
+}
 
 is_stale() {
   local src=$1 out=$2
@@ -40,11 +67,46 @@ render() {
   return 1
 }
 
-if (($# > 0)); then
+mode=stale
+case "${1:-}" in
+  -h|--help)
+    usage
+    exit 0
+    ;;
+  --all)
+    shift
+    if (($# > 0)); then
+      printf 'error: --all does not accept diagram names\n\n' >&2
+      usage >&2
+      exit 2
+    fi
+    mode=all
+    ;;
+  --*)
+    printf 'error: unknown option: %s\n\n' "$1" >&2
+    usage >&2
+    exit 2
+    ;;
+  "")
+    ;;
+  *)
+    mode=selected
+    ;;
+esac
+
+mkdir -p "$OUT_DIR"
+shopt -s nullglob
+
+if [[ $mode == selected ]]; then
   targets=("$@")
+elif [[ $mode == all ]]; then
+  targets=()
+  for src in "$SRC_DIR"/[0-9][0-9]-*.drawio; do
+    targets+=("$(basename "$src" .drawio)")
+  done
 else
   targets=()
-  for src in "$SRC_DIR"/*.drawio; do
+  for src in "$SRC_DIR"/[0-9][0-9]-*.drawio; do
     base=$(basename "$src" .drawio)
     for fmt in pdf png svg; do
       if is_stale "$src" "$OUT_DIR/$base.$fmt"; then targets+=("$base"); break; fi
@@ -57,6 +119,11 @@ failed=()
 for base in "${targets[@]:-}"; do
   [[ -z $base ]] && continue
   log "=== $base ==="
+  if [[ ! -f "$SRC_DIR/$base.drawio" ]]; then
+    log "  FAIL source not found: $SRC_DIR/$base.drawio"
+    failed+=("$base")
+    continue
+  fi
   for fmt in pdf png svg; do
     render "$base" "$fmt" || failed+=("$base.$fmt")
   done

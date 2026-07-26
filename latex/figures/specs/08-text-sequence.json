@@ -1,0 +1,35 @@
+{
+  "title": "Nhập giao dịch bằng văn bản",
+  "participants": [
+    {"id": "user", "label": "Người dùng", "actor": true},
+    {"id": "app", "label": "Mobile App"},
+    {"id": "route", "label": "Chat Route"},
+    {"id": "ai", "label": "AI Orchestrator"},
+    {"id": "provider", "label": "Gemini / Local Router"},
+    {"id": "pending", "label": "Pending KV Store"},
+    {"id": "db", "label": "PostgreSQL"}
+  ],
+  "messages": [
+    {"from": "user", "to": "app", "label": "Nhập: ăn phở 50k", "activate": false},
+    {"from": "app", "to": "route", "label": "POST /api/chat/message"},
+    {"from": "route", "to": "db", "label": "Đọc danh mục + feedback"},
+    {"from": "db", "to": "route", "label": "Categories + corrections", "return": true},
+    {"from": "route", "to": "ai", "label": "parseTransaction(text, context)"},
+    {"from": "ai", "to": "provider", "label": "Function calling hoặc local rules"},
+    {"note": "LLM chỉ tạo lệnh có kiểu; chưa ghi dữ liệu", "over": "provider"},
+    {"from": "provider", "to": "ai", "label": "Typed candidate + confidence", "return": true},
+    {"from": "ai", "to": "route", "label": "Normalized result", "return": true},
+    {"from": "route", "to": "pending", "label": "Lưu draft với TTL"},
+    {"from": "pending", "to": "route", "label": "pending_id", "return": true},
+    {"from": "route", "to": "app", "label": "Transaction preview", "return": true},
+    {"from": "user", "to": "app", "label": "Sửa hoặc xác nhận", "activate": false},
+    {"from": "app", "to": "route", "label": "POST /api/chat/confirm"},
+    {"from": "route", "to": "pending", "label": "Đọc và claim draft"},
+    {"from": "pending", "to": "route", "label": "Validated draft", "return": true},
+    {"from": "route", "to": "db", "label": "BEGIN · INSERT transaction · cập nhật ví · COMMIT"},
+    {"from": "db", "to": "route", "label": "Giao dịch đã lưu", "return": true},
+    {"from": "route", "to": "pending", "label": "Xóa pending + invalidate cache", "activate": false},
+    {"from": "route", "to": "app", "label": "Kết quả xác nhận", "return": true},
+    {"from": "app", "to": "user", "label": "Thông báo thành công", "return": true}
+  ]
+}

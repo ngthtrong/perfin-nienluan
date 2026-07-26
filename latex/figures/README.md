@@ -5,6 +5,9 @@ kiến trúc/luồng/dữ liệu (`01`--`13`) và 13 sơ đồ ca sử dụng (`
 mục `rendered/` chứa bản xuất PDF, PNG và SVG cùng basename; dự án LaTeX ưu
 tiên dùng PDF để giữ chất lượng vector.
 
+Hướng dẫn tự render PDF, PNG, SVG và biên dịch lại hai phiên bản báo cáo:
+[RENDERING.md](RENDERING.md).
+
 | Tệp | Nội dung | Mức |
 |---|---|---|
 | `01-system-context` | Ngữ cảnh và biên hệ thống | Hệ thống |
@@ -41,16 +44,29 @@ và xuất lại cả ba định dạng vào `rendered/` với tùy chọn crop.
 
 Màu dùng xuyên suốt:
 
-- xanh dương: người dùng/giao diện/trạng thái tương tác;
-- xanh lá: dữ liệu và giải thuật xác định;
-- tím: LLM, parser hoặc thành phần xác suất;
-- vàng: kho trạng thái, queue, quyết định hoặc hạ tầng;
-- đỏ: nhánh từ chối hoặc rollback;
-- xám: tác nhân/thành phần phụ trợ (ví dụ quản trị viên phát triển);
+- xanh dương `#EEF2F7 / #5B7290 / #22303F`: người dùng, giao diện và trạng thái tương tác;
+- xanh lá `#E6F4EA / #2E7D46 / #1B4429`: dữ liệu và giải thuật xác định;
+- tím `#F0EAF9 / #7C5CBF / #3A2A5F`: LLM, parser hoặc thành phần xác suất;
+- vàng `#FBF3D9 / #B08900 / #5A4700`: kho trạng thái, queue, quyết định hoặc hạ tầng;
+- đỏ `#FCEDED / #C97A7A / #5A2A2A`: nhánh từ chối hoặc rollback;
+- xám `#EAEEF2 / #6B7A89 / #2C3440`: tác nhân hoặc thành phần phụ trợ;
 - viền nét đứt: dịch vụ nằm ngoài biên tin cậy của hệ thống.
 
 Trong sơ đồ ca sử dụng, liên kết association là đường thẳng không mũi tên;
 `<<include>>` là bước bắt buộc và `<<extend>>` là nhánh tùy chọn/ngoại lệ, cả hai
 vẽ bằng nét đứt mũi tên mở. Mọi liên kết `<<include>>/<<extend>>` toả ra từ một
-điểm chung trên cạnh phải của ca sử dụng chính nên không cắt chéo nhau.
+điểm chung trên cạnh phải của ca sử dụng chính nên không cắt chéo nhau. Sơ đồ
+ca sử dụng dùng cỡ chữ 17--18 pt cho actor/use case, 14 pt cho quan hệ và không
+có legend hoặc khối chú thích phụ.
 
+Các nguồn sinh tự động được giữ cạnh tệp `.drawio` để thay đổi có thể tái lập:
+
+```bash
+python3 core_gen.py
+python3 usecase_gen.py
+python3 <drawio-skill>/scripts/seqlayout.py specs/08-text-sequence.json -o drawio/08-text-sequence.drawio
+python3 <drawio-skill>/scripts/seqlayout.py specs/11-insight-sequence.json -o drawio/11-insight-sequence.drawio
+python3 <drawio-skill>/scripts/seqlayout.py specs/13-worker-sequence.json -o drawio/13-worker-sequence.drawio
+python3 sequence_style.py
+bash rerender-stale.sh
+```

@@ -1,85 +1,104 @@
+<?xml version='1.0' encoding='utf-8'?>
 <mxfile>
-  <diagram id="seqlayout" name="Phân tích facts và diễn giải có căn cứ">
-    <mxGraphModel dx="800" dy="600" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+  <diagram id="seqlayout" name="Sinh insight có căn cứ">
+    <mxGraphModel dx="800" dy="600" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1580" pageHeight="880" math="0" shadow="0" reportStyled="1">
       <root>
-        <mxCell id="0"/>
-        <mxCell id="1" parent="0"/>
-        <mxCell id="user" value="Người dùng" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;size=40;participant=umlActor;verticalAlign=bottom;spacingBottom=-14;labelBackgroundColor=#ffffff;" vertex="1" parent="1">
-          <mxGeometry x="40" y="40" width="100" height="1010" as="geometry"/>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="report-title" value="Sơ đồ tuần tự sinh insight có căn cứ" style="text;html=1;align=left;verticalAlign=middle;fontSize=18;fontStyle=1;fontColor=#22303F;" vertex="1" parent="1"><mxGeometry x="40" y="14" width="1500" height="28" as="geometry" /></mxCell><mxCell id="report-subtitle" value="Analytics tính facts trước; persona và LLM chỉ điều chỉnh cách diễn giải." style="text;html=1;align=left;verticalAlign=middle;fontSize=12;fontColor=#5A6A78;whiteSpace=wrap;" vertex="1" parent="1"><mxGeometry x="40" y="44" width="1500" height="30" as="geometry" /></mxCell><mxCell id="user" value="&lt;b&gt;Người dùng&lt;/b&gt;" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;participant=umlActor;verticalAlign=bottom;spacingBottom=-14;labelBackgroundColor=#ffffff;fillColor=#EEF2F7;strokeColor=#5B7290;fontColor=#22303F;fontSize=13;strokeWidth=1.2;size=44;" vertex="1" parent="1">
+          <mxGeometry x="40" y="95" width="100" height="747.4" as="geometry" />
         </mxCell>
-        <mxCell id="app" value="Report Screen" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;size=40;" vertex="1" parent="1">
-          <mxGeometry x="240" y="40" width="100" height="1010" as="geometry"/>
+        <mxCell id="screen" value="&lt;b&gt;Report Screen&lt;/b&gt;" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;fillColor=#EEF2F7;strokeColor=#5B7290;fontColor=#22303F;fontSize=13;strokeWidth=1.2;size=44;" vertex="1" parent="1">
+          <mxGeometry x="240" y="95" width="100" height="747.4" as="geometry" />
         </mxCell>
-        <mxCell id="route" value="Report Route" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;size=40;" vertex="1" parent="1">
-          <mxGeometry x="440" y="40" width="100" height="1010" as="geometry"/>
+        <mxCell id="route" value="&lt;b&gt;Report Route&lt;/b&gt;" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;fillColor=#EEF2F7;strokeColor=#5B7290;fontColor=#22303F;fontSize=13;strokeWidth=1.2;size=44;" vertex="1" parent="1">
+          <mxGeometry x="440" y="95" width="100" height="747.4" as="geometry" />
         </mxCell>
-        <mxCell id="analytics" value="Analytics Engine" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;size=40;" vertex="1" parent="1">
-          <mxGeometry x="640" y="40" width="100" height="1010" as="geometry"/>
+        <mxCell id="analytics" value="&lt;b&gt;Analytics Engine&lt;/b&gt;" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;fillColor=#E6F4EA;strokeColor=#2E7D46;fontColor=#1B4429;fontSize=13;strokeWidth=1.2;size=44;" vertex="1" parent="1">
+          <mxGeometry x="640" y="95" width="100" height="747.4" as="geometry" />
         </mxCell>
-        <mxCell id="db" value="PostgreSQL" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;size=40;" vertex="1" parent="1">
-          <mxGeometry x="840" y="40" width="100" height="1010" as="geometry"/>
+        <mxCell id="db" value="&lt;b&gt;PostgreSQL&lt;/b&gt;" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;fillColor=#E6F4EA;strokeColor=#2E7D46;fontColor=#1B4429;fontSize=13;strokeWidth=1.2;size=44;" vertex="1" parent="1">
+          <mxGeometry x="840" y="95" width="100" height="747.4" as="geometry" />
         </mxCell>
-        <mxCell id="cache" value="KV / Redis" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;size=40;" vertex="1" parent="1">
-          <mxGeometry x="1040" y="40" width="100" height="1010" as="geometry"/>
+        <mxCell id="cache" value="&lt;b&gt;KV / Redis&lt;/b&gt;" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;fillColor=#FBF3D9;strokeColor=#B08900;fontColor=#5A4700;fontSize=13;strokeWidth=1.2;size=44;" vertex="1" parent="1">
+          <mxGeometry x="1040" y="95" width="100" height="747.4" as="geometry" />
         </mxCell>
-        <mxCell id="persona" value="Persona Service" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;size=40;" vertex="1" parent="1">
-          <mxGeometry x="1240" y="40" width="100" height="1010" as="geometry"/>
+        <mxCell id="persona" value="&lt;b&gt;Persona Service&lt;/b&gt;" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;fillColor=#F0EAF9;strokeColor=#7C5CBF;fontColor=#3A2A5F;fontSize=13;strokeWidth=1.2;size=44;" vertex="1" parent="1">
+          <mxGeometry x="1240" y="95" width="100" height="747.4" as="geometry" />
         </mxCell>
-        <mxCell id="llm" value="LLM Narrator" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;size=40;" vertex="1" parent="1">
-          <mxGeometry x="1440" y="40" width="100" height="1010" as="geometry"/>
+        <mxCell id="llm" value="&lt;b&gt;LLM Narrator&lt;/b&gt;" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;fillColor=#F0EAF9;strokeColor=#7C5CBF;fontColor=#3A2A5F;fontSize=13;strokeWidth=1.2;size=44;dashed=1;" vertex="1" parent="1">
+          <mxGeometry x="1440" y="95" width="100" height="747.4" as="geometry" />
         </mxCell>
-        <mxCell id="m0" value="Mở báo cáo / hỏi insight" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;exitX=0.5;exitY=0.0891;entryX=0.5;entryY=0.0891;" edge="1" parent="1" source="user" target="app">
-          <mxGeometry relative="1" as="geometry"/>
+        <mxCell id="act0" value="" style="html=1;points=[];perimeter=orthogonalPerimeter;outlineConnect=0;fillColor=#ffffff;" vertex="1" parent="cache">
+          <mxGeometry x="45" y="177.6" width="10" height="37" as="geometry" />
         </mxCell>
-        <mxCell id="m1" value="GET /api/reports/insights" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;exitX=0.5;exitY=0.1386;entryX=0.5;entryY=0.1386;" edge="1" parent="1" source="app" target="route">
-          <mxGeometry relative="1" as="geometry"/>
+        <mxCell id="act1" value="" style="html=1;points=[];perimeter=orthogonalPerimeter;outlineConnect=0;fillColor=#ffffff;" vertex="1" parent="db">
+          <mxGeometry x="45" y="251.6" width="10" height="37" as="geometry" />
         </mxCell>
-        <mxCell id="m2" value="buildInsightFacts(user, payday)" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;exitX=0.5;exitY=0.1881;entryX=0.5;entryY=0.1881;" edge="1" parent="1" source="route" target="analytics">
-          <mxGeometry relative="1" as="geometry"/>
+        <mxCell id="act2" value="" style="html=1;points=[];perimeter=orthogonalPerimeter;outlineConnect=0;fillColor=#ffffff;" vertex="1" parent="analytics">
+          <mxGeometry x="45" y="140.6" width="10" height="318.2" as="geometry" />
         </mxCell>
-        <mxCell id="m3" value="GET cache:insights:user" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;exitX=0.5;exitY=0.2376;entryX=0.5;entryY=0.2376;" edge="1" parent="1" source="analytics" target="cache">
-          <mxGeometry relative="1" as="geometry"/>
+        <mxCell id="act3" value="" style="html=1;points=[];perimeter=orthogonalPerimeter;outlineConnect=0;fillColor=#ffffff;" vertex="1" parent="persona">
+          <mxGeometry x="45" y="495.8" width="10" height="37" as="geometry" />
         </mxCell>
-        <mxCell id="m4" value="miss hoặc facts cached" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;curved=0;rounded=0;strokeColor=#999999;fontColor=#999999;exitX=0.5;exitY=0.2871;entryX=0.5;entryY=0.2871;" edge="1" parent="1" source="cache" target="analytics">
-          <mxGeometry relative="1" as="geometry"/>
+        <mxCell id="act4" value="" style="html=1;points=[];perimeter=orthogonalPerimeter;outlineConnect=0;fillColor=#ffffff;" vertex="1" parent="llm">
+          <mxGeometry x="45" y="569.8" width="10" height="37" as="geometry" />
         </mxCell>
-        <mxCell id="m5" value="Truy vấn chuỗi tháng / ngày / danh mục / ví" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;exitX=0.5;exitY=0.3366;entryX=0.5;entryY=0.3366;" edge="1" parent="1" source="analytics" target="db">
-          <mxGeometry relative="1" as="geometry"/>
+        <mxCell id="act5" value="" style="html=1;points=[];perimeter=orthogonalPerimeter;outlineConnect=0;fillColor=#ffffff;" vertex="1" parent="route">
+          <mxGeometry x="45" y="103.6" width="10" height="540.2" as="geometry" />
         </mxCell>
-        <mxCell id="m6" value="Dữ liệu số có cấu trúc" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;curved=0;rounded=0;strokeColor=#999999;fontColor=#999999;exitX=0.5;exitY=0.3861;entryX=0.5;entryY=0.3861;" edge="1" parent="1" source="db" target="analytics">
-          <mxGeometry relative="1" as="geometry"/>
+        <mxCell id="m0" value="Mở báo cáo / hỏi insight" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;exitX=0.5;exitY=0.0891;entryX=0.5;entryY=0.0891;fontSize=12;labelBackgroundColor=#FFFFFF;fontColor=#3D4B5A;strokeWidth=1.15;strokeColor=#5B7290;" edge="1" parent="1" source="user" target="screen">
+          <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="m7" value="Regression, z-score/IQR, runway, subscription, Pearson" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;exitX=0.5;exitY=0.4356;entryX=0.5;entryY=0.4653;" edge="1" parent="1" source="analytics" target="analytics">
+        <mxCell id="m1" value="GET /api/reports/insights" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;exitX=0.5;exitY=0.1386;entryX=0;entryY=0.0;fontSize=12;labelBackgroundColor=#FFFFFF;fontColor=#3D4B5A;strokeWidth=1.15;strokeColor=#5B7290;" edge="1" parent="1" source="screen" target="act5">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="m2" value="buildInsightFacts(user, payday)" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;exitX=1;exitY=0.0685;entryX=0;entryY=0.0;fontSize=12;labelBackgroundColor=#FFFFFF;fontColor=#3D4B5A;strokeWidth=1.15;strokeColor=#5B7290;" edge="1" parent="1" source="act5" target="act2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="m3" value="GET cache:insights:user" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;exitX=1;exitY=0.1163;entryX=0;entryY=0.0;fontSize=12;labelBackgroundColor=#FFFFFF;fontColor=#3D4B5A;strokeWidth=1.15;strokeColor=#5B7290;" edge="1" parent="1" source="act2" target="act0">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="m4" value="miss hoặc facts cached" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;curved=0;rounded=0;exitX=0;exitY=1.0;entryX=1;entryY=0.2326;fontSize=12;labelBackgroundColor=#FFFFFF;fontColor=#6B7A89;strokeWidth=1.15;strokeColor=#9AA7B4;" edge="1" parent="1" source="act0" target="act2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="m5" value="Truy vấn chuỗi tháng / ngày / danh mục / ví" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;exitX=1;exitY=0.3488;entryX=0;entryY=0.0;fontSize=12;labelBackgroundColor=#FFFFFF;fontColor=#3D4B5A;strokeWidth=1.15;strokeColor=#5B7290;" edge="1" parent="1" source="act2" target="act1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="m6" value="Dữ liệu số có cấu trúc" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;curved=0;rounded=0;exitX=0;exitY=1.0;entryX=1;entryY=0.4651;fontSize=12;labelBackgroundColor=#FFFFFF;fontColor=#6B7A89;strokeWidth=1.15;strokeColor=#9AA7B4;" edge="1" parent="1" source="act1" target="act2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="m7" value="Regression · z-score/IQR · runway · Pearson" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;exitX=1;exitY=0.5814;entryX=1;entryY=0.6512;fontSize=12;labelBackgroundColor=#FFFFFF;fontColor=#3D4B5A;strokeWidth=1.15;strokeColor=#5B7290;" edge="1" parent="1" source="act2" target="act2">
           <mxGeometry relative="1" as="geometry">
-            <Array as="points"><mxPoint x="750" y="480"/><mxPoint x="750" y="510"/></Array>
+            <Array as="points"><mxPoint x="750" y="420.6" /><mxPoint x="750" y="442.8" /></Array>
           </mxGeometry>
         </mxCell>
-        <mxCell id="note8" value="Mọi con số được tính trước bằng giải thuật xác định" style="shape=note;whiteSpace=wrap;html=1;size=14;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
-          <mxGeometry x="710" y="530" width="140" height="40" as="geometry"/>
+        <mxCell id="note8" value="Mọi con số được tính trước bằng giải thuật xác định" style="shape=note;whiteSpace=wrap;html=1;size=14;fillColor=#FBF3D9;strokeColor=#B08900;fontColor=#5A4700;fontSize=12;strokeWidth=1.1;" vertex="1" parent="1">
+          <mxGeometry x="710" y="457.6" width="140" height="46" as="geometry" />
         </mxCell>
-        <mxCell id="m9" value="SET facts TTL" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;exitX=0.5;exitY=0.5644;entryX=0.5;entryY=0.5644;" edge="1" parent="1" source="analytics" target="cache">
-          <mxGeometry relative="1" as="geometry"/>
+        <mxCell id="m9" value="SET facts TTL" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;exitX=1;exitY=0.8837;entryX=0.5;entryY=0.5644;fontSize=12;labelBackgroundColor=#FFFFFF;fontColor=#3D4B5A;strokeWidth=1.15;strokeColor=#5B7290;" edge="1" parent="1" source="act2" target="cache">
+          <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="m10" value="Insight facts" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;curved=0;rounded=0;strokeColor=#999999;fontColor=#999999;exitX=0.5;exitY=0.6139;entryX=0.5;entryY=0.6139;" edge="1" parent="1" source="analytics" target="route">
-          <mxGeometry relative="1" as="geometry"/>
+        <mxCell id="m10" value="Insight facts" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;curved=0;rounded=0;exitX=0;exitY=1.0;entryX=1;entryY=0.6575;fontSize=12;labelBackgroundColor=#FFFFFF;fontColor=#6B7A89;strokeWidth=1.15;strokeColor=#9AA7B4;" edge="1" parent="1" source="act2" target="act5">
+          <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="m11" value="Lấy style prompt đã consent" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;exitX=0.5;exitY=0.6634;entryX=0.5;entryY=0.6634;" edge="1" parent="1" source="route" target="persona">
-          <mxGeometry relative="1" as="geometry"/>
+        <mxCell id="m11" value="Lấy style prompt đã consent" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;exitX=1;exitY=0.726;entryX=0;entryY=0.0;fontSize=12;labelBackgroundColor=#FFFFFF;fontColor=#3D4B5A;strokeWidth=1.15;strokeColor=#5B7290;" edge="1" parent="1" source="act5" target="act3">
+          <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="m12" value="Persona hiện hành" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;curved=0;rounded=0;strokeColor=#999999;fontColor=#999999;exitX=0.5;exitY=0.7129;entryX=0.5;entryY=0.7129;" edge="1" parent="1" source="persona" target="route">
-          <mxGeometry relative="1" as="geometry"/>
+        <mxCell id="m12" value="Persona hiện hành" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;curved=0;rounded=0;exitX=0;exitY=1.0;entryX=1;entryY=0.7945;fontSize=12;labelBackgroundColor=#FFFFFF;fontColor=#6B7A89;strokeWidth=1.15;strokeColor=#9AA7B4;" edge="1" parent="1" source="act3" target="act5">
+          <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="m13" value="Narrate(facts, persona); cấm bịa số" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;exitX=0.5;exitY=0.7624;entryX=0.5;entryY=0.7624;" edge="1" parent="1" source="route" target="llm">
-          <mxGeometry relative="1" as="geometry"/>
+        <mxCell id="m13" value="Narrate(facts, persona) · cấm bịa số" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;exitX=1;exitY=0.863;entryX=0;entryY=0.0;fontSize=12;labelBackgroundColor=#FFFFFF;fontColor=#3D4B5A;strokeWidth=1.15;strokeColor=#5B7290;" edge="1" parent="1" source="act5" target="act4">
+          <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="m14" value="Narration hoặc template fallback" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;curved=0;rounded=0;strokeColor=#999999;fontColor=#999999;exitX=0.5;exitY=0.8119;entryX=0.5;entryY=0.8119;" edge="1" parent="1" source="llm" target="route">
-          <mxGeometry relative="1" as="geometry"/>
+        <mxCell id="m14" value="Narration hoặc template fallback" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;curved=0;rounded=0;exitX=0;exitY=1.0;entryX=1;entryY=0.9315;fontSize=12;labelBackgroundColor=#FFFFFF;fontColor=#6B7A89;strokeWidth=1.15;strokeColor=#9AA7B4;" edge="1" parent="1" source="act4" target="act5">
+          <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="m15" value="facts + narration + provider_used" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;curved=0;rounded=0;strokeColor=#999999;fontColor=#999999;exitX=0.5;exitY=0.8614;entryX=0.5;entryY=0.8614;" edge="1" parent="1" source="route" target="app">
-          <mxGeometry relative="1" as="geometry"/>
+        <mxCell id="m15" value="facts + narration + provider_used" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;curved=0;rounded=0;exitX=0;exitY=1.0;entryX=0.5;entryY=0.8614;fontSize=12;labelBackgroundColor=#FFFFFF;fontColor=#6B7A89;strokeWidth=1.15;strokeColor=#9AA7B4;" edge="1" parent="1" source="act5" target="screen">
+          <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="m16" value="Biểu đồ và lời giải thích nhất quán" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;curved=0;rounded=0;strokeColor=#999999;fontColor=#999999;exitX=0.5;exitY=0.9109;entryX=0.5;entryY=0.9109;" edge="1" parent="1" source="app" target="user">
-          <mxGeometry relative="1" as="geometry"/>
+        <mxCell id="m16" value="Biểu đồ và lời giải thích nhất quán" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;curved=0;rounded=0;exitX=0.5;exitY=0.9109;entryX=0.5;entryY=0.9109;fontSize=12;labelBackgroundColor=#FFFFFF;fontColor=#6B7A89;strokeWidth=1.15;strokeColor=#9AA7B4;" edge="1" parent="1" source="screen" target="user">
+          <mxGeometry relative="1" as="geometry" />
         </mxCell>
       </root>
     </mxGraphModel>

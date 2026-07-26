@@ -99,7 +99,7 @@ Các mã \texttt{TC-FRxx-yy} dưới đây là định danh ca kiểm thử ở 
   \bottomrule
 \end{longtable}
 
-\widereportfigure{14-usecase-overview.pdf}{Sơ đồ ca sử dụng tổng thể của PERFIN. Người dùng là tác nhân chính của toàn bộ mười hai chức năng; Dịch vụ AI ngoài, Worker nền và Quản trị viên phát triển chỉ tham gia các ca liên quan và nằm ngoài biên tin cậy dữ liệu.}{fig:usecase-overview}
+\widereportfigure{14-usecase-overview.pdf}{Sơ đồ ca sử dụng tổng thể của PERFIN. Người dùng là tác nhân chính của toàn bộ mười hai chức năng; Dịch vụ AI ngoài và Worker nền chỉ tham gia các ca liên quan và nằm ngoài biên tin cậy dữ liệu.}{fig:usecase-overview}
 
 Hình~\ref{fig:usecase-overview} tổng hợp mười hai chức năng FR-01--FR-12 dưới góc nhìn tác nhân. Người dùng khởi tạo mọi luồng nghiệp vụ; Dịch vụ AI ngoài chỉ hỗ trợ trích xuất và diễn giải ở các ca nhập liệu, phân tích và insight; Worker nền phụ trách các ca phân tích định kỳ, khoản định kỳ và dọn export; Quản trị viên phát triển chỉ cấu hình hệ thống. Các ca sử dụng chi tiết của từng FR được tách thành sơ đồ riêng ở các mục dưới đây.
 
@@ -430,13 +430,13 @@ ERD ở Hình~\ref{fig:physical-erd} gồm 18 bảng vật lý: \code{users}, \c
 
 \subsubsection{Ranh giới LLM trong kiến trúc}
 
-\reportfigure[0.88\linewidth]{06-llm-boundary.pdf}{Ranh giới trách nhiệm của LLM: dữ liệu và facts được tạo ở lõi xác định; LLM chỉ chuyển đổi ngữ nghĩa và diễn giải.}{fig:llm-boundary}
+\widereportfigure{06-llm-boundary.pdf}{Ranh giới trách nhiệm của LLM: dữ liệu và facts được tạo ở lõi xác định; LLM chỉ chuyển đổi ngữ nghĩa và diễn giải.}{fig:llm-boundary}
 
 Hình~\ref{fig:llm-boundary} là sơ đồ quan trọng nhất để giải thích tác dụng LLM. Đầu vào tự nhiên được biến thành typed command; service kiểm tra và tạo preview. Với câu hỏi phân tích, SQL và giải thuật tạo facts trước khi narrator nhận dữ liệu. LLM không có kết nối trực tiếp PostgreSQL và không tự thực thi tool. Lợi ích của LLM được đánh giá bằng độ chính xác thực thể, tỷ lệ hỏi lại, số thao tác tiết kiệm và chất lượng diễn giải, không bằng việc thay thế công thức.
 
 \subsubsection{Máy trạng thái hội thoại}
 
-\reportfigure[0.86\linewidth]{07-conversation-state.pdf}{Máy trạng thái hội thoại và giao dịch chờ xác nhận.}{fig:conversation-state}
+\widereportfigure{07-conversation-state.pdf}{Máy trạng thái hội thoại và giao dịch chờ xác nhận.}{fig:conversation-state}
 
 Các trạng thái chính ở Hình~\ref{fig:conversation-state} gồm idle, parse, collecting, preview, confirmed, cancelled và expired; lựa chọn ứng viên được giữ trong collecting. Redis giữ intent, trường đang chờ, dữ liệu đã thu và candidates trong một TTL giới hạn. Nhánh ghi dữ liệu bắt buộc đi qua preview rồi confirmed. Ba trạng thái cuối kết thúc phiên hiện tại; yêu cầu mới tạo phiên idle khác. Thiết kế đích dùng thao tác claim nguyên tử khi xác nhận để hai request đồng thời không cùng tạo giao dịch.
 
@@ -448,13 +448,13 @@ Trình tự Hình~\ref{fig:text-sequence} gồm nhận text, lấy categories/wa
 
 \subsubsection{Đầu vào đa phương thức}
 
-\reportfigure[0.84\linewidth]{09-multimodal-flow.pdf}{Luồng xử lý đầu vào đa phương thức. Voice và ảnh hội tụ vào pipeline text chung sau bước xác nhận.}{fig:multimodal-flow}
+\widereportfigure{09-multimodal-flow.pdf}{Luồng xử lý đầu vào đa phương thức. Voice và ảnh hội tụ vào pipeline text chung sau bước xác nhận.}{fig:multimodal-flow}
 
 Voice đi qua STT và bước xác nhận transcript. Ảnh đi qua preprocessing/OCR rồi cho phép chọn tổng hóa đơn hoặc từng mặt hàng. Hai nhánh hội tụ tại pipeline text. Lỗi provider phải được biểu diễn là lỗi hoặc yêu cầu nhập tay; không dùng raw text giả. Báo cáo hiện chưa có ground truth media nên Hình~\ref{fig:multimodal-flow} mô tả \textbf{thiết kế đích}, không phải bằng chứng accuracy OCR/STT.
 
 \subsubsection{Phân loại và vòng phản hồi}
 
-\reportfigure[0.84\linewidth]{10-feedback-flow.pdf}{Luồng phản hồi và cá nhân hóa phân loại bằng correction retrieval, không phải fine-tuning.}{fig:feedback-flow}
+\widereportfigure{10-feedback-flow.pdf}{Luồng phản hồi và cá nhân hóa phân loại bằng correction retrieval, không phải fine-tuning.}{fig:feedback-flow}
 
 Theo Hình~\ref{fig:feedback-flow}, khi người dùng sửa category, hệ thống lưu cặp kết quả AI--kết quả đúng. Lần sau, correction exact/fuzzy được xét trước, sau đó mới đến matcher/LLM. Giao dịch lặp trong ``Khác'' có thể được gom cụm để đề xuất category; tạo category và re-tag luôn là kế hoạch chờ xác nhận. Lịch sử mâu thuẫn phải hạ confidence thay vì học theo correction gần nhất.
 
@@ -466,7 +466,7 @@ Trong Hình~\ref{fig:insight-sequence}, model SQL truy xuất dữ liệu; Analy
 
 \subsubsection{Lập kế hoạch mục tiêu}
 
-\reportfigure[0.86\linewidth]{12-goal-flow.pdf}{Luồng lập kế hoạch mục tiêu và mô phỏng what-if.}{fig:goal-flow}
+\widereportfigure{12-goal-flow.pdf}{Luồng lập kế hoạch mục tiêu và mô phỏng what-if.}{fig:goal-flow}
 
 LLM trong Hình~\ref{fig:goal-flow} chỉ trích xuất mục tiêu, số tiền, hạn chót, mức góp và lãi suất. Goal Planner kiểm tra miền dữ liệu, tính surplus, thời hạn, mức góp và cảnh báo. What-if tạo kịch bản mới mà không sửa kế hoạch gốc. Chỉ xác nhận mới lưu \code{financial_goals}.
 

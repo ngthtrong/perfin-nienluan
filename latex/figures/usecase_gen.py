@@ -26,11 +26,11 @@ DRAWIO_DIR = os.path.join(HERE, "drawio")
 
 # fill, stroke, font
 COLORS = {
-    "blue":   ("#EAF2FB", "#3E6E9E", "#1E3A52"),
+    "blue":   ("#EEF2F7", "#5B7290", "#22303F"),
     "green":  ("#E6F4EA", "#2E7D46", "#1B4429"),
     "purple": ("#F0EAF9", "#7C5CBF", "#3A2A5F"),
     "yellow": ("#FBF3D9", "#B08900", "#5A4700"),
-    "gray":   ("#EEF1F4", "#6B7A89", "#2C3440"),
+    "gray":   ("#EAEEF2", "#6B7A89", "#2C3440"),
     "red":    ("#FCEDED", "#C97A7A", "#5A2A2A"),
 }
 STROKE = {k: v[1] for k, v in COLORS.items()}
@@ -55,17 +55,17 @@ def actor(cid, label, x, y, color="blue", dashed=False):
     style = (
         f"shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;"
         f"html=1;outlineConnect=0;{d}fillColor={fill};strokeColor={stroke};"
-        f"fontColor={font};fontSize=12;whiteSpace=wrap;"
+        f"fontColor={font};fontSize=17;fontStyle=1;whiteSpace=wrap;"
     )
-    return _cell(cid, label, style, x, y, 46, 90)
+    return _cell(cid, label, style, x, y, 58, 104)
 
 
-def usecase(cid, label, x, y, w=300, h=64, color="green", dashed=False):
+def usecase(cid, label, x, y, w=330, h=72, color="green", dashed=False):
     fill, stroke, font = COLORS[color]
     d = "dashed=1;" if dashed else ""
     style = (
         f"ellipse;whiteSpace=wrap;html=1;{d}fillColor={fill};strokeColor={stroke};"
-        f"fontColor={font};fontSize=12;"
+        f"fontColor={font};fontSize=18;strokeWidth=1.2;spacing=6;"
     )
     return _cell(cid, label, style, x, y, w, h)
 
@@ -73,8 +73,8 @@ def usecase(cid, label, x, y, w=300, h=64, color="green", dashed=False):
 def boundary(cid, label, x, y, w, h):
     style = (
         "rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;align=center;"
-        "fontStyle=1;fontSize=14;fillColor=none;strokeColor=#5B7290;"
-        "fontColor=#22303F;spacingTop=6;dashed=0;"
+        "fontStyle=1;fontSize=18;fillColor=none;strokeColor=#5B7290;"
+        "fontColor=#22303F;spacingTop=7;strokeWidth=1.2;dashed=0;"
     )
     return _cell(cid, label, style, x, y, w, h)
 
@@ -89,7 +89,7 @@ def note(cid, label, x, y, w, h, align="left"):
 
 def title(cid, label, x, y, w, h):
     style = (
-        "text;html=1;align=left;verticalAlign=middle;fontSize=15;"
+        "text;html=1;align=left;verticalAlign=middle;fontSize=20;"
         "fontColor=#22303F;fontStyle=1;whiteSpace=wrap;"
     )
     return _cell(cid, label, style, x, y, w, h)
@@ -122,7 +122,7 @@ def assoc(cid, src, tgt, label="", exit_xy=None, entry_xy=None, color="#5B7290")
     # UML association: straight line, no arrowhead, not curved.
     style = (
         f"edgeStyle=none;curved=0;rounded=0;html=1;endArrow=none;"
-        f"strokeColor={color};fontColor=#3D4B5A;fontSize=10;"
+        f"strokeColor={color};fontColor=#3D4B5A;fontSize=14;strokeWidth=1.2;"
         f"labelBackgroundColor=#FFFFFF;"
     )
     return _edge(cid, src, tgt, style, label, exit_xy, entry_xy)
@@ -136,7 +136,7 @@ def rel(cid, src, tgt, kind, exit_xy=None, entry_xy=None, ortho=False,
     es = "orthogonalEdgeStyle" if ortho else "none"
     style = (
         f"edgeStyle={es};curved=0;rounded=0;html=1;dashed=1;endArrow=open;"
-        f"endFill=0;strokeColor={color};fontColor={color};fontSize=10;"
+        f"endFill=0;strokeColor={color};fontColor={color};fontSize=14;strokeWidth=1.2;"
         f"fontStyle=2;labelBackgroundColor=#FFFFFF;"
     )
     return _edge(cid, src, tgt, style, label, exit_xy, entry_xy)
@@ -172,85 +172,71 @@ def write(basename, xml):
 # 14 - Overall / system use case diagram
 # --------------------------------------------------------------------------
 def diagram_overview():
-    W, H = 1160, 1460
+    W, H = 1320, 760
     cells = []
     cells.append(title("t", "Sơ đồ use case tổng thể hệ thống PERFIN",
-                        40, 20, 760, 26))
-    cells.append(subtitle(
-        "st",
-        "Biên hệ thống là API và dịch vụ nghiệp vụ PERFIN; người dùng thao "
-        "tác qua ứng dụng di động (REST/JSON). Dịch vụ AI ngoài và worker "
-        "nền là tác nhân phụ.",
-        40, 46, 1000, 34))
+                        40, 18, 900, 30))
 
-    bx, by, bw, bh = 420, 96, 470, 1250
+    bx, by, bw, bh = 220, 70, 880, 590
     cells.append(boundary("bnd",
-                          "Hệ thống PERFIN\n(API + dịch vụ nghiệp vụ)",
+                          "Hệ thống PERFIN (API + dịch vụ nghiệp vụ)",
                           bx, by, bw, bh))
 
-    # Use cases grouped by actor affinity so association fans never cross.
-    # (AI-related at top, user-only in middle, worker-related at bottom.)
-    ux = 470
-    uw = 300
-    row0 = 150
-    step = 96
-    uc = [
+    left = [
         ("uc1", "FR-01 · Nhập giao dịch bằng văn bản tự nhiên", "purple"),
-        ("uc2", "FR-02 · Nhập giao dịch bằng ảnh và giọng nói", "purple"),
-        ("uc8", "FR-08 · Sinh insight có căn cứ và persona", "purple"),
         ("uc3", "FR-03 · Clarification và giao dịch chờ xác nhận", "yellow"),
-        ("uc4", "FR-04 · Phân loại và học từ phản hồi", "green"),
         ("uc5", "FR-05 · Quản lý giao dịch, ví và danh mục", "green"),
-        ("uc6", "FR-06 · Chuyển ví và dòng tiền đặc biệt", "green"),
-        ("uc9", "FR-09 · Ngân sách, đề xuất và dự báo", "green"),
-        ("uc10", "FR-10 · Mục tiêu tài chính và mô phỏng what-if", "green"),
         ("uc7", "FR-07 · Phân tích dữ liệu tài chính", "green"),
+        ("uc9", "FR-09 · Ngân sách, đề xuất và dự báo", "green"),
         ("uc11", "FR-11 · Khoản định kỳ và tác vụ chủ động", "green"),
+    ]
+    right = [
+        ("uc2", "FR-02 · Nhập giao dịch bằng ảnh và giọng nói", "purple"),
+        ("uc4", "FR-04 · Phân loại và học từ phản hồi", "green"),
+        ("uc6", "FR-06 · Chuyển ví và dòng tiền đặc biệt", "green"),
+        ("uc8", "FR-08 · Sinh insight có căn cứ và persona", "purple"),
+        ("uc10", "FR-10 · Mục tiêu tài chính và mô phỏng what-if", "green"),
         ("uc12", "FR-12 · Xuất dữ liệu và dọn tệp hết hạn", "green"),
     ]
-    ys = {}
-    for i, (cid, label, color) in enumerate(uc):
-        y = row0 + i * step
-        ys[cid] = y
-        cells.append(usecase(cid, label, ux, y, uw, 66, color))
+    row0, step = 110, 82
+    for i, (cid, label, color) in enumerate(left):
+        cells.append(usecase(cid, label, 280, row0 + i * step,
+                             330, 62, color))
+    for i, (cid, label, color) in enumerate(right):
+        cells.append(usecase(cid, label, 710, row0 + i * step,
+                             330, 62, color))
 
-    # Actors
-    user_y = 620
-    cells.append(actor("aUser", "Người dùng", 120, user_y, "blue"))
-    ai_y = 210
-    cells.append(actor("aAI", "Dịch vụ AI ngoài\n(LLM · OCR · STT)",
-                        980, ai_y, "purple", dashed=True))
-    wk_y = 1120
-    cells.append(actor("aWk", "Worker nền", 980, wk_y, "yellow"))
-    adm_y = 1360
-    cells.append(actor("aAdm", "Quản trị viên phát triển",
-                       660, adm_y, "gray", dashed=True))
+    # Duplicate the primary actor symbol on both sides to keep associations
+    # short and readable; both symbols represent the same UML actor.
+    cells.append(actor("aUserL", "Người dùng", 80, 275, "blue"))
+    cells.append(actor("aUserR", "Người dùng", 1160, 275, "blue"))
+    cells.append(actor("aAIL", "AI ngoài",
+                       80, 75, "purple", dashed=True))
+    cells.append(actor("aAIR", "AI ngoài",
+                       1160, 75, "purple", dashed=True))
+    cells.append(actor("aWkL", "Worker nền", 90, 535, "yellow"))
+    cells.append(actor("aWkR", "Worker nền", 1160, 535, "yellow"))
 
-    # User associates with all 12 (fan from left, no crossings)
-    for i, (cid, _, _) in enumerate(uc):
-        cells.append(assoc(f"eu{i}", "aUser", cid,
+    for i, (cid, _, _) in enumerate(left):
+        cells.append(assoc(f"eul{i}", "aUserL", cid,
                            exit_xy=(1, 0.5), entry_xy=(0, 0.5)))
-    # AI -> FR-01, FR-02, FR-08 (top three rows -> no crossing)
-    for cid in ("uc1", "uc2", "uc8"):
-        cells.append(assoc(f"eai_{cid}", "aAI", cid,
+    for i, (cid, _, _) in enumerate(right):
+        cells.append(assoc(f"eur{i}", "aUserR", cid,
+                           exit_xy=(0, 0.5), entry_xy=(1, 0.5)))
+    cells.append(assoc("eai_uc1", "aAIL", "uc1",
+                       exit_xy=(1, 0.5), entry_xy=(0, 0.5),
+                       color="#7C5CBF"))
+    for cid in ("uc2", "uc8"):
+        cells.append(assoc(f"eai_{cid}", "aAIR", cid,
                            exit_xy=(0, 0.5), entry_xy=(1, 0.5),
                            color="#7C5CBF"))
-    # Worker -> FR-07, FR-11, FR-12 (bottom three rows -> no crossing)
-    for cid in ("uc7", "uc11", "uc12"):
-        cells.append(assoc(f"ewk_{cid}", "aWk", cid,
-                           exit_xy=(0, 0.5), entry_xy=(1, 0.5),
+    for cid in ("uc7", "uc11"):
+        cells.append(assoc(f"ewk_{cid}", "aWkL", cid,
+                           exit_xy=(1, 0.5), entry_xy=(0, 0.5),
                            color="#B08900"))
-    # Dev admin: config association to system boundary bottom edge
-    cells.append(assoc("eadm", "aAdm", "bnd", "cấu hình provider / migration",
-                       exit_xy=(0.5, 0), entry_xy=(0.6, 1), color="#9AA7B4"))
-
-    # Legend
-    ly = 1400
-    cells.append(note("lg", "Tím: liên quan LLM/OCR/STT · "
-                      "Vàng: trạng thái/hạ tầng · Xanh lá: giải thuật xác "
-                      "định · Viền nét đứt: ngoài biên tin cậy.",
-                      40, ly, 1080, 30))
-
+    cells.append(assoc("ewk_uc12", "aWkR", "uc12",
+                       exit_xy=(0, 0.5), entry_xy=(1, 0.5),
+                       color="#B08900"))
     return build("14-usecase-overview", "Use case overview", W, H, cells)
 
 
@@ -506,14 +492,14 @@ FR_SPECS = [
 
 def diagram_fr(spec):
     # Layout constants.
-    PAGE_W = 1240
-    TITLE_H = 120
+    PAGE_W = 1320
+    TITLE_H = 76
     A_X = 60            # primary actor x
-    MAIN_X, MAIN_W, MAIN_H = 250, 340, 104
-    SUB_X, SUB_W, SUB_H = 740, 400, 74
-    SEC_X = 1150        # secondary actor x
-    GAP = 30
-    SUB_Y0 = TITLE_H + 20
+    MAIN_X, MAIN_W, MAIN_H = 250, 360, 105
+    SUB_X, SUB_W, SUB_H = 760, 420, 78
+    SEC_X = 1230        # secondary actor x
+    GAP = 12
+    SUB_Y0 = TITLE_H + 18
 
     subs = spec["subs"]
     n = len(subs)
@@ -521,14 +507,13 @@ def diagram_fr(spec):
     cy = (SUB_Y0 + col_bottom) / 2.0
 
     cells = []
-    cells.append(title("t", spec["title"], 40, 20, PAGE_W - 80, 26))
-    cells.append(subtitle("st", spec["sub"], 40, 50, PAGE_W - 80, 50))
+    cells.append(title("t", spec["title"], 40, 18, PAGE_W - 80, 30))
 
     # Boundary around use cases.
     bnd_x = MAIN_X - 40
-    bnd_y = SUB_Y0 - 40
+    bnd_y = SUB_Y0 - 28
     bnd_w = (SUB_X + SUB_W) - bnd_x + 40
-    bnd_h = (col_bottom - bnd_y) + 40
+    bnd_h = (col_bottom - bnd_y) + 30
     cells.append(boundary("bnd", "Hệ thống PERFIN", bnd_x, bnd_y,
                           bnd_w, bnd_h))
 
@@ -547,7 +532,7 @@ def diagram_fr(spec):
         cells.append(usecase(sid, label, SUB_X, y, SUB_W, SUB_H, color))
 
     # Primary actor (Người dùng), centered against main UC.
-    a_y = int(cy - 45)
+    a_y = int(cy - 52)
     cells.append(actor("aUser", "Người dùng", A_X, a_y, "blue"))
     cells.append(assoc("eUser", "aUser", "main",
                        exit_xy=(1, 0.5), entry_xy=(0, 0.5)))
@@ -575,7 +560,7 @@ def diagram_fr(spec):
             else:
                 tys.append(SUB_Y0 + t * (SUB_H + GAP) + SUB_H / 2)
         sec_cy = sum(tys) / len(tys)
-        cells.append(actor(aid, sa["name"], SEC_X, int(sec_cy - 45),
+        cells.append(actor(aid, sa["name"], SEC_X, int(sec_cy - 52),
                            sa["color"], dashed=sa["dashed"]))
         for t in tgts:
             tgt = "main" if t == "main" else sub_ids[t]
@@ -584,18 +569,7 @@ def diagram_fr(spec):
                                exit_xy=(0, 0.5), entry_xy=entry,
                                color=STROKE[sa["color"]]))
 
-    # Legend.
-    ly = col_bottom + 30
-    cells.append(note(
-        "lg",
-        "Nét đứt mở &lt;&lt;include&gt;&gt;: bước bắt buộc · "
-        "&lt;&lt;extend&gt;&gt;: nhánh tùy chọn/ngoại lệ · "
-        "Tím: LLM/parser · Xanh lá: giải thuật xác định · "
-        "Vàng: trạng thái/hạ tầng · Đỏ: từ chối/rollback · "
-        "Viền nét đứt: tác nhân ngoài biên tin cậy.",
-        40, ly, PAGE_W - 80, 46))
-
-    page_h = int(ly + 60)
+    page_h = int(col_bottom + 52)
     return build(spec["did"], spec["num"] + " use case", PAGE_W, page_h, cells)
 
 

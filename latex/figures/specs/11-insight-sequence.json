@@ -1,0 +1,32 @@
+{
+  "title": "Sinh insight có căn cứ",
+  "participants": [
+    {"id": "user", "label": "Người dùng", "actor": true},
+    {"id": "screen", "label": "Report Screen"},
+    {"id": "route", "label": "Report Route"},
+    {"id": "analytics", "label": "Analytics Engine"},
+    {"id": "db", "label": "PostgreSQL"},
+    {"id": "cache", "label": "KV / Redis"},
+    {"id": "persona", "label": "Persona Service"},
+    {"id": "llm", "label": "LLM Narrator"}
+  ],
+  "messages": [
+    {"from": "user", "to": "screen", "label": "Mở báo cáo / hỏi insight", "activate": false},
+    {"from": "screen", "to": "route", "label": "GET /api/reports/insights"},
+    {"from": "route", "to": "analytics", "label": "buildInsightFacts(user, payday)"},
+    {"from": "analytics", "to": "cache", "label": "GET cache:insights:user"},
+    {"from": "cache", "to": "analytics", "label": "miss hoặc facts cached", "return": true},
+    {"from": "analytics", "to": "db", "label": "Truy vấn chuỗi tháng / ngày / danh mục / ví"},
+    {"from": "db", "to": "analytics", "label": "Dữ liệu số có cấu trúc", "return": true},
+    {"from": "analytics", "to": "analytics", "label": "Regression · z-score/IQR · runway · Pearson"},
+    {"note": "Mọi con số được tính trước bằng giải thuật xác định", "over": "analytics"},
+    {"from": "analytics", "to": "cache", "label": "SET facts TTL", "activate": false},
+    {"from": "analytics", "to": "route", "label": "Insight facts", "return": true},
+    {"from": "route", "to": "persona", "label": "Lấy style prompt đã consent"},
+    {"from": "persona", "to": "route", "label": "Persona hiện hành", "return": true},
+    {"from": "route", "to": "llm", "label": "Narrate(facts, persona) · cấm bịa số"},
+    {"from": "llm", "to": "route", "label": "Narration hoặc template fallback", "return": true},
+    {"from": "route", "to": "screen", "label": "facts + narration + provider_used", "return": true},
+    {"from": "screen", "to": "user", "label": "Biểu đồ và lời giải thích nhất quán", "return": true}
+  ]
+}
