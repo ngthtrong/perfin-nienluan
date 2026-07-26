@@ -20,4 +20,19 @@ function query(text, params) {
   return pool.query(text, params);
 }
 
-module.exports = { pool, query };
+/**
+ * Roll back an open transaction without losing the error that caused the failure.
+ * A bare `await client.query('ROLLBACK')` inside a catch block replaces the
+ * original error when the rollback itself fails (dead connection, closed pool),
+ * which hides the real cause. The rollback failure is attached to the original
+ * error for diagnostics instead.
+ */
+async function rollbackAfterFailure(client, error) {
+  try {
+    await client.query('ROLLBACK');
+  } catch (rollbackError) {
+    if (error && typeof error === 'object') error.rollbackError = rollbackError;
+  }
+}
+
+module.exports = { pool, query, rollbackAfterFailure };

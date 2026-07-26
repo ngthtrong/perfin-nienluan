@@ -1,4 +1,4 @@
-const { pool, query } = require('../config/database');
+const { pool, query, rollbackAfterFailure } = require('../config/database');
 const { normalizeText } = require('../services/parser.service');
 const KVStore = require('../services/store/kv.store');
 const { normalizePastOrPresentDate } = require('../services/transactions/validation');
@@ -465,7 +465,7 @@ const RecurringBillModel = {
         period_due_date: periodDue,
       };
     } catch (error) {
-      if (inTransaction) await client.query('ROLLBACK');
+      if (inTransaction) await rollbackAfterFailure(client, error);
       throw error;
     } finally {
       client.release();

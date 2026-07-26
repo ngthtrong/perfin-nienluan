@@ -1,4 +1,4 @@
-const { query } = require('../config/database');
+const { pool, query, rollbackAfterFailure } = require('../config/database');
 const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
@@ -527,7 +527,8 @@ async function restoreBackup(userId = DEFAULT_USER, filePath) {
     throw new Error('Dữ liệu backup bị lỗi (checksum không khớp)');
   }
 
-  const client = await (require('../config/database')).pool.connect();
+  const client = await pool.connect();
+  let transactionClosed = false;
   try {
     await client.query('BEGIN');
 
@@ -597,6 +598,7 @@ async function restoreBackup(userId = DEFAULT_USER, filePath) {
     );
 
     await client.query('COMMIT');
+    transactionClosed = true;
     return {
       success: true,
       restored: {
@@ -607,7 +609,7 @@ async function restoreBackup(userId = DEFAULT_USER, filePath) {
       },
     };
   } catch (err) {
-    await client.query('ROLLBACK');
+    if (!transactionClosed) await rollbackAfterFailure(client, err);
     throw err;
   } finally {
     client.release();

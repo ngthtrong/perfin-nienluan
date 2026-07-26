@@ -1,5 +1,5 @@
 const crypto = require('crypto');
-const { pool, query } = require('../../config/database');
+const { pool, query, rollbackAfterFailure } = require('../../config/database');
 const CategoryModel = require('../../models/category.model');
 const KVStore = require('../store/kv.store');
 const {
@@ -116,6 +116,7 @@ const CategoryRetagService = {
     }
 
     const client = await pool.connect();
+    let transactionClosed = false;
     let category;
     try {
       await client.query('BEGIN');
@@ -180,8 +181,9 @@ const CategoryRetagService = {
         );
       }
       await client.query('COMMIT');
+      transactionClosed = true;
     } catch (error) {
-      await client.query('ROLLBACK');
+      if (!transactionClosed) await rollbackAfterFailure(client, error);
       throw error;
     } finally {
       client.release();

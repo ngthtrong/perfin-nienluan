@@ -1,4 +1,4 @@
-const { pool, query } = require('../config/database');
+const { pool, query, rollbackAfterFailure } = require('../config/database');
 const CategoryModel = require('./category.model');
 
 const DEFAULT_USER = 'default_user';
@@ -145,6 +145,7 @@ const BudgetModel = {
 
     const client = await pool.connect();
     const saved = [];
+    let transactionClosed = false;
     try {
       await client.query('BEGIN');
       for (const item of items) {
@@ -186,9 +187,10 @@ const BudgetModel = {
         saved.push(result.rows[0]);
       }
       await client.query('COMMIT');
+      transactionClosed = true;
       return saved;
     } catch (error) {
-      await client.query('ROLLBACK');
+      if (!transactionClosed) await rollbackAfterFailure(client, error);
       throw error;
     } finally {
       client.release();
