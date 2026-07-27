@@ -66,18 +66,36 @@ const FINANCIAL_TOOL_DECLARATIONS = [
   },
   {
     name: 'query_financial_data',
-    description: 'Request exact computed financial data instead of guessing numbers. Use query=transactions with search/type/category and action=list or aggregate when the user asks about matching transactions; do not replace it with a whole-month summary.',
+    description: [
+      'Request exact computed financial data instead of guessing numbers.',
+      'Use query=transactions with search/type/category and action=list or aggregate when the user asks about matching transactions; do not replace it with a whole-month summary.',
+      'Use query=wallets when the user asks which wallets/accounts they have or what their balances are — never answer that with summary.',
+      'Always set period when the user names a time frame ("tuần này" → this_week, "hôm qua" → yesterday, "7 ngày qua" → last_n_days with days=7, "tháng trước" → last_month, "quý này" → this_quarter). Omit period only when no time frame is mentioned.',
+      'For query=budgets, set category_name to the category the user named (e.g. "ngân sách cho bida" → category_name="bida") so the answer covers only that budget instead of every budget.',
+    ].join(' '),
     parametersJsonSchema: {
       type: 'object',
       properties: {
         query: {
           type: 'string',
-          enum: ['summary', 'transactions', 'insights', 'runway', 'subscriptions', 'goals', 'budgets', 'category_suggestions'],
+          enum: ['summary', 'transactions', 'wallets', 'insights', 'runway', 'subscriptions', 'goals', 'budgets', 'category_suggestions'],
         },
+        period: {
+          type: ['string', 'null'],
+          enum: [
+            'today', 'yesterday', 'this_week', 'last_week', 'last_n_days',
+            'this_month', 'last_month', 'this_quarter', 'last_quarter',
+            'this_year', 'last_year', 'year_to_date', 'custom', null,
+          ],
+          description: 'Time frame the user asked about. Use custom together with from/to for anything else.',
+        },
+        days: { type: ['number', 'null'], minimum: 1, maximum: 730, description: 'Number of days when period=last_n_days' },
+        from: { type: ['string', 'null'], description: 'YYYY-MM-DD start date when period=custom' },
+        to: { type: ['string', 'null'], description: 'YYYY-MM-DD end date when period=custom' },
         month: { type: ['number', 'null'], minimum: 1, maximum: 12 },
         year: { type: ['number', 'null'], minimum: 2020, maximum: 2100 },
         transaction_type: { type: ['string', 'null'], enum: ['income', 'expense', null] },
-        category_name: { type: ['string', 'null'] },
+        category_name: { type: ['string', 'null'], description: 'Category or subject the user named, e.g. the category of a budget question' },
         search: { type: ['string', 'null'], description: 'Words from the requested transaction description/merchant/activity' },
         action: { type: ['string', 'null'], enum: ['list', 'aggregate', null] },
         limit: { type: ['number', 'null'], minimum: 1, maximum: 20 },

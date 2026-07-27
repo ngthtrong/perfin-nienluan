@@ -264,6 +264,8 @@ def lane(
     color: str = "blue",
     *,
     dashed: bool = False,
+    parent: str = "1",
+    font_size: int = 14,
 ) -> str:
     c = COLORS[color]
     return cell(
@@ -282,7 +284,7 @@ def lane(
             f"swimlaneFillColor=#FFFFFF",
             f"strokeColor={c.stroke}",
             f"fontColor={c.font}",
-            "fontSize=14",
+            f"fontSize={font_size}",
             "fontStyle=1",
             "strokeWidth=1.2",
             "dashed=1" if dashed else "",
@@ -291,6 +293,7 @@ def lane(
         y,
         w,
         h,
+        parent=parent,
     )
 
 
@@ -336,6 +339,43 @@ def card(
     )
 
 
+def end_label(
+    parent_edge: str,
+    suffix: str,
+    value: str,
+    pos: float,
+    *,
+    color: str = "#3D4B5A",
+    dy: int = -9,
+) -> str:
+    """Nhãn gắn ở một đầu cạnh (bội số UML, lực lượng ERD, role name).
+
+    ``pos`` là toạ độ tương đối theo chiều dài cạnh: -1 là sát đầu nguồn,
+    +1 là sát đầu đích.
+    """
+    style = style_join(
+        "edgeLabel",
+        "html=1",
+        "align=center",
+        "verticalAlign=middle",
+        "resizable=0",
+        "points=[]",
+        "labelBackgroundColor=#FFFFFF",
+        "fontSize=11",
+        f"fontColor={color}",
+    )
+    return (
+        f'        <mxCell id="{esc(parent_edge)}-{esc(suffix)}" '
+        f'value="{esc(value)}" style="{style}" vertex="1" connectable="0" '
+        f'parent="{esc(parent_edge)}">\n'
+        f'          <mxGeometry x="{pos}" y="{dy}" relative="1" '
+        f'as="geometry">\n'
+        f'            <mxPoint as="offset" />\n'
+        f"          </mxGeometry>\n"
+        f"        </mxCell>"
+    )
+
+
 def edge(
     cid: str,
     source: str,
@@ -349,6 +389,16 @@ def edge(
     entry_xy: tuple[float, float] | None = None,
     points: Sequence[tuple[int, int]] | None = None,
     font_size: int = 11,
+    end_arrow: str | None = None,
+    start_arrow: str | None = None,
+    start_fill: int = 1,
+    src_label: str = "",
+    tgt_label: str = "",
+    src_pos: float = -0.78,
+    tgt_pos: float = 0.78,
+    label_dy: int = -9,
+    label_offset: tuple[int, int] | None = None,
+    label_pos: float = 0.0,
 ) -> str:
     c = COLORS[color]
     anchors = ""
@@ -360,9 +410,21 @@ def edge(
         anchors += (
             f"entryX={entry_xy[0]};entryY={entry_xy[1]};entryDx=0;entryDy=0;"
         )
+    if end_arrow is not None:
+        end_spec = f"endArrow={end_arrow};" + (
+            "endFill=1;" if end_arrow not in ("none", "open", "openThin") else "endFill=0;"
+        )
+    else:
+        end_spec = "endArrow=blockThin;endFill=1;" if arrow else "endArrow=none;"
+    start_spec = ""
+    if start_arrow is not None:
+        start_spec = f"startArrow={start_arrow};startFill={start_fill};startSize=14;"
     style = style_join(
         "edgeStyle=orthogonalEdgeStyle",
-        "rounded=1",
+        # rounded=0: đầu bài yêu cầu mũi tên liên kết là đường thẳng gấp khúc
+        # vuông góc, không bo cung ở chỗ đổi hướng.
+        "rounded=0",
+        "curved=0",
         "orthogonalLoop=1",
         "jettySize=auto",
         "html=1",
@@ -372,8 +434,315 @@ def edge(
         "labelBackgroundColor=#FFFFFF",
         "strokeWidth=1.2",
         "dashed=1" if dashed else "",
-        "endArrow=blockThin" if arrow else "endArrow=none",
-        "endFill=1" if arrow else "",
+        end_spec,
+        start_spec,
+        anchors,
+    )
+    if points:
+        pts = "".join(f'<mxPoint x="{x}" y="{y}" />' for x, y in points)
+        geometry = (
+            '          <mxGeometry relative="1" as="geometry">\n'
+            f'            <Array as="points">{pts}</Array>\n'
+            "          </mxGeometry>"
+        )
+    else:
+        geometry = '          <mxGeometry relative="1" as="geometry" />'
+    # label_offset: đẩy nhãn ra khỏi thân cạnh bằng một edgeLabel con, dùng khi
+    # nhãn dài chạy đè lên hộp lân cận nếu để mặc định giữa cạnh.
+    edge_value = "" if (label and label_offset is not None) else label
+    out = [
+        f'        <mxCell id="{esc(cid)}" value="{esc(edge_value)}" '
+        f'style="{style}" edge="1" parent="1" '
+        f'source="{esc(source)}" target="{esc(target)}">\n'
+        f"{geometry}\n"
+        f"        </mxCell>"
+    ]
+    if label and label_offset is not None:
+        lab_style = style_join(
+            "edgeLabel",
+            "html=1",
+            "align=center",
+            "verticalAlign=middle",
+            "resizable=0",
+            "points=[]",
+            "labelBackgroundColor=#FFFFFF",
+            f"fontSize={font_size}",
+            f"fontColor={c.font}",
+        )
+        out.append(
+            f'        <mxCell id="{esc(cid)}-ml" value="{esc(label)}" '
+            f'style="{lab_style}" vertex="1" connectable="0" '
+            f'parent="{esc(cid)}">\n'
+            f'          <mxGeometry x="{label_pos}" relative="1" as="geometry">\n'
+            f'            <mxPoint x="{label_offset[0]}" y="{label_offset[1]}" '
+            f'as="offset" />\n'
+            f"          </mxGeometry>\n"
+            f"        </mxCell>"
+        )
+    if src_label:
+        out.append(
+            end_label(cid, "sl", src_label, src_pos, color=c.font, dy=label_dy)
+        )
+    if tgt_label:
+        out.append(
+            end_label(cid, "tl", tgt_label, tgt_pos, color=c.font, dy=label_dy)
+        )
+    return "\n".join(out)
+
+
+def legend(
+    cid: str,
+    x: int,
+    y: int,
+    items: Sequence[tuple[str, str]],
+    *,
+    title_text: str = "Chú giải màu",
+    width: int = 250,
+    row_h: int = 22,
+    swatch_w: int = 26,
+) -> list[str]:
+    """Khối chú giải: mỗi dòng là một ô màu kèm nghĩa của màu đó.
+
+    ``items`` là danh sách ``(tên màu trong COLORS, nghĩa)``. Màu đang mang
+    nghĩa nên bắt buộc phải có legend (yêu cầu của GVHD).
+    """
+    # Nghĩa của màu có thể dài hơn một dòng; tính chiều cao từng hàng theo số
+    # dòng wrap thực tế để hàng sau không đè lên hàng trước hoặc lên tiêu đề.
+    text_w = width - swatch_w - 30
+    heights = [
+        max(row_h, _wrapped_lines(meaning, text_w) * 15 + 8)
+        for _, meaning in items
+    ]
+    tops: list[int] = []
+    acc = 40
+    for rh in heights:
+        tops.append(acc)
+        acc += rh
+    h = acc + 8
+    out = [
+        cell(
+            cid,
+            title_text,
+            style_join(
+                "rounded=0",
+                "whiteSpace=wrap",
+                "html=1",
+                "align=left",
+                "verticalAlign=top",
+                "spacingTop=6",
+                "spacingLeft=9",
+                "fillColor=#FFFFFF",
+                "strokeColor=#9AA7B4",
+                "fontColor=#3D4B5A",
+                "fontSize=12",
+                "fontStyle=1",
+                "strokeWidth=1",
+                "dashed=0",
+            ),
+            x,
+            y,
+            width,
+            h,
+        )
+    ]
+    for i, (color_name, meaning) in enumerate(items):
+        c = COLORS[color_name]
+        # Ô màu căn giữa theo chiều cao thực của hàng chữ tương ứng.
+        ry = y + tops[i] + heights[i] // 2 - 7
+        out.append(
+            cell(
+                f"{cid}-s{i}",
+                "",
+                style_join(
+                    "rounded=0",
+                    "html=1",
+                    f"fillColor={c.fill}",
+                    f"strokeColor={c.stroke}",
+                    "strokeWidth=1.2",
+                ),
+                x + 9,
+                ry,
+                swatch_w,
+                14,
+            )
+        )
+        out.append(
+            cell(
+                f"{cid}-t{i}",
+                meaning,
+                style_join(
+                    "text",
+                    "html=1",
+                    "align=left",
+                    "verticalAlign=middle",
+                    "fontSize=11",
+                    "fontColor=#3D4B5A",
+                    "whiteSpace=wrap",
+                ),
+                x + 9 + swatch_w + 7,
+                y + tops[i],
+                text_w,
+                heights[i],
+            )
+        )
+    return out
+
+
+def _wrapped_lines(text: str, width_px: int, *, char_px: float = 6.05) -> int:
+    """Số dòng ước lượng khi ``text`` được wrap trong ô rộng ``width_px``.
+
+    draw.io wrap theo từ nên ước lượng bằng cách gom từ cho tới khi vượt bề
+    rộng ô; dùng để tính chiều cao hàng chú giải thay vì giả định một dòng.
+    """
+    limit = max(1, int(width_px / char_px))
+    lines, cur = 1, 0
+    for word in text.split():
+        need = len(word) if cur == 0 else cur + 1 + len(word)
+        if need > limit and cur:
+            lines += 1
+            cur = len(word)
+        else:
+            cur = need
+    return lines
+
+
+def legend_line(
+    cid: str,
+    x: int,
+    y: int,
+    items: Sequence[tuple[str, str]],
+    *,
+    title_text: str = "Chú giải ký hiệu",
+    width: int = 250,
+    row_h: int = 24,
+) -> list[str]:
+    """Chú giải kiểu đường/ký hiệu: mỗi dòng là một đoạn mẫu kèm nghĩa."""
+    # Nhãn dài sẽ wrap thành nhiều dòng nên chiều cao mỗi hàng phải tính theo
+    # số dòng thực tế, nếu không hàng sau sẽ đè lên hàng trước và lên tiêu đề.
+    text_w = width - 78
+    heights = [
+        max(row_h, _wrapped_lines(meaning, text_w) * 15 + 8)
+        for _, meaning in items
+    ]
+    tops = []
+    acc = 42
+    for rh in heights:
+        tops.append(acc)
+        acc += rh
+    h = acc + 8
+    out = [
+        cell(
+            cid,
+            title_text,
+            style_join(
+                "rounded=0",
+                "whiteSpace=wrap",
+                "html=1",
+                "align=left",
+                "verticalAlign=top",
+                "spacingTop=6",
+                "spacingLeft=9",
+                "fillColor=#FFFFFF",
+                "strokeColor=#9AA7B4",
+                "fontColor=#3D4B5A",
+                "fontSize=12",
+                "fontStyle=1",
+                "strokeWidth=1",
+                "dashed=0",
+            ),
+            x,
+            y,
+            width,
+            h,
+        )
+    ]
+    for i, (style_spec, meaning) in enumerate(items):
+        # Mẫu đường căn giữa theo chiều cao thực của hàng để luôn nằm ngang
+        # hàng chữ tương ứng, kể cả khi chữ wrap hai dòng.
+        ry = y + tops[i] + heights[i] // 2
+        out.append(
+            f'        <mxCell id="{esc(cid)}-l{i}" value="" '
+            f'style="{style_spec}html=1;strokeWidth=1.4;strokeColor=#3D4B5A;" '
+            f'edge="1" parent="1">\n'
+            f'          <mxGeometry relative="1" as="geometry">\n'
+            f'            <mxPoint x="{x + 12}" y="{ry}" as="sourcePoint" />\n'
+            f'            <mxPoint x="{x + 60}" y="{ry}" as="targetPoint" />\n'
+            f"          </mxGeometry>\n"
+            f"        </mxCell>"
+        )
+        out.append(
+            cell(
+                f"{cid}-m{i}",
+                meaning,
+                style_join(
+                    "text",
+                    "html=1",
+                    "align=left",
+                    "verticalAlign=middle",
+                    "fontSize=11",
+                    "fontColor=#3D4B5A",
+                    "whiteSpace=wrap",
+                ),
+                x + 68,
+                y + tops[i],
+                text_w,
+                heights[i],
+            )
+        )
+    return out
+
+
+def erd_edge(
+    cid: str,
+    source: str,
+    target: str,
+    label: str,
+    *,
+    color: str = "green",
+    src_card: str = "one",
+    tgt_card: str = "many",
+    dashed: bool = False,
+    exit_xy: tuple[float, float] | None = None,
+    entry_xy: tuple[float, float] | None = None,
+    points: Sequence[tuple[int, int]] | None = None,
+) -> str:
+    """Cạnh ERD với ký hiệu chân chim (crow's foot) ở cả hai đầu.
+
+    ``src_card``/``tgt_card`` nhận ``one``, ``many``, ``zero_one`` hoặc
+    ``zero_many`` và được dịch sang shape ERx của draw.io, nhờ đó lực lượng
+    quan hệ đọc được trực tiếp trên hình thay vì phải suy từ nhãn.
+    """
+    shapes = {
+        "one": "ERone",
+        "many": "ERmany",
+        "zero_one": "ERzeroToOne",
+        "zero_many": "ERzeroToMany",
+    }
+    c = COLORS[color]
+    anchors = ""
+    if exit_xy is not None:
+        anchors += f"exitX={exit_xy[0]};exitY={exit_xy[1]};exitDx=0;exitDy=0;"
+    if entry_xy is not None:
+        anchors += f"entryX={entry_xy[0]};entryY={entry_xy[1]};entryDx=0;entryDy=0;"
+    style = style_join(
+        "edgeStyle=orthogonalEdgeStyle",
+        "rounded=0",
+        "curved=0",
+        "orthogonalLoop=1",
+        "jettySize=auto",
+        "html=1",
+        f"startArrow={shapes[src_card]}",
+        "startFill=0",
+        "startSize=14",
+        f"endArrow={shapes[tgt_card]}",
+        "endFill=0",
+        "endSize=14",
+        f"strokeColor={c.stroke}",
+        f"fontColor={c.font}",
+        "fontSize=11",
+        "labelBackgroundColor=#FFFFFF",
+        "strokeWidth=1.2",
+        "dashed=1" if dashed else "",
         anchors,
     )
     if points:
@@ -392,6 +761,206 @@ def edge(
         f"{geometry}\n"
         f"        </mxCell>"
     )
+
+
+def uml_node(
+    cid: str,
+    stereotype: str,
+    name: str,
+    detail: Sequence[str],
+    x: int,
+    y: int,
+    w: int,
+    h: int,
+    color: str = "blue",
+    *,
+    dashed: bool = False,
+    parent: str = "1",
+) -> str:
+    """Node triển khai UML: khối 3D kèm stereotype «device»/«execution environment»."""
+    c = COLORS[color]
+    lines = "\n".join(detail)
+    label = f"«{stereotype}»\n<b>{name}</b>"
+    if lines:
+        label += "\n" + lines
+    return cell(
+        cid,
+        label,
+        style_join(
+            "shape=cube",
+            "boundedLbl=1",
+            "backgroundOutline=1",
+            "darkOpacity=0.05",
+            "size=12",
+            "whiteSpace=wrap",
+            "html=1",
+            "align=center",
+            "verticalAlign=middle",
+            "spacingLeft=8",
+            "spacingTop=4",
+            f"fillColor={c.fill}",
+            f"strokeColor={c.stroke}",
+            f"fontColor={c.font}",
+            "fontSize=12",
+            "strokeWidth=1.4",
+            "dashed=1" if dashed else "",
+        ),
+        x,
+        y,
+        w,
+        h,
+        parent=parent,
+    )
+
+
+def uml_artifact(
+    cid: str,
+    name: str,
+    x: int,
+    y: int,
+    w: int,
+    h: int,
+    color: str = "gray",
+    *,
+    parent: str = "1",
+) -> str:
+    """Artifact UML: hình tờ tài liệu gấp góc kèm stereotype «artifact»."""
+    c = COLORS[color]
+    return cell(
+        cid,
+        f"«artifact»\n{name}",
+        style_join(
+            "shape=note",
+            "size=14",
+            "whiteSpace=wrap",
+            "html=1",
+            "align=center",
+            "verticalAlign=middle",
+            f"fillColor={c.fill}",
+            f"strokeColor={c.stroke}",
+            f"fontColor={c.font}",
+            "fontSize=11",
+            "strokeWidth=1.2",
+        ),
+        x,
+        y,
+        w,
+        h,
+        parent=parent,
+    )
+
+
+def note_box(
+    cid: str,
+    text: str,
+    x: int,
+    y: int,
+    w: int,
+    h: int,
+    color: str = "gray",
+    *,
+    parent: str = "1",
+    font_size: int = 11,
+) -> str:
+    """Ghi chú giải thích đặt trong hình (không phải node nghiệp vụ)."""
+    c = COLORS[color]
+    return cell(
+        cid,
+        text,
+        style_join(
+            "rounded=0",
+            "whiteSpace=wrap",
+            "html=1",
+            "align=left",
+            "verticalAlign=top",
+            "spacingTop=6",
+            "spacingLeft=8",
+            "spacingRight=6",
+            f"fillColor={c.fill}",
+            f"strokeColor={c.stroke}",
+            f"fontColor={c.font}",
+            f"fontSize={font_size}",
+            "strokeWidth=1",
+            "dashed=1",
+        ),
+        x,
+        y,
+        w,
+        h,
+        parent=parent,
+    )
+
+
+def state(
+    cid: str,
+    name: str,
+    x: int,
+    y: int,
+    w: int,
+    h: int,
+    color: str = "blue",
+    *,
+    detail: str = "",
+    parent: str = "1",
+) -> str:
+    """Trạng thái UML: hộp bo góc, tên trạng thái ở trên, do/entry ở dưới."""
+    c = COLORS[color]
+    label = f"<b>{name}</b>"
+    if detail:
+        label += f"\n{detail}"
+    return cell(
+        cid,
+        label,
+        style_join(
+            "rounded=1",
+            "arcSize=22",
+            "whiteSpace=wrap",
+            "html=1",
+            "align=center",
+            "verticalAlign=middle",
+            "spacing=6",
+            f"fillColor={c.fill}",
+            f"strokeColor={c.stroke}",
+            f"fontColor={c.font}",
+            "fontSize=13",
+            "strokeWidth=1.4",
+        ),
+        x,
+        y,
+        w,
+        h,
+        parent=parent,
+    )
+
+
+def pseudostate(
+    cid: str,
+    x: int,
+    y: int,
+    *,
+    kind: str = "initial",
+    size: int = 30,
+    parent: str = "1",
+) -> str:
+    """Pseudostate khởi tạo (đĩa đen) hoặc trạng thái kết thúc (vòng bao)."""
+    if kind == "initial":
+        style = style_join(
+            "ellipse",
+            "html=1",
+            "fillColor=#2C3440",
+            "strokeColor=#2C3440",
+            "strokeWidth=1.4",
+        )
+    else:
+        style = style_join(
+            "ellipse",
+            "shape=endState",
+            "html=1",
+            "fillColor=#2C3440",
+            "strokeColor=#2C3440",
+            "strokeWidth=1.6",
+        )
+    return cell(cid, "", style, x, y, size, size, parent=parent)
 
 
 def build(did: str, name: str, width: int, height: int, cells: Iterable[str]) -> str:
@@ -425,35 +994,169 @@ def diagram_03() -> str:
         title("t", "Sơ đồ triển khai nguyên mẫu PERFIN", 40, 16, 1040),
         subtitle(
             "st",
-            "Các tiến trình ứng dụng nằm trong môi trường demo; dịch vụ AI đám "
-            "mây nằm ngoài biên triển khai và chỉ trả dữ liệu trung gian.",
+            "Node ghi đầy đủ stereotype UML; mọi communication path đều ghi "
+            "giao thức và cổng. Dịch vụ AI đám mây nằm ngoài biên triển khai "
+            "và chỉ trả dữ liệu trung gian.",
             40,
             46,
-            1100,
+            1180,
         ),
-        lane("demo", "Môi trường demo / thực nghiệm", 250, 105, 820, 540, "blue"),
-        lane("cloud", "Dịch vụ AI đám mây", 1100, 105, 250, 540, "purple", dashed=True),
-        box("mobile", "Thiết bị người dùng\nPERFIN Mobile", 40, 275, 170, 78, "blue", bold=True),
-        box("api", "Node.js API\nExpress", 40, 70, 210, 76, "blue", parent="demo", bold=True),
-        box("worker", "Node.js Worker\nBullMQ", 40, 250, 210, 76, "blue", parent="demo", bold=True),
-        database("redis", "Redis\nstate · cache · queue", 360, 75, 190, 92, "yellow", parent="demo"),
-        database("postgres", "PostgreSQL\nnguồn dữ liệu chuẩn", 360, 250, 190, 92, "green", parent="demo"),
-        box("localai", "PaddleOCR / PhoWhisper\nPython subprocess cục bộ", 585, 170, 200, 86, "purple", parent="demo"),
-        box("exports", "Thư mục export / backup", 585, 360, 200, 70, "yellow", parent="demo"),
-        box("gemini", "Gemini API\nfunction calling · narration", 25, 85, 200, 86, "purple", dashed=True, parent="cloud"),
-        box("google", "Google Vision / Speech\nOCR · STT cloud", 25, 270, 200, 86, "purple", dashed=True, parent="cloud"),
-        edge("e1", "mobile", "api", "HTTPS / JSON", exit_xy=(1, 0.5), entry_xy=(0, 0.5)),
-        edge("e2", "api", "redis", "state / cache", color="yellow", exit_xy=(1, 0.35), entry_xy=(0, 0.5)),
-        edge("e3", "api", "postgres", "transaction / SQL", color="green", exit_xy=(1, 0.75), entry_xy=(0, 0.35), points=[(580, 220)]),
-        edge("e4", "api", "worker", "enqueue job", color="yellow", exit_xy=(0.3, 1), entry_xy=(0.3, 0)),
-        edge("e5", "worker", "redis", "queue / retry", color="yellow", exit_xy=(1, 0.25), entry_xy=(0, 0.75)),
-        edge("e6", "worker", "postgres", "ghi tác vụ nền", color="green", exit_xy=(1, 0.65), entry_xy=(0, 0.75)),
-        edge("e7", "worker", "exports", "export / cleanup", color="yellow", exit_xy=(1, 0.85), entry_xy=(0, 0.5)),
-        edge("e8", "api", "localai", "", color="purple", exit_xy=(0.8, 0), entry_xy=(0, 0.5), points=[(500, 155), (810, 155), (810, 318)]),
-        edge("e9", "api", "gemini", "", color="purple", dashed=True, exit_xy=(0.65, 0), entry_xy=(0, 0.5), points=[(470, 145), (1080, 145), (1080, 233)]),
-        edge("e10", "api", "google", "", color="purple", dashed=True, exit_xy=(0.95, 0), entry_xy=(0, 0.5), points=[(500, 135), (1060, 135), (1060, 418)]),
+        # Hai khung đặt ở y=150, node trong khung bắt đầu từ y tương đối 70 nên
+        # dải y=186..220 là hành lang trống ngay dưới băng tiêu đề: nhãn giao
+        # thức của các cạnh đi ra khỏi khung nằm ở đây, không đè lên tiêu đề.
+        lane(
+            "demo",
+            "«execution environment» Môi trường demo / thực nghiệm",
+            300, 150, 860, 600, "blue",
+        ),
+        lane(
+            "cloud",
+            "Ngoài biên triển khai · dịch vụ AI đám mây",
+            1200, 150, 300, 600, "purple", dashed=True,
+        ),
+        uml_node(
+            "mobile", "device", "Thiết bị người dùng",
+            ["«artifact» PERFIN Mobile (React Native)"],
+            40, 330, 210, 110, "blue",
+        ),
+        uml_node(
+            "api", "execution environment", "Node.js 20 · Express",
+            ["«artifact» perfin-api"],
+            40, 70, 230, 92, "blue", parent="demo",
+        ),
+        uml_node(
+            "worker", "execution environment", "Node.js 20 · BullMQ",
+            ["«artifact» perfin-worker"],
+            40, 260, 230, 92, "blue", parent="demo",
+        ),
+        database("redis", "«device» Redis 7\nstate · cache · queue", 400, 70, 190, 96, "yellow", parent="demo"),
+        database("postgres", "«device» PostgreSQL 15\nnguồn dữ liệu chuẩn", 400, 260, 190, 96, "green", parent="demo"),
+        uml_node(
+            "localai", "execution environment", "Python 3.11 cục bộ",
+            ["«artifact» PaddleOCR", "«artifact» PhoWhisper"],
+            650, 165, 190, 104, "purple", parent="demo",
+        ),
+        uml_node(
+            "fs", "device", "Ổ đĩa máy chủ demo", [],
+            640, 370, 200, 90, "yellow", parent="demo",
+        ),
+        uml_artifact(
+            "exports", "exports/*.csv · backups/*.sql",
+            640, 480, 200, 70, "yellow", parent="demo",
+        ),
+        uml_node(
+            "gemini", "device", "Gemini API",
+            ["function calling · narration"],
+            35, 70, 230, 104, "purple", dashed=True, parent="cloud",
+        ),
+        uml_node(
+            "google", "device", "Google Vision / Speech",
+            ["OCR · STT đám mây"],
+            35, 300, 230, 104, "purple", dashed=True, parent="cloud",
+        ),
+        # Mỗi communication path ghi rõ giao thức và cổng theo yêu cầu của GVHD.
+        # Toạ độ waypoint là toạ độ tuyệt đối trên trang: api/worker nằm ở
+        # x 340..570, redis/postgres ở x 700..890, localai ở x 950..1140.
+        edge(
+            "e1", "mobile", "api", "HTTPS/JSON · TLS 1.3",
+            exit_xy=(1, 0.5), entry_xy=(0, 0.5), font_size=10,
+            points=[(320, 385), (320, 266)], label_pos=-0.35,
+            label_offset=(0, -10),
+        ),
+        edge(
+            "e2", "api", "redis", "RESP · TCP 6379", color="yellow",
+            exit_xy=(1, 0.35), entry_xy=(0, 0.5), font_size=10,
+            label_offset=(0, -10),
+        ),
+        # api→postgres và worker→redis là cặp cạnh chéo nhau; hai hành lang
+        # dọc x=670 và x=635 giữ chúng vuông góc, nhãn dịch ra khỏi chỗ giao.
+        edge(
+            "e3", "api", "postgres", "SQL · TCP 5432", color="green",
+            exit_xy=(1, 0.75), entry_xy=(0, 0.25),
+            points=[(670, 289), (670, 434)], font_size=10,
+            label_offset=(-22, 12),
+        ),
+        edge(
+            "e4", "api", "worker", "BullMQ job · RESP TCP 6379", color="yellow",
+            exit_xy=(0.15, 1), entry_xy=(0.15, 0), font_size=10,
+            label_offset=(-4, 0),
+        ),
+        edge(
+            "e5", "worker", "redis", "RESP · TCP 6379", color="yellow",
+            exit_xy=(1, 0.25), entry_xy=(0, 0.85),
+            points=[(635, 433), (635, 302)], font_size=10,
+            label_offset=(-26, 0),
+        ),
+        edge(
+            "e6", "worker", "postgres", "SQL · TCP 5432", color="green",
+            exit_xy=(1, 0.65), entry_xy=(0, 0.65), font_size=10,
+            label_offset=(0, -10),
+        ),
+        edge(
+            "e7", "worker", "fs", "POSIX file I/O", color="yellow",
+            exit_xy=(0.8, 1), entry_xy=(0, 0.3),
+            points=[(524, 547)], font_size=10, label_pos=-0.2,
+            label_offset=(0, -10),
+        ),
+        # e8/e9/e10 đều ra khỏi mặt trên của api nhưng theo bốn hành lang ngang
+        # khác nhau (y=202 trong khung, y=126 và y=100 ngoài khung) và thứ tự
+        # cột x tăng dần nên không cắt nhau.
+        edge(
+            "e8", "api", "localai", "stdio · child_process", color="purple",
+            exit_xy=(0.9, 0), entry_xy=(0.5, 0),
+            points=[(547, 202), (1045, 202)], font_size=10,
+            label_pos=-0.66,
+        ),
+        edge(
+            "e9", "api", "gemini", "HTTPS/REST", color="purple", dashed=True,
+            exit_xy=(0.55, 0), entry_xy=(0, 0.5),
+            points=[(466, 126), (1172, 126)], font_size=10,
+        ),
+        edge(
+            "e10", "api", "google", "HTTPS/REST", color="purple", dashed=True,
+            exit_xy=(0.7, 0), entry_xy=(0, 0.5),
+            points=[(501, 100), (1188, 100)], font_size=10,
+        ),
+        edge(
+            "dep1", "fs", "exports", "«deploy»", color="yellow", dashed=True,
+            arrow=False, exit_xy=(0.5, 1), entry_xy=(0.5, 0), font_size=10,
+            label_offset=(0, 0),
+        ),
+        *legend(
+            "lg",
+            30,
+            446,
+            [
+                ("blue", "Tiến trình ứng dụng trong biên"),
+                ("green", "Lưu trữ bền vững, dữ liệu chuẩn"),
+                ("yellow", "Lưu trữ tạm, hàng đợi, tệp đĩa"),
+                ("purple", "Thành phần AI (nét đứt: ngoài biên)"),
+            ],
+            width=260,
+        ),
+        *legend_line(
+            "lgl",
+            30,
+            650,
+            [
+                (
+                    "endArrow=blockThin;endFill=1;html=1;rounded=0;",
+                    "Communication path + giao thức",
+                ),
+                (
+                    "endArrow=blockThin;endFill=1;dashed=1;html=1;rounded=0;",
+                    "Phụ thuộc ra dịch vụ ngoài biên",
+                ),
+                (
+                    "endArrow=none;dashed=1;html=1;rounded=0;",
+                    "«deploy»: artifact trên node",
+                ),
+            ],
+            title_text="Chú giải ký hiệu",
+            width=260,
+        ),
     ]
-    return build("03-deployment", "Deployment", 1390, 690, c)
+    return build("03-deployment", "Deployment", 1560, 830, c)
 
 
 def diagram_04() -> str:
@@ -461,37 +1164,156 @@ def diagram_04() -> str:
         title("t", "Mô hình lớp miền theo aggregate nghiệp vụ", 40, 16, 1080),
         subtitle(
             "st",
-            "Các aggregate dùng màu nhất quán với kiến trúc; ownership theo userId "
-            "được lược khỏi cạnh để ưu tiên các quan hệ nghiệp vụ chính.",
+            "Quan hệ ghi đầy đủ ký hiệu UML: hình thoi đặc = composition, hình "
+            "thoi rỗng = aggregation, mũi tên = navigability, bội số ghi ở cả "
+            "hai đầu kèm role name. User là gốc sở hữu của cả bốn aggregate.",
             40,
             46,
             1250,
         ),
-        lane("profile", "Hồ sơ & cá nhân hóa", 40, 100, 330, 750, "purple"),
-        lane("ledger", "Sổ cái", 390, 100, 330, 750, "green"),
-        lane("planning", "Kế hoạch & định kỳ", 740, 100, 330, 750, "yellow"),
-        lane("conversation", "Hội thoại & phản hồi", 1090, 100, 330, 750, "blue"),
-        card("user", "User", ["+ id: int", "+ userKey: string", "+ payday: int", "+ personalizationConsent: bool"], 20, 60, 290, 125, "blue", parent="profile", font_size=13),
-        card("personality", "AIPersonality", ["+ id: int", "+ key, name: string", "+ stylePrompt: text"], 20, 225, 290, 110, "purple", parent="profile", font_size=13),
-        card("trait", "UserTrait", ["+ id: int", "+ traitType: string", "+ traitValue: string"], 20, 375, 290, 105, "purple", parent="profile", font_size=13),
-        card("wallet", "Wallet", ["+ id: int", "+ name, type: string", "+ balance: decimal", "+ updateBalance(amount)"], 20, 60, 290, 125, "green", parent="ledger", font_size=13),
-        card("transaction", "Transaction", ["+ id: int", "+ description: string", "+ amount: decimal", "+ type, source: string", "+ transactionDate: date", "+ softDelete() / restore()"], 20, 225, 290, 165, "green", parent="ledger", font_size=13),
-        card("category", "Category", ["+ id: int", "+ name, type: string", "+ parentId: int"], 20, 430, 290, 105, "green", parent="ledger", font_size=13),
-        card("budget", "Budget", ["+ id: int", "+ amountLimit: decimal", "+ month, year: int", "+ progress() / forecast()"], 20, 60, 290, 125, "yellow", parent="planning", font_size=13),
-        card("goal", "FinancialGoal", ["+ id: int", "+ goalType: string", "+ target/currentAmount: decimal", "+ targetDate: date", "+ buildPlan() / assessProgress()"], 20, 225, 290, 150, "yellow", parent="planning", font_size=13),
-        card("bill", "RecurringBill", ["+ id: int", "+ name, frequency: string", "+ amount: decimal", "+ nextDueDate: date", "+ pay() / pause()"], 20, 415, 290, 140, "yellow", parent="planning", font_size=13),
-        card("payment", "RecurringPayment", ["+ id: int", "+ periodDueDate / paidDate", "+ amount: decimal", "+ status: string"], 20, 595, 290, 120, "yellow", parent="planning", font_size=13),
-        card("chat", "ChatMessage", ["+ id: int", "+ role: string", "+ content: text", "+ metadata: json"], 20, 60, 290, 120, "blue", parent="conversation", font_size=13),
-        card("feedback", "AIFeedback", ["+ id: int", "+ feedbackType: string", "+ aiResult: json", "+ correctedResult: json"], 20, 220, 290, 125, "purple", parent="conversation", font_size=13),
-        edge("u_p", "user", "personality", "activates 0..1", color="purple", exit_xy=(0.35, 1), entry_xy=(0.35, 0), arrow=False),
-        edge("w_tx", "wallet", "transaction", "funds 0..*", color="green", exit_xy=(0.35, 1), entry_xy=(0.35, 0), arrow=False),
-        edge("cat_tx", "category", "transaction", "classifies", color="green", exit_xy=(0.7, 0), entry_xy=(0.7, 1), arrow=False),
-        edge("b_h", "bill", "payment", "history 0..*", color="yellow", exit_xy=(0.5, 1), entry_xy=(0.5, 0), arrow=False),
-        edge("p_c", "personality", "chat", "styles", color="purple", dashed=True, exit_xy=(1, 0.5), entry_xy=(0.5, 0), arrow=False, points=[(380, 380), (380, 90), (1255, 90)]),
-        edge("f_tx", "feedback", "transaction", "corrects 0..1", color="purple", dashed=True, exit_xy=(0.2, 0), entry_xy=(1, 0.55), arrow=False, points=[(1168, 305), (730, 305), (730, 415)]),
-        edge("w_g", "wallet", "goal", "links 0..1", color="green", exit_xy=(1, 0.7), entry_xy=(0, 0.4), arrow=False, points=[(730, 250), (730, 385)]),
+        # User đứng riêng ở hàng trên: là gốc sở hữu (composition) của cả bốn
+        # aggregate nên phải nhìn thấy được quan hệ ownership, không lược bỏ.
+        card(
+            "user",
+            "User",
+            [
+                "+ id: int",
+                "+ userKey: string",
+                "+ payday: int",
+                "+ personalizationConsent: bool",
+            ],
+            560,
+            110,
+            330,
+            120,
+            "blue",
+            font_size=13,
+        ),
+        lane("profile", "Hồ sơ & cá nhân hóa", 40, 285, 330, 545, "purple"),
+        lane("ledger", "Sổ cái", 390, 285, 330, 545, "green"),
+        lane("planning", "Kế hoạch & định kỳ", 740, 285, 330, 700, "yellow"),
+        lane("conversation", "Hội thoại & phản hồi", 1090, 285, 330, 545, "blue"),
+        card("personality", "AIPersonality", ["+ id: int", "+ key, name: string", "+ stylePrompt: text"], 20, 55, 290, 105, "purple", parent="profile", font_size=13),
+        card("trait", "UserTrait", ["+ id: int", "+ traitType: string", "+ traitValue: string"], 20, 195, 290, 100, "purple", parent="profile", font_size=13),
+        card("wallet", "Wallet", ["+ id: int", "+ name, type: string", "+ balance: decimal", "+ updateBalance(amount)"], 20, 55, 290, 120, "green", parent="ledger", font_size=13),
+        card("transaction", "Transaction", ["+ id: int", "+ description: string", "+ amount: decimal", "+ type, source: string", "+ transactionDate: date", "+ softDelete() / restore()"], 20, 210, 290, 160, "green", parent="ledger", font_size=13),
+        card("category", "Category", ["+ id: int", "+ name, type: string", "+ parentId: int"], 20, 405, 290, 100, "green", parent="ledger", font_size=13),
+        card("budget", "Budget", ["+ id: int", "+ amountLimit: decimal", "+ month, year: int", "+ progress() / forecast()"], 20, 55, 290, 120, "yellow", parent="planning", font_size=13),
+        card("goal", "FinancialGoal", ["+ id: int", "+ goalType: string", "+ target/currentAmount: decimal", "+ targetDate: date", "+ buildPlan() / assessProgress()"], 20, 210, 290, 145, "yellow", parent="planning", font_size=13),
+        card("bill", "RecurringBill", ["+ id: int", "+ name, frequency: string", "+ amount: decimal", "+ nextDueDate: date", "+ pay() / pause()"], 20, 390, 290, 135, "yellow", parent="planning", font_size=13),
+        card("payment", "RecurringPayment", ["+ id: int", "+ periodDueDate / paidDate", "+ amount: decimal", "+ status: string"], 20, 560, 290, 115, "yellow", parent="planning", font_size=13),
+        card("chat", "ChatMessage", ["+ id: int", "+ role: string", "+ content: text", "+ metadata: json"], 20, 55, 290, 115, "blue", parent="conversation", font_size=13),
+        card("feedback", "AIFeedback", ["+ id: int", "+ feedbackType: string", "+ aiResult: json", "+ correctedResult: json"], 20, 205, 290, 120, "purple", parent="conversation", font_size=13),
+        # Ownership: composition. Trong draw.io, startArrow nằm ở đầu source nên
+        # hình thoi đặc phải đặt bằng start_arrow để nằm ở phía User (đầu
+        # "whole"); đầu part mang mũi tên mở thể hiện navigability.
+        edge(
+            "own_wallet", "user", "wallet", "owns",
+            color="green", start_arrow="diamondThin", start_fill=1,
+            end_arrow="openThin", exit_xy=(0.25, 1), entry_xy=(0.5, 0),
+            src_label="1", tgt_label="1..*", points=[(642, 262), (555, 262)],
+        ),
+        edge(
+            "own_budget", "user", "budget", "owns",
+            color="yellow", start_arrow="diamondThin", start_fill=1,
+            end_arrow="openThin", exit_xy=(0.75, 1), entry_xy=(0.5, 0),
+            src_label="1", tgt_label="0..*", points=[(808, 262), (905, 262)],
+        ),
+        edge(
+            "own_profile", "user", "trait", "owns",
+            color="purple", start_arrow="diamondThin", start_fill=1,
+            end_arrow="openThin", exit_xy=(0, 0.5), entry_xy=(0.5, 0),
+            src_label="1", tgt_label="0..*", points=[(205, 170)],
+        ),
+        edge(
+            "own_chat", "user", "chat", "owns",
+            color="blue", start_arrow="diamondThin", start_fill=1,
+            end_arrow="openThin", exit_xy=(1, 0.5), entry_xy=(0.5, 0),
+            src_label="1", tgt_label="0..*", points=[(1255, 170)],
+        ),
+        # Aggregation: hình thoi RỖNG ở phía User vì AIPersonality tồn tại độc
+        # lập với hồ sơ đang bật nó.
+        edge(
+            "u_p", "user", "personality", "activates",
+            color="purple", start_arrow="diamondThin", start_fill=0,
+            end_arrow="openThin", exit_xy=(0.1, 1), entry_xy=(1, 0.5),
+            src_label="0..1", tgt_label="1", points=[(593, 392)],
+        ),
+        # Association một chiều: mũi tên mở ở đầu đích thể hiện navigability.
+        edge(
+            "w_tx", "wallet", "transaction", "funds",
+            color="green", end_arrow="openThin", exit_xy=(0.3, 1),
+            entry_xy=(0.3, 0), src_label="1", tgt_label="0..*",
+        ),
+        edge(
+            "cat_tx", "category", "transaction", "classifies",
+            color="green", end_arrow="openThin", exit_xy=(0.72, 0),
+            entry_xy=(0.72, 1), src_label="0..1", tgt_label="0..*",
+        ),
+        # Composition: RecurringPayment là lịch sử thuộc RecurringBill, nên hình
+        # thoi đặc nằm ở đầu RecurringBill (source).
+        edge(
+            "b_h", "bill", "payment", "history",
+            color="yellow", start_arrow="diamondThin", start_fill=1,
+            end_arrow="openThin", exit_xy=(0.5, 1), entry_xy=(0.5, 0),
+            src_label="1", tgt_label="0..*",
+        ),
+        edge(
+            "p_c", "personality", "chat", "styles",
+            color="purple", dashed=True, end_arrow="openThin",
+            exit_xy=(1, 0.75), entry_xy=(0, 0.5),
+            src_label="0..1", tgt_label="0..*",
+            points=[(378, 418), (378, 850), (1070, 850), (1070, 397)],
+        ),
+        edge(
+            "f_tx", "feedback", "transaction", "corrects",
+            color="purple", dashed=True, end_arrow="openThin",
+            exit_xy=(0, 0.5), entry_xy=(1, 0.75),
+            src_label="0..*", tgt_label="0..1", points=[(730, 555)],
+        ),
+        edge(
+            "w_g", "wallet", "goal", "links",
+            color="green", end_arrow="openThin", exit_xy=(1, 0.35),
+            entry_xy=(0, 0.35), src_label="0..1", tgt_label="0..*",
+        ),
+        *legend(
+            "lg",
+            40,
+            110,
+            [
+                ("blue", "Người dùng và hội thoại"),
+                ("green", "Sổ cái xác định"),
+                ("yellow", "Kế hoạch và khoản định kỳ"),
+                ("purple", "Thành phần liên quan LLM"),
+            ],
+            width=250,
+        ),
+        *legend_line(
+            "lgl",
+            940,
+            110,
+            [
+                (
+                    "endArrow=diamondThin;endFill=1;endSize=14;html=1;rounded=0;",
+                    "Composition: con phụ thuộc vòng đời cha",
+                ),
+                (
+                    "endArrow=diamondThin;endFill=0;endSize=14;html=1;rounded=0;",
+                    "Aggregation: con tồn tại độc lập",
+                ),
+                (
+                    "endArrow=openThin;endFill=0;endSize=12;html=1;rounded=0;",
+                    "Association có navigability (hướng đọc)",
+                ),
+                (
+                    "endArrow=openThin;endFill=0;endSize=12;dashed=1;html=1;rounded=0;",
+                    "Tham chiếu lỏng qua FK nullable",
+                ),
+            ],
+            width=300,
+        ),
     ]
-    return build("04-domain-class", "Domain class", 1460, 890, c)
+    return build("04-domain-class", "Domain class", 1460, 1010, c)
 
 
 def diagram_05() -> str:
@@ -500,8 +1322,11 @@ def diagram_05() -> str:
         subtitle(
             "st",
             "Tên cột được rút gọn theo nhóm để giữ khả năng đọc; kiểu dữ liệu và "
-            "constraint đầy đủ là chuỗi migration 001–008. Các cạnh thể hiện FK "
-            "nghiệp vụ chính, còn user_id lặp lại biểu diễn phạm vi người dùng.",
+            "constraint đầy đủ là chuỗi migration 001–008. Mọi cạnh FK đều ghi "
+            "lực lượng bằng ký hiệu chân chim ở hai đầu. Các FK phạm vi người "
+            "dùng (user_id) được khai báo trong hộp bảng thay cho đường dài; "
+            "cạnh chỉ vẽ cho quan hệ nghiệp vụ chính và quan hệ 1:1 duy nhất "
+            "(users–backup_config).",
             40,
             46,
             1430,
@@ -525,19 +1350,105 @@ def diagram_05() -> str:
         card("goals", "FINANCIAL_GOALS", ["PK id · FK user/linked_wallet", "goal_type · status", "target/current_amount", "target_date"], 15, 262, 330, 108, "yellow", parent="planning"),
         card("bills", "RECURRING_BILLS", ["PK id · FK user/category/wallet", "name · amount · frequency", "next_due_date"], 15, 50, 330, 92, "yellow", parent="ops"),
         card("payments", "RECURRING_BILL_PAYMENTS", ["PK id · FK user/bill", "FK transaction/wallet", "period_due_date · status"], 15, 162, 330, 92, "yellow", parent="ops"),
-        card("dismissed", "RECURRING_SUGGESTIONS_DISMISSED", ["PK id · FK user_id", "signature · dismissed_at"], 15, 274, 330, 80, "yellow", parent="ops"),
-        card("exports", "EXPORT_HISTORY", ["PK id · FK user_id", "export_type · file_path", "filters · expires_at"], 15, 374, 330, 92, "blue", parent="ops"),
-        card("backup", "BACKUP_CONFIG", ["PK id · FK user_id", "auto_enabled · frequency", "keep_count"], 15, 486, 330, 92, "blue", parent="ops"),
-        edge("p_u", "personalities", "users", "active_for", color="purple", dashed=True, exit_xy=(0.4, 0), entry_xy=(0.4, 1), arrow=False),
-        edge("p_c", "personalities", "chat", "styles", color="purple", dashed=True, exit_xy=(0.7, 1), entry_xy=(0.7, 0), arrow=False),
-        edge("cat_tx", "categories", "transactions", "classifies", color="green", exit_xy=(0, 0.45), entry_xy=(0, 0.45), arrow=False, points=[(415, 195), (415, 430)]),
-        edge("w_tx", "wallets", "transactions", "funds", color="green", exit_xy=(0.65, 1), entry_xy=(0.75, 0), arrow=False),
-        edge("cat_bud", "categories", "budgets", "limits", color="green", exit_xy=(1, 0.35), entry_xy=(0, 0.35), arrow=False),
-        edge("bud_hist", "budgets", "budget_history", "audits", color="yellow", exit_xy=(0.5, 1), entry_xy=(0.5, 0), arrow=False),
-        edge("w_goal", "wallets", "goals", "links", color="green", exit_xy=(1, 0.6), entry_xy=(0, 0.6), arrow=False),
-        edge("bill_pay", "bills", "payments", "history", color="yellow", exit_xy=(0.5, 1), entry_xy=(0.5, 0), arrow=False),
+        card("dismissed", "RECURRING_SUGGESTIONS_DISMISSED", ["PK id · FK user_id → users.id (N:1)", "signature · dismissed_at"], 15, 274, 330, 80, "yellow", parent="ops"),
+        card("exports", "EXPORT_HISTORY", ["PK id · FK user_id → users.id (N:1)", "export_type · file_path", "filters · expires_at"], 15, 374, 330, 92, "blue", parent="ops"),
+        card("backup", "BACKUP_CONFIG", ["PK id · FK user_id → users.id (1:1)", "auto_enabled · frequency", "keep_count"], 15, 486, 330, 92, "blue", parent="ops"),
+        # Mọi cạnh FK đều ghi lực lượng bằng ký hiệu chân chim ở hai đầu, nên
+        # đọc được 1:1 hay 1:N trực tiếp trên hình.
+        erd_edge("p_u", "personalities", "users", "active_for", color="purple",
+                 dashed=True, src_card="zero_one", tgt_card="one",
+                 exit_xy=(0.4, 0), entry_xy=(0.4, 1)),
+        erd_edge("p_c", "personalities", "chat", "styles", color="purple",
+                 dashed=True, src_card="zero_one", tgt_card="zero_many",
+                 exit_xy=(0.7, 1), entry_xy=(0.7, 0)),
+        erd_edge("cat_tx", "categories", "transactions", "classifies",
+                 color="green", src_card="zero_one", tgt_card="zero_many",
+                 exit_xy=(0, 0.45), entry_xy=(0, 0.45),
+                 points=[(400, 195), (400, 430)]),
+        erd_edge("w_tx", "wallets", "transactions", "funds", color="green",
+                 src_card="one", tgt_card="zero_many",
+                 exit_xy=(0.65, 1), entry_xy=(0.75, 0)),
+        erd_edge("cat_bud", "categories", "budgets", "limits", color="green",
+                 src_card="one", tgt_card="zero_many",
+                 exit_xy=(1, 0.35), entry_xy=(0, 0.35)),
+        erd_edge("bud_hist", "budgets", "budget_history", "audits",
+                 color="yellow", src_card="one", tgt_card="zero_many",
+                 exit_xy=(0.5, 1), entry_xy=(0.5, 0)),
+        erd_edge("w_goal", "wallets", "goals", "links", color="green",
+                 src_card="zero_one", tgt_card="zero_many",
+                 exit_xy=(1, 0.6), entry_xy=(0, 0.6)),
+        erd_edge("bill_pay", "bills", "payments", "history", color="yellow",
+                 src_card="one", tgt_card="zero_many",
+                 exit_xy=(0.5, 1), entry_xy=(0.5, 0)),
+        # Bảy bảng trước đây bị vẽ cô lập, nay đã nối đúng FK của chúng.
+        erd_edge("w_pnl", "wallets", "pnl", "records_pnl", color="green",
+                 src_card="one", tgt_card="zero_many",
+                 exit_xy=(0.25, 1), entry_xy=(0.25, 0),
+                 points=[(480, 400)]),
+        erd_edge("w_tf", "wallets", "transfers", "moves_between", color="green",
+                 src_card="one", tgt_card="zero_many",
+                 exit_xy=(1, 0.8), entry_xy=(1, 0.5),
+                 points=[(760, 245), (760, 673)]),
+        erd_edge("u_chat", "users", "chat", "writes", color="blue",
+                 src_card="one", tgt_card="zero_many",
+                 exit_xy=(0.15, 1), entry_xy=(0.15, 0),
+                 points=[(90, 200), (90, 480)]),
+        erd_edge("tx_fb", "transactions", "feedback", "corrected_by",
+                 color="purple", dashed=True, src_card="zero_one",
+                 tgt_card="zero_many", exit_xy=(0, 0.85), entry_xy=(1, 0.5),
+                 points=[(398, 700)]),
+        # EXPORT_HISTORY, BACKUP_CONFIG và RECURRING_SUGGESTIONS_DISMISSED chỉ có
+        # duy nhất FK user_id. Kéo ba đường từ lane ngoài cùng bên trái sang lane
+        # ngoài cùng bên phải sẽ tạo đúng loại cạnh vắt ngang cần tránh, nên ba
+        # bảng này dùng phương án khai báo FK trong hộp kèm lực lượng — nêu rõ ở
+        # ghi chú dưới đây và trong phụ đề hình.
+        note_box(
+            "isolated_note",
+            "Ba bảng EXPORT_HISTORY, BACKUP_CONFIG và "
+            "RECURRING_SUGGESTIONS_DISMISSED chỉ tham chiếu USERS qua user_id. "
+            "Đường nối được thay bằng khai báo FK trong hộp bảng, lực lượng ghi "
+            "ngay cạnh tên FK (N:1, riêng BACKUP_CONFIG là 1:1).",
+            1170, 590, 360, 96, "gray",
+        ),
+        *legend_line(
+            "lgl",
+            30,
+            878,
+            [
+                (
+                    "endArrow=ERone;endFill=0;endSize=14;html=1;rounded=0;",
+                    "Đúng một bản ghi (1)",
+                ),
+                (
+                    "endArrow=ERzeroToOne;endFill=0;endSize=14;html=1;rounded=0;",
+                    "Không hoặc một (0..1)",
+                ),
+                (
+                    "endArrow=ERzeroToMany;endFill=0;endSize=14;html=1;rounded=0;",
+                    "Không hoặc nhiều (0..N)",
+                ),
+                (
+                    "endArrow=none;dashed=1;html=1;rounded=0;",
+                    "FK nullable / tham chiếu lỏng",
+                ),
+            ],
+            title_text="Chú giải lực lượng quan hệ",
+            width=330,
+        ),
+        *legend(
+            "lg",
+            400,
+            878,
+            [
+                ("blue", "Hồ sơ, hội thoại và vận hành"),
+                ("green", "Sổ cái xác định"),
+                ("yellow", "Kế hoạch và khoản định kỳ"),
+                ("purple", "Dữ liệu liên quan LLM"),
+            ],
+            width=320,
+        ),
     ]
-    return build("05-physical-erd", "Physical ERD", 1560, 880, c)
+    return build("05-physical-erd", "Physical ERD", 1560, 1010, c)
 
 
 def diagram_06() -> str:
@@ -549,7 +1460,7 @@ def diagram_06() -> str:
             "effect, phép tính và nguồn dữ liệu chuẩn luôn thuộc lõi xác định.",
             40,
             46,
-            1260,
+            1160,
         ),
         box("input", "Đầu vào tự nhiên\ntext · OCR text · transcript", 40, 120, 190, 72, "blue"),
         box("pre", "Tiền xử lý xác định\nchuẩn hóa · giới hạn · nạp danh mục", 270, 120, 230, 72, "green"),
@@ -569,7 +1480,21 @@ def diagram_06() -> str:
         box("facts", "Insight facts có cấu trúc\nnguồn sự thật định lượng", 270, 680, 200, 70, "blue"),
         box("narrator", "LLM narrator + persona\nchỉ diễn giải facts", 40, 670, 190, 82, "purple", dashed=True),
         box("explain", "Lời giải thích có căn cứ\nhoặc template fallback", 40, 780, 250, 64, "blue"),
-        box("safety", "Ràng buộc an toàn\nLLM không ghi DB trực tiếp · không tự tạo số liệu", 590, 455, 320, 70, "red", font_size=12),
+        # Ràng buộc an toàn được tách thành hai note «constraint» đặt cạnh đúng
+        # thành phần bị ràng buộc, thay cho một hộp ở giữa phải kéo hai đường
+        # dài xuyên khung sang hai góc đối diện.
+        note_box(
+            "cst_parse",
+            "«constraint»\nLLM chỉ sinh lệnh có kiểu để lõi xác định kiểm tra; "
+            "không truy cập DB và không thực thi side effect.",
+            440, 250, 240, 74, "red",
+        ),
+        note_box(
+            "cst_narr",
+            "«constraint»\nNarrator chỉ diễn giải facts đã tính sẵn; không tự "
+            "tạo hoặc làm tròn lại số liệu.",
+            40, 556, 220, 74, "red",
+        ),
         edge("e1", "input", "pre", "", color="green", exit_xy=(1, 0.5), entry_xy=(0, 0.5)),
         edge("e2", "pre", "router", "", color="yellow", exit_xy=(1, 0.5), entry_xy=(0, 0.5)),
         edge("e3", "router", "llmparse", "ngữ cảnh phức tạp", color="purple", dashed=True, exit_xy=(1, 0.3), entry_xy=(0, 0.5)),
@@ -579,7 +1504,9 @@ def diagram_06() -> str:
         edge("e7", "typed", "validate", "", color="green", exit_xy=(1, 0.5), entry_xy=(0, 0.5)),
         edge("e8", "validate", "complete", "", color="yellow", exit_xy=(0.5, 1), entry_xy=(0.5, 0)),
         edge("e9", "complete", "clarify", "Không", color="red", exit_xy=(0, 0.5), entry_xy=(1, 0.5)),
-        edge("e10", "clarify", "input", "bổ sung", color="red", exit_xy=(0, 0.5), entry_xy=(0.5, 1), points=[(970, 370), (20, 370), (20, 210)]),
+        # Vòng quay lại được dành riêng một hành lang trống ở y=362 nên không
+        # cắt qua bất kỳ node hay cạnh nào khác.
+        edge("e10", "clarify", "input", "người dùng bổ sung thông tin", color="red", exit_xy=(0, 0.5), entry_xy=(0, 0.75), points=[(970, 362), (24, 362)]),
         edge("e11", "complete", "preview", "Có", exit_xy=(0.5, 1), entry_xy=(0.5, 0)),
         edge("e12", "preview", "confirm", "", color="yellow", exit_xy=(0.5, 1), entry_xy=(0.5, 0)),
         edge("e13", "confirm", "edit", "Sửa / hủy", color="red", exit_xy=(0, 0.5), entry_xy=(1, 0.5)),
@@ -590,10 +1517,28 @@ def diagram_06() -> str:
         edge("e18", "analytics", "facts", "facts", color="green", exit_xy=(0, 0.5), entry_xy=(1, 0.5)),
         edge("e19", "facts", "narrator", "", color="purple", dashed=True, exit_xy=(0, 0.5), entry_xy=(1, 0.5)),
         edge("e20", "narrator", "explain", "", color="blue", exit_xy=(0.5, 1), entry_xy=(0.5, 0)),
-        edge("safe1", "safety", "llmparse", "", color="red", dashed=True, arrow=False, exit_xy=(0.35, 0), entry_xy=(0.5, 1)),
-        edge("safe2", "safety", "narrator", "", color="red", dashed=True, arrow=False, exit_xy=(0, 0.7), entry_xy=(1, 0.2), points=[(560, 600), (250, 600)]),
+        # Hai liên kết ràng buộc giờ chỉ dài vài chục pixel vì note đã đặt ngay
+        # cạnh thành phần bị ràng buộc.
+        edge("safe1", "cst_parse", "llmparse", "", color="red", dashed=True,
+             arrow=False, exit_xy=(1, 0.3), entry_xy=(0, 0.9),
+             points=[(710, 268)]),
+        edge("safe2", "cst_narr", "narrator", "", color="red", dashed=True,
+             arrow=False, exit_xy=(0.5, 1), entry_xy=(0.5, 0)),
+        *legend(
+            "lg",
+            300,
+            420,
+            [
+                ("blue", "Dữ liệu và trạng thái trung gian"),
+                ("green", "Lõi xác định: kiểm tra, tính toán, ghi dữ liệu"),
+                ("purple", "Thành phần LLM (viền nét đứt)"),
+                ("yellow", "Điểm quyết định của luồng"),
+                ("red", "Nhánh từ chối, hỏi lại và ràng buộc an toàn"),
+            ],
+            width=300,
+        ),
     ]
-    return build("06-llm-boundary", "LLM boundary", 1490, 870, c)
+    return build("06-llm-boundary", "LLM boundary", 1490, 890, c)
 
 
 def diagram_07() -> str:
@@ -607,39 +1552,145 @@ def diagram_07() -> str:
             46,
             1120,
         ),
-        terminal("idle", "Rỗi / sẵn sàng", 40, 330, 150, 58, "blue"),
-        box("parse", "Phân tích ý định\nvà trường dữ liệu", 240, 320, 190, 76, "blue"),
-        decision("enough", "Đủ dữ liệu?", 480, 305, 150, 105),
-        box("clarify", "Hỏi làm rõ", 480, 485, 150, 62, "red"),
-        decision("kind", "Loại yêu cầu?", 690, 305, 150, 105),
-        box("facts", "Tính facts và\ntrả lời truy vấn", 900, 170, 190, 74, "green"),
-        box("pending", "Lưu pending có TTL\nvà hiển thị bản xem trước", 900, 320, 230, 76, "yellow"),
-        decision("action", "Hành động\nngười dùng?", 1180, 305, 150, 105),
-        box("update", "Cập nhật draft\nvà validation lại", 1150, 485, 210, 70, "blue"),
-        box("commit", "Claim + COMMIT\nnguyên tử", 900, 610, 210, 70, "green"),
-        decision("ok", "Commit\nthành công?", 650, 595, 150, 105),
-        box("rollback", "ROLLBACK\nkhông tạo hiệu ứng dở dang", 420, 610, 190, 70, "red"),
-        terminal("done", "Xóa pending / kết thúc", 160, 615, 200, 62, "green"),
-        edge("e1", "idle", "parse", "", exit_xy=(1, 0.5), entry_xy=(0, 0.5)),
-        edge("e2", "parse", "enough", "", color="yellow", exit_xy=(1, 0.5), entry_xy=(0, 0.5)),
-        edge("e3", "enough", "clarify", "Không", color="red", exit_xy=(0.5, 1), entry_xy=(0.5, 0)),
-        edge("e4", "clarify", "parse", "bổ sung", color="red", exit_xy=(0, 0.5), entry_xy=(0.5, 1), points=[(220, 515), (220, 410)]),
-        edge("e5", "enough", "kind", "Có", exit_xy=(1, 0.5), entry_xy=(0, 0.5)),
-        edge("e6", "kind", "facts", "chỉ đọc", color="green", exit_xy=(0.65, 0), entry_xy=(0, 0.5)),
-        edge("e7", "facts", "done", "", color="green", exit_xy=(0, 0.5), entry_xy=(0.25, 0), points=[(850, 205), (210, 205), (210, 595)]),
-        edge("e8", "kind", "pending", "thay đổi dữ liệu", color="yellow", exit_xy=(1, 0.5), entry_xy=(0, 0.5)),
-        edge("e9", "pending", "action", "", color="yellow", exit_xy=(1, 0.5), entry_xy=(0, 0.5)),
-        edge("e10", "action", "update", "sửa", exit_xy=(0.65, 1), entry_xy=(0.75, 0)),
-        edge("e11", "update", "pending", "", exit_xy=(0, 0.35), entry_xy=(1, 0.75)),
-        edge("e12", "action", "commit", "xác nhận", color="green", exit_xy=(0, 0.7), entry_xy=(1, 0.5), points=[(1120, 450), (1120, 645)]),
-        edge("e13", "action", "done", "hủy / hết TTL", color="red", exit_xy=(1, 0.5), entry_xy=(0.5, 1), points=[(1380, 360), (1380, 735), (260, 735)]),
-        edge("e14", "commit", "ok", "", color="yellow", exit_xy=(0, 0.5), entry_xy=(1, 0.5)),
-        edge("e15", "ok", "done", "Có", color="green", exit_xy=(0.35, 1), entry_xy=(0.75, 1), points=[(700, 735), (310, 735)]),
-        edge("e16", "ok", "rollback", "Không", color="red", exit_xy=(0, 0.7), entry_xy=(1, 0.5)),
-        edge("e17", "rollback", "done", "", color="red", exit_xy=(0, 0.5), entry_xy=(1, 0.7)),
-        edge("e18", "done", "idle", "yêu cầu mới", exit_xy=(0, 0.5), entry_xy=(0.5, 1), points=[(20, 645), (20, 420)]),
+        # Bảy trạng thái đúng theo thuật ngữ dùng trong phần lời: idle, parse,
+        # collecting, preview, confirmed, cancelled, expired. Node là trạng
+        # thái (không phải hành động), có pseudostate khởi tạo và trạng thái
+        # kết thúc, mọi chuyển tiếp ghi theo cú pháp trigger [guard] / effect.
+        #
+        # Bố cục: hàng ngang trên là đường đi thuận (idle → parse → collecting
+        # → preview), hàng dưới là các trạng thái kết thúc. Khoảng trống giữa
+        # hai hộp liền kề luôn rộng 185px để nhãn chuyển tiếp nằm trọn trong
+        # khoảng trống đó, không đè lên chữ trong hộp; nhãn nào dài thì ngắt
+        # thành hai dòng thay vì kéo ngang qua hộp bên cạnh.
+        pseudostate("init", 62, 285, kind="initial"),
+        state(
+            "idle", "idle", 120, 262, 165, 76, "blue",
+            detail="entry / xóa ngữ cảnh cũ",
+        ),
+        state(
+            "parse", "parse", 470, 250, 205, 100, "blue",
+            detail="do / trích intent và slot\nfrom text · OCR · STT",
+        ),
+        state(
+            "collecting", "collecting", 860, 250, 235, 100, "yellow",
+            detail="do / hỏi slot còn thiếu\nkeep candidates (Redis TTL)",
+        ),
+        state(
+            "preview", "preview", 1280, 250, 235, 100, "yellow",
+            detail="entry / dựng bản xem trước\nkhông có side effect",
+        ),
+        state(
+            "confirmed", "confirmed", 1280, 520, 235, 96, "green",
+            detail="entry / claim nguyên tử\ndo / COMMIT giao dịch",
+        ),
+        state(
+            "cancelled", "cancelled", 860, 520, 235, 86, "red",
+            detail="entry / bỏ pending, không ghi DB",
+        ),
+        state(
+            "expired", "expired", 430, 520, 250, 86, "red",
+            detail="entry / xóa state trong Redis",
+        ),
+        pseudostate("final", 960, 800, kind="final", size=36),
+        edge("t0", "init", "idle", "", exit_xy=(1, 0.5), entry_xy=(0, 0.5)),
+        edge(
+            "t1", "idle", "parse", "tin nhắn người dùng\n/ mở phiên",
+            exit_xy=(1, 0.5), entry_xy=(0, 0.5),
+        ),
+        edge(
+            "t2", "parse", "collecting",
+            "parsed [thiếu slot bắt buộc]\n/ hỏi slot kế tiếp",
+            color="yellow", exit_xy=(1, 0.35), entry_xy=(0, 0.35),
+        ),
+        # Nhánh đủ slot đi vòng phía trên hàng trạng thái nên nhãn nằm ở dải
+        # trống giữa phụ đề và hàng hộp, không chồng lên hộp nào.
+        edge(
+            "t3", "parse", "preview", "parsed [đủ slot] / dựng preview",
+            color="yellow", exit_xy=(0.5, 0), entry_xy=(0.5, 0),
+            points=[(572, 140), (1397, 140)],
+        ),
+        edge(
+            "t4", "collecting", "collecting",
+            "trả lời [vẫn còn slot thiếu]\n/ cập nhật slot",
+            color="yellow", exit_xy=(0.3, 0), entry_xy=(0.7, 0),
+            points=[(930, 216), (1024, 216)], label_offset=(0, -20),
+        ),
+        edge(
+            "t5", "collecting", "preview", "trả lời [đủ slot]\n/ dựng preview",
+            color="yellow", exit_xy=(1, 0.35), entry_xy=(0, 0.35),
+        ),
+        edge(
+            "t6", "preview", "collecting", "sửa slot\n/ mở lại thu thập",
+            color="blue", exit_xy=(0, 0.8), entry_xy=(1, 0.8),
+        ),
+        # Nhãn của các chuyển tiếp dọc được đẩy sang khoảng trống bên cạnh
+        # (label_offset) vì giữa cạnh dọc là nơi hộp lân cận chiếm chỗ.
+        edge(
+            "t7", "preview", "confirmed",
+            "xác nhận\n/ claim rồi COMMIT",
+            color="green", exit_xy=(0.5, 1), entry_xy=(0.5, 0),
+            label_offset=(-92, 0),
+        ),
+        edge(
+            # Đi theo hành lang y=470 nằm giữa hai hàng hộp: nếu bám sát cạnh
+            # phải như trước thì đoạn ngang sẽ chạy xuyên qua hộp confirmed.
+            "t8", "preview", "cancelled", "hủy / xóa pending",
+            color="red", exit_xy=(0.05, 1), entry_xy=(0.85, 0),
+            points=[(1292, 470), (1060, 470)], label_offset=(0, -14),
+        ),
+        edge(
+            "t9", "collecting", "expired", "after(TTL)\n/ dọn ngữ cảnh",
+            color="red", exit_xy=(0.25, 1), entry_xy=(0.5, 0),
+            points=[(918, 440), (555, 440)],
+        ),
+        edge(
+            "t10", "collecting", "cancelled", "hủy\n/ dừng thu thập",
+            color="red", exit_xy=(0.6, 1), entry_xy=(0.6, 0),
+            label_offset=(74, 0),
+        ),
+        edge(
+            "t11", "confirmed", "cancelled",
+            "[COMMIT thất bại]\n/ ROLLBACK",
+            color="red", exit_xy=(0.5, 1), entry_xy=(0.5, 1),
+            points=[(1397, 690), (977, 690)],
+        ),
+        edge(
+            "t12", "confirmed", "final", "committed",
+            color="green", exit_xy=(0.9, 1), entry_xy=(1, 0.5),
+            points=[(1491, 818)],
+        ),
+        edge(
+            "t13", "cancelled", "final", "", color="red",
+            exit_xy=(0.25, 1), entry_xy=(0.5, 0),
+            points=[(918, 760), (978, 760)],
+        ),
+        edge(
+            "t14", "expired", "final", "", color="red",
+            exit_xy=(0.5, 1), entry_xy=(0, 0.5),
+            points=[(555, 818)],
+        ),
+        note_box(
+            "syntax",
+            "Cú pháp chuyển tiếp: trigger [guard] / effect. after(TTL) là "
+            "trigger thời gian do Redis đặt hạn. Đĩa đen là pseudostate khởi "
+            "tạo, vòng bao là trạng thái kết thúc phiên; yêu cầu mới bắt đầu "
+            "một phiên idle khác.",
+            40, 580, 330, 130, "gray",
+        ),
+        *legend(
+            "lg",
+            40,
+            420,
+            [
+                ("blue", "Trạng thái chỉ đọc, chưa có dữ liệu chờ"),
+                ("yellow", "Có state tạm trong Redis kèm TTL"),
+                ("green", "Trạng thái duy nhất được ghi dữ liệu"),
+                ("red", "Kết thúc không tạo hiệu ứng nào"),
+            ],
+            width=330,
+        ),
     ]
-    return build("07-conversation-state", "Conversation state", 1410, 770, c)
+    return build("07-conversation-state", "Conversation state", 1560, 880, c)
 
 
 def diagram_09() -> str:
@@ -692,6 +1743,20 @@ def diagram_09() -> str:
         edge("e20", "confirm", "end", "Hủy", color="red", exit_xy=(0.65, 1), entry_xy=(0.2, 0), points=[(220, 640), (395, 640)]),
         edge("e21", "sql", "end", "", color="green", exit_xy=(1, 0.5), entry_xy=(0, 0.5)),
         edge("e22", "fail", "end", "thử lại", color="red", exit_xy=(1, 0.5), entry_xy=(0.8, 1), points=[(1430, 115), (1430, 790), (525, 790)]),
+        *legend(
+            "lg",
+            40,
+            250,
+            [
+                ("orange", "Dữ liệu thô chưa kiểm chứng (ảnh, âm thanh, raw text)"),
+                ("purple", "Thành phần AI ngoài: OCR, STT, LLM parser"),
+                ("yellow", "Điểm quyết định và dữ liệu tạm có TTL"),
+                ("blue", "Bước cần người dùng xem lại"),
+                ("green", "Lõi xác định: chuẩn hóa, ghi dữ liệu, kết quả"),
+                ("red", "Nhánh lỗi hoặc hủy, không ghi dữ liệu"),
+            ],
+            width=460,
+        ),
     ]
     return build("09-multimodal-flow", "Multimodal flow", 1460, 820, c)
 
@@ -748,8 +1813,33 @@ def diagram_10() -> str:
         edge("e18", "commit", "reuse", "", color="green", exit_xy=(1, 0.5), entry_xy=(0, 0.5)),
         edge("e19", "reuse", "end", "", color="green", exit_xy=(0.5, 1), entry_xy=(0.7, 0)),
         edge("e20", "retag", "end", "Hủy / hết hạn", color="red", exit_xy=(0.5, 1), entry_xy=(0, 0.5), points=[(888, 690), (1170, 690)]),
+        *legend(
+            "lg",
+            30,
+            762,
+            [
+                ("purple", "Bước có gọi LLM"),
+                ("green", "Tính toán xác định trên dữ liệu đã có"),
+                ("blue", "Trạng thái dữ liệu và tương tác người dùng"),
+                ("orange", "Ghi dữ liệu trong một transaction"),
+                ("red", "Nhánh hủy hoặc hết hạn, không ghi gì"),
+            ],
+            width=340,
+        ),
+        *legend(
+            "lgz",
+            410,
+            762,
+            [
+                ("purple", "Zone 1 · truy hồi mẫu sửa"),
+                ("blue", "Zone 2 · xác nhận và ghi feedback"),
+                ("yellow", "Zone 3 · đề xuất danh mục và re-tag"),
+            ],
+            title_text="Chú giải màu vùng trách nhiệm",
+            width=340,
+        ),
     ]
-    return build("10-feedback-flow", "Feedback flow", 1560, 790, c)
+    return build("10-feedback-flow", "Feedback flow", 1560, 930, c)
 
 
 def diagram_12() -> str:
@@ -800,8 +1890,21 @@ def diagram_12() -> str:
         edge("e18", "saveq", "goals", "Có", color="green", exit_xy=(1, 0.5), entry_xy=(0, 0.5)),
         edge("e19", "goals", "end", "", color="green", exit_xy=(1, 0.5), entry_xy=(0, 0.5)),
         edge("e20", "saveq", "end", "Không / sửa", color="red", exit_xy=(0.5, 1), entry_xy=(0.5, 1), points=[(330, 730), (880, 730)]),
+        *legend(
+            "lg",
+            1040,
+            420,
+            [
+                ("orange", "Đầu vào của người dùng"),
+                ("green", "Công thức xác định: phân bổ, amortization, dự báo"),
+                ("yellow", "Điểm quyết định của luồng"),
+                ("blue", "Kết quả kế hoạch chưa ghi dữ liệu"),
+                ("red", "Cảnh báo và nhánh không ghi dữ liệu"),
+            ],
+            width=340,
+        ),
     ]
-    return build("12-goal-flow", "Goal flow", 1500, 770, c)
+    return build("12-goal-flow", "Goal flow", 1500, 790, c)
 
 
 def write_all() -> None:

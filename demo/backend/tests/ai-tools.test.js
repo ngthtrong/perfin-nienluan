@@ -75,7 +75,10 @@ test('transaction questions retain their requested filter instead of becoming a 
   assert.equal(amountQuery.intent, 'query_transactions');
   assert.equal(amountQuery.query.action, 'aggregate');
   assert.equal(amountQuery.query.type, 'expense');
-  assert.equal(amountQuery.query.current_month, true);
+  // "tháng này" is now a period the user named, not an implicit default.
+  // current_month only stays true when no period was mentioned at all.
+  assert.equal(amountQuery.query.period, 'this_month');
+  assert.equal(amountQuery.query.current_month, false);
   assert.equal(amountQuery.query.search, 'đánh bida');
 
   const referent = routeLocalIntent('liệt kê 5 giao dịch đó', categories);
@@ -109,14 +112,33 @@ test('high-confidence chat intents bypass an enabled provider', async () => {
     'tôi đã chi bao nhiêu tiền đánh bida trong tháng này?',
     categories
   );
-  const advice = await manager.parseTransaction('tư vấn cho tôi', categories);
   const paid = await manager.parseTransaction('tôi đã thanh toán rồi', categories);
 
   assert.equal(transactionQuery.intent, 'query_transactions');
   assert.equal(transactionQuery.query.search, 'đánh bida');
-  assert.equal(advice.intent, 'query_insights');
   assert.equal(paid.intent, 'recurring_pay');
   assert.equal(providerCalls, 0);
+});
+
+test('an open-ended question reaches the provider instead of a weak local guess', async () => {
+  const manager = new AIServiceManager();
+  let providerCalls = 0;
+  manager.selected.provider = 'gemini';
+  manager.gemini = {
+    models: {
+      async generateContent() {
+        providerCalls += 1;
+        return { text: 'generic response' };
+      },
+    },
+  };
+
+  // Advice and unfiltered spending questions used to be answered from the local
+  // regex parse. The model routes them better, so they no longer pre-empt it.
+  await manager.parseTransaction('tư vấn cho tôi', categories);
+  await manager.parseTransaction('tháng này tôi chi bao nhiêu', categories);
+
+  assert.equal(providerCalls, 2);
 });
 
 test('general questions do not enter transaction clarification state', async () => {

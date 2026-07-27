@@ -25,7 +25,12 @@ const { resolveUserPayday } = require('../services/jobs/userScope');
 const ChatMessage = require('../models/chatMessage.model');
 const pending = require('../services/pendingTransaction.service');
 const { matchCategory, normalizeAmount, normalizeText } = require('../services/parser.service');
-const { isRecurringPaymentAcknowledgement } = require('../services/ai/localIntentRouter');
+const {
+  isRecurringPaymentAcknowledgement,
+  isQuestionLike,
+  routeLocalIntent,
+} = require('../services/ai/localIntentRouter');
+const { resolvePeriod } = require('../services/ai/periodResolver');
 const {
   normalizePastOrPresentDate,
   validateTransactionPayload,
@@ -272,6 +277,22 @@ function transactionMonthWindow(querySpec = {}, now = new Date()) {
   };
 }
 
+// Resolve the period a query is actually about, and keep the month/year shape the
+// existing month-only callers and tests rely on. The label comes from the resolved
+// window instead of being hardcoded, so a weekly question is no longer reported
+// as a monthly one.
+function queryWindow(querySpec = {}, now = new Date()) {
+  const resolved = resolvePeriod(querySpec, now);
+  const monthly = resolved.is_month
+    ? transactionMonthWindow({ month: resolved.month, year: resolved.year }, now)
+    : null;
+  return {
+    ...resolved,
+    month: monthly ? monthly.month : now.getMonth() + 1,
+    year: monthly ? monthly.year : now.getFullYear(),
+  };
+}
+
 function transactionListLine(transaction, index) {
   const sign = transaction.type === 'income' ? '+' : '-';
   const date = RecurringBillModel.formatDateOnly(transaction.transaction_date);
@@ -380,7 +401,7 @@ async function handleRecurringList() {
   const lines = bills.map((b) => {
     const freqLabel = { weekly: 'hàng tuần', monthly: 'hàng tháng', quarterly: 'hàng quý', yearly: 'hàng năm' }[b.frequency];
     const status = b.status === 'paused' ? ' [Tạm dừng]' : '';
-    return `• ${b.name}: ${formatVND(b.amount)} ${freqLabel}, kỳ kế ${b.next_due_date}${status}`;
+    return `• ${b.name}: ${formatVND(b.amount)} ${freqLabel}, kỳ kế ${RecurringBillModel.formatDateOnly(b.next_due_date)}${status}`;
   }).join('\n');
   return { type: 'chat_response', message: await applyPersona(`Các khoản chi cố định của bạn:\n${lines}`) };
 }
@@ -529,6 +550,34 @@ function firstNumber(text) {
   return match ? Number(match[0]) : null;
 }
 
+// Intents that only read data. Asking one of these is a change of subject, never
+// an answer to a half-finished form. Deliberately excludes 'question', which the
+// router also returns as its "no idea" fallback: a bare noun like "tiền phòng"
+// lands there, and that is exactly the slot value the flow is waiting for.
+const READ_ONLY_INTENTS = new Set([
+  'recurring_list',
+  'recurring_history',
+  'export',
+  'budget_suggest',
+  'query_category_suggestions',
+]);
+
+// A pending clarification used to consume *every* following message as a slot
+// value for its 5-minute TTL, so an unrelated question ("tôi có những ví nào?")
+// asked after an abandoned "ăn phở" flow came back as "mình chưa đọc được thông
+// tin đó". A new question abandons the stale flow instead of feeding it.
+function abandonsConversation(text, state, categories) {
+  const awaiting = Array.isArray(state.awaiting) ? state.awaiting : [state.awaiting].filter(Boolean);
+  // A numbered choice is always an answer, never a new subject.
+  if (awaiting[0] === 'bill_choice') return false;
+  // A bare value ("50k", "tiền phòng") is the answer the flow is waiting for.
+  if (normalizeAmount(text)) return false;
+  const routed = routeLocalIntent(text, categories);
+  const intent = String(routed?.intent || '');
+  if (intent.startsWith('query_') || READ_ONLY_INTENTS.has(intent)) return true;
+  return isQuestionLike(text);
+}
+
 async function resolveConversation(text, state, categories) {
   const awaiting = Array.isArray(state.awaiting) ? [...state.awaiting] : [state.awaiting].filter(Boolean);
   if (!awaiting.length) return null;
@@ -658,7 +707,7 @@ async function handleTransactionQuery(parsed) {
     filters = { transaction_ids: transactionIds };
     contextLabel = 'trong nhóm vừa được phân loại';
   } else {
-    period = transactionMonthWindow(spec);
+    period = queryWindow(spec);
     let categoryId = Number.isInteger(Number(spec.category_id)) && Number(spec.category_id) > 0
       ? Number(spec.category_id)
       : null;
@@ -694,7 +743,7 @@ async function handleTransactionQuery(parsed) {
     ]);
     transactions = page.data || [];
     totals = aggregate;
-    contextLabel = `trong tháng ${period.month}/${period.year}`;
+    contextLabel = period.phrase;
   }
 
   const searchLabel = filters.search ? ` khớp “${filters.search}”` : '';
@@ -744,20 +793,75 @@ async function handleFinancialQuery(parsed) {
     case 'query_transactions':
       return handleTransactionQuery(parsed);
     case 'query_runway': {
+      // Runway is a forward projection from the current balance, so it has no
+      // user-selectable window; the label stays honest about that.
       const runway = await AnalyticsEngine.runwayFacts(userId, await resolveUserPayday(userId));
-      return narrateFacts({ runway });
+      return narrateFacts({ runway }, 'từ hôm nay trở đi');
     }
     case 'query_subscriptions': {
-      const subscriptions = await AnalyticsEngine.subscriptionFacts(userId);
-      return narrateFacts({ subscriptions });
+      const window = queryWindow(parsed.query || {});
+      const subscriptions = await AnalyticsEngine.subscriptionFacts(userId, Math.max(window.days, 90));
+      return narrateFacts({ subscriptions }, window.explicit ? window.label : 'gần đây');
     }
     case 'query_insights': {
+      const window = queryWindow(parsed.query || {});
       const facts = await AnalyticsEngine.buildInsightFacts(userId, { payday: await resolveUserPayday(userId) });
-      return narrateFacts(facts);
+      return narrateFacts(facts, window.explicit ? window.label : 'gần đây');
     }
     case 'query_summary': {
-      const summary = await ReportService.getMonthlySummary(userId, parsed.query?.month, parsed.query?.year);
-      return { type: 'report', message: await applyPersona(`Tháng ${summary.month}/${summary.year}: thu ${formatVND(summary.total_income)}, chi ${formatVND(summary.total_expense)}, chênh lệch ${formatVND(summary.net)}.`), summary };
+      const window = queryWindow(parsed.query || {});
+      // A month keeps the existing month-indexed summary; any other window
+      // ("tuần này", "hôm qua", a custom range) is totalled over its real dates
+      // rather than silently widened to the whole month.
+      if (window.is_month) {
+        const summary = await ReportService.getMonthlySummary(userId, window.month, window.year);
+        return {
+          type: 'report',
+          message: await applyPersona(`Tháng ${summary.month}/${summary.year}: thu ${formatVND(summary.total_income)}, chi ${formatVND(summary.total_expense)}, chênh lệch ${formatVND(summary.net)}.`),
+          summary,
+          period: window,
+        };
+      }
+      const totals = await TransactionModel.getFilteredTotals(userId, { from: window.from, to: window.to });
+      const summary = {
+        from: window.from,
+        to: window.to,
+        total_income: totals.total_income,
+        total_expense: totals.total_expense,
+        net: totals.total_income - totals.total_expense,
+        transaction_count: totals.transaction_count,
+      };
+      return {
+        type: 'report',
+        message: await applyPersona(`Tổng kết ${window.label}: thu ${formatVND(summary.total_income)}, chi ${formatVND(summary.total_expense)}, chênh lệch ${formatVND(summary.net)} (${summary.transaction_count} giao dịch).`),
+        summary,
+        period: window,
+      };
+    }
+    case 'query_wallets': {
+      const wallets = await AccountModel.getAll(userId);
+      if (!wallets.length) {
+        return { type: 'chat_response', message: await applyPersona('Bạn chưa có ví nào. Mình có thể tạo ví "Tiền mặt" để bắt đầu nhé?') };
+      }
+      const total = wallets.reduce((sum, wallet) => sum + Number(wallet.balance || 0), 0);
+      const typeLabels = {
+        cash: 'tiền mặt',
+        bank: 'ngân hàng',
+        e_wallet: 'ví điện tử',
+        credit: 'thẻ tín dụng',
+        savings: 'tiết kiệm',
+        investment: 'đầu tư',
+      };
+      const lines = wallets.map((wallet, index) => {
+        const label = typeLabels[wallet.type] || wallet.type;
+        return `${index + 1}. ${wallet.name} (${label}): ${formatVND(wallet.balance)}${wallet.is_default ? ' • mặc định' : ''}`;
+      }).join('\n');
+      return {
+        type: 'wallet_list',
+        message: await applyPersona(`Bạn có ${wallets.length} ví, tổng số dư ${formatVND(total)}:\n${lines}`),
+        wallets,
+        total_balance: total,
+      };
     }
     case 'query_goals': {
       const goals = await GoalModel.getAll(userId);
@@ -767,9 +871,56 @@ async function handleFinancialQuery(parsed) {
       return { type: 'goal_list', message: await applyPersona(`Các mục tiêu hiện tại:\n${lines}`), goals: rows };
     }
     case 'query_budgets': {
-      const budgets = forecastBudgets(await BudgetModel.getProgress(userId));
+      // Budgets are stored per calendar month, so a weekly/daily question is
+      // answered with the month that contains it — but the period is still read
+      // from the request instead of always defaulting to now.
+      const window = queryWindow(parsed.query || {});
+      // Take the month that contains the end of the window, so "tuần này" at the
+      // start of August reads August's budgets rather than July's.
+      const budgetMonth = window.is_month ? window.month : Number(window.to.slice(5, 7));
+      const budgetYear = window.is_month ? window.year : Number(window.to.slice(0, 4));
+      const periodLabel = `tháng ${budgetMonth}/${budgetYear}`;
+      const all = forecastBudgets(await BudgetModel.getProgress(userId, budgetMonth, budgetYear));
+      const wanted = String(parsed.query?.category_name || '').trim().slice(0, 100);
+      const budgets = wanted
+        ? all.filter((budget) => {
+          const name = normalizeText(budget.category_name);
+          const target = normalizeText(wanted);
+          return name === target || name.includes(target) || target.includes(name);
+        })
+        : all;
+
+      if (wanted && !budgets.length) {
+        // Dumping every budget row here is what made "ngân sách cho bida" look
+        // like a wrong answer to a different question.
+        const known = all.length ? ` Bạn đang theo dõi: ${all.map((budget) => budget.category_name).join(', ')}.` : '';
+        return {
+          type: 'budget_progress',
+          message: await applyPersona(`Bạn chưa đặt ngân sách cho “${wanted}” trong ${periodLabel}.${known}`),
+          budgets: [],
+          filters: { category_name: wanted },
+          period: window,
+        };
+      }
       if (!budgets.length) {
-        return { type: 'budget_progress', message: await applyPersona('Bạn chưa đặt ngân sách tháng này.'), budgets };
+        return {
+          type: 'budget_progress',
+          message: await applyPersona(`Bạn chưa đặt ngân sách nào cho ${periodLabel}.`),
+          budgets,
+          period: window,
+        };
+      }
+      if (wanted) {
+        const lines = budgets.map((budget) => (
+          `• ${budget.category_name}: đã dùng ${formatVND(budget.spent)}/${formatVND(budget.amount_limit)} (${budget.percentage}%), còn ${formatVND(budget.remaining)}`
+        )).join('\n');
+        return {
+          type: 'budget_progress',
+          message: await applyPersona(`Ngân sách ${periodLabel} khớp “${wanted}”:\n${lines}`),
+          budgets,
+          filters: { category_name: wanted },
+          period: window,
+        };
       }
       const atRisk = budgets.filter((budget) => budget.likely_to_exceed);
       const riskSummary = atRisk.length
@@ -777,8 +928,9 @@ async function handleFinancialQuery(parsed) {
         : ' Chưa có danh mục nào được dự báo vượt hạn mức.';
       return {
         type: 'budget_progress',
-        message: await applyPersona(`Bạn đang theo dõi ${budgets.length} ngân sách trong tháng này.${riskSummary}`),
+        message: await applyPersona(`Bạn đang theo dõi ${budgets.length} ngân sách trong ${periodLabel}.${riskSummary}`),
         budgets,
+        period: window,
       };
     }
     case 'query_category_suggestions': {
@@ -1102,7 +1254,11 @@ router.post('/message', async (req, res, next) => {
 
     const recurringAcknowledgement = isRecurringPaymentAcknowledgement(text);
     if (recurringAcknowledgement) await ConversationState.clear(userId);
-    const conversation = recurringAcknowledgement ? null : await ConversationState.get(userId);
+    let conversation = recurringAcknowledgement ? null : await ConversationState.get(userId);
+    if (conversation && abandonsConversation(text, conversation, categories)) {
+      await ConversationState.clear(userId);
+      conversation = null;
+    }
     const parsed = conversation
       ? await resolveConversation(text, conversation, categories)
       : await parseWithLearnedFeedback(text, categories);
@@ -1263,6 +1419,9 @@ module.exports.categoryRetagTransactionIds = categoryRetagTransactionIds;
 module.exports.recurringReminderBillIds = recurringReminderBillIds;
 module.exports.selectRelevantReminderBills = selectRelevantReminderBills;
 module.exports.transactionMonthWindow = transactionMonthWindow;
+module.exports.queryWindow = queryWindow;
+module.exports.handleFinancialQuery = handleFinancialQuery;
+module.exports.abandonsConversation = abandonsConversation;
 module.exports.totalsFromTransactions = totalsFromTransactions;
 module.exports.handleRecurringPay = handleRecurringPay;
 module.exports.handleTransactionQuery = handleTransactionQuery;

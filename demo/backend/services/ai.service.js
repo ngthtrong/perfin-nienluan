@@ -85,10 +85,19 @@ function parseCacheKey(text, categories, userPrompt) {
   return `cache:ai-parse:${digest}`;
 }
 
+// Only a local parse that is unambiguous may skip the LLM. The previous version
+// pre-empted every query_transactions/query_insights parse, which meant a vague
+// question ("tuần này tôi xài bao nhiêu") was answered from a weak regex parse
+// even though the model routed it correctly. A short recurring acknowledgement
+// stays deterministic: it answers a reminder the server itself just sent.
 function isPriorityLocalIntent(parsed) {
-  return parsed?.intent === 'query_transactions'
-    || parsed?.intent === 'query_insights'
-    || (parsed?.intent === 'recurring_pay' && parsed?.recurring?.acknowledgement === true);
+  if (parsed?.intent === 'recurring_pay' && parsed?.recurring?.acknowledgement === true) return true;
+  if (parsed?.intent !== 'query_transactions') return false;
+  if (parsed.local_confidence === 'low') return false;
+  const spec = parsed.query || {};
+  // A filter the model could not invent on its own: an exact category, a
+  // server-produced referent, or a period the user named explicitly.
+  return Boolean(spec.category_id || spec.reference || spec.period || spec.month);
 }
 
 function enforceInsightUnits(text, facts) {

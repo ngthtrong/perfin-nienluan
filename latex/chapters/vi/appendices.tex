@@ -2,9 +2,9 @@
 
 \chapter{Danh mục sơ đồ Draw.io}
 
-Mỗi sơ đồ có nguồn chỉnh sửa chuẩn tại \path{archive/latex/figures/drawio} và bản render tại \path{archive/latex/figures/rendered}. Báo cáo liên kết bản PDF vector; PNG/SVG dùng cho xem nhanh và tài liệu web. Thuật ngữ trong sơ đồ phải đồng nhất với báo cáo và phân biệt lõi xác định, LLM, dữ liệu bền vững, state tạm cùng dịch vụ ngoài.
+Báo cáo dùng 26 sơ đồ. Nguồn chỉnh sửa chuẩn nằm tại \path{latex/figures/drawio/} và bản render tại \path{latex/figures/rendered/}; mỗi basename trong bảng dưới đây ứng với một tệp \path{.drawio} trong thư mục nguồn và ba bản render \path{.pdf}, \path{.png}, \path{.svg} cùng tên. Báo cáo liên kết bản PDF vector; PNG/SVG dùng cho xem nhanh và tài liệu web. Toàn bộ tệp \path{.drawio} được sinh bằng ba script Python cùng thư mục: \path{core_gen.py} sinh sơ đồ 03--12, \path{usecase_gen.py} sinh sơ đồ 14--26, \path{sequence_style.py} sinh các sơ đồ tuần tự; vì vậy khi cần sửa sơ đồ phải sửa script rồi sinh lại chứ không chỉnh trực tiếp XML. Thuật ngữ trong sơ đồ đồng nhất với báo cáo và phân biệt lõi xác định, LLM, dữ liệu bền vững, state tạm cùng dịch vụ ngoài; sơ đồ nào dùng màu để mang nghĩa đều có bảng chú giải màu đặt ngay trong hình.
 
-\begin{longtable}{@{}C{1.0cm}L{4.2cm}L{4.5cm}L{3.0cm}@{}}
+\begin{longtable}{@{}C{1.0cm}L{4.7cm}L{4.6cm}L{2.9cm}@{}}
   \toprule
   \textbf{STT} & \textbf{Tên hình} & \textbf{Basename} & \textbf{Vị trí trong báo cáo} \\
   \midrule
@@ -26,6 +26,19 @@ Mỗi sơ đồ có nguồn chỉnh sửa chuẩn tại \path{archive/latex/figu
   11 & Insight có căn cứ & \path{11-insight-sequence} & Hình~\ref{fig:insight-sequence} \\
   12 & Goal planner và what-if & \path{12-goal-flow} & Hình~\ref{fig:goal-flow} \\
   13 & Tác vụ chủ động & \path{13-worker-sequence} & Hình~\ref{fig:worker-sequence} \\
+  14 & Ca sử dụng tổng thể & \path{14-usecase-overview} & Hình~\ref{fig:usecase-overview} \\
+  15 & Ca sử dụng FR-01 & \path{15-usecase-fr01} & Hình~\ref{fig:usecase-fr01} \\
+  16 & Ca sử dụng FR-02 & \path{16-usecase-fr02} & Hình~\ref{fig:usecase-fr02} \\
+  17 & Ca sử dụng FR-03 & \path{17-usecase-fr03} & Hình~\ref{fig:usecase-fr03} \\
+  18 & Ca sử dụng FR-04 & \path{18-usecase-fr04} & Hình~\ref{fig:usecase-fr04} \\
+  19 & Ca sử dụng FR-05 & \path{19-usecase-fr05} & Hình~\ref{fig:usecase-fr05} \\
+  20 & Ca sử dụng FR-06 & \path{20-usecase-fr06} & Hình~\ref{fig:usecase-fr06} \\
+  21 & Ca sử dụng FR-07 & \path{21-usecase-fr07} & Hình~\ref{fig:usecase-fr07} \\
+  22 & Ca sử dụng FR-08 & \path{22-usecase-fr08} & Hình~\ref{fig:usecase-fr08} \\
+  23 & Ca sử dụng FR-09 & \path{23-usecase-fr09} & Hình~\ref{fig:usecase-fr09} \\
+  24 & Ca sử dụng FR-10 & \path{24-usecase-fr10} & Hình~\ref{fig:usecase-fr10} \\
+  25 & Ca sử dụng FR-11 & \path{25-usecase-fr11} & Hình~\ref{fig:usecase-fr11} \\
+  26 & Ca sử dụng FR-12 & \path{26-usecase-fr12} & Hình~\ref{fig:usecase-fr12} \\
   \bottomrule
 \end{longtable}
 
