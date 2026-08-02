@@ -1,60 +1,105 @@
 \appendix
 
-\chapter{Danh mục sơ đồ Draw.io}
+\chapter{Hướng dẫn cài đặt}
 
-Báo cáo dùng 26 sơ đồ. Nguồn chỉnh sửa chuẩn nằm tại \path{latex/figures/drawio/} và bản render tại \path{latex/figures/rendered/}; mỗi basename trong bảng dưới đây ứng với một tệp \path{.drawio} trong thư mục nguồn và ba bản render \path{.pdf}, \path{.png}, \path{.svg} cùng tên. Báo cáo liên kết bản PDF vector; PNG/SVG dùng cho xem nhanh và tài liệu web. Toàn bộ tệp \path{.drawio} được sinh bằng ba script Python cùng thư mục: \path{core_gen.py} sinh sơ đồ 03--12, \path{usecase_gen.py} sinh sơ đồ 14--26, \path{sequence_style.py} sinh các sơ đồ tuần tự; vì vậy khi cần sửa sơ đồ phải sửa script rồi sinh lại chứ không chỉnh trực tiếp XML. Thuật ngữ trong sơ đồ đồng nhất với báo cáo và phân biệt lõi xác định, LLM, dữ liệu bền vững, state tạm cùng dịch vụ ngoài; sơ đồ nào dùng màu để mang nghĩa đều có bảng chú giải màu đặt ngay trong hình.
+Môi trường tối thiểu gồm Node.js/npm, PostgreSQL và Expo Go hoặc trình duyệt. Redis 7 được khuyến nghị khi chạy worker; nếu không có Redis, API có thể chạy với KV memory fallback trong môi trường phát triển nhưng không kiểm chứng được queue/retry.
 
-\begin{longtable}{@{}C{1.0cm}L{4.7cm}L{4.6cm}L{2.9cm}@{}}
-  \toprule
-  \textbf{STT} & \textbf{Tên hình} & \textbf{Basename} & \textbf{Vị trí trong báo cáo} \\
-  \midrule
-  \endfirsthead
-  \toprule
-  \textbf{STT} & \textbf{Tên hình} & \textbf{Basename} & \textbf{Vị trí trong báo cáo} \\
-  \midrule
-  \endhead
-  1 & Ngữ cảnh hệ thống & \path{01-system-context} & Hình~\ref{fig:system-context} \\
-  2 & Kiến trúc vận hành & \path{02-runtime-architecture} & Hình~\ref{fig:runtime-architecture} \\
-  3 & Triển khai nguyên mẫu & \path{03-deployment} & Hình~\ref{fig:deployment} \\
-  4 & Aggregate miền nghiệp vụ & \path{04-domain-class} & Hình~\ref{fig:domain-class} \\
-  5 & ERD vật lý & \path{05-physical-erd} & Hình~\ref{fig:physical-erd} \\
-  6 & Ranh giới LLM & \path{06-llm-boundary} & Hình~\ref{fig:llm-boundary} \\
-  7 & Trạng thái hội thoại & \path{07-conversation-state} & Hình~\ref{fig:conversation-state} \\
-  8 & Nhập giao dịch text & \path{08-text-sequence} & Hình~\ref{fig:text-sequence} \\
-  9 & Đầu vào đa phương thức & \path{09-multimodal-flow} & Hình~\ref{fig:multimodal-flow} \\
-  10 & Feedback và phân loại & \path{10-feedback-flow} & Hình~\ref{fig:feedback-flow} \\
-  11 & Insight có căn cứ & \path{11-insight-sequence} & Hình~\ref{fig:insight-sequence} \\
-  12 & Goal planner và what-if & \path{12-goal-flow} & Hình~\ref{fig:goal-flow} \\
-  13 & Tác vụ chủ động & \path{13-worker-sequence} & Hình~\ref{fig:worker-sequence} \\
-  14 & Ca sử dụng tổng thể & \path{14-usecase-overview} & Hình~\ref{fig:usecase-overview} \\
-  15 & Ca sử dụng FR-01 & \path{15-usecase-fr01} & Hình~\ref{fig:usecase-fr01} \\
-  16 & Ca sử dụng FR-02 & \path{16-usecase-fr02} & Hình~\ref{fig:usecase-fr02} \\
-  17 & Ca sử dụng FR-03 & \path{17-usecase-fr03} & Hình~\ref{fig:usecase-fr03} \\
-  18 & Ca sử dụng FR-04 & \path{18-usecase-fr04} & Hình~\ref{fig:usecase-fr04} \\
-  19 & Ca sử dụng FR-05 & \path{19-usecase-fr05} & Hình~\ref{fig:usecase-fr05} \\
-  20 & Ca sử dụng FR-06 & \path{20-usecase-fr06} & Hình~\ref{fig:usecase-fr06} \\
-  21 & Ca sử dụng FR-07 & \path{21-usecase-fr07} & Hình~\ref{fig:usecase-fr07} \\
-  22 & Ca sử dụng FR-08 & \path{22-usecase-fr08} & Hình~\ref{fig:usecase-fr08} \\
-  23 & Ca sử dụng FR-09 & \path{23-usecase-fr09} & Hình~\ref{fig:usecase-fr09} \\
-  24 & Ca sử dụng FR-10 & \path{24-usecase-fr10} & Hình~\ref{fig:usecase-fr10} \\
-  25 & Ca sử dụng FR-11 & \path{25-usecase-fr11} & Hình~\ref{fig:usecase-fr11} \\
-  26 & Ca sử dụng FR-12 & \path{26-usecase-fr12} & Hình~\ref{fig:usecase-fr12} \\
-  \bottomrule
-\end{longtable}
+\section{Khởi tạo backend}
+
+Từ thư mục gốc dự án, sao chép cấu hình mẫu, điền thông tin PostgreSQL và giữ \code{AI_PROVIDER=local} nếu không dùng khóa Gemini. Không commit secret hoặc service-account vào Git.
+
+\begin{verbatim}
+cd demo/backend
+cp .env.example .env
+npm install
+npm run migrate
+npm start
+\end{verbatim}
+
+API mặc định chạy tại \url{http://127.0.0.1:3000}. Kiểm tra bằng \code{curl http://127.0.0.1:3000/}. Muốn tạo lại schema và dữ liệu seed chỉ dùng trên database phát triển/test:
+
+\begin{verbatim}
+npm run migrate:fresh
+\end{verbatim}
+
+\section{Khởi động Redis và worker}
+
+Từ thư mục \code{demo}, chạy Redis bằng Docker Compose; sau đó mở terminal khác cho worker:
+
+\begin{verbatim}
+docker compose up -d redis
+cd backend
+npm run worker
+\end{verbatim}
+
+Kiểm tra \code{REDIS_URL}, \code{JOBS_ENABLED} và timezone trong \code{backend/.env}. Dừng Redis bằng \code{docker compose down}; volume được giữ để có thể khởi động lại.
+
+\section{Khởi động frontend}
+
+\begin{verbatim}
+cd demo/frontend
+npm install
+EXPO_PUBLIC_API_URL=http://127.0.0.1:3000 npm start
+\end{verbatim}
+
+Nếu chạy trên điện thoại cùng LAN, thay \code{127.0.0.1} bằng IP LAN của máy chạy backend và dùng \code{npm run start:lan}. Khi thiết bị không truy cập được IP nội bộ, dùng Expo tunnel và một backend tunnel riêng; tuyệt đối không đưa secret AI vào biến môi trường phía frontend.
+
+\chapter{Hướng dẫn sử dụng nhanh}
+
+\begin{enumerate}
+  \item Mở ứng dụng và kiểm tra Dashboard hiển thị số dư, tổng thu/chi và giao dịch gần đây.
+  \item Ở màn hình Transactions, thêm giao dịch bằng form hoặc mở Chat để nhập câu như ``ăn phở 50k sáng nay''.
+  \item Với ảnh/audio, chọn tệp, đọc lại raw OCR/transcript rồi sửa nếu cần. Kết quả media không được lưu tự động.
+  \item Kiểm tra preview gồm số tiền, loại, ngày, danh mục và ví; chọn sửa, hủy hoặc xác nhận. Chỉ nút xác nhận mới tạo giao dịch.
+  \item Dùng Budget để đặt hạn mức; Reports để xem xu hướng/insight; Goals để tạo kế hoạch và thử kịch bản what-if.
+  \item Nếu kết quả phân loại sai, sửa danh mục của giao dịch. Correction đã xác nhận có thể được truy hồi cho lần nhập sau.
+\end{enumerate}
+
+Nguyên mẫu chưa có đăng nhập và dùng hồ sơ \code{default_user}. Không nhập dữ liệu nhạy cảm hoặc dùng kết quả như tư vấn đầu tư chắc chắn.
 
 \chapter{Lệnh tái lập kiểm thử}
 
-Các lệnh dưới đây được chạy từ đúng thư mục thành phần. Người thực hiện phải ghi commit, phiên bản runtime, cấu hình provider và trạng thái dịch vụ; không chép secret vào biên bản.
+Các lệnh sau chạy từ đúng thư mục thành phần. Người thực hiện cần ghi commit, Node version, cấu hình provider và trạng thái PostgreSQL/Redis; không ghi secret vào artifact.
 
 \begin{verbatim}
 cd demo/backend
 npm test
 npm run test:ai
+npm run smoke:full
 
 cd ../frontend
-EXPO_PUBLIC_API_URL=http://127.0.0.1:3000 \
-  npx expo export --platform web \
-  --output-dir /tmp/perfin-web-final
+npm run ui:smoke
+npx expo export --platform web --output-dir /tmp/perfin-web
 \end{verbatim}
 
-Để kiểm thử tích hợp, cần một PostgreSQL test riêng và Redis đang chạy. Migration phải được chạy trên database test; sau mỗi nhóm test phải kiểm tra rollback và dọn dữ liệu bằng fixture. Không dùng database phát triển cá nhân làm môi trường tự động.
+Smoke media cần provider và fixture thật. Nếu không có ground truth thì chỉ được báo pass/fail khả dụng, không tính accuracy. Kiểm thử tích hợp phải dùng database test riêng và dọn dữ liệu sau mỗi nhóm ca.
+
+\chapter{Nguồn sơ đồ}
+
+Báo cáo giữ 14 nguồn Draw.io, trong đó chỉ một use case tổng thể. Tất cả nhãn trong sơ đồ dùng tiếng Anh và được dùng chung cho bản báo cáo Việt/Anh. Nguồn chỉnh sửa nằm tại \path{latex/figures/drawio/}; bản PDF/PNG/SVG nằm tại \path{latex/figures/rendered/}.
+
+\begin{longtable}{@{}C{1.0cm}L{5.2cm}L{6.8cm}@{}}
+  \toprule
+  \textbf{STT} & \textbf{Nội dung} & \textbf{Basename} \\
+  \midrule
+  \endfirsthead
+  \toprule
+  \textbf{STT} & \textbf{Nội dung} & \textbf{Basename} \\
+  \midrule
+  \endhead
+  1 & Ngữ cảnh hệ thống & \path{01-system-context} \\
+  2 & Kiến trúc vận hành & \path{02-runtime-architecture} \\
+  3 & Triển khai nguyên mẫu & \path{03-deployment} \\
+  4 & Class Diagram miền & \path{04-domain-class} \\
+  5 & ERD vật lý & \path{05-physical-erd} \\
+  6 & Ranh giới LLM & \path{06-llm-boundary} \\
+  7 & Trạng thái hội thoại & \path{07-conversation-state} \\
+  8 & Nhập giao dịch text & \path{08-text-sequence} \\
+  9 & Đầu vào đa phương thức & \path{09-multimodal-flow} \\
+  10 & Phản hồi và phân loại & \path{10-feedback-flow} \\
+  11 & Insight có căn cứ & \path{11-insight-sequence} \\
+  12 & Goal planner và what-if & \path{12-goal-flow} \\
+  13 & Tác vụ nền & \path{13-worker-sequence} \\
+  14 & Use case tổng thể & \path{14-usecase-overview} \\
+  \bottomrule
+\end{longtable}

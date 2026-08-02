@@ -1,9 +1,11 @@
 # Bộ sơ đồ PERFIN
 
-Thư mục `drawio/` chứa 26 tệp nguồn chỉnh sửa được bằng draw.io: 13 sơ đồ
-kiến trúc/luồng/dữ liệu (`01`--`13`) và 13 sơ đồ ca sử dụng (`14`--`26`). Thư
-mục `rendered/` chứa bản xuất PDF, PNG và SVG cùng basename; dự án LaTeX ưu
-tiên dùng PDF để giữ chất lượng vector.
+Thư mục `drawio/` chứa 14 tệp nguồn chỉnh sửa được bằng draw.io: 13 sơ đồ
+kiến trúc/luồng/dữ liệu (`01`--`13`) và một sơ đồ ca sử dụng tổng thể (`14`).
+Theo guideline mới, 12 sơ đồ use case chi tiết đã được thay bằng bảng đặc tả
+normal flow, subflow và alternate flow trong Chương 3. Thư mục `rendered/`
+chứa bản xuất PDF, PNG và SVG cùng basename; dự án LaTeX ưu tiên PDF vector.
+Toàn bộ nhãn trong hình dùng tiếng Anh để hai bản báo cáo dùng chung.
 
 Hướng dẫn tự render PDF, PNG, SVG và biên dịch lại hai phiên bản báo cáo:
 [RENDERING.md](RENDERING.md).
@@ -24,18 +26,6 @@ Hướng dẫn tự render PDF, PNG, SVG và biên dịch lại hai phiên bản
 | `12-goal-flow` | Saving/purchase/debt payoff và what-if | Giải thuật |
 | `13-worker-sequence` | Scheduler, queue, worker và thông báo nội bộ | Tuần tự |
 | `14-usecase-overview` | Ca sử dụng tổng thể FR-01--FR-12 theo tác nhân | Ca sử dụng |
-| `15-usecase-fr01` | Ca sử dụng chi tiết FR-01 (nhập văn bản) | Ca sử dụng |
-| `16-usecase-fr02` | Ca sử dụng chi tiết FR-02 (ảnh và giọng nói) | Ca sử dụng |
-| `17-usecase-fr03` | Ca sử dụng chi tiết FR-03 (clarification/pending) | Ca sử dụng |
-| `18-usecase-fr04` | Ca sử dụng chi tiết FR-04 (phân loại/phản hồi) | Ca sử dụng |
-| `19-usecase-fr05` | Ca sử dụng chi tiết FR-05 (quản lý dữ liệu) | Ca sử dụng |
-| `20-usecase-fr06` | Ca sử dụng chi tiết FR-06 (chuyển ví) | Ca sử dụng |
-| `21-usecase-fr07` | Ca sử dụng chi tiết FR-07 (phân tích) | Ca sử dụng |
-| `22-usecase-fr08` | Ca sử dụng chi tiết FR-08 (insight/persona) | Ca sử dụng |
-| `23-usecase-fr09` | Ca sử dụng chi tiết FR-09 (ngân sách/dự báo) | Ca sử dụng |
-| `24-usecase-fr10` | Ca sử dụng chi tiết FR-10 (mục tiêu/what-if) | Ca sử dụng |
-| `25-usecase-fr11` | Ca sử dụng chi tiết FR-11 (khoản định kỳ/worker) | Ca sử dụng |
-| `26-usecase-fr12` | Ca sử dụng chi tiết FR-12 (xuất dữ liệu/dọn tệp) | Ca sử dụng |
 
 Nguồn sự thật kỹ thuật của ERD là chuỗi migration trong
 `demo/backend/migrations/`, không phải các schema hoặc sơ đồ cũ trong
@@ -52,12 +42,9 @@ Màu dùng xuyên suốt:
 - xám `#EAEEF2 / #6B7A89 / #2C3440`: tác nhân hoặc thành phần phụ trợ;
 - viền nét đứt: dịch vụ nằm ngoài biên tin cậy của hệ thống.
 
-Trong sơ đồ ca sử dụng, liên kết association là đường thẳng không mũi tên;
-`<<include>>` là bước bắt buộc và `<<extend>>` là nhánh tùy chọn/ngoại lệ, cả hai
-vẽ bằng nét đứt mũi tên mở. Mọi liên kết `<<include>>/<<extend>>` toả ra từ một
-điểm chung trên cạnh phải của ca sử dụng chính nên không cắt chéo nhau. Sơ đồ
-ca sử dụng dùng cỡ chữ 17--18 pt cho actor/use case, 14 pt cho quan hệ và không
-có legend hoặc khối chú thích phụ.
+Sơ đồ ca sử dụng chỉ thể hiện bức tranh tổng thể: mỗi actor xuất hiện một lần,
+các association đi theo corridor riêng và các FR được nhóm theo miền. Chi tiết
+thứ tự xử lý và ngoại lệ thuộc các bảng đặc tả, không được lặp lại bằng hình.
 
 Các nguồn sinh tự động được giữ cạnh tệp `.drawio` để thay đổi có thể tái lập:
 
@@ -68,5 +55,6 @@ python3 <drawio-skill>/scripts/seqlayout.py specs/08-text-sequence.json -o drawi
 python3 <drawio-skill>/scripts/seqlayout.py specs/11-insight-sequence.json -o drawio/11-insight-sequence.drawio
 python3 <drawio-skill>/scripts/seqlayout.py specs/13-worker-sequence.json -o drawio/13-worker-sequence.drawio
 python3 sequence_style.py
+node translate_labels.js
 bash rerender-stale.sh
 ```

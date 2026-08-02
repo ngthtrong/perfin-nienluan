@@ -5,709 +5,532 @@
 
 \subsection{Overall Description}
 
-PERFIN is a mobile application prototype for entering, normalizing, managing and analyzing personal financial data. The prototype focuses on protecting data quality and verifying the algorithms; the chat interface is only a supplementary input gateway alongside the direct screens. All financial computation, constraint checking and data changes are performed by the backend. The LLM, OCR and STT do not access PostgreSQL directly and are not treated as authoritative sources of figures.
-
-The current version operates with a single \texttt{default\_user} profile. Per-user foreign keys create an upgrade path for later, but do not yet demonstrate that the system has authentication, authorization or multi-user isolation at production level. PostgreSQL is the durable source of business data; Redis stores state with TTL, cache and queue data, with process memory as a fallback in the development environment. The specification uses FR/NFR codes, acceptance conditions and test-case identifiers to provide traceability in the spirit of IEEE~830 \cite{ieee830}.
+PERFIN is a mobile prototype for entering, normalizing, managing and analysing personal-finance data. Chat and media complement forms as input channels. The backend performs every financial calculation, constraint check and data change; LLM, OCR and STT services have no direct PostgreSQL access and are not authoritative numeric sources. FR/NFR identifiers and test traceability follow the intent of IEEE~830 \cite{ieee830}.
 
 \begin{table}[H]
   \centering
-  \caption{System actors}
+  \caption{Product context and constraints}
+  \label{tab:product-overview}
+  \begin{tabularx}{\textwidth}{@{}L{3.5cm}Y@{}}
+    \toprule
+    \textbf{Item} & \textbf{Description} \\
+    \midrule
+    User & A general user records and interprets personal-finance data without requiring statistical expertise. \\
+    Environment & React Native/Expo on mobile or web, Express API and PostgreSQL; Redis and a worker are configuration-dependent. \\
+    System of record & PostgreSQL stores business data; Redis stores only TTL-bound pending, clarification, cache and queue state. \\
+    Constraints & The demo uses \code{default_user}, has no production authentication/authorization and defaults to VND. \\
+    Dependencies & LLM/OCR/STT providers are replaceable; failure must produce a real error or fallback, never fabricated data. \\
+    Assumption & The user reviews previews; guidance does not replace professional financial advice. \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+\begin{table}[H]
+  \centering
+  \caption{Actors and concerns}
   \label{tab:actors}
-  \begin{tabularx}{\textwidth}{@{}L{3.4cm}Y Y@{}}
+  \begin{tabularx}{\textwidth}{@{}L{3.2cm}Y Y@{}}
     \toprule
-    \textbf{Actor} & \textbf{Role} & \textbf{Limitation} \\
+    \textbf{Actor} & \textbf{Role} & \textbf{Concern or limitation} \\
     \midrule
-    User & Enters data, edits/confirms/cancels the preview, manages budgets/goals and views reports. & Responsible for checking data inferred from language or media before saving. \\
-    Mobile application & Captures text, images, audio; calls the REST API; displays the preview, facts and results. & Does not access the database directly or hold the AI provider's secret keys. \\
-    API and business services & Validation, database transactions, computation and returning structured results. & Does not delegate computation or data-write authority to the LLM. \\
-    External AI services & Answer tool calls, OCR text or STT transcripts. & Results are untrusted input; they do not execute business logic themselves. \\
-    Background worker & Runs recurring reminders, runway/subscription scans, month-end insights and export cleanup. & Must be scoped per profile and prevent duplicate effects on retry. \\
-    Development administrator & Configures providers, migrations and demo data. & Not a product end-user actor. \\
+    User & Enters, edits, confirms, manages and views reports. & Language/media-derived data must be reviewed before storage. \\
+    External AI service & Returns a typed draft, OCR text or transcript. & Cannot execute business operations or write the database. \\
+    Background worker & Runs reminders, analysis and file cleanup. & Jobs require user scope, retry and duplicate-effect protection. \\
+    Developer administrator & Configures environment, migrations and providers. & Not a business actor of the application. \\
     \bottomrule
   \end{tabularx}
 \end{table}
 
-The \texttt{TC-FRxx-yy} codes below are test-case identifiers at the specification level. A case is considered ``measured'' only when it has input data, an expected result, an environment and a corresponding log in Section~\ref{sec:testing}.
-
-\subsection{Specific Requirements}
-
-\subsubsection{Interfaces and external dependencies}
-
-\begin{itemize}
-  \item The mobile application communicates with the Express backend over REST/JSON; the application does not connect directly to PostgreSQL, Redis or the AI provider's API.
-  \item Media input accepts the image/audio formats permitted by the backend, up to 10~MB per file. The transcript or raw text must be returned for the user to check.
-  \item Gemini or the local parser handles intent understanding and field extraction; PaddleOCR/Google Vision and PhoWhisper/Google Speech are interchangeable adapters. An unavailable provider must lead to an error or a real fallback, not a fabricated result.
-  \item PostgreSQL holds business data and history that needs auditing. Redis holds pending/clarification state, cache and queues; losing Redis must not cause fabricated financial data.
-\end{itemize}
-
-\subsubsection{Shared data and business rules}
-
-\begin{enumerate}
-  \item Transaction amounts for income/expense, wallet transfers, budgets and recurring bills must be finite positive numbers. Investment profit/loss values are finite non-zero numbers and may be signed.
-  \item Transaction, transfer and payment dates must not be in the future; a goal's target date must not be in the past when a plan is created.
-  \item Referenced categories and wallets must exist within the current profile's scope. The demo version does not yet have multi-user authorization.
-  \item Wallet balances \textbf{are allowed to be negative}. PERFIN records the ledger and warns about cash flow; it does not reject an expense/transfer merely because the source balance is insufficient.
-  \item Changes initiated by chat or media must pass through a preview and confirmation; direct actions from a form may be written after backend validation succeeds.
-  \item Operations affecting multiple records or balances must be within a single database transaction. A cache/hydration error after \texttt{COMMIT} must not be reported as a write error that makes the user retry.
-  \item Transactions use soft delete and can be restored; reports by default do not count deleted records.
-  \item Analysis results must include the data period, quantitative facts and the method. Missing data must return \texttt{null}/a warning, not infer strong conclusions.
-\end{enumerate}
-
-\subsubsection{Scope and priority}
-
-\begin{table}[H]
-  \centering
-  \caption{Functional grouping by academic priority}
-  \label{tab:function-groups}
-  \begin{tabularx}{\textwidth}{@{}L{3.4cm}Y Y@{}}
-    \toprule
-    \textbf{Group} & \textbf{Functions} & \textbf{Role in the project} \\
-    \midrule
-    Data core & Transactions, wallets, categories, budgets, recurring bills and goals. & The main object of study. \\
-    Algorithm core & Parsing, matching, feedback, analytics, budget/goal planner. & The main contribution, to be described and tested. \\
-    LLM layer & Tool routing, extraction, clarification, narration and persona. & A bounded supporting component. \\
-    Demo support & Dashboard, management screens and export. & Demonstrates usability, not the focus. \\
-    Out of scope & Production auth, bank sync, shared wallet and high availability. & Future work, not a completion condition for the project. \\
-    \bottomrule
-  \end{tabularx}
-\end{table}
+Shared rules are: business amounts must be finite and valid; transaction dates cannot be in the future; wallets and categories belong to the current profile; negative wallet balances are allowed; chat/media operations require preview and confirmation; multi-record updates are atomic; reports exclude soft-deleted transactions by default; and insufficient data yields a warning or \code{null}, never an invented value.
 
 \subsection{Functional Requirements}
 
-\begin{longtable}{@{}L{1.3cm}L{4.3cm}L{8.2cm}@{}}
-  \caption{Functional requirements}\label{tab:functional-requirements}\\
+\widereportfigure{14-usecase-overview.pdf}{Overall PERFIN use case diagram. Feature details are specified with flow tables instead of twelve separate diagrams.}{fig:usecase-overview}
+
+Figure~\ref{fig:usecase-overview} contains observable actor goals only. Parser, validation, transaction, TTL and retry behaviour belongs in the flow tables or the sequence/flow diagrams in Section~\ref{subsec:detailed-design}.
+
+\begin{frtable}{FR-01 --- Enter Transactions from Text}{tab:fr01}
+  \textbf{Feature name} & Enter transactions from natural-language text. \\
+  \textbf{ID} & FR-01. \\
+  \textbf{User} & User. \\
+  \textbf{Necessity} & Mandatory. \\
+  \textbf{Classification} & Complex. \\
+  \textbf{Participants and concerns} & The user needs fast entry; the AI Orchestrator returns a typed draft; Transaction Service protects the ledger. \\
+  \textbf{Summary} & Convert one sentence into one or more structured transactions and create a preview before writing. \\
+  \textbf{Relationships} & Includes FR-03 and FR-04; uses FR-05 after confirmation. \\
+  \textbf{Normal flow} & \textbf{Step 1:} User submits text. \textbf{Step 2:} Extract and normalize. \textbf{Step 3:} Validate schema, category and wallet. \textbf{Sub 1:} Build preview. \textbf{Step 4:} User confirms. \textbf{Step 5:} Commit atomically and return the result. \\
+  \textbf{Subflows} & \textbf{Sub 1 --- Preview:} (1) Store a TTL-bound draft; (2) show amount, type, date, category, wallet and warnings. \\
+  \textbf{Alternate flows} & \textbf{Step 2:} Provider failure uses the local parser or returns an error. \textbf{Step 3:} Missing/ambiguous fields invoke FR-03. \textbf{Step 4:} Edit or cancel causes no write. \\
+\end{frtable}
+
+\begin{frtable}{FR-02 --- Enter Transactions from Image or Speech}{tab:fr02}
+  \textbf{Feature name} & Enter a transaction from a receipt image or speech. \\
+  \textbf{ID} & FR-02. \\
+  \textbf{User} & User; External AI service. \\
+  \textbf{Necessity} & Desirable. \\
+  \textbf{Classification} & Complex. \\
+  \textbf{Participants and concerns} & The user needs visible raw text; adapters report the provider and failures; the backend rejects invalid files. \\
+  \textbf{Summary} & Convert image/audio into reviewable text, then reuse FR-01. \\
+  \textbf{Relationships} & Includes FR-01 and FR-03. \\
+  \textbf{Normal flow} & \textbf{Step 1:} Select a valid file. \textbf{Step 2:} Backend invokes OCR or STT. \textbf{Step 3:} Display raw text and provider. \textbf{Sub 1:} User edits/confirms text. \textbf{Step 4:} Continue with FR-01. \\
+  \textbf{Subflows} & \textbf{Sub 1 --- Media review:} (1) edit a voice transcript; (2) for a receipt, select total or individual items when present. \\
+  \textbf{Alternate flows} & Invalid type or size above 10 MB is rejected. A provider that returns no text produces an error and no mock or pending draft. \\
+\end{frtable}
+
+\begin{frtable}{FR-03 --- Clarify and Confirm Pending Transactions}{tab:fr03}
+  \textbf{Feature name} & Clarification, preview and pending-transaction confirmation. \\
+  \textbf{ID} & FR-03. \\
+  \textbf{User} & User. \\
+  \textbf{Necessity} & Mandatory. \\
+  \textbf{Classification} & Complex. \\
+  \textbf{Participants and concerns} & The user can edit/cancel; the KV store applies TTL; a preview can be consumed once. \\
+  \textbf{Summary} & Collect missing fields across turns and prevent inferred data from being written. \\
+  \textbf{Relationships} & Used by FR-01, FR-02, FR-09, FR-10 and FR-12. \\
+  \textbf{Normal flow} & Store intent and missing fields; ask for the next field; merge and revalidate; build/edit a preview; atomically claim pending state; call the business service. \\
+  \textbf{Subflows} & \textbf{Preview:} attach a \code{pending_id} with five-minute TTL and update only with a valid payload. \\
+  \textbf{Alternate flows} & Continue asking while fields are missing. Expired, incorrect or claimed IDs cannot write; cancellation clears state. \\
+\end{frtable}
+
+\begin{frtable}{FR-04 --- Classify and Learn from Corrections}{tab:fr04}
+  \textbf{Feature name} & Category classification and correction retrieval. \\
+  \textbf{ID} & FR-04. \\
+  \textbf{User} & User. \\
+  \textbf{Necessity} & Mandatory. \\
+  \textbf{Classification} & Complex. \\
+  \textbf{Participants and concerns} & The matcher must be explainable; the user corrects labels; feedback failure must not corrupt a committed transaction. \\
+  \textbf{Summary} & Select a category by exact/alias/fuzzy/LLM methods and reuse confirmed corrections. \\
+  \textbf{Relationships} & Extends FR-01 and may be triggered by an FR-05 category edit. \\
+  \textbf{Normal flow} & Normalize description; load same-profile categories/corrections; rank candidates; apply a strong correction; return category, confidence and match kind; store feedback after confirmation. \\
+  \textbf{Subflows} & Select at most five similar corrections and use them as context or a controlled override. \\
+  \textbf{Alternate flows} & Low score, small margin or conflicting corrections return Other/request a selection. Feedback-write failure is logged only. \\
+\end{frtable}
+
+\begin{frtable}{FR-05 --- Manage Financial Data}{tab:fr05}
+  \textbf{Feature name} & Manage transactions, wallets and categories. \\
+  \textbf{ID} & FR-05. \\
+  \textbf{User} & User. \\
+  \textbf{Necessity} & Mandatory. \\
+  \textbf{Classification} & Complex. \\
+  \textbf{Participants and concerns} & The user needs CRUD and restore; services maintain balance and history consistency. \\
+  \textbf{Summary} & Create, view, edit, soft-delete and restore transactions and manage profile-scoped categories/wallets. \\
+  \textbf{Relationships} & Used by FR-01/FR-02 and supplies FR-07--FR-12. \\
+  \textbf{Normal flow} & Select operation; validate payload and ownership; compute balance delta; update transaction and wallet atomically; return record and new balance. \\
+  \textbf{Subflows} & Write the transaction, update the wallet, commit, then invalidate cache best-effort. \\
+  \textbf{Alternate flows} & Out-of-scope IDs or invalid payloads are rejected. A negative balance remains valid. Any pre-commit failure rolls back. \\
+\end{frtable}
+
+\begin{frtable}{FR-06 --- Transfer Funds and Record Special Cash Flows}{tab:fr06}
+  \textbf{Feature name} & Wallet transfer and investment gain/loss. \\
+  \textbf{ID} & FR-06. \\
+  \textbf{User} & User. \\
+  \textbf{Necessity} & Desirable. \\
+  \textbf{Classification} & Complex. \\
+  \textbf{Participants and concerns} & One user action must update both wallets and history consistently. \\
+  \textbf{Summary} & Record internal transfers without changing total assets and classify investment cash flow correctly. \\
+  \textbf{Relationships} & Uses FR-05 wallet and transaction entities. \\
+  \textbf{Normal flow} & Enter source, target, amount and date; validate distinct wallets; lock in stable order; debit, credit and write history; commit. \\
+  \textbf{Subflows} & In one transaction, subtract source, add target and write \code{wallet_transfers}; net change equals zero. \\
+  \textbf{Alternate flows} & Same/missing/out-of-scope wallets or invalid amount/date roll back. A future negative source balance alone is not rejected. \\
+\end{frtable}
+
+\begin{frtable}{FR-07 --- Analyse Financial Data}{tab:fr07}
+  \textbf{Feature name} & Trend, anomaly, runway, recurring and correlation analysis. \\
+  \textbf{ID} & FR-07. \\
+  \textbf{User} & User; Background worker. \\
+  \textbf{Necessity} & Mandatory. \\
+  \textbf{Classification} & Complex. \\
+  \textbf{Participants and concerns} & Analytics needs clean data; users need period, sample size and method. \\
+  \textbf{Summary} & Compute deterministic facts over non-deleted data and zero-filled time axes. \\
+  \textbf{Relationships} & Reads FR-05 and supplies FR-08 and FR-11. \\
+  \textbf{Normal flow} & Select analysis and period; query profile data; zero-fill and check sample count; run the algorithm; return facts, method and warnings. \\
+  \textbf{Subflows} & Run OLS, z-score/IQR, runway, recurring or Pearson through one result contract. \\
+  \textbf{Alternate flows} & Sparse data or zero variance returns a degraded result or \code{null}; no causal claim or fabricated transaction. \\
+\end{frtable}
+
+\begin{frtable}{FR-08 --- Generate Grounded Insights}{tab:fr08}
+  \textbf{Feature name} & Grounded insight and persona narration. \\
+  \textbf{ID} & FR-08. \\
+  \textbf{User} & User; External AI service. \\
+  \textbf{Necessity} & Desirable. \\
+  \textbf{Classification} & Complex. \\
+  \textbf{Participants and concerns} & The user needs clear explanation; Analytics owns facts; the narrator cannot alter numbers. \\
+  \textbf{Summary} & Explain precomputed facts and return them with the narration for traceability. \\
+  \textbf{Relationships} & Includes FR-07 and may use a persona when consent is enabled. \\
+  \textbf{Normal flow} & Receive question/report request; generate facts; load permitted persona; narrate facts; validate response contract; return facts and narration. \\
+  \textbf{Subflows} & Cache facts with TTL and store narration metadata without treating it as authoritative. \\
+  \textbf{Alternate flows} & Sparse facts return a warning. Provider failure returns a deterministic template. Numeric-check failure falls back instead of emitting the response. \\
+\end{frtable}
+
+\begin{frtable}{FR-09 --- Manage and Forecast Budgets}{tab:fr09}
+  \textbf{Feature name} & Monthly budgets, recommendations and forecasts. \\
+  \textbf{ID} & FR-09. \\
+  \textbf{User} & User. \\
+  \textbf{Necessity} & Mandatory. \\
+  \textbf{Classification} & Complex. \\
+  \textbf{Participants and concerns} & Users need explicit limits; Budget Service needs consistent period and category data. \\
+  \textbf{Summary} & Manage limits, forecast month end and propose budgets from history. \\
+  \textbf{Relationships} & Reads FR-05 and may invoke FR-03 from chat. \\
+  \textbf{Normal flow} & Select month; query spending; compute progress and forecast; produce warning/recommendation; confirm before saving a recommendation. \\
+  \textbf{Subflows} & Baseline uses historical mean plus buffer; 50/30/20 and hybrid constrain total allocation. \\
+  \textbf{Alternate flows} & No history yields a setup request, not a prediction. Duplicate category-period updates atomically. \\
+\end{frtable}
+
+\begin{frtable}{FR-10 --- Plan Goals and What-if Scenarios}{tab:fr10}
+  \textbf{Feature name} & Savings, purchase and debt-payoff goal planning. \\
+  \textbf{ID} & FR-10. \\
+  \textbf{User} & User. \\
+  \textbf{Necessity} & Mandatory. \\
+  \textbf{Classification} & Complex. \\
+  \textbf{Participants and concerns} & The user needs formula-backed progress; Goal Planner must expose infeasible assumptions. \\
+  \textbf{Summary} & Calculate contribution, duration, amortization and what-if plans without modifying the original until confirmation. \\
+  \textbf{Relationships} & Reads FR-05/FR-07 and may use FR-03. \\
+  \textbf{Normal flow} & Enter goal; validate amount/date/rate; compute allocatable cash; run goal-specific formula; return plan and warnings; save after confirmation. \\
+  \textbf{Subflows} & What-if reruns the same pure function with an additional contribution and keeps the original plan unchanged. \\
+  \textbf{Alternate flows} & Invalid inputs request correction. Payment below first-month interest warns of negative amortization. Cancel causes no write. \\
+\end{frtable}
+
+\begin{frtable}{FR-11 --- Manage Recurring Bills and Proactive Jobs}{tab:fr11}
+  \textbf{Feature name} & Recurring bills, payments and proactive messages. \\
+  \textbf{ID} & FR-11. \\
+  \textbf{User} & User; Background worker. \\
+  \textbf{Necessity} & Desirable. \\
+  \textbf{Classification} & Complex. \\
+  \textbf{Participants and concerns} & The user needs correct due dates; the worker needs retry and idempotency; PostgreSQL must prevent duplicate effects. \\
+  \textbf{Summary} & Manage schedules, record one payment per period and generate grounded reminders/alerts. \\
+  \textbf{Relationships} & Reads FR-05/FR-07; may call FR-08 for wording only. \\
+  \textbf{Normal flow} & Scheduler enqueues a user-scoped job; worker loads due data; computes deterministic facts; persists an event by unique key; advances schedule after success. \\
+  \textbf{Subflows} & Payment writes payment history, transaction and next due date atomically. \\
+  \textbf{Alternate flows} & Duplicate event/job returns the existing result. Transient failure retries with backoff. Redis failure stops the worker while the interactive API may continue. \\
+\end{frtable}
+
+\begin{frtable}{FR-12 --- Export Data and Remove Expired Files}{tab:fr12}
+  \textbf{Feature name} & Data export, export history and expired-file cleanup. \\
+  \textbf{ID} & FR-12. \\
+  \textbf{User} & User; Background worker. \\
+  \textbf{Necessity} & Optional. \\
+  \textbf{Classification} & Medium. \\
+  \textbf{Participants and concerns} & The user needs correct data; the exporter needs safe escaping; cleanup cannot remove valid files. \\
+  \textbf{Summary} & Generate filtered CSV, store history and delete files after TTL. \\
+  \textbf{Relationships} & Reads FR-05, may use FR-03 from chat, and delegates cleanup to the worker. \\
+  \textbf{Normal flow} & Select format/period; validate and query profile data; create a safe file; write \code{export_history}; return a download link. \\
+  \textbf{Subflows} & Escape formula-like cells, write UTF-8 BOM and row count, then assign TTL. \\
+  \textbf{Alternate flows} & Empty data returns a header-only file. The path once labelled PDF only creates HTML and is not claimed as a true PDF export. \\
+\end{frtable}
+
+\subsection{Non-functional Requirements}
+
+\begin{longtable}{@{}L{1.3cm}L{3.0cm}L{5.8cm}L{3.8cm}@{}}
+  \caption{Non-functional requirements and acceptance methods}\label{tab:nfr}\\
   \toprule
-  \textbf{Code} & \textbf{Requirement} & \textbf{High-level acceptance condition} \\
+  \textbf{ID} & \textbf{Group} & \textbf{Testable requirement} & \textbf{Measurement} \\
   \midrule
   \endfirsthead
   \toprule
-  \textbf{Code} & \textbf{Requirement} & \textbf{High-level acceptance condition} \\
+  \textbf{ID} & \textbf{Group} & \textbf{Testable requirement} & \textbf{Measurement} \\
   \midrule
   \endhead
-  FR-01 & Enter transactions via natural-language text & Normalize one or more transactions, create a preview and do not write when required fields are missing. \\
-  FR-02 & Enter via image and voice & Return a real raw OCR/transcript; confirm before the transaction pipeline; no claim of invoice-total reconciliation yet. \\
-  FR-03 & Clarification and pending transactions & Store state for 5 minutes; allow supplement/edit/confirm/cancel; a preview can be claimed only once. \\
-  FR-04 & Classification and learning from feedback & Prioritize safe exact/alias/fuzzy; record corrections after commit; do not learn when the result is ambiguous/conflicting. \\
-  FR-05 & Manage financial data & CRUD with validation and soft delete; atomic balance update; allow negative wallet balances. \\
-  FR-06 & Atomic wallet transfer & Debit, credit and history in the same transaction; two distinct wallets; no sufficient-balance check. \\
-  FR-07 & Data analysis & Compute trend, anomaly, runway, recurring and positive correlation using deterministic algorithms. \\
-  FR-08 & Grounded insight and persona & Return facts and interpretation; the numeric grounding checker is a design target, not a measured result yet. \\
-  FR-09 & Budget and forecast & Compute progress/forecast; recommend based on history or a ratio framework; apply only on confirmation. \\
-  FR-10 & Financial goals & Preview saving/purchase/debt plans and what-if; save only the exact previewed payload. \\
-  FR-11 & Recurring bills and proactive tasks & Manage the schedule, atomic payment; worker retry with dedup and user scope. \\
-  FR-12 & Data export & CSV works; the flow labeled PDF currently produces HTML; store history and clean up files past TTL. \\
+  NFR-01 & Recovery & Provider/Redis failure fabricates no data; restore demo service and backup data within three hours after an incident. & Fault injection, restart and restore on a test database. \\
+  NFR-02 & Integrity & No partial create, update, delete, restore, transfer or payment; credentials are never transmitted or logged in clear text. & Rollback tests and configuration/log scanning; TLS for network deployment. \\
+  NFR-03 & UI & Vietnamese blue--white interface, consistent navigation and no overflow at 390$\times$844. & UI smoke on Dashboard, Transaction and Chat. \\
+  NFR-04 & Timing & Acknowledge within three seconds; target text p95 $\leq3$ s and media p95 $\leq8$ s in a disclosed environment. & At least 30 runs per flow with provider, hardware, cache and error rate. \\
+  NFR-05 & Correctness & Algorithms match expected normal/boundary cases; negative balances are valid; narrator invents no number. & Unit tests, invariants and facts--response checker. \\
+  NFR-06 & Privacy & Remove temporary media; use traits only with consent; ID queries include user scope. & Temporary-file, consent and cross-scope tests. \\
+  NFR-07 & Worker consistency & Retrying an event/job creates no duplicate payment, message or export. & Repeat fingerprints and count effects. \\
+  NFR-08 & Traceability & Analysis includes period, sample size, method, facts and degradation status. & Contract tests and FR--test--artifact matrix. \\
   \bottomrule
 \end{longtable}
 
-\widereportfigure{14-usecase-overview.pdf}{PERFIN's overall use case diagram. The User is the primary actor of all twelve functions; External AI services and the Background worker take part only in the related use cases and sit outside the data trust boundary.}{fig:usecase-overview}
-
-Figure~\ref{fig:usecase-overview} summarizes the twelve functions FR-01--FR-12 from the actor viewpoint. The User initiates every business flow; External AI services only assist extraction and interpretation in the entry, analysis and insight use cases; the Background worker handles the periodic analysis, recurring-bill and export-cleanup use cases; the Development administrator only configures the system. The detailed use cases for each FR are broken out into separate diagrams in the sections below.
-
-\subsubsection{FR-01 --- Enter transactions via natural-language text}
-
-\textbf{Purpose and trigger.} Reduce manual entry while still enforcing the schema. The user sends a chat sentence or calls the analysis endpoint; the sentence may contain one or many transactions.
-
-\textbf{Input and processing.} Non-empty text; the profile has wallets and categories. Target fields include the description, a positive amount, the \texttt{income/expense} type, a date not in the future, a category and a wallet. The orchestrator selects LLM structured output or the local parser, normalizes amount/date per Section~\ref{subsec:amount-date-norm} and maps the category/wallet. The backend applies the ledger rules of Section~\ref{sec:fin-data}; the LLM only proposes arguments. A batch is written atomically only after the FR-03 preview.
-
-\textbf{Errors, output and postconditions.} A missing amount or remaining ambiguity moves to clarification; a provider error uses a real fallback or returns an error. A future date, an out-of-scope reference or a single wrong batch element rejects the whole. Before confirmation only normalized data, warnings and a \texttt{pending\_id} are returned; only after confirmation is PostgreSQL changed, the pending consumed and the cache invalidated best-effort.
-
-\textbf{Acceptance criteria.}
-\begin{itemize}
-  \item \texttt{TC-FR01-01}: a sentence with all fields creates one preview and does not yet increase the transaction count in the DB.
-  \item \texttt{TC-FR01-02}: a multi-transaction sentence extracts all of them and commits all-or-nothing.
-  \item \texttt{TC-FR01-03}: a missing amount creates a clarification, not a pending that could be written wrong.
-  \item \texttt{TC-FR01-04}: a future date or an out-of-scope reference does not change balances.
-\end{itemize}
-
-\widereportfigure{15-usecase-fr01.pdf}{Detailed use case for FR-01 --- entering transactions via natural-language text.}{fig:usecase-fr01}
-
-\subsubsection{FR-02 --- Enter transactions via image and voice}
-
-\textbf{Purpose and trigger.} Convert an invoice image or Vietnamese audio into checkable text and then reuse FR-01. The file must be of a backend-supported type and no larger than 10~MB.
-
-\textbf{Input and processing.} A media adapter must be configured or a local provider must exist. The provider returns raw OCR/transcript together with the provider name; the system displays the result, extracts fields and then creates the choices/preview. The OCR/STT foundation is in Section~\ref{subsec:ocr-stt}; CER/WER and field accuracy are in Section~\ref{subsec:ocr-stt-error}. The current version may allow choosing to save the invoice total or individual line items, but \textbf{does not yet reconcile the item total against the invoice total}.
-
-\textbf{Errors, output and postconditions.} A wrong-type/oversized file or a failed upload is rejected. A provider that returns no text must raise a real error, not create a mock. The API returns raw text/transcript, provider, context and extracted data; only after media confirmation and FR-03 is the transaction written.
-
-\textbf{Acceptance criteria.}
-\begin{itemize}
-  \item \texttt{TC-FR02-01}: a valid image returns raw OCR and provider, with no claim that line-item totals were matched.
-  \item \texttt{TC-FR02-02}: the transcript is displayed, edited/confirmed and only then enters the parser.
-  \item \texttt{TC-FR02-03}: a provider error creates no mock or pending.
-  \item \texttt{TC-FR02-04}: a wrong-type file or one larger than 10~MB is blocked before the business logic.
-\end{itemize}
-
-\widereportfigure{16-usecase-fr02.pdf}{Detailed use case for FR-02 --- entering transactions via image and voice.}{fig:usecase-fr02}
-
-\subsubsection{FR-03 --- Clarification and pending transactions}
-
-\textbf{Purpose and trigger.} Collect missing fields across multiple turns and prevent writing speculative data. FR-01/FR-02 create state when a field is missing, when there are multiple choices or when there is enough data to preview.
-
-\textbf{Input and processing.} State is bound to the profile and includes the intent, pending fields, collected data, candidates and creation time; a pending holds one transaction/batch with metadata. State and pendings live in the KV store with a 5-minute TTL. Answers are merged and revalidated; editing the preview uses controlled get--update--set; confirmation uses an atomic \texttt{claim} so a \texttt{pending\_id} is consumed only once.
-
-\textbf{Errors, output and postconditions.} An expired pending, a wrong ID or an already-claimed one must not be written to the DB; a failed edit keeps the old preview when possible; canceling clears the state; a stale request does not overwrite a new preview. A valid confirmation clears the pending and hands the data to the transaction service.
-
-\textbf{Acceptance criteria.}
-\begin{itemize}
-  \item \texttt{TC-FR03-01}: an answer supplements the correct missing field and refreshes the TTL.
-  \item \texttt{TC-FR03-02}: two simultaneous confirmations let only one request claim and write data.
-  \item \texttt{TC-FR03-03}: a stale ID does not consume a new preview.
-  \item \texttt{TC-FR03-04}: a failed edit or expired TTL does not change PostgreSQL.
-\end{itemize}
-
-\widereportfigure{17-usecase-fr03.pdf}{Detailed use case for FR-03 --- clarification and pending transactions.}{fig:usecase-fr03}
-
-\subsubsection{FR-04 --- Category classification and learning from feedback}
-
-\textbf{Purpose and trigger.} Choose an explainable category that adapts to personal corrections but does not learn from uncertain signals. The matcher receives the description, income/expense type, categories/aliases and corrections within the same profile.
-
-\textbf{Input and processing.} Strings are stripped of diacritics, lowercased and whitespace-normalized. The order is exact name, exact alias, then fuzzy per Section~\ref{subsec:text-similarity}; a threshold of 0.90 for very short input, 0.82 for the rest, and a minimum margin of 0.08. A correction close to the input may serve as few-shot context; the result still goes through validation/confirmation. Editing the category of a non-manual transaction records the old--correct pair best-effort after commit.
-
-\textbf{Errors, output and postconditions.} Failing the threshold, two candidates too close, a conflicting alias or non-consensual corrections must fall back to ``Other''/a request to choose. A failure to record feedback must not turn a committed transaction into a failure. The result includes category, confidence, match type and fallback reason.
-
-\textbf{Acceptance criteria.}
-\begin{itemize}
-  \item \texttt{TC-FR04-01}: exact and exact-alias precede fuzzy.
-  \item \texttt{TC-FR04-02}: a gap under 0.08 returns ambiguous/fallback.
-  \item \texttt{TC-FR04-03}: short input under 0.90 is not auto-assigned.
-  \item \texttt{TC-FR04-04}: a valid correction serves as an example; a conflicting correction does not force classification.
-\end{itemize}
-
-\widereportfigure{18-usecase-fr04.pdf}{Detailed use case for FR-04 --- category classification and learning from feedback.}{fig:usecase-fr04}
-
-\subsubsection{FR-05 --- Manage transactions, wallets and categories}
-
-\textbf{Purpose and trigger.} Maintain a ledger that can be edited, soft-deleted, restored and queried without corrupting balances. The user performs CRUD on transactions, wallets and categories; filters support date period, type, category, wallet and pagination.
-
-\textbf{Input and processing.} An income/expense transaction has a positive amount, a non-future date, and a valid category/wallet. Per Section~\ref{subsec:ledger-model}, income adds to and expense subtracts from the balance. Create, edit of amount/type/wallet, soft delete and restore all apply the delta within the same DB transaction; changing the category does not change the balance; reports exclude records with \texttt{deleted\_at}.
-
-\textbf{Errors, output and postconditions.} Data outside the valid domain or references outside the profile are rejected; \textbf{the balance after an expense is allowed to be negative}. A cache error after commit is only logged. The API returns the hydrated transaction and the new balance; a restore reapplies the correct effect exactly once.
-
-\textbf{Acceptance criteria.}
-\begin{itemize}
-  \item \texttt{TC-FR05-01}: income/expense changes the balance by $+A/-A$ respectively.
-  \item \texttt{TC-FR05-02}: editing amount/type/wallet applies the correct delta and rolls back entirely on error.
-  \item \texttt{TC-FR05-03}: an expense larger than the balance is still valid and the wallet may go negative.
-  \item \texttt{TC-FR05-04}: soft delete/restore reverses and applies the balance correctly exactly once.
-\end{itemize}
-
-\widereportfigure{19-usecase-fr05.pdf}{Detailed use case for FR-05 --- managing transactions, wallets and categories.}{fig:usecase-fr05}
-
-\subsubsection{FR-06 --- Wallet transfers and special cash flows}
-
-\textbf{Purpose and trigger.} Record transfers and investment cash flows without leaving a dangling debit/credit. The amount must be positive and the date not in the future; a transfer needs two distinct wallets, and an investment flow needs the appropriate wallet type.
-
-\textbf{Input and processing.} The service locks the wallets in order, subtracts $A$ from the source, adds $A$ to the destination and writes \texttt{wallet\_transfers} within the same \texttt{BEGIN/COMMIT}. An internal transfer preserves the zero-net-change invariant of Section~\ref{subsec:ledger-model}. Non-zero investment profit/loss applies only to investment/savings wallets.
-
-\textbf{Errors, output and postconditions.} Duplicate/missing wallets, a wrong amount/date or a wallet outside the profile cause a rollback. \textbf{There is no sufficient-balance check}; the source wallet is allowed to go negative. The system returns the transfer history and two balances that both reflect one transfer or both remain unchanged.
-
-\textbf{Acceptance criteria.}
-\begin{itemize}
-  \item \texttt{TC-FR06-01}: $B'_s=B_s-A$, $B'_d=B_d+A$ and the total balance is unchanged.
-  \item \texttt{TC-FR06-02}: an insufficient source wallet is still allowed to go negative.
-  \item \texttt{TC-FR06-03}: two identical/out-of-profile wallets are rejected before commit.
-  \item \texttt{TC-FR06-04}: an error between debit, credit and insert rolls back all three effects.
-\end{itemize}
-
-\widereportfigure{20-usecase-fr06.pdf}{Detailed use case for FR-06 --- wallet transfers and special cash flows.}{fig:usecase-fr06}
-
-\subsubsection{FR-07 --- Financial data analysis}
-
-\textbf{Purpose and trigger.} Turn transaction history into quantitative facts about trends, anomalies, cash-depletion risk, recurring spending and category relationships. The flow runs when the user opens a report/insight or a worker scans periodically.
-
-\textbf{Input and processing.} Use only non-deleted transactions and zero-fill the time axis where needed. The Analytics Engine applies Sections~\ref{subsec:ols-trend}--\ref{subsec:correlation}: (i) trend reports an increase only with at least 3 months, a positive slope, at least a 10\% average increase and $R^2\geq0{,}5$; (ii) anomaly needs at least 4 points, flagging the high-spending side when $z\geq2{,}5$ or exceeding $Q_3+1{,}5IQR$; (iii) runway uses exactly 14 calendar days including zero-spend days, returns 0 days for a non-positive balance and forecasts no depletion date for a zero burn rate; (iv) recurring uses a 90-day window, a maximum amount of 500,000~VND, a 15\% tolerance and a 20--40 day cadence; (v) correlation zero-fills 12 weeks, requires data in at least 4 weeks and reports only \textbf{positive} correlation $r\geq0{,}6$, not $|r|$.
-
-\textbf{Errors, output and postconditions.} Missing data returns \texttt{null}; edge branches handle a zero denominator/burn rate. A failed component is recorded in \texttt{degraded\_components}; correlation must not be interpreted as causation. Facts JSON has a timestamp, values, period, method and warnings; the insight cache has a 10-minute TTL.
-
-\textbf{Acceptance criteria.}
-\begin{itemize}
-  \item \texttt{TC-FR07-01}: slope, forecast and $R^2$ match a hand-computed series.
-  \item \texttt{TC-FR07-02}: z-score/IQR flags only the upper side and handles zero variance/IQR.
-  \item \texttt{TC-FR07-03}: runway uses all 14 days including zero-spend days; a negative balance returns 0 days.
-  \item \texttt{TC-FR07-04}: recurring obeys the count, amount and cadence; \texttt{TC-FR07-05}: only pairs with $r\geq0{,}6$ are returned, negative pairs are not reported.
-\end{itemize}
-
-\widereportfigure{21-usecase-fr07.pdf}{Detailed use case for FR-07 --- financial data analysis.}{fig:usecase-fr07}
-
-\subsubsection{FR-08 --- Grounded insight and persona}
-
-\textbf{Purpose and trigger.} Interpret FR-07 in understandable language without delegating computation to the LLM. The flow receives facts, the data period, \texttt{degraded\_components} and the persona; the raw-facts endpoint must be usable independently of the narrator.
-
-\textbf{Input and processing.} The backend sends structured facts to the narrator while also generating overall advice via deterministic rules. The persona only changes the phrasing; the response always includes facts, provider and metadata for cross-checking. The boundary is in Section~\ref{subsec:llm-boundary-theory}, the grounding measurement in Section~\ref{subsec:algo-grounding-perf}.
-
-\textbf{Errors, output and postconditions.} If the LLM is unavailable, a template fallback is used or a clear error is returned, with no mock numbers generated. \textbf{A checker ensuring every number in the narration belongs to the facts is a design target}; numeric faithfulness is not yet claimed as achieved. The read flow does not write transactions, budgets or goals.
-
-\textbf{Acceptance criteria.}
-\begin{itemize}
-  \item \texttt{TC-FR08-01}: changing the persona does not change the facts of the same analysis.
-  \item \texttt{TC-FR08-02}: a provider error uses a real fallback, keeps the facts and inserts no sample data.
-  \item \texttt{TC-FR08-03} (design target): the checker detects numbers/units not supported by the facts.
-\end{itemize}
-
-\widereportfigure{22-usecase-fr08.pdf}{Detailed use case for FR-08 --- grounded insight and persona.}{fig:usecase-fr08}
-
-\subsubsection{FR-09 --- Budget, recommendation and forecast}
-
-\textbf{Purpose and trigger.} Track limits, forecast overrun risk and recommend based on history rather than letting the LLM pick numbers. The user performs CRUD on budgets or requests \texttt{category\_average}, \texttt{50-30-20}, \texttt{hybrid}.
-
-\textbf{Input and processing.} The category must be an expense type, the limit positive, and the month/year valid. Progress computes spent, remaining and ratio; forecast uses $\text{spent}/\text{elapsed\_days}\times\text{days\_in\_month}$. The recommender per Section~\ref{subsec:budget-forecast} averages over all months in the window including zero months, with a 5\% buffer; needs/wants are capped at 50\%/30\% of income and saving at 20\%. Hybrid only shrinks weights when the total exceeds the cap. Under 3 months generates a warning; apply requires \texttt{confirmed=true} and an atomic upsert.
-
-\textbf{Errors, output and postconditions.} Missing income makes ratio strategies fall back to the average. A wrong category/period/limit, an empty batch or one over 50 items, or a missing confirmation is rejected; one wrong item rolls back the whole batch. Only the confirmed apply endpoint changes \texttt{budgets}/\texttt{budget\_history}.
-
-\textbf{Acceptance criteria.}
-\begin{itemize}
-  \item \texttt{TC-FR09-01}: a zero-activity month is still in the average denominator.
-  \item \texttt{TC-FR09-02}: the forecast matches the formula and does not divide by 0.
-  \item \texttt{TC-FR09-03}: under 3 months has a warning; missing income falls back correctly.
-  \item \texttt{TC-FR09-04}: a missing confirmation is blocked; a wrong item rolls back the batch.
-\end{itemize}
-
-\widereportfigure{23-usecase-fr09.pdf}{Detailed use case for FR-09 --- budget, recommendation and forecast.}{fig:usecase-fr09}
-
-\subsubsection{FR-10 --- Financial goals and what-if simulation}
-
-\textbf{Purpose and trigger.} Compute contribution, completion time and scenarios for saving, purchase or debt goals using deterministic functions. Input includes goal type, positive target, non-negative current/contribution, a non-past date and an annual interest rate for debt.
-
-\textbf{Input and processing.} The Goal Planner applies Section~\ref{subsec:goal-planning} to compute the shortfall, number of months, contribution to deadline, progress and warnings. For debt, the monthly rate equals the annual rate divided by 12; the annuity formula has a zero-rate branch and monthly simulation to compute interest/remaining balance; a payment not exceeding the first month's interest is flagged for negative amortization. What-if reruns the same function. The plan endpoint does not write to the DB and issues a payload-signed token valid for 15 minutes; creating/updating a plan field accepts only an unexpired token whose fingerprint matches.
-
-\textbf{Errors, output and postconditions.} A wrong date/interest/amount, an expired token or an altered payload is rejected. A zero contribution has no deadline; a non-decreasing debt returns a warning. The preview returns the plan, progress, cashflow, what-if and token but writes no data; only a valid confirmation saves.
-
-\textbf{Acceptance criteria.}
-\begin{itemize}
-  \item \texttt{TC-FR10-01}: saving with/without a deadline matches the formula.
-  \item \texttt{TC-FR10-02}: debt with zero/positive interest matches the simulation and detects negative amortization.
-  \item \texttt{TC-FR10-03}: the preview creates no row; an expired token/different payload is blocked.
-  \item \texttt{TC-FR10-04}: what-if does not change the saved goal.
-\end{itemize}
-
-\widereportfigure{24-usecase-fr10.pdf}{Detailed use case for FR-10 --- financial goals and what-if simulation.}{fig:usecase-fr10}
-
-\subsubsection{FR-11 --- Recurring bills and proactive tasks}
-
-\textbf{Purpose and trigger.} Manage recurring-spending schedules, record payments consistently and create non-duplicate reminders/insights on retry. A bill has a name, a positive amount, a weekly/monthly/quarterly/yearly frequency and a valid due day; a payment carries the just-read \texttt{period\_due\_date}; the worker receives a job name and user scope.
-
-\textbf{Input and processing.} The due date is computed per cycle and clamped to end of month. Recurring suggestions use Section~\ref{subsec:recurring-mining}. A payment locks the bill, checks the period, creates an expense, subtracts from the wallet, records the payment and advances \texttt{next\_due\_date} within one transaction; deleting the plan still keeps the payments. The scheduler upserts the schedule, retries up to 3 times with exponential backoff; an event key/fingerprint and a unique index prevent duplicate message/export creation.
-
-\textbf{Errors, output and postconditions.} A missing/stale period, a wrong schedule/amount/reference causes a rollback. An unsupported handler must raise a clear error; a retry keeps the same event key. The wallet after payment is allowed to go negative. The system returns the bill, payment, transaction, next period and worker statistics; a period has exactly one effect.
-
-\textbf{Acceptance criteria.}
-\begin{itemize}
-  \item \texttt{TC-FR11-01}: the four cycles produce the correct due date, including months missing days 29--31.
-  \item \texttt{TC-FR11-02}: a payment updates four effects atomically and rolls back on error.
-  \item \texttt{TC-FR11-03}: a stale-period request does not mistakenly pay a new period.
-  \item \texttt{TC-FR11-04}: rerunning the same event key does not increase the message/file a second time.
-\end{itemize}
-
-\widereportfigure{25-usecase-fr11.pdf}{Detailed use case for FR-11 --- recurring bills and proactive tasks.}{fig:usecase-fr11}
-
-\subsubsection{FR-12 --- Data export, file history and cleanup}
-
-\textbf{Purpose and trigger.} Let the user retrieve data by filter, track created files and clean up expired files. Only non-soft-deleted transactions belonging to the profile and matching the format/date-range/filter are exported.
-
-\textbf{Input and processing.} UTF-8 CSV with BOM, escaping special characters, and storing history with a default 7-day TTL. The API flow named \texttt{pdf} currently produces \texttt{.html}, returning \texttt{text/html}; this is printable HTML, \textbf{not a binary PDF}. The worker deletes expired files and updates the history status. The \texttt{.pfbak} backup endpoint exists but has not been verified end-to-end and is therefore not evidence of production recovery.
-
-\textbf{Errors, output and postconditions.} If no matching data exists, do not create an empty file as if successful; a wrong format/filter, an expired file or an out-of-profile ID returns an error; do not return a fake URL when file writing fails. Cleanup makes a file undownloadable but keeps metadata per policy.
-
-\textbf{Acceptance criteria.}
-\begin{itemize}
-  \item \texttt{TC-FR12-01}: the CSV filters correctly, excludes soft-deletes and escapes special characters.
-  \item \texttt{TC-FR12-02}: the PDF-labeled endpoint returns \texttt{.html}/\texttt{text/html} and must not be called a real PDF.
-  \item \texttt{TC-FR12-03}: a file past TTL is cleaned up and the history reports it as unavailable.
-  \item \texttt{TC-FR12-04}: only announce backup/restore after tests of integrity, checksum, rollback and table reconciliation.
-\end{itemize}
-
-\widereportfigure{26-usecase-fr12.pdf}{Detailed use case for FR-12 --- data export, file history and cleanup.}{fig:usecase-fr12}
-
-\subsection{Nonfunctional Requirements}
-
-The thresholds below are acceptance criteria or design targets, not necessarily current results. Actual measurements and missing measurements are separated in Section~\ref{subsec:results}.
-
-\begin{longtable}{@{}L{1.2cm}L{2.8cm}L{3.5cm}L{5.2cm}@{}}
-  \caption{Nonfunctional requirements and how to measure}\label{tab:nfr}\\
-  \toprule
-  \textbf{Code} & \textbf{Requirement} & \textbf{Target} & \textbf{How to measure} \\
-  \midrule
-  \endfirsthead
-  \toprule
-  \textbf{Code} & \textbf{Requirement} & \textbf{Target} & \textbf{How to measure} \\
-  \midrule
-  \endhead
-  NFR-01 & Data correctness and atomicity & No partial write in create, update, delete, restore, transfer, recurring payment and batch apply; a valid negative balance is not counted as an error. & Step-by-step fault injection, before--after row/balance reconciliation and rollback checks. \\
-  NFR-02 & Extraction accuracy & Lock separate thresholds for amount, type, date, category, wallet on an independent labeled set; do not infer from the 31 hard-coded cases. & Per-field precision, recall, F1, exact match and error analysis by sentence type. \\
-  NFR-03 & Numeric faithfulness & \textbf{Design target:} the narration adds/changes no number or unit beyond the facts; not yet claimed as achieved. & A facts--response checker, numeric faithfulness and unsupported-number rate on a version-locked set. \\
-  NFR-04 & Performance & Text p95 target $\leq3$ seconds; media p95 $\leq8$ seconds in the announced environment. & At least 30 runs/flow; record hardware, provider/model, cache hit/miss, p50/p95 and error rate. \\
-  NFR-05 & Resilience & A provider error creates no fake data; a Redis error has a development fallback; a post-commit error causes no duplicate retry. & Timeout/unavailable tests for LLM/OCR/STT/Redis, checking the response, pending and DB. \\
-  NFR-06 & Privacy and security scope & Do not log credentials; delete temporary media; use traits only with consent. & Check logs/config/temp files and consent; note that \texttt{default\_user} is not yet production multi-user isolated. \\
-  NFR-07 & Testability & Pure algorithms independent of DB/LLM; typical and edge cases with hand-computed expected values. & Unit tests for trend, anomaly, runway, correlation, budget, goal, matching and coverage/traceability reports. \\
-  NFR-08 & Background-task consistency & The same event/job retry creates no duplicate message/export or repeated payment. & Run the same fingerprint multiple times, simulate mid-step failure and compare records; a live Redis worker is measured separately. \\
-  NFR-09 & Traceability & Insight returns facts, data period, method, provider and degraded components. & Contract tests and reconciliation of FR $\rightarrow$ formula $\rightarrow$ test $\rightarrow$ artifact. \\
-  NFR-10 & Maintainability and replaceability & The route--service--model modules, provider adapters and configurable thresholds do not change the business contract. & Dependency review, provider/fallback swap tests and checking that no formula is placed in the route/narrator. \\
-  \bottomrule
-\end{longtable}
-
-The current acceptance limitations include: no production authentication/authorization yet; the grounding checker is still a design target; the Redis worker has not been fully smoke-tested live; the ``PDF'' flow currently returns HTML; backup/restore lacks sufficient evidence to be declared complete.
+Recovery, latency, OCR/STT accuracy and complete numeric grounding remain acceptance targets; unmeasured targets are not presented as achieved results.
 
 \section{Software Design}
 
-\subsection{Application Architecture}
+\subsection{Architecture}
 
-PERFIN uses a modular monolith rather than microservices. The Express API contains business modules that are independent at the source level but share the same deployment process. The worker is a separate process for background jobs. This structure suits the scale of the project, reduces operational cost and still preserves module boundaries.
+PERFIN is a modular monolith: domain services are separated by responsibility while the API remains one process; a separate worker handles background jobs. This matches project scale, reduces operating cost and preserves independent module tests.
 
-\widereportfigure{02-runtime-architecture.pdf}{PERFIN's runtime architecture. The deterministic core creates and stores facts; the AI Orchestrator only coordinates semantics.}{fig:runtime-architecture}
-
-Figure~\ref{fig:runtime-architecture} shows the standard path: mobile calls a route, the route hands off to a service, and the service uses a model to access PostgreSQL. The Analytics Engine, Budget Engine and Goal Planner compute deterministic results. Redis serves cache/state/queue; the worker handles periodic tasks; the AI provider sits outside the data trust boundary.
+\widereportfigure{02-runtime-architecture.pdf}{PERFIN runtime architecture; the deterministic core creates and stores facts while the AI Orchestrator coordinates semantics.}{fig:runtime-architecture}
 
 \begin{table}[H]
   \centering
-  \caption{Architecture components and responsibilities}
+  \caption{Architectural components and responsibilities}
   \label{tab:components}
-  \begin{tabularx}{\textwidth}{@{}L{3.4cm}Y Y@{}}
+  \begin{tabularx}{\textwidth}{@{}L{3.2cm}Y Y@{}}
     \toprule
-    \textbf{Component} & \textbf{Main responsibility} & \textbf{Not responsible for} \\
+    \textbf{Component} & \textbf{Responsible for} & \textbf{Not responsible for} \\
     \midrule
-    Mobile App & Capture input, preview, display and confirm. & Computing insights or holding provider secrets. \\
-    Express Routes & HTTP contract, input validation, response mapping. & Containing analysis formulas. \\
-    Core Services & Business rules, transactions and confirmation. & Generating arbitrary answers. \\
-    AI Orchestrator & Tool routing, extraction and fallback. & Accessing the DB outside of tools. \\
-    Analytics Engine & Computing statistical facts. & Writing personalized advice. \\
-    Persona/Narrator & Phrasing facts in a tone. & Changing numbers or deciding. \\
-    PostgreSQL Models & Queries, constraints and transactions. & Storing temporary conversation state. \\
-    Redis/KV & TTL state, cache and rate count. & Being the authoritative financial data source. \\
-    BullMQ Worker & Periodic jobs, retry and dedup. & Handling interactive requests directly. \\
+    Mobile App & Capture input, show previews/facts and confirm. & Database access or AI secrets. \\
+    Express Routes & HTTP contracts, upload and input validation. & Analytical formulas. \\
+    Core Services & Business rules, transactions and idempotency. & LLM-generated numbers. \\
+    Analytics, Budget, Goal & Deterministic facts and plans. & Arbitrary advice. \\
+    AI Orchestrator & Tool routing, extraction, narration and fallback. & Direct database writes. \\
+    PostgreSQL & System of record, constraints and aggregates. & Temporary conversation state. \\
+    Redis/BullMQ & TTL state, cache, queue and retry. & Financial source of truth. \\
     \bottomrule
   \end{tabularx}
 \end{table}
 
-\widereportfigure{03-deployment.pdf}{Prototype deployment diagram. The frontend, API, worker, PostgreSQL and Redis belong to the demo environment; the AI provider is called over the network.}{fig:deployment}
-
-Figure~\ref{fig:deployment} is a \textbf{prototype deployment design}, not a description of a production cluster or a high-availability commitment. Docker Compose currently only supports Redis; the API, worker and PostgreSQL need to be launched/configured separately. Readiness must be separated from liveness so the backend is not considered ready when DB bootstrap fails.
+Microservices were considered but not selected because prototype scale does not justify deployment, tracing and distributed-consistency costs. Serverless is also a poor fit for a long-running worker and local media providers. A modular monolith keeps database transactions simple and leaves a future extraction path when real load evidence exists.
 
 \subsection{Data Design}
 
-\subsubsection{Domain model}
+\widereportfigure{04-domain-class.pdf}{PERFIN UML domain class model separating ledger, planning, recurring and conversation/feedback aggregates.}{fig:domain-class}
 
-\widereportfigure{04-domain-class.pdf}{Domain model by business aggregate. The data clusters are separated from the analytics services and the language layer.}{fig:domain-class}
+\code{User} is the ownership root; \code{Wallet}, \code{Transaction} and \code{Category} form the ledger; \code{Budget}, \code{FinancialGoal} and recurring classes form planning; \code{ChatMessage} and \code{AIFeedback} preserve traceable interaction. Engines are not entities because they only read data and create facts.
 
-Figure~\ref{fig:domain-class} separates four aggregates: ledger, planning, recurring bills and conversation--feedback. The User entity is drawn exactly once and owns all four aggregates; the ownership relations and the fact-reading flow are routed orthogonally. The Analytics/Budget/Goal Services only read aggregates to compute facts or plans and do not own financial entities.
+\widereportfigure{05-physical-erd.pdf}{Physical ERD reconciled with runtime migrations; principal business foreign keys use direct relations.}{fig:physical-erd}
 
-\subsubsection{Physical model}
+\begin{longtable}{@{}L{4.5cm}L{3.0cm}L{6.0cm}@{}}
+  \caption{Entities in alphabetical order}\label{tab:data-entities}\\
+  \toprule
+  \textbf{Entity} & \textbf{Type} & \textbf{Description} \\
+  \midrule
+  \endfirsthead
+  \toprule
+  \textbf{Entity} & \textbf{Type} & \textbf{Description} \\
+  \midrule
+  \endhead
+  \code{ai_feedback_logs} & History & Original AI result, correction and context. \\
+  \code{ai_personalities} & Catalogue & Selectable persona and style prompt. \\
+  \code{backup_config} & Configuration & Per-user backup policy; worker backup is not proven. \\
+  \code{budget_history} & History & Audit trail of budget-limit changes. \\
+  \code{budgets} & Planning & Category and monthly limits. \\
+  \code{categories} & Catalogue & Income/expense taxonomy and parent relation. \\
+  \code{chat_messages} & History & Conversation, facts/metadata and event key. \\
+  \code{export_history} & Operations & Exported files, filters and expiry. \\
+  \code{financial_goals} & Planning & Goal, progress, deadline and linked wallet. \\
+  \code{investment_pnl} & Ledger & Realized investment gain/loss. \\
+  \path{recurring_bill_payments} & Ledger & Payment record for each recurring period. \\
+  \code{recurring_bills} & Planning & Amount, frequency and next due date. \\
+  \path{recurring_suggestions_dismissed} & History & Signature of a dismissed recurring suggestion. \\
+  \code{transactions} & Ledger & Income/expense, input source and soft-delete status. \\
+  \code{user_traits} & Personalization & Consent-dependent user traits. \\
+  \code{users} & Data root & Demo profile and data-scope key. \\
+  \code{wallet_transfers} & Ledger & Transfer between two wallets. \\
+  \code{wallets} & Ledger & Wallet balance, type and name. \\
+  \bottomrule
+\end{longtable}
 
-\widereportfigure{05-physical-erd.pdf}{The physical entity--relationship diagram reconciled with the runtime migration chain.}{fig:physical-erd}
-
-The ERD in Figure~\ref{fig:physical-erd} has 18 physical tables: \code{users}, \code{ai_personalities}, \code{user_traits}, \code{categories}, \code{wallets}, \code{transactions}, \code{budgets}, \code{budget_history}, \code{chat_messages}, \code{investment_pnl}, \code{wallet_transfers}, \code{export_history}, \code{backup_config}, three recurring tables, \code{financial_goals} and \code{ai_feedback_logs}. Three compatibility views are not counted as tables. Every table appears exactly once, including \code{users}; cross-module FKs are noted inside the child table box instead of drawing long lines. This presentation keeps PK/FK/UQ/CHECK but eliminates curves and most crossings. The \code{users.user_key} key is the bridge to \code{default_user}, not evidence of existing authentication.
-
-\begin{table}[H]
-  \centering
-  \caption{Main data entity groups}
-  \label{tab:data-entities}
-  \begin{tabularx}{\textwidth}{@{}L{3.8cm}Y Y@{}}
-    \toprule
-    \textbf{Group} & \textbf{Tables/entities} & \textbf{Meaning} \\
-    \midrule
-    Users and personalization & \code{users}, \code{ai_personalities}, \code{user_traits} & Demo profile, persona, consent and traits. \\
-    Personal ledger & \code{wallets}, \code{categories}, \code{transactions} & The core income--expense source. \\
-    Budget & \code{budgets}, \code{budget_history} & Limits and change history. \\
-    Recurring spending & Three recurring tables & Schedule, payments and skipped suggestions. \\
-    AI feedback & \code{ai_feedback_logs} & Initial result and the user's correction. \\
-    Goals & \code{financial_goals} & Saving, purchase, debt and progress. \\
-    Special cash flows & \code{wallet_transfers}, \code{investment_pnl} & Wallet transfers and investment profit/loss. \\
-    Operations & \code{chat_messages}, \code{export_history}, \code{backup_config} & Chat, export and backup configuration. \\
-    \bottomrule
-  \end{tabularx}
-\end{table}
-
-\subsubsection{Important data rules}
-
-\begin{itemize}
-  \item Money uses \code{DECIMAL(15,2)}; the service must convert types explicitly when computing in JavaScript.
-  \item Soft delete preserves recoverability; report queries by default exclude deleted records.
-  \item Deleting a category that has transactions must be blocked or use controlled re-tagging, not a cascade that loses history.
-  \item Pending/clarification lives in Redis with its own schema and TTL, not in the durable ERD.
-  \item Every query by ID in the design target must include \code{user_id/user_key} to prevent cross-access when authentication is added.
-\end{itemize}
+Money uses \code{DECIMAL(15,2)}; report queries exclude soft-deleted records; deleting a referenced category is blocked or controlled by re-tagging; pending state exists only in Redis; and target-design ID queries include \code{user_id/user_key}.
 
 \subsection{Detailed Design}
+\label{subsec:detailed-design}
 
-\subsubsection{LLM boundary in the architecture}
+\subsubsection{LLM Boundary and Input}
 
-\widereportfigure{06-llm-boundary.pdf}{The LLM's responsibility boundary: data and facts are created in the deterministic core; the LLM only performs semantic conversion and interpretation.}{fig:llm-boundary}
+\widereportfigure{06-llm-boundary.pdf}{LLM responsibility boundary: typed drafts and narration remain outside validation, calculation and data-write authority.}{fig:llm-boundary}
 
-Figure~\ref{fig:llm-boundary} is the most important diagram for explaining the LLM's role. Natural input is turned into a typed command; the service validates and creates a preview. For an analytical question, SQL and algorithms create facts before the narrator receives the data. The LLM has no direct connection to PostgreSQL and does not execute tools itself. The LLM's benefit is evaluated by entity accuracy, clarification rate, saved actions and interpretation quality, not by replacing formulas.
+The LLM only creates a typed command or narrates facts. The backend validates schema and domain rules, builds a preview and waits for confirmation before opening a transaction. For analysis, SQL and the engine create facts before narration. A parser or deterministic template provides a testable fallback.
 
-\subsubsection{Conversation state machine}
+\widereportfigure{08-text-sequence.pdf}{Text-entry sequence; the data-write transaction starts only after confirmation.}{fig:text-sequence}
 
-\widereportfigure{07-conversation-state.pdf}{The conversation and pending-transaction state machine.}{fig:conversation-state}
+Parsing/preview has no side effect; confirm/commit atomically claims pending state. State contains intent, missing fields, candidates and a draft with a five-minute TTL. Concurrent confirmation must not create two transactions from one \code{pending_id}.
 
-The main states in Figure~\ref{fig:conversation-state} are idle, parse, collecting, preview, confirmed, cancelled and expired; candidate choices are held in collecting. Redis keeps the intent, pending fields, collected data and candidates within a limited TTL. The data-writing branch must go through preview then confirmed. The last three states end the current session; a new request creates another idle session. The design target uses an atomic claim operation on confirmation so two simultaneous requests do not both create a transaction.
+\widereportfigure{09-multimodal-flow.pdf}{Image and speech processing; both branches converge on the text pipeline after raw-text review.}{fig:multimodal-flow}
 
-\subsubsection{Text transaction entry}
+OCR/STT returns only raw text and provider metadata. Current ground truth is too small and receipt line totals are not automatically reconciled, so Figure~\ref{fig:multimodal-flow} is a design flow, not evidence of accuracy.
 
-\widereportfigure{08-text-sequence.pdf}{Sequence diagram for text transaction entry. The LLM sits outside the data-writing transaction.}{fig:text-sequence}
+\subsubsection{Classification and Correction Retrieval}
+\label{subsec:classification-design}
 
-The sequence in Figure~\ref{fig:text-sequence} consists of receiving text, fetching categories/wallets and corrections, calling the LLM tool or local parser, normalizing, validating, clarifying if incomplete, creating a preview, editing/confirming and writing to the DB in a transaction. The budget check happens after the balance and transaction are consistent. If the commit fails, no success message may be returned.
+\widereportfigure{10-feedback-flow.pdf}{Classification and correction-retrieval flow; feedback is stored only after confirmation.}{fig:feedback-flow}
 
-\subsubsection{Multimodal input}
+The matcher uses
 
-\widereportfigure{09-multimodal-flow.pdf}{The multimodal input processing flow. Voice and image converge into the shared text pipeline after the confirmation step.}{fig:multimodal-flow}
+\begin{equation}
+  s=\max(s_{edit},\;0.92s_{dice},\;s_{contain}).
+\end{equation}
 
-Voice goes through STT and a transcript-confirmation step. Image goes through preprocessing/OCR and then allows choosing the invoice total or individual line items. The two branches converge at the text pipeline. A provider error must be represented as an error or a request for manual entry; no fake raw text is used. The report currently has no media ground truth, so Figure~\ref{fig:multimodal-flow} describes the \textbf{design target}, not evidence of OCR/STT accuracy.
+Selection proceeds through exact name, exact alias and fuzzy matching. Long input uses $\tau=0.82$, input of at most four characters uses $\tau=0.90$, and the best candidate must exceed the second by $m=0.08$. These are prototype starting values, not universal optima. Retrieval loads at most 200 recent corrections and selects at most five similar examples; conflict lowers confidence instead of forcing a label.
 
-\subsubsection{Classification and feedback loop}
+\subsubsection{Analytics and Planning Algorithms}
+\label{subsec:analytics-design}
 
-\widereportfigure{10-feedback-flow.pdf}{The classification feedback and personalization flow using correction retrieval, not fine-tuning.}{fig:feedback-flow}
+Default windows are 14 days for runway, 30 days for anomaly, 90 days for recurring discovery, six months for trend and 12 weeks for correlation. Every result reports its configured window.
 
-As shown in Figure~\ref{fig:feedback-flow}, when the user edits a category, the system stores the AI-result--correct-result pair. Next time, the exact/fuzzy correction is considered first, then the matcher/LLM. Repeated transactions in ``Other'' can be clustered to suggest a category; creating a category and re-tagging is always a plan awaiting confirmation. Conflicting history must lower confidence instead of learning the most recent correction.
+For total balance $B$, daily expense $e_j$ and $W=14$,
 
-\subsubsection{Grounded insight generation}
+\begin{equation}
+  \bar e_W=\frac{1}{W}\sum_{j=1}^{W}e_j,\qquad
+  d=\left\lfloor\frac{B}{\bar e_W}\right\rfloor.
+\end{equation}
 
-\widereportfigure{11-insight-sequence.pdf}{Sequence diagram for grounded insight generation. The response returns both the message and the facts for traceability.}{fig:insight-sequence}
+If $B\leq0$, then $d=0$; if $\bar e_W=0$, the depletion date is undefined. Recurring grouping uses mean amount $\bar a$, relative deviation $\delta_i=|a_i-\bar a|/\bar a$ and mean cadence. A group is stable when all $\delta_i\leq0.15$, cadence is 20--40 days or at least three occurrences exist.
 
-In Figure~\ref{fig:insight-sequence}, the SQL model retrieves data; the Analytics Engine computes facts and metadata; a guard checks units and the observation count. Only then does the narrator interpret according to the persona. When the LLM fails, the template narrator uses the same facts. The design target adds a numeric checker before returning the response to detect unsupported numbers.
+For category spending $s_{c,j}$ across $m$ months, a five-percent-buffer baseline is
 
-\subsubsection{Goal planning}
+\begin{equation}
+  b_c=1.05\left(\frac{1}{m}\sum_{j=1}^{m}s_{c,j}\right).
+\end{equation}
 
-\widereportfigure{12-goal-flow.pdf}{The goal-planning and what-if simulation flow.}{fig:goal-flow}
+Month-end forecast is $\widehat S_D=(S/d_e)D$, where $S$ is spending so far, $d_e$ elapsed days and $D$ month length. 50/30/20 and hybrid strategies shrink allocations when their sum exceeds the cap; recommendations require confirmation.
 
-The LLM in Figure~\ref{fig:goal-flow} only extracts the goal, amount, deadline, contribution and interest rate. The Goal Planner checks the data domain, computes surplus, deadline, contribution and warnings. What-if creates a new scenario without changing the original plan. Only a confirmation saves to \code{financial_goals}.
+For remaining goal amount $R$ and monthly contribution $M>0$, $n=\lceil R/M\rceil$. For debt principal $L$, monthly rate $r$ and duration $n$, level payment is
 
-\subsubsection{Proactive tasks}
+\begin{equation}
+  P=\frac{Lr}{1-(1+r)^{-n}}
+\end{equation}
 
-\widereportfigure{13-worker-sequence.pdf}{Sequence diagram for proactive tasks and the mechanism preventing duplicate effects on retry.}{fig:worker-sequence}
+for $r>0$, and $P=L/n$ for $r=0$. A payment below first-month interest triggers a negative-amortization warning. What-if runs the same function with new parameters and does not modify the original plan.
 
-In Figure~\ref{fig:worker-sequence}, the scheduler creates an identified job; the worker takes the correct user scope, calls the handler, computes facts and writes an internal message or export. A retry uses the same fingerprint; a unique event key and idempotent operations eliminate duplicate notifications. The current feature creates a message in \code{chat_messages}, not a push notification. Scheduled auto-backup has no corresponding worker yet and must not be described as operational.
+\widereportfigure{12-goal-flow.pdf}{Goal planning and what-if flow; only final confirmation persists a goal.}{fig:goal-flow}
 
-\subsubsection{Control of LLM-initiated operations}
+\subsubsection{Grounded Insight Generation}
 
-\begin{longtable}{@{}L{3.0cm}L{4.6cm}L{2.1cm}L{4.0cm}@{}}
-  \caption{Control conditions for LLM-initiated operations}\label{tab:llm-actions}\\
-  \toprule
-  \textbf{Operation} & \textbf{Required validation} & \textbf{Confirm} & \textbf{Atomic/idempotent} \\
-  \midrule
-  \endfirsthead
-  \toprule
-  \textbf{Operation} & \textbf{Required validation} & \textbf{Confirm} & \textbf{Atomic/idempotent} \\
-  \midrule
-  \endhead
-  Create one/many transactions & amount $>0$, valid type/category/wallet & Yes & Batch and balance in the same transaction. \\
-  Wallet transfer & Two distinct wallets, valid amount/date; negative balance allowed & Yes & Debit, credit, history in the same transaction. \\
-  Create recurring bill & Valid name, amount, cycle and date & Yes & No duplicate under the same plan. \\
-  Apply budget & Valid history and total limit & Yes & Upsert by user/category/period. \\
-  Create goal & Suitable type, target, date, interest & Yes & Save after preview. \\
-  Create category and re-tag & Non-generic name, ID belongs to user & Yes & Create/reuse, retag and feedback in the same plan. \\
-  Query/insight & Valid data range & No & Traceable facts. \\
-  Export & Valid format and date range & Yes from chat & Cleanup with fingerprint. \\
-  \bottomrule
-\end{longtable}
+\widereportfigure{11-insight-sequence.pdf}{Grounded-insight sequence; Analytics returns facts before persona/LLM narration.}{fig:insight-sequence}
 
-\subsection{Security, Privacy and Ethics}
-
-The prototype has no production authentication yet; therefore multi-user isolation must not be claimed. The routes use \code{default_user}. Every ID-based operation has been audited so that it always carries a \code{user_id} predicate, and cross-access tests now exist (Table~\ref{tab:idor-verification}); but a data predicate is not a substitute for authentication: real authentication and authorization must still be added before a real deployment.
-
-\begin{longtable}{@{}L{5.2cm}L{2.2cm}L{5.2cm}@{}}
-  \caption{Cross-access (IDOR) testing on ID-based endpoints, 25/07/2026}\label{tab:idor-verification}\\
-  \toprule
-  \textbf{Endpoint under test} & \textbf{Result} & \textbf{Interpretation} \\
-  \midrule
-  \endfirsthead
-  \toprule
-  \textbf{Endpoint under test} & \textbf{Result} & \textbf{Interpretation} \\
-  \midrule
-  \endhead
-  \code{GET/PUT/DELETE /api/budgets/:id} & 404 & Another user's budget cannot be read, modified or deleted. \\
-  \code{GET/PUT/DELETE /api/recurring/:id} & 404 & Same for recurring bills. \\
-  \code{POST} on \code{:id/pause}, \code{:id/resume}, \code{:id/pay} & 404 & No state change or payment can be written onto another user's record. \\
-  \code{GET} on \code{:id/payments} & 404 & Before the ownership check was added at the route, this returned 200 with an empty history: no data leak, but it still revealed that the id existed. \\
-  Control: the caller's own records & 200 & Legitimate access is unaffected. \\
-  \bottomrule
-\end{longtable}
-
-Method: create a second profile, insert records owned by it, then call the API as \code{default_user} using exactly those IDs; 10/10 cross-access attempts were blocked and 2/2 legitimate accesses still worked. The four regression cases in \code{tests/user-idor-scope.test.js} assert on the \emph{emitted SQL} rather than only the return value, because with a single demo profile a query missing the \code{user_id} predicate still returns the expected record. Artifact: \code{log/idor-verification_2026-07-25.json}.
-
-AI credentials, service accounts and connection strings must not be written to Git or chat logs. Images/audio need a delete-after-processing policy. \code{user_traits} may be used only when consent is enabled. The persona must not pressure, disparage or turn suggestions into definitive investment advice. Backup must not use an AES key packaged inside the client; the key must come from a secret-management mechanism external to the application.
+Insight facts include value, unit, window, sample count, method and warnings. A persona changes tone only with consent. The response includes both narration and facts for UI/test comparison. A numeric checker covering every expression remains a target design.
 
 \section{Testing}
 \label{sec:testing}
 
 \subsection{Test Plan}
 
-\subsubsection{Test Matrix}
-
-\begin{longtable}{@{}L{2.1cm}L{3.5cm}L{3.5cm}L{3.5cm}@{}}
-  \caption{Test matrix}\label{tab:test-matrix}\\
+\begin{longtable}{@{}L{2.2cm}L{3.7cm}L{4.2cm}L{3.9cm}@{}}
+  \caption{Test-plan matrix}\label{tab:test-matrix}\\
   \toprule
-  \textbf{Level} & \textbf{Target} & \textbf{Technique} & \textbf{Evidence} \\
+  \textbf{Level} & \textbf{Target} & \textbf{Technique} & \textbf{Expected evidence} \\
   \midrule
   \endfirsthead
   \toprule
-  \textbf{Level} & \textbf{Target} & \textbf{Technique} & \textbf{Evidence} \\
+  \textbf{Level} & \textbf{Target} & \textbf{Technique} & \textbf{Expected evidence} \\
   \midrule
   \endhead
-  Unit & Analytics, matching, budget, goal, validation & Normal data, boundary, invariant & \code{node:test}, hand-computed expected values. \\
-  Integration & Route--service--model, Redis, PostgreSQL & Test DB, rollback and TTL & Run logs and DB snapshots. \\
-  AI contract & Tool schema and parser & Labeled sentence set, provider/fallback & Per-case JSON. \\
-  Media & OCR/STT adapter & Real images/audio with ground truth & CER/WER and field accuracy. \\
-  Grounding & Narrator/persona & Compare response figures with facts & Numeric faithfulness. \\
-  Worker & Retry, deduplication and schedule & Repeat runs with same event, injected errors & Effect counts before--after. \\
-  System & Text/voice/image to DB & End-to-end on device & Video/logs and DB assertions. \\
-  UAT & Target users & Timed/step-counted tasks & Completion rate, SUS. \\
+  Unit & Matching, analytics, budget, goal and validation. & Normal, boundary, hand-computed expected values and invariants. & \code{node:test} pass/fail by case. \\
+  Integration & Route--service--model, PostgreSQL and Redis. & Test DB, rollback, TTL and concurrent claim. & Logs, DB snapshots and exit code. \\
+  System & Text/voice/image through preview and DB. & End-to-end scripted smoke. & HTTP response, DB assertion and UI image. \\
+  AI contract & Parser, tool schema and LLM. & Labelled inputs, same task and metrics. & JSON predictions, accuracy and macro-F1. \\
+  Media & OCR/STT adapters. & Ground-truth image/audio. & CER/WER and field accuracy. \\
+  Worker & Retry, deduplication and schedule. & Repeated fingerprint and fault injection. & Before/after effect count. \\
+  UAT & Target users. & Timed tasks and step count. & Completion, duration and SUS. \\
   \bottomrule
 \end{longtable}
 
-\subsubsection{Test Data Design}
-
-The text dataset must separate the development and evaluation sets, covering the units \texttt{k}, \texttt{nghìn}, \texttt{ngàn}, \texttt{tr}, \texttt{triệu}, numbers in words, multiplication, relative dates, income--expense--transfer--investment, multiple transactions, typos, Vietnamese--English mixing, missing/ambiguous cases and conflicting corrections. The media set must store the original images/audio together with the reference transcript or invoice table. The analytics data should be synthetic/anonymized data with known slope, outliers, cadence and correlation for cross-checking against the formulas.
-
-\subsubsection{Metric Suite}
-
-\begin{table}[H]
-  \centering
-  \caption{Evaluation metric suite}
-  \label{tab:metrics}
-  \begin{tabularx}{\textwidth}{@{}L{3.2cm}L{5.2cm}Y@{}}
-    \toprule
-    \textbf{Group} & \textbf{Metric} & \textbf{Interpretation} \\
-    \midrule
-    Extraction & Precision, recall, F1 per field, exact match & Compare amount/type/date/category/wallet against labels. \\
-    Classification & Accuracy, macro-F1, confusion matrix & Do not let high-sample categories mask low-sample ones. \\
-    Clarification & Completion rate, number of turns & Count only initially missing/ambiguous cases. \\
-    OCR/STT & CER/WER and transaction-field accuracy & Separate raw quality from business impact. \\
-    Grounding & Numeric faithfulness, unsupported-number rate & Every figure must map to facts. \\
-    Analytics & Error against expected & Test formulas and boundary conditions. \\
-    Performance & p50, p95, error rate & Separate cache hit/miss and provider. \\
-    Worker & Duplicate-effect rate, retry success & Repeat with the same fingerprint. \\
-    Experience & Completion, time, number of operations & Compare chat with form on the same task. \\
-    \bottomrule
-  \end{tabularx}
-\end{table}
+The text dataset must cover currency units, written numbers, multiplication, relative dates, multiple transactions, typos, mixed Vietnamese/English, missing or ambiguous fields and conflicting corrections. Analytics data needs known slopes, outliers, cadence and correlation. Media data must store image/audio with a reference transcript or receipt table.
 
 \subsection{Results and Analysis}
 \label{subsec:results}
 
-\subsubsection{Measured Results}
+\subsubsection{Measured Operational Results}
 
-On 16/07/2026, checks from unit to runtime level were run in the workspace. The results are presented within the scope of their evidence, without extending into conclusions about model accuracy or production readiness.
-
-\begin{longtable}{@{}L{3.3cm}L{4.2cm}L{2.4cm}L{3.4cm}@{}}
-  \caption{Measured results and missing measurements}\label{tab:measured-results}\\
+\begin{longtable}{@{}L{3.4cm}L{3.5cm}L{2.4cm}L{4.4cm}@{}}
+  \caption{Measured results and conclusion boundaries}\label{tab:measured-results}\\
   \toprule
-  \textbf{Item} & \textbf{Result} & \textbf{Category} & \textbf{Scope of conclusion} \\
+  \textbf{Item} & \textbf{Result} & \textbf{Status} & \textbf{Permitted conclusion} \\
   \midrule
   \endfirsthead
   \toprule
-  \textbf{Item} & \textbf{Result} & \textbf{Category} & \textbf{Scope of conclusion} \\
+  \textbf{Item} & \textbf{Result} & \textbf{Status} & \textbf{Permitted conclusion} \\
   \midrule
   \endhead
-  Backend \code{npm test} after fixes & 182/182 tests passed, 0 failures & \statusmeasured & Unit/service across 38 test files; includes transaction, concurrency, recurring, health, importer, time-series and user scope. The 16/07/2026 milestone was 100/100, before the suite was extended. \\
-  Local parser quality gate & 31/31 strict pass; 0 partial; 0 fail & \statusmeasured & Local, without Gemini; strict exit code, 31 hard-coded cases. \\
-  Baseline before fixes & 13/13 test files; parser 27/31 strict & \statusmeasured & Kept for error analysis and to demonstrate the impact of the fixes. \\
-  Full API/DB/media smoke & 23/23 checks passed & \statusmeasured & Live PostgreSQL, preview, edit, cancel, OCR on 2 images and STT on 1 M4A; does not include the Redis worker. \\
-  Mobile-web UI smoke & 4/4 gates passed at 390$\times$844 & \statusmeasured & Three screens with no overflow; uploaded images render for real; Chromium. \\
-  Expo web/Android export & Bundled 653/960 modules & \statusmeasured & Demonstrates the frontend bundles; not runtime performance. \\
-  Financial CSV import & 5,265 rows, 0 rejects, full provenance & \statusmeasured & Run twice on a clone and reconciled against live PostgreSQL after backup. \\
-  Category classification (local parser) & Acc 29.36\%; macro-F1 0.177 (12 classes) & \statusmeasured & 5,265 labeled rows; historical labels follow the money source, so only partially schema-independent. \\
-  Ablation parser vs LLM (Gemini) & Parser 22.2\%/0.204; LLM 59.5\%/0.607 & \statusmeasured & Stratified sample of 63 sentences; 63/63 Gemini calls succeeded; p50 964 ms. \\
-  Feedback before/after & Acc $0\%\to68.19\%$; macro-F1 $0\to0.544$ & \statusmeasured & 3,502 parser-wrong sentences split seed/holdout; control-group non-regression checked. \\
-  OCR/STT accuracy & Not yet published & \statusmissing & Requires images/audio with ground truth. \\
-  Redis worker running & Not confirmed in this measurement round & \statusmissing & WSL has no Redis/Docker; API fallback and degraded readiness were checked. \\
-  Numeric grounding, p50/p95, UAT & Not yet published & \statusmissing & Requires a checker, environment and version-locked scenarios. \\
+  Backend \code{npm test} & 182/182 pass. & \statusmeasured & Unit/service tests across 38 files; not UAT or production evidence. \\
+  Local-parser gate & 31/31 strict pass. & \statusmeasured & Fixed set of 31 sentences; not an independent benchmark. \\
+  Full API/DB/media smoke & 23/23 checks pass. & \statusmeasured & Selected fixtures traverse HTTP--PostgreSQL/provider; Redis worker excluded. \\
+  Mobile-web UI smoke & 4/4 gates pass at 390$\times$844. & \statusmeasured & No overflow and images render; not UAT. \\
+  Data import & 5,265 rows, 0 rejects. & \statusmeasured & Provenance-aware importer reconciled on demo PostgreSQL. \\
+  Parser on 5,265 rows & Accuracy 29.36\%; macro-F1 0.177. & \statusmeasured & Historical labels conflict with current taxonomy; useful for error analysis. \\
+  Parser vs Gemini & Macro-F1 0.204 vs 0.607. & \statusmeasured & Same stratified 63-sentence sample; Gemini p50 964 ms. \\
+  Correction retrieval & Accuracy 68.19\% on parser-wrong holdout. & \statusmeasured & Baseline 0\% follows from sample selection; not a whole-system improvement. \\
+  OCR/STT accuracy & Not reported. & \statusmissing & Two images and one audio smoke fixture cannot establish CER/WER/field accuracy. \\
+  Live Redis worker & Not confirmed. & \statusmissing & Payment logic is tested, but live queue/worker was not measured. \\
+  Grounding, p95 and UAT & Not reported. & \statusmissing & Requires checker, at least 30 runs per flow and target users. \\
   \bottomrule
 \end{longtable}
 
-The baseline parser had two amount errors: ``1 triệu 5'' and the multiplication ``3 cái áo, mỗi cái 200k''; two partial cases related to ``quần jeans'' and ``đi ăn''. After the fixes, all four cases have regression tests and the harness reaches 31/31 strict, while also returning a non-zero exit code whenever any case fails. The 100\% rate applies only to this fixed set, and is not yet a Gemini benchmark or an independent labeled set.
+Smoke testing only establishes completion of selected scenarios. It is not OCR/STT accuracy evidence, and a tested payment handler does not prove that a live Redis worker ran.
 
-The full smoke test demonstrates that the HTTP--PostgreSQL flow, Gemini structured output, OCR and STT can complete on the selected fixtures. This result is only a functional smoke test: there is no ground truth sufficient to infer accuracy, CER/WER or numeric faithfulness; a single timing measurement is also not p50/p95. The Redis worker has not been run live in the recorded environment.
+\subsubsection{Classification Experiments}
 
-\subsubsection{Status of Critical Features}
-
-\begin{longtable}{@{}L{3.2cm}L{2.5cm}L{4.3cm}L{3.5cm}@{}}
-  \caption{Status and target behavior of critical features}\label{tab:feature-status}\\
-  \toprule
-  \textbf{Feature} & \textbf{Current status} & \textbf{Main gap} & \textbf{Completion condition} \\
-  \midrule
-  \endfirsthead
-  \toprule
-  \textbf{Feature} & \textbf{Current status} & \textbf{Main gap} & \textbf{Completion condition} \\
-  \midrule
-  \endhead
-  Transactions and analytics & \statusmeasured & Transaction, post-commit, zero-fill and full DB smoke passed; 5,265 live rows reconciled. & Labeled dataset and broader DB fault-injection. \\
-  Chat preview/confirm & \statusmeasured & One-time claim, stale ID, edit/cancel race, history and HTTP--DB smoke passed. & Measure TTL/claim with real Redis and higher concurrent load. \\
-  Local parser & \statusmeasured{} on an independent set & 31/31 strict on the fixed gate; on 5,265 independent rows only 29.36\% acc / macro-F1 0.177. & Improve low-support categories and ambiguous money-source sentences. \\
-  LLM tool routing & \statusmeasured{} (ablation) & Gemini 59.5\% acc / macro-F1 0.607 vs parser 22.2\% / 0.204 on the same 63-sentence sample. & Expand the sample and lock cost/latency per provider. \\
-  OCR/STT & \statusmeasured & Real-provider smoke passed with 2 images and 1 M4A; no ground truth yet. & Adapter failure tests, CER/WER and field accuracy on an anonymized set. \\
-  Wallet/transfer & Partially implemented & Missing wallet-creation route/UI on a fresh install; no transfer integration test yet. & Minimal CRUD and balance-integrity testing. \\
-  Recurring and worker & \statusmeasured & Payment locks rows, is atomic, has an expected period and chat preview; notification is still internal chat. & Live DB tests and an out-of-app reminder channel if expanded. \\
-  Export/backup & Misnamed & Denominator/escaping fixed; ``PDF'' is still HTML, backup still missing. & Real PDF or relabel; safe backup/restore. \\
-  Auth/multi-user & Out of current scope & \code{default_user}; every ID-based operation is now scoped and covered by cross-access tests, but there is no authentication. & Do not demo as present; add authentication/authorization before production. \\
-  \bottomrule
-\end{longtable}
-
-\subsubsection{Quantitative Experiments on the Labeled Set}
-
-The acceptance run of 16/07/2026 (above) confirmed that the system runs correctly at the runtime level but did not yet quantify algorithmic quality on an independent set; a second measurement round on 24/07/2026 therefore added three quantitative experiments over the full labeled set to answer the specific question of how accurate the algorithm is. These three experiments were run on 24/07/2026 against \code{dataFinance.csv} itself (5,265 rows, SHA-256 \code{a9b7cf1b...027ca94f}), commit \code{5f03476}, Node v24.16.0, provider \code{gemini}, model \code{gemini-3.1-flash-lite}. Code and reproducible artifacts (JSON + Markdown) live under \code{demo/backend/tests/experiments/} and \code{log/}.
-
-\paragraph{a) Category-classification benchmark --- local parser on the full set.}
-Running \code{parseLocalTransaction} over all 5,265 labeled rows and comparing the predicted label with the gold label mapped from the historical taxonomy.
+Three experiments on 24 July 2026 use \code{dataFinance.csv} with 5,265 rows. Reproduction code and JSON/Markdown artifacts reside under \path{demo/backend/tests/experiments/} and \path{log/}.
 
 \begin{table}[H]
   \centering
-  \caption{Local-parser classification results on \texttt{dataFinance.csv}}
-  \label{tab:classification-benchmark}
-  \begin{tabularx}{\textwidth}{@{}L{7cm}Y@{}}
+  \caption{Local-parser result on 5,265 transactions}
+  \label{tab:exp-classification}
+  \begin{tabularx}{0.78\textwidth}{@{}Y R{3.0cm}@{}}
     \toprule
     \textbf{Metric} & \textbf{Value} \\
     \midrule
-    Accuracy (micro) & 29.36\% \\
-    Macro-F1 (12 classes with support) & 0.177 \\
+    Accuracy & 29.36\% \\
+    Macro-F1 (12 represented classes) & 0.177 \\
     Weighted-F1 & 0.301 \\
-    Accuracy (excluding the ``Khác'' class) & 27.52\% \\
-    Misclassified cases & 3,719 / 5,265 \\
-    Misses involving the ``Khác'' class & 2,957 \\
+    Incorrect cases & 3,719/5,265 \\
+    Errors involving Other & 2,957 \\
     \bottomrule
   \end{tabularx}
 \end{table}
 
-The low figure is a \textbf{meaningful finding, not a failure}: historical labels classify by \emph{money source} (e.g. ``mẹ cho tiền ăn'' $\to$ the family label ``Khác'') whereas the parser classifies by \emph{content} ($\to$ ``Ăn uống''). The two schemes use different axes, so 79.5\% (2,957/3,719) of misses revolve around the ``Khác'' class. This is precisely why the design chooses the LLM as the primary extraction layer and keeps the user in a confirmation loop rather than trusting alias matching.
-
-\paragraph{b) Local parser vs LLM (Gemini) ablation.}
-On a stratified sample of 63 sentences (5 per class, seed 42), comparing the two category-extraction arms; the LLM arm calls \code{parseWithGemini} directly, bypassing the cache and local routing.
+Most errors involve Other because some historical labels describe the funding source while the parser categorizes spending purpose. Taxonomy and labelling policy therefore need to be locked before model optimization.
 
 \begin{table}[H]
   \centering
-  \caption{Local parser vs LLM ablation}
-  \label{tab:ablation}
-  \begin{tabularx}{\textwidth}{@{}L{2.6cm}YYYYY@{}}
+  \caption{Local parser and Gemini ablation on the same 63 sentences}
+  \label{tab:exp-ablation}
+  \begin{tabularx}{\textwidth}{@{}L{3.0cm}R{2.0cm}R{2.3cm}R{2.2cm}Y@{}}
     \toprule
-    \textbf{Arm} & \textbf{Acc} & \textbf{Macro-F1} & \textbf{Clarify} & \textbf{p50 (ms)} & \textbf{API calls} \\
+    \textbf{Branch} & \textbf{Accuracy} & \textbf{Macro-F1} & \textbf{p50} & \textbf{Note} \\
     \midrule
-    Local parser & 22.2\% & 0.204 & 84.1\% & 0 & 0 \\
-    LLM (Gemini) & 59.5\% & 0.607 & 95.2\% & 964 & 63 \\
+    Local parser & 22.2\% & 0.204 & 0 ms & No API call. \\
+    Gemini & 59.5\% & 0.607 & 964 ms & 63/63 calls succeeded; 21 empty labels count as wrong. \\
     \bottomrule
   \end{tabularx}
 \end{table}
 
-The LLM generalizes roughly 3.0$\times$ better on macro-F1 over free-form sentences, at the cost of a p50 latency of 964\,ms and per-call API cost. Both arms pass through the confirmation step before any write, so the LLM is an extraction-assist layer rather than a source of truth. All 63 Gemini API calls succeeded (0 errors); of these, 42 sentences received a definite label and 21 returned empty and are counted as misclassifications. The accuracy above is computed over the full 63-sentence sample.
+Gemini performs better on this small sample but introduces latency and provider dependence. The result supports continued LLM extraction experiments; it does not show that one model is universally better for every user or taxonomy.
 
-\paragraph{c) Feedback before/after (correction retrieval).}
-Excluding the ``Khác'' class leaves 4,832 content sentences. The parser-wrong group (3,502 sentences) is split in half: seed (write corrections) and holdout (replay). Improvement is measured on the holdout, with a no-regression check on the control group (1,330 sentences the parser already got right).
+\subsubsection{Correction-retrieval Experiment}
+
+After removing Other, the experiment selected 3,502 sentences the parser had already classified incorrectly, then split seed and holdout. Because selection guarantees parser error in the holdout, pre-correction accuracy is necessarily 0\%. Table~\ref{tab:exp-feedback} measures errors repaired inside this selected set, not improvement over a representative baseline.
 
 \begin{table}[H]
   \centering
-  \caption{Feedback before/after on the holdout set}
-  \label{tab:feedback}
-  \begin{tabularx}{\textwidth}{@{}L{3cm}YYY@{}}
+  \caption{Correction retrieval on a parser-wrong holdout}
+  \label{tab:exp-feedback}
+  \begin{tabularx}{0.82\textwidth}{@{}L{3.6cm}R{2.2cm}R{2.2cm}Y@{}}
     \toprule
-    \textbf{Metric} & \textbf{Before (parser)} & \textbf{After} \textbf{(correction $\to$ parser)} & \textbf{$\Delta$} \\
+    \textbf{Metric} & \textbf{Before} & \textbf{After} & \textbf{Interpretation} \\
     \midrule
-    Accuracy & 0.00\% & 68.19\% & +68.19 pts \\
-    Macro-F1 & 0.0000 & 0.5440 & +0.5440 \\
-    Weighted-F1 & 0.0000 & 0.7824 & +0.7824 \\
+    Accuracy & 0.00\% & 68.19\% & 1,194 selected errors repaired. \\
+    Macro-F1 & 0.000 & 0.544 & Computed within the selected holdout. \\
+    Weighted-F1 & 0.000 & 0.782 & Influenced by holdout class distribution. \\
     \bottomrule
   \end{tabularx}
 \end{table}
 
-1,194 sentences flipped wrong$\to$right through text-similarity retrieval (not exact match, so it measures generalization to near-identical sentences). The control group had 466/1,330 sentences turned wrong by corrections, but 430 of those (92\%) are \textbf{inherent label noise} in the historical data --- the same text appears with several different gold labels, which no system can disambiguate. Genuine regression on unambiguous sentences is only 36 cases (2.7\%), confirming the corrections do not systematically mislearn.
+The control group contains 1,330 parser-correct sentences; correction changed 466 incorrectly, 430 of which shared text with conflicting historical labels. Degradation on unambiguous sentences is 36/1,330 (2.7\%). Retrieval can repair recurring errors but is label-noise sensitive; a future experiment needs random whole-distribution sampling and confidence intervals.
 
-\paragraph{d) Grounded narration.}
-Not measured quantitatively in this round; kept at design level (give the same facts to multiple personas, check that figures stay unchanged as the tone varies) and is a priority extension.
+\subsection{Requirements-to-Evidence Traceability}
 
-Results (a)--(c) have reproducible logs and are therefore reflected in the abstract and conclusion; (d) is not yet eligible.
+Table~\ref{tab:traceability} links observable requirements to design, tests and evidence status. A route, mock or diagram alone is not end-to-end acceptance evidence.
+
+\begin{longtable}{@{}L{2.2cm}L{3.4cm}L{3.5cm}L{4.8cm}@{}}
+  \caption{FR--design--test--evidence traceability}\label{tab:traceability}\\
+  \toprule
+  \textbf{Req.} & \textbf{Design} & \textbf{Related test} & \textbf{Evidence and gap} \\
+  \midrule
+  \endfirsthead
+  \toprule
+  \textbf{Req.} & \textbf{Design} & \textbf{Related test} & \textbf{Evidence and gap} \\
+  \midrule
+  \endhead
+  FR-01, FR-03--FR-06 & Typed draft, TTL preview, service and SQL transaction. & Parser gate, backend tests and API--DB smoke. & Selected fixtures and rollback invariants pass; no independent task-based user measurement. \\
+  FR-02 & Media adapter, raw-text review and shared FR-01 pipeline. & Upload/media smoke; planned CER/WER and field accuracy. & Sample provider flow executes; insufficient ground truth for OCR/STT accuracy. \\
+  FR-07--FR-10 & Analytics, facts contract, Budget/Goal service and grounded narrator. & Hand-expected unit tests, classification benchmark and planned checker. & Formulas and functions have tests; response-wide grounding and warning thresholds remain incomplete. \\
+  FR-11 & Recurring service, BullMQ, event key and retry. & Payment/handler unit tests; planned live worker and fault injection. & Business logic is tested; no live queue/worker evidence in this evaluation. \\
+  FR-12 & CSV exporter, history and TTL cleanup. & Escaping tests, API smoke and planned expiry check. & CSV has evidence; the former PDF-labelled path only generates HTML. \\
+  NFR-01--NFR-08 & Constraints, user scope, fallback, idempotency and fact metadata. & Rollback, cross-scope, load, recovery, worker and UAT. & Test integrity has evidence; three-hour recovery, p95, UAT, live worker and faithfulness remain targets. \\
+  \bottomrule
+\end{longtable}
+
+\subsection{Threats to Validity}
+
+\subsubsection{Internal Validity}
+
+Benchmarks depend on historical labels. Identical descriptions with different categories show that label noise can penalize both parser and retrieval even when a prediction follows the current taxonomy. The 63-sentence ablation is small, and the correction holdout is conditionally selected from parser errors, so observed differences are not unbiased whole-traffic estimates. Gemini is version- and time-dependent; artifacts should retain model, parameters, timestamp and raw response.
+
+\subsubsection{Construct Validity}
+
+The 31/31 gate measures success on designed sentences, not out-of-sample correctness. Smoke tests measure scenario completion, not accuracy or usability. Accuracy can hide rare classes, so macro-F1, weighted-F1, per-class confusion and support are also needed. For OCR/STT, CER/WER alone is insufficient: amount, date and merchant field accuracy maps more directly to ledger risk.
+
+\subsubsection{External Validity}
+
+Data comes from one demo profile, uses VND and is primarily Vietnamese. Results do not automatically generalize to many users, other taxonomies, varied receipts or production load. The next evaluation should lock the taxonomy, sample randomly over time, split by normalized description, fix random seeds and add target-user UAT. Current conclusions apply only to the source, dataset and environment recorded in the 24 July 2026 artifacts.

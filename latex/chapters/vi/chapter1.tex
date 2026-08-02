@@ -3,100 +3,96 @@
 
 \section{Đặt vấn đề}
 
-\subsection{Bối cảnh}
+Quản lý tài chính cá nhân đòi hỏi người dùng ghi nhận giao dịch đều đặn, phân loại nhất quán và hiểu được ý nghĩa của lịch sử thu--chi. Năng lực tài chính có liên hệ trực tiếp với khả năng lập kế hoạch và ra quyết định dài hạn \cite{lusardi2014}. Tuy nhiên, biểu mẫu truyền thống thường yêu cầu nhiều thao tác; dữ liệu vì thế dễ bị bỏ sót hoặc gán sai danh mục, kéo theo sai lệch ở số dư, ngân sách và báo cáo.
 
-Quản lý tài chính cá nhân đòi hỏi người dùng ghi nhận giao dịch đều đặn, phân loại đúng và hiểu được ý nghĩa của lịch sử thu--chi. Kiến thức tài chính có liên quan trực tiếp đến khả năng lập kế hoạch và ra quyết định dài hạn \cite{lusardi2014}. Tuy nhiên, công cụ ghi chép truyền thống thường yêu cầu nhiều thao tác: chọn loại giao dịch, nhập số tiền, chọn danh mục, ví và thời gian. Khi nhập liệu trở thành gánh nặng, dữ liệu dễ bị thiếu hoặc sai danh mục; mọi báo cáo phía sau vì thế kém tin cậy.
+Đầu vào tự nhiên như ``ăn phở sáng nay 45k bằng Momo'' giúp giảm thao tác nhưng tạo thêm rủi ro. Hệ thống phải hiểu đơn vị tiền Việt Nam, ngày tương đối, nhiều giao dịch trong một câu, tên ví gần đúng và ngữ cảnh phân loại. Ảnh hóa đơn và giọng nói còn chịu sai số OCR/STT. Nếu kết quả suy đoán được ghi thẳng vào cơ sở dữ liệu, một lỗi nhỏ có thể lan truyền sang toàn bộ phép phân tích phía sau.
 
-Đầu vào tự nhiên như ``ăn phở sáng nay 45k bằng Momo'' giảm số bước thao tác, nhưng tạo ra bài toán kỹ thuật mới. Hệ thống phải hiểu đơn vị tiền Việt Nam, ngày tương đối, nhiều giao dịch trong một câu, tên ví gần đúng và ngữ cảnh phân loại. Ảnh hóa đơn và giọng nói còn bổ sung nhiễu OCR/STT. Nếu ghi thẳng kết quả suy đoán vào cơ sở dữ liệu, một lỗi nhỏ có thể làm sai số dư, ngân sách và toàn bộ insight về sau.
-
-\subsection{Vấn đề về phân tích và diễn giải}
-
-Biểu đồ và bộ lọc trả lời tốt những câu hỏi xác định như ``tháng này đã chi bao nhiêu''. Giá trị nghiên cứu của PERFIN không nằm ở việc bọc câu truy vấn SQL bằng chatbot. Hệ thống cần phát hiện các hiện tượng khó quan sát bằng một số đơn lẻ: xu hướng tăng dần, ngày chi bất thường, tốc độ cạn dòng tiền, khoản phí định kỳ hoặc tiến độ mục tiêu bị lệch.
-
-Các hiện tượng trên phải được tính bởi giải thuật có thể kiểm thử. LLM có thể hiểu câu hỏi và diễn giải kết quả, nhưng không phải nguồn chân lý cho phép tính tài chính. Giao toàn bộ phân tích cho LLM làm kết quả khó tái lập và tăng nguy cơ xuất hiện số liệu không có trong dữ liệu gốc.
-
-\subsection{Bài toán nghiên cứu}
-
-Đề tài tập trung trả lời ba câu hỏi:
+PERFIN giải quyết bài toán theo nguyên tắc: PostgreSQL và các hàm xác định là nguồn sự thật; LLM, OCR và STT chỉ tạo dữ liệu trung gian cần được kiểm tra. Đề tài tập trung trả lời ba câu hỏi nghiên cứu:
 
 \begin{enumerate}
-  \item Làm thế nào chuyển đầu vào văn bản, ảnh và giọng nói thành giao dịch có cấu trúc mà vẫn bảo vệ tính đúng đắn của dữ liệu?
+  \item Làm thế nào chuyển văn bản, ảnh và giọng nói thành giao dịch có cấu trúc mà vẫn bảo vệ tính đúng đắn của dữ liệu?
   \item Những giải thuật xác định nào phù hợp để tạo insight có thể giải thích từ lịch sử tài chính cá nhân?
-  \item LLM nên tham gia ở đâu để tăng tính tự nhiên và cá nhân hóa mà không chiếm quyền tính toán hoặc tự ý thay đổi dữ liệu?
+  \item LLM nên tham gia ở đâu để tăng tính tự nhiên mà không chiếm quyền tính toán hoặc tự ý thay đổi dữ liệu?
 \end{enumerate}
 
-\widereportfigure{01-system-context.pdf}{Sơ đồ ngữ cảnh và phạm vi hệ thống PERFIN. Người dùng tương tác với ứng dụng; các nhà cung cấp LLM, OCR và STT chỉ là dịch vụ hỗ trợ bên ngoài.}{fig:system-context}
+\widereportfigure{01-system-context.pdf}{Ngữ cảnh và phạm vi của PERFIN; các dịch vụ LLM, OCR và STT nằm ngoài biên tin cậy dữ liệu.}{fig:system-context}
 
-Hình~\ref{fig:system-context} định vị PERFIN là hệ thống quản lý dữ liệu và giải thuật. Ngân hàng, ví dùng chung, xác thực production và hạ tầng sẵn sàng cao không thuộc phạm vi niên luận cơ sở ngành.
+Hình~\ref{fig:system-context} cho thấy phạm vi niên luận là thu nhận, tổ chức và phân tích dữ liệu tài chính cá nhân. Kết nối ngân hàng, ví dùng chung, xác thực production và hạ tầng sẵn sàng cao không thuộc phạm vi thực hiện.
 
 \section{Mục tiêu}
 
-Mục tiêu tổng quát là xây dựng và đánh giá một nguyên mẫu quản lý tài chính cá nhân trong đó dữ liệu có cấu trúc và giải thuật xác định là nền tảng, còn LLM là lớp hiểu ngôn ngữ và diễn giải có kiểm soát.
+Mục tiêu tổng quát là hoàn thành trong 13 tuần một nguyên mẫu quản lý tài chính cá nhân trong đó dữ liệu có cấu trúc và giải thuật xác định là nền tảng, còn LLM là lớp hiểu ngôn ngữ và diễn giải có kiểm soát.
 
 \begin{table}[H]
   \centering
-  \caption{Mục tiêu và tiêu chí đánh giá của đề tài}
+  \caption{Mục tiêu cụ thể, tiêu chí và thời hạn}
   \label{tab:objectives}
-  \begin{tabularx}{\textwidth}{@{}L{1.1cm}Y Y@{}}
+  \begin{tabularx}{\textwidth}{@{}L{1.0cm}Y Y L{2.0cm}@{}}
     \toprule
-    \textbf{Mã} & \textbf{Mục tiêu cụ thể} & \textbf{Bằng chứng và tiêu chí nghiệm thu} \\
+    \textbf{Mã} & \textbf{Mục tiêu cụ thể} & \textbf{Tiêu chí đánh giá} & \textbf{Thời hạn} \\
     \midrule
-    O1 & Xây dựng mô hình dữ liệu tài chính có khóa, ràng buộc, chỉ mục và giao dịch nguyên tử. & Migration, ERD, test rollback; luồng cập nhật trọng yếu phải hoàn tất toàn bộ hoặc không đổi dữ liệu. \\
-    O2 & Xây dựng pipeline trích xuất đa phương thức có hỏi lại và xác nhận. & Bộ dữ liệu gán nhãn, log tool call; không ghi DB khi thiếu trường bắt buộc. \\
-    O3 & Hiện thực trend, anomaly, runway, recurring, correlation, ngân sách và mục tiêu. & Test công thức với dữ liệu thường, dữ liệu biên và kết quả tính tay. \\
-    O4 & Giới hạn LLM ở hiểu ý định, gọi công cụ và diễn giải facts. & Tool schema, kiểm tra numeric faithfulness và fallback; không thêm số ngoài facts. \\
-    O5 & Đánh giá khả năng vận hành của nguyên mẫu. & Test tích hợp, p50/p95, lỗi provider và UAT phải có log tái lập trước khi công bố. \\
+    O1 & Xây dựng mô hình dữ liệu tài chính có khóa, ràng buộc và cập nhật nguyên tử. & Migration, ERD và kiểm thử rollback; không có ghi dở dang ở luồng trọng yếu. & Tuần 5 \\
+    O2 & Xây dựng pipeline trích xuất văn bản, ảnh và giọng nói có hỏi lại, xem trước và xác nhận. & Không ghi cơ sở dữ liệu khi thiếu trường; lưu được nguồn và dữ liệu trung gian. & Tuần 8 \\
+    O3 & Hiện thực các giải thuật trend, anomaly, runway, recurring, correlation, ngân sách và mục tiêu. & Ca thường, ca biên và bất biến được đối chiếu với kết quả tính tay. & Tuần 9 \\
+    O4 & Giới hạn LLM ở hiểu ý định, gọi công cụ và diễn giải facts. & Tool schema, validation, fallback và bước xác nhận tách khỏi quyền ghi dữ liệu. & Tuần 10 \\
+    O5 & Đánh giá nguyên mẫu bằng kiểm thử và thí nghiệm có thể tái lập. & Công bố đúng phạm vi unit/integration/smoke và các chỉ số phân loại; nêu rõ phép đo còn thiếu. & Tuần 13 \\
     \bottomrule
   \end{tabularx}
 \end{table}
 
-Các ngưỡng trong Bảng~\ref{tab:objectives} là \textbf{mục tiêu nghiệm thu}, không mặc nhiên là kết quả đã đạt. Báo cáo chỉ gắn nhãn ``đã đo'' khi có lệnh, môi trường và đầu ra tái lập.
+Các tiêu chí trong Bảng~\ref{tab:objectives} là điều kiện nghiệm thu theo kế hoạch. Báo cáo chỉ gọi một kết quả là ``đã đo'' khi có đầu vào, môi trường và artifact tương ứng.
+
+\section{Phương pháp nghiên cứu}
+
+Đề tài kết hợp bốn phương pháp:
+
+\begin{enumerate}
+  \item \textbf{Nghiên cứu tài liệu:} tổng hợp lý thuyết về dữ liệu quan hệ, độ tương đồng văn bản, thống kê giải thích được, OCR, STT và function calling; từ đó xác định ranh giới phù hợp cho LLM.
+  \item \textbf{Phân tích yêu cầu và hệ thống:} khảo sát quy trình nhập--xác nhận--phân tích, mô hình hóa tác nhân, dữ liệu, ràng buộc và các tình huống lỗi có thể làm sai sổ cái.
+  \item \textbf{Thiết kế và tạo nguyên mẫu:} phát triển theo vòng lặp ngắn; mỗi module được tách route--service--model, còn công thức được hiện thực bằng hàm xác định để có thể kiểm thử độc lập.
+  \item \textbf{Thực nghiệm:} dùng unit, integration, system smoke và các tập gán nhãn để so parser với LLM, đo tác dụng của correction retrieval và phân tích sai số. Smoke test media chỉ chứng minh khả năng chạy, không được dùng thay cho accuracy.
+\end{enumerate}
+
+\section{Kế hoạch thực hiện}
+
+Kế hoạch bắt đầu ngày 11/05/2026 và kéo dài 13 tuần. Các mốc có thể chồng lấn ở hoạt động kiểm thử và viết báo cáo, nhưng mỗi tuần có một đầu ra kiểm tra được.
+
+\begin{longtable}{@{}C{1.0cm}L{2.7cm}L{6.2cm}L{4.0cm}@{}}
+  \caption{Kế hoạch thực hiện 13 tuần}\label{tab:implementation-plan}\\
+  \toprule
+  \textbf{Tuần} & \textbf{Thời gian} & \textbf{Công việc chính} & \textbf{Đầu ra} \\
+  \midrule
+  \endfirsthead
+  \toprule
+  \textbf{Tuần} & \textbf{Thời gian} & \textbf{Công việc chính} & \textbf{Đầu ra} \\
+  \midrule
+  \endhead
+  1 & 11--17/05 & Khảo sát bài toán, guideline và ứng dụng liên quan. & Câu hỏi nghiên cứu, phạm vi. \\
+  2 & 18--24/05 & Thu thập yêu cầu và chuẩn hóa SRS. & Danh sách FR/NFR, use case tổng thể. \\
+  3 & 25--31/05 & Thiết kế kiến trúc và ranh giới LLM. & Sơ đồ kiến trúc, contract module. \\
+  4 & 01--07/06 & Thiết kế mô hình miền và lược đồ quan hệ. & Class diagram, ERD, migration draft. \\
+  5 & 08--14/06 & Hiện thực sổ cái, constraint và transaction. & O1, bộ kiểm thử dữ liệu lõi. \\
+  6 & 15--21/06 & Hiện thực parser, chuẩn hóa và fuzzy matching. & Pipeline text và quality gate. \\
+  7 & 22--28/06 & Tích hợp LLM, clarification và pending state. & Tool schema, preview/confirm. \\
+  8 & 29/06--05/07 & Tích hợp OCR/STT qua adapter. & Pipeline media và xử lý lỗi provider. \\
+  9 & 06--12/07 & Hiện thực analytics, budget và goal planner. & O3 và unit test công thức. \\
+  10 & 13--19/07 & Hoàn thiện narrator, feedback và worker. & O4, fallback và kiểm soát side effect. \\
+  11 & 20--26/07 & Kiểm thử tích hợp, import dữ liệu và thí nghiệm. & Log, JSON kết quả, phân tích sai số. \\
+  12 & 27/07--02/08 & Tái cấu trúc báo cáo và chuẩn hóa sơ đồ. & Bản LaTeX v2 theo guideline. \\
+  13 & 03--09/08 & Rà soát, biên dịch, sửa tham chiếu và chuẩn bị demo. & PDF nộp, mã nguồn và hướng dẫn sử dụng. \\
+  \bottomrule
+\end{longtable}
 
 \section{Phạm vi đề tài}
 
-\subsection{Phạm vi thực hiện}
+Trong phạm vi là giao dịch thu--chi, chuyển ví, danh mục, ngân sách, khoản định kỳ, mục tiêu, phân tích dữ liệu và đầu vào văn bản/ảnh/giọng nói ở mức nguyên mẫu. Trọng tâm đánh giá là mô hình dữ liệu, tính đúng của phép biến đổi và các giải thuật. Giao diện di động có vai trò thu nhận đầu vào và minh họa quy trình sử dụng.
 
-\begin{table}[H]
-  \centering
-  \caption{Phạm vi thực hiện và nội dung ngoài phạm vi}
-  \label{tab:scope}
-  \begin{tabularx}{\textwidth}{@{}Y Y@{}}
-    \toprule
-    \textbf{Trong phạm vi} & \textbf{Ngoài phạm vi} \\
-    \midrule
-    Giao dịch thu, chi, chuyển ví và lãi/lỗ đầu tư ở mức nguyên mẫu. & Kết nối Open Banking và đồng bộ ngân hàng thật. \\
-    Nhập văn bản, ảnh hóa đơn, giọng nói; preview và xác nhận. & Huấn luyện mô hình nền tảng, OCR hoặc STT mới. \\
-    Danh mục, phản hồi sửa sai, gợi ý và re-tag có xác nhận. & Ví dùng chung, chia nợ nhóm và cộng tác thời gian thực. \\
-    Ngân sách, recurring bill, insight và mục tiêu tài chính. & Tư vấn đầu tư, chấm điểm tín dụng hoặc quyết định thay người dùng. \\
-    Một hồ sơ demo \code{default_user} và đường nâng cấp dữ liệu. & Đăng ký, JWT, phân quyền và cô lập multi-user production. \\
-    Redis, worker và fallback cho demo/kiểm thử. & High availability, giám sát tập trung và cam kết uptime. \\
-    \bottomrule
-  \end{tabularx}
-\end{table}
-
-Trọng tâm của niên luận là mô hình dữ liệu, tính đúng của biến đổi dữ liệu và các giải thuật phân tích. Giao diện di động đóng vai trò thu nhận đầu vào và minh họa khả năng sử dụng; độ đầy đủ CRUD cho mọi đối tượng không phải thước đo đóng góp học thuật chính.
-
-\subsection{Giả định và giới hạn}
-
-\begin{itemize}
-  \item Đơn vị tiền mặc định là VND; dữ liệu tiền dùng kiểu số thập phân trong PostgreSQL. Số do LLM sinh không được dùng làm nguồn chuẩn.
-  \item Kết luận thống kê chỉ có ý nghĩa khi số quan sát đủ lớn. Hệ thống phải giảm mức tin cậy hoặc từ chối kết luận khi dữ liệu quá ít.
-  \item Persona chỉ thay đổi cách diễn đạt, không thay đổi facts, phép tính, quyền truy cập hay điều kiện xác nhận.
-  \item Nguyên mẫu không thay thế chuyên gia tài chính; gợi ý chỉ hỗ trợ tổ chức và hiểu dữ liệu cá nhân.
-\end{itemize}
+Ngoài phạm vi là kết nối Open Banking, huấn luyện mô hình nền tảng, ví dùng chung, tư vấn đầu tư, xác thực và phân quyền production, high availability và cam kết uptime. Nguyên mẫu dùng hồ sơ \code{default_user}; khóa ngoại theo người dùng chỉ là đường mở rộng, không phải bằng chứng đã có hệ thống multi-user an toàn.
 
 \section{Đóng góp của đề tài}
 
-Đề tài hướng tới năm đóng góp có thể kiểm chứng:
-
-\begin{enumerate}
-  \item mô hình dữ liệu có ràng buộc và các luồng cập nhật nguyên tử;
-  \item pipeline kết hợp LLM, parser cục bộ, fuzzy matching và con người trong vòng lặp;
-  \item bộ giải thuật phân tích xác định, tách khỏi lớp sinh ngôn ngữ;
-  \item cơ chế grounded narration, trong đó LLM chỉ diễn giải facts đã tính;
-  \item giao thức đánh giá tách tính đúng thuật toán, chất lượng AI, hiệu năng và trải nghiệm nhập liệu.
-\end{enumerate}
+Các đóng góp chính gồm: mô hình dữ liệu có ràng buộc và cập nhật nguyên tử; pipeline đa phương thức có con người trong vòng lặp; nhóm giải thuật phân tích có thể kiểm tra độc lập; ranh giới trong đó LLM chỉ trích xuất và diễn giải; và giao thức đánh giá tách chất lượng thuật toán, khả năng chạy của provider và mức sẵn sàng hệ thống.
 
 \section{Bố cục báo cáo}
 
-Chương~\ref{chap:introduction} trình bày bài toán, mục tiêu và phạm vi. Chương~\ref{chap:theory} xây dựng cơ sở lý thuyết về dữ liệu tài chính, LLM, OCR/STT và giải thuật phân tích. Chương~\ref{chap:results} đặc tả yêu cầu, thiết kế kiến trúc, mô hình dữ liệu, luồng xử lý và kiểm thử. Chương~\ref{chap:conclusion} đối chiếu mục tiêu, nêu hạn chế và đề xuất hướng phát triển.
+Chương~\ref{chap:introduction} trình bày bài toán, mục tiêu, phương pháp và kế hoạch. Chương~\ref{chap:theory} tổng hợp cơ sở lý thuyết, so sánh phương án và lý do lựa chọn. Chương~\ref{chap:results} trình bày SRS, thiết kế, giải thuật chi tiết và kiểm thử. Chương~\ref{chap:conclusion} đối chiếu mục tiêu, nêu hạn chế và hướng phát triển.

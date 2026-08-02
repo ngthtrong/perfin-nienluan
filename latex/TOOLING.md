@@ -42,7 +42,7 @@ sandbox, `timeout 180` và retry một lần cho lỗi `UnknownVizError` ngẫu 
 wsl bash -c "cd /mnt/c/Users/jhiny/OneDrive/Desktop/perfin-nienluan/latex/figures && ./rerender-stale.sh"
 
 # Chỉ xuất vài sơ đồ theo basename (không kèm .drawio)
-wsl bash -c "cd /mnt/c/Users/jhiny/OneDrive/Desktop/perfin-nienluan/latex/figures && ./rerender-stale.sh 14-usecase-overview 15-usecase-fr01"
+wsl bash -c "cd /mnt/c/Users/jhiny/OneDrive/Desktop/perfin-nienluan/latex/figures && ./rerender-stale.sh 02-runtime-architecture 14-usecase-overview"
 ```
 
 Script xuất cả ba định dạng `pdf`, `png` (`--width 2200`), `svg` vào `rendered/`
@@ -101,13 +101,15 @@ nháy đơn cho phần cần giữ nguyên.
 Windows; lệnh sẽ báo `No such file or directory`. Mọi thứ liên quan `/mnt/c` phải
 nằm **bên trong** `wsl bash -c`.
 
-### 2.4 Sinh sơ đồ ca sử dụng bằng script
+### 2.4 Sinh sơ đồ bằng script
 
-13 sơ đồ ca sử dụng (`14`–`26`) sinh từ `figures/usecase_gen.py`. Sửa spec trong
-Python rồi sinh lại XML, sau đó mới export:
+Sơ đồ use case tổng thể (`14`) sinh từ `figures/usecase_gen.py`; các sơ đồ lõi
+sinh từ `core_gen.py`, còn ba sequence diagram sinh từ JSON trong `specs/`.
+Sau bước sinh, chạy `translate_labels.js` để bảo đảm bộ hình dùng chung chỉ có
+nhãn tiếng Anh, rồi mới export:
 
 ```bash
-wsl bash -c "cd /mnt/c/Users/jhiny/OneDrive/Desktop/perfin-nienluan/latex/figures && python3 usecase_gen.py"
+wsl bash -c "cd /mnt/c/Users/jhiny/OneDrive/Desktop/perfin-nienluan/latex/figures && python3 core_gen.py && python3 usecase_gen.py && node translate_labels.js"
 wsl bash -c "cd /mnt/c/Users/jhiny/OneDrive/Desktop/perfin-nienluan/latex/figures && ./rerender-stale.sh"
 ```
 
@@ -184,8 +186,8 @@ wsl bash -c "cd /mnt/c/Users/jhiny/OneDrive/Desktop/perfin-nienluan/latex && mak
 ```bash
 P=/mnt/c/Users/jhiny/OneDrive/Desktop/perfin-nienluan/latex
 
-# 1. sinh lại XML nếu sửa spec Python
-wsl bash -c "cd $P/figures && python3 usecase_gen.py"
+# 1. sinh lại XML nếu sửa spec Python/JSON và chuẩn hóa nhãn tiếng Anh
+wsl bash -c "cd $P/figures && python3 core_gen.py && python3 usecase_gen.py && node translate_labels.js"
 
 # 2. export pdf/png/svg cho các sơ đồ đã thay đổi
 wsl bash -c "cd $P/figures && ./rerender-stale.sh"
@@ -196,7 +198,7 @@ wsl bash -c "grep -E 'FAIL|DONE' /tmp/rerender.log"
 # 4. biên dịch lại hai bản PDF bằng MiKTeX (xem 3.1)
 ```
 
-Kiểm tra nhanh số lượng artifact — 26 nguồn phải cho 78 tệp rendered:
+Kiểm tra nhanh số lượng artifact — 14 nguồn phải cho 42 tệp rendered:
 
 ```bash
 wsl bash -c "ls $P/figures/drawio/*.drawio | wc -l; ls $P/figures/rendered/* | wc -l"

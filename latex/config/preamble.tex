@@ -117,6 +117,24 @@
 \newcommand{\code}[1]{\texttt{\detokenize{#1}}}
 % Macro trạng thái (\statusmeasured ...) được định nghĩa trong config/lang-\doclang.
 
+% Mẫu bảng yêu cầu chức năng theo Guideline-report.md. Hai nhãn cột được
+% định nghĩa theo ngôn ngữ trong config/lang-<lang>.tex.
+\newenvironment{frtable}[2]{%
+  \begin{longtable}{@{}L{3.8cm}L{10.8cm}@{}}
+    \caption{#1}\label{#2}\\
+    \toprule
+    \textbf{\frfieldlabel} & \textbf{\frcontentlabel} \\
+    \midrule
+    \endfirsthead
+    \toprule
+    \textbf{\frfieldlabel} & \textbf{\frcontentlabel} \\
+    \midrule
+    \endhead
+}{%
+    \bottomrule
+  \end{longtable}
+}
+
 \newcommand{\frontchapter}[1]{%
   \cleardoublepage
   \phantomsection

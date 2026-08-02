@@ -1,637 +1,153 @@
-\chapter{Theoretical Foundation}
+\chapter{Theoretical Background}
 \label{chap:theory}
+
+This chapter summarizes the concepts, models and technologies used by the project. Project-specific formulas and thresholds are moved to the detailed design in Chapter~\ref{chap:results}.
 
 \section{Financial Data and Preprocessing}
 \label{sec:fin-data}
 
-\subsection{Transaction, Balance and Cash-Flow Model}
-\label{subsec:ledger-model}
+\subsection{Relational Ledger and Data Integrity}
 
-A minimally valid transaction has an amount $A>0$, a transaction type, a
-date, a description, a category and a wallet within the user's scope.
-PERFIN distinguishes \texttt{income}, \texttt{expense}, \texttt{transfer},
-\texttt{investment\_inflow}, \texttt{investment\_outflow} and
-\texttt{investment\_pnl} because each type has a different effect on
-balances and reports. For a wallet $w$, the balance change caused by an
-income or expense transaction is
+A financial transaction minimally contains an amount, type, date, description, category and wallet. Income increases a balance, expense decreases it, and a wallet transfer creates two opposite changes that must not be counted as income or expense. Multi-record changes belong in one database transaction so they either complete or roll back together.
 
-\begin{equation}
-  \Delta B_w=
-  \left\{
-  \begin{array}{ll}
-    +A, & \mbox{if income},\\
-    -A, & \mbox{if expense}.
-  \end{array}
-  \right.
-\end{equation}
+A relational database provides foreign keys, decimal types, domain constraints and aggregate queries. Durable business data must remain separate from short-lived clarification, preview, cache and queue state. Daily, weekly and monthly series must preserve the calendar axis and zero-fill inactive periods; dropping zero periods distorts slopes, burn rate and correlation.
 
-Over a period $P$, total income $I_P$, total expense $E_P$ and net cash
-flow $N_P$ are computed from transactions that have not been soft-deleted:
-
-\begin{equation}
-  I_P=\sum_{t\in P,\,type(t)=income}A_t,\qquad
-  E_P=\sum_{t\in P,\,type(t)=expense}A_t,\qquad
-  N_P=I_P-E_P.
-\end{equation}
-
-Transferring $A$ from a source wallet $s$ to a destination wallet $d$
-produces $\Delta B_s=-A$ and $\Delta B_d=+A$, so that
-$\Delta(B_s+B_d)=0$. This invariant ensures a wallet transfer is not
-counted as income or expense. The prototype allows a negative wallet
-balance to reflect cash or an overdrawn account; the business rule is a
-positive amount, two distinct wallets belonging to the same user, not a
-``sufficient balance'' condition. The debit, credit and history record
-must lie within the same \texttt{BEGIN/COMMIT} transaction; if one step
-fails, \texttt{ROLLBACK} restores the entire state.
-
-\subsection{Data Integrity and Lifecycle}
-\label{subsec:integrity}
-
-PERFIN applies four layers of protection:
-
-\begin{enumerate}
-  \item \textbf{Domain constraints:} transaction amounts, limits and
-  contribution amounts must be valid; dates must not exceed the allowed
-  business domain.
-  \item \textbf{Referential integrity:} transactions reference users,
-  categories and wallets by foreign keys.
-  \item \textbf{Business integrity:} no transfer between the same wallet;
-  no transaction written with a missing required field; soft delete does
-  not remove the ability to recover.
-  \item \textbf{Atomicity:} every multi-table change or balance change
-  together with its history is committed in full or not at all.
-\end{enumerate}
-
-Indexes are placed on frequently filtered columns such as user, date,
-category, wallet and status. Money is stored as
-\texttt{DECIMAL(15,2)}; when passed to JavaScript it must be converted
-in a controlled manner to avoid string concatenation or unintended
-rounding. The cache is invalidated after commit. A cache error after
-commit must not be returned as a business error, because the client may
-retry and cause a duplicate effect.
-
-\subsection{Time-Axis Normalization and Observation Windows}
-\label{subsec:time-axis}
-
-Analysis by day, week or month must preserve the correct calendar axis.
-Let $x_j$ be the total expense of the $j$-th calendar period in a window
-$W$. If that period has no transactions then $x_j=0$; the period must not
-be removed from the series. Zero-fill prevents two distortions:
-compressing the time gaps inflates the slope, and taking only days with
-spending inflates the burn rate.
-
-The observation window must always accompany the result. PERFIN currently
-uses 14 days for runway, 30 days for anomaly, 90 days for recurring items,
-6 months for trend and 12 weeks for correlation by default. These are the
-prototype's starting parameters, not thresholds proven optimal across all
-users.
-
-\subsection{Durable Data and Transient State}
-\label{subsec:persist-state}
-
-PostgreSQL stores auditable business data. Redis stores short-lived state:
-transactions awaiting confirmation, the field being clarified, the list of
-ambiguous choices, caches and rate-limit counters. TTL expires
-conversation state through the \texttt{EXPIRE} mechanism. The in-process
-memory fallback serves development only; its data is lost on restart and
-is not a production configuration.
-
-\section{Input Normalization and Classification}
-\label{sec:normalize}
-
-\subsection{Normalizing Amount, Date and Transaction Structure}
-\label{subsec:amount-date-norm}
-
-Natural input is converted into a typed draft before validation. The
-suffixes \texttt{k}, ``nghìn'', ``ngàn'' multiply the value by $10^3$;
-\texttt{tr}, ``triệu'' multiply by $10^6$. Relative dates are resolved
-against the local date of the request. A sentence with several items must
-produce an array of drafts, in which each element has its own
-\texttt{amount}, \texttt{type}, \texttt{description},
-\texttt{transaction\_date}, \texttt{category} and \texttt{wallet}. The
-parser or LLM only creates the draft; the service then checks for a finite
-number, the date domain, the category, the wallet and ownership before
-creating the preview.
-
-\subsection{Text Similarity and Safe Category Selection}
+\subsection{Normalization and Text Similarity}
 \label{subsec:text-similarity}
 
-Strings are stripped of diacritics, lowercased, cleared of non-alphanumeric
-characters and collapsed on whitespace. For two normalized strings $a,b$,
-the edit score uses the Levenshtein distance $D_{lev}$~\cite{levenshtein1966}:
+Input is normalized for case, punctuation, whitespace, currency units and relative dates before schema mapping. For strings $a,b$, Levenshtein similarity \cite{levenshtein1966} is
 
 \begin{equation}
   s_{edit}=1-\frac{D_{lev}(a,b)}{\max(|a|,|b|)}.
 \end{equation}
 
-Let $T_a,T_b$ be two token sets; the Dice coefficient~\cite{dice1945} is
+For token sets $T_a,T_b$, the Dice coefficient \cite{dice1945} is
 
 \begin{equation}
   s_{dice}=\frac{2|T_a\cap T_b|}{|T_a|+|T_b|}.
 \end{equation}
 
-If the smaller token set has at least two elements and is fully contained
-in the larger set, the containment score $s_{contain}$ lies in the range
-$[0{,}82;0{,}94]$ according to the length ratio. The overall score in the
-source code is
+Levenshtein distance captures nearby typing errors, whereas Dice is useful when phrase order or components differ. PERFIN combines exact matches, aliases, both scores and a safety margin between the two best candidates. The chosen thresholds are detailed in Section~\ref{subsec:classification-design}.
 
-\begin{equation}
-  s=\max(s_{edit},\;0{,}92s_{dice},\;s_{contain}).
-\end{equation}
-
-The selection order is exact category name, exact alias, then fuzzy. Long
-input uses the threshold $\tau=0{,}82$, input of no more than four
-characters uses $\tau=0{,}90$. The best candidate must also beat the
-second candidate by at least a margin $m=0{,}08$. If $s_1<\tau$ or
-$s_1-s_2<m$, the system chooses ``Other'' or requests clarification rather
-than assigning an ambiguous result on its own. This formula serves FR-04
-and does not replace the user's confirmation.
-
-\subsection{Learning from Feedback}
-\label{subsec:feedback-learning}
-
-When the user corrects a category, the system stores the original
-result--correct result pair together with the context. Exact/fuzzy
-corrections are considered before aliases and the LLM on the next round; a
-conflicting correction lowers confidence or requests confirmation. This is
-retrieval combined with adaptive rules, \textbf{not model fine-tuning}.
-The effect of feedback must be evaluated by accuracy or macro-F1 before and
-after on the same replay set.
-
-\subsection{OCR, Speech-to-Text and Provider Adapters}
-\label{subsec:ocr-stt}
-
-OCR comprises image preprocessing, text-region detection, recognition and
-post-processing. STT converts audio into a transcript. In PERFIN, the
-provider returns only raw text or a transcript along with the provider name
-and error status; the result then continues through the
-draft--validation--preview pipeline as text.
-
-A receipt image may produce one aggregate transaction or several line-item
-drafts, but the current version \textbf{does not yet have an algorithm to
-automatically reconcile} the line-item total with the invoice total, tax
-and discount. The user must check the preview; a two-image smoke test is
-not a measurement of OCR accuracy. The transcript must also be shown before
-confirmation so that a recognition error does not silently become an
-amount. The adapter allows a local provider to be replaced by a cloud
-provider without modifying the transaction service. When a provider fails,
-the system returns an error or allows manual entry; it does not generate
-sample data.
-
-\section{Analysis and Planning Algorithms}
+\section{Explainable Analytical Techniques}
 \label{sec:algorithms}
 
-\begin{table}[htbp]
-  \centering
-  \caption{Deterministic algorithms and the features that use them}
-  \label{tab:algorithms}
-  \small
-  \begin{tabularx}{\textwidth}{|p{3.0cm}|X|X|}
-    \hline
-    \textbf{Algorithm} & \textbf{Input and output} &
-    \textbf{Feature that uses it} \\ \hline
-    Linear regression & Monthly expense series with zero-fill; slope, $R^2$,
-    forecast & FR-07: trend \\ \hline
-    Z-score and IQR & Daily or per-item expense series; flags, scores,
-    method & FR-07: anomaly \\ \hline
-    Cashflow runway & Total balance and 14 calendar days; burn rate, day
-    count, depletion date & FR-07/FR-11: cash-flow alert \\ \hline
-    Recurring items & Description, amount, date; clusters, cadence, monthly
-    estimate & FR-07/FR-11: subscription scan \\ \hline
-    Pearson & Two weekly series with zero-fill; positive correlation &
-    FR-07: category relationships \\ \hline
-    Budget recommender & Monthly expense, income, limits; recommendations
-    and overrun forecast & FR-09 \\ \hline
-    Goal planner & Goal, contribution or repayment, deadline, interest rate;
-    time, shortfall, what-if & FR-10 \\ \hline
-  \end{tabularx}
-\end{table}
+\subsection{Trend, Anomaly and Correlation}
 
-\subsection{Linear Regression and Trend Forecasting}
-\label{subsec:ols-trend}
-
-Let $y_i$ be the total expense of period $i$, $x_i=i$ with
-$i=0,\ldots,n-1$, and $\bar{x}$ and $\bar{y}$ the corresponding means. The
-least-squares (OLS) line $\hat y_i=a+bx_i$~\cite{montgomery2012} has
+Ordinary least squares (OLS) \cite{montgomery2012} models a time series as $\hat y_i=a+bx_i$. Its slope is
 
 \begin{equation}
-  b=\frac{\sum_{i=0}^{n-1}(x_i-\bar{x})(y_i-\bar{y})}
-          {\sum_{i=0}^{n-1}(x_i-\bar{x})^2},\qquad
-  a=\bar{y}-b\bar{x}.
+  b=\frac{\sum_i(x_i-\bar{x})(y_i-\bar{y})}
+          {\sum_i(x_i-\bar{x})^2}.
 \end{equation}
 
-The goodness of fit and the next-period forecast are
+The sign of $b$ gives direction and $R^2$ gives linear fit. OLS is explainable and testable but does not model seasonality or future events. A z-score compares an observation with the mean in standard-deviation units, while the interquartile range is more robust to extremes \cite{tukey1977}. PERFIN uses both as review signals, not as fraud conclusions.
 
-\begin{equation}
-  R^2=1-\frac{\sum_i(y_i-\hat y_i)^2}
-                 {\sum_i(y_i-\bar y)^2},\qquad
-  \hat y_n=\max(0,a+bn).
-\end{equation}
-
-When a constant series makes the denominator of $R^2$ equal to 0, the
-source code returns $R^2=0$ and does not report a trend. The service adds
-a rising trend to the facts only when there are at least three months,
-$b>0$, $R^2\geq0{,}5$ and the average percentage change between pairs with
-a positive prior sample reaches at least 10\%. Zero-fill must be performed
-before the regression. The result describes a short-term linear trend; it
-does not model seasonality or future events.
-
-\subsection{Anomaly Detection with Z-score and IQR}
-\label{subsec:anomaly}
-
-For $n\geq4$ expense values $x_i$, the mean, sample standard deviation and
-z-score are
-
-\begin{equation}
-  \mu=\frac{1}{n}\sum_{i=1}^{n}x_i,\qquad
-  s=\sqrt{\frac{\sum_{i=1}^{n}(x_i-\mu)^2}{n-1}},\qquad
-  z_i=\frac{x_i-\mu}{s}.
-\end{equation}
-
-Quantiles are linearly interpolated over the sorted sequence. Let
-$IQR=Q_3-Q_1$ and the upper threshold $U=Q_3+kIQR$. PERFIN flags the
-high-expense side when
-
-\begin{equation}
-  z_i\geq2{,}5\qquad\hbox{or}\qquad x_i>Q_3+1{,}5IQR.
-\end{equation}
-
-If $s=0$ then $z_i=0$; if $IQR=0$ then the IQR branch raises no flag. The
-output comprises the value, the date or label, $z_i$, the ratio to the mean
-and the method \texttt{z}, \texttt{iqr} or \texttt{z+iqr}. The result only
-asks the user to review; it does not prove fraud and the thresholds need to
-be calibrated on representative data.
-
-\subsection{Estimating Cash-Flow Runway}
-\label{subsec:runway}
-
-Let $B=\sum_w B_w$ be the current total balance, $W=14$ the number of
-observed calendar days and $e_j\geq0$ the spending on day $j$; days with no
-spending have $e_j=0$. The burn rate and the number of remaining days are
-
-\begin{equation}
-  \bar e_W=\frac{1}{W}\sum_{j=1}^{W}e_j,\qquad
-  d=\left\lfloor\frac{B}{\bar e_W}\right\rfloor.
-\end{equation}
-
-If $B\leq0$, \texttt{daysLeft=0}; if $\bar e_W=0$, the system does not
-forecast a depletion date (\texttt{null}). Otherwise, the depletion date
-equals the current date plus $d$. When there is a payday, the system finds
-its next occurrence in the calendar and compares it with the depletion
-date. For example, $B=2{,}8$ million VND and a 14-day total expense of
-$1{,}4$ million VND give $\bar e=100{,}000$ VND/day, so $d=28$ days. This
-is an extrapolation that keeps the recent spending level constant; it does
-not yet account for upcoming income or an abnormal expense.
-
-\subsection{Mining Recurring Expenses}
-\label{subsec:recurring-mining}
-
-Only \texttt{expense} transactions not exceeding 500,000 VND are considered
-in the current configuration. After the descriptions are normalized,
-transactions with the same key are grouped into a cluster of $m$ amounts
-$a_i$ and dates $t_i$. The average amount, relative deviation and average
-cadence are
-
-\begin{equation}
-  \bar a=\frac{1}{m}\sum_{i=1}^{m}a_i,\qquad
-  \delta_i=\frac{|a_i-\bar a|}{\bar a},\qquad
-  \bar\Delta=\frac{1}{m-1}\sum_{i=2}^{m}|t_i-t_{i-1}|.
-\end{equation}
-
-A cluster is stable when every $\delta_i\leq0{,}15$. A cluster is a
-recurring candidate when it is stable and satisfies one of two conditions:
-$20\leq\bar\Delta\leq40$ days, or at least three occurrences. With $m=2$,
-the cadence must still lie within the window. The monthly estimate is
-currently $\bar a$ under the assumption of one occurrence per month; the
-total subscription is the sum of the cluster estimates. Exact grouping
-helps limit false positives but may miss variant descriptions. The result
-is only a ``recurring signal''; it does not automatically create a
-recurring bill or cancel a service.
-
-\subsection{Cross-Category Spending Correlation}
-\label{subsec:correlation}
-
-For two weekly expense series $X=(x_1,\ldots,x_n)$ and
-$Y=(y_1,\ldots,y_n)$ on the same weekly axis, a category's missing week is
-filled with 0. The Pearson correlation coefficient~\cite{pearson1895} is
+Pearson's coefficient \cite{pearson1895} measures linear co-movement:
 
 \begin{equation}
   r=\frac{\sum_i(x_i-\bar{x})(y_i-\bar{y})}
   {\sqrt{\sum_i(x_i-\bar{x})^2\sum_i(y_i-\bar{y})^2}}.
 \end{equation}
 
-The function returns 0 if $n<3$ or one series has zero variance. The
-current version considers only categories with at least four weeks of
-observation and reports only pairs with \textbf{positive} correlation
-$r\geq0{,}6$; negative correlation is not yet reported. The system selects
-the pair with the largest $r$ and must interpret it as ``co-varying in the
-observed data'', not infer a causal relationship.
+Correlation is interpreted only within the observed window and does not imply causation.
 
-\subsection{Budget Recommendation and Forecasting}
-\label{subsec:budget-forecast}
+\subsection{Runway, Recurring Items, Budgets and Goals}
 
-Let $s_{c,j}$ be the expense of category $c$ in month $j$ over $m$ calendar
-months; a month with no activity has $s_{c,j}=0$. The average and the base
-level with a buffer $\beta=5\%$ are
+Runway extrapolates how long the current balance can support the recent spending rate. Recurring-item discovery groups transactions by description, amount and date interval. Budget forecasting uses spending pace over elapsed days, while goal planning uses the remaining amount, deadline, contribution and debt simulation. These techniques prioritize transparent assumptions and boundary handling. PERFIN's formulas and windows appear in Section~\ref{subsec:analytics-design}.
 
-\begin{equation}
-  \bar s_c=\frac{1}{m}\sum_{j=1}^{m}s_{c,j},\qquad
-  b_c=(1+\beta)\bar s_c.
-\end{equation}
-
-With monthly income $Y$, the default framework allots at most
-$C_{need}=0{,}50Y$ to needs, $C_{want}=0{,}30Y$ to wants and sets a target
-of $0{,}20Y$ for savings. Let $g$ be the spending group (needs or wants),
-$C_g$ its allocation ceiling and $\sum_{k\in g}b_k$ the total base limit of
-the categories in that group. Three strategies produce a raw limit $L_c$:
-
-\begin{equation}
-  L_c=
-  \left\{
-  \begin{array}{ll}
-    b_c,
-      & \mbox{category average},\\
-    C_g\displaystyle\frac{b_c}{\sum_{k\in g}b_k},
-      & \mbox{50/30/20},\\
-    b_c\displaystyle\min\left(1,\frac{C_g}{\sum_{k\in g}b_k}\right),
-      & \mbox{hybrid}.
-  \end{array}
-  \right.
-\end{equation}
-
-The result is rounded to a step of
-10,000 VND; a positive value smaller than one step still becomes 10,000
-VND. Confidence follows the number of months in which the category had
-activity: high when at least 6, medium when 3--5, low when below 3; every
-recommendation also carries a warning if the observed history is under
-three months.
-
-To forecast a limit overrun within the month, with $S$ the amount spent
-after $d_e$ days and a month of $D$ days:
-
-\begin{equation}
-  q=\frac{S}{d_e},\qquad \widehat S_D=qD,\qquad
-  d_{exceed}=\left\lceil\frac{L-S}{q}\right\rceil.
-\end{equation}
-
-The system attaches \texttt{likely\_to\_exceed} when $\widehat S_D>L$. The
-formula assumes a constant spending rate, so it is only an early warning;
-any recommendation or limit change always requires the user's confirmation.
-
-\subsection{Goal and Debt-Repayment Planning}
-\label{subsec:goal-planning}
-
-For a savings or purchase goal, let $T>0$ be the goal amount, $C\geq0$ the
-current amount, $R=\max(0,T-C)$ the remaining shortfall and $M\geq0$ the
-monthly contribution. If $M>0$:
-
-\begin{equation}
-  n=\left\lceil\frac{R}{M}\right\rceil.
-\end{equation}
-
-If the deadline is $n_D>0$ months away, the required contribution is
-$M_D=\lceil R/n_D\rceil$, the monthly shortfall is $G=\max(0,M_D-M)$ and
-the shortfall at the deadline is $H=\max(0,R-Mn_D)$. When $M=0$, the
-completion time is undefined; when $R=0$, the goal is complete
-immediately. What-if simply re-runs the same function with $M'=M+E$, where
-$E$ is the freed-up spending, and does not modify the original plan.
-
-For debt repayment, $L$ is the current outstanding balance, $i_a$ the
-annual interest rate as a percentage, $r=i_a/(100\times12)$ the monthly
-rate and $n$ the number of months. The level payment that completes on time
-is
-
-\begin{equation}
-  P=
-  \left\{
-  \begin{array}{ll}
-    L/n, & r=0,\\[2mm]
-    \displaystyle\frac{Lr}{1-(1+r)^{-n}}, & r>0.
-  \end{array}
-  \right.
-\end{equation}
-
-The simulation uses the recurrence
-$L_{k+1}=\max(0,L_k(1+r)-P)$ and adds $L_kr$ to the total interest. If
-$P\leq Lr$ in the first month, the balance does not decrease and the system
-returns the warning \texttt{NEGATIVE\_AMORTIZATION}. If the debt is not
-settled within the default simulation limit of 600 months, the plan is not
-feasible within the horizon. The formula lets FR-10 clearly separate the
-computation from the LLM's interpretation.
-
-\section{Evaluation Methodology}
-\label{sec:eval-method}
-
-\subsection{Extraction and Classification Accuracy}
-\label{subsec:extract-accuracy}
-
-For a field to be extracted, $TP$ is a correctly predicted value, $FP$ is a
-wrongly predicted or spurious value and $FN$ is a ground-truth value that
-was missed:
-
-\begin{equation}
-  Precision=\frac{TP}{TP+FP},\qquad
-  Recall=\frac{TP}{TP+FN},\qquad
-  F1=\frac{2\,Precision\,Recall}{Precision+Recall}.
-\end{equation}
-
-Exact match is achieved only when all required fields of a transaction are
-correct together. Macro-F1 averages the F1 of each category so that
-high-sample classes do not mask low-sample ones. These metrics must be
-computed on an evaluation set independent of the development prompts or
-rules.
-
-\subsection{OCR and STT Error and Business Impact}
-\label{subsec:ocr-stt-error}
-
-Here $S$, $D$, $I$ are the number of substitutions, deletions and
-insertions respectively; $N$ is the number of characters or words in the
-ground truth. The subscript $c$ denotes character-level counts (CER) and
-$w$ denotes word-level counts (WER):
-
-\begin{equation}
-  CER=\frac{S_c+D_c+I_c}{N_c},\qquad
-  WER=\frac{S_w+D_w+I_w}{N_w}.
-\end{equation}
-
-CER/WER measure raw text; transaction-field accuracy is what tells whether
-a media error corrupted the amount, date, merchant or line item. That is
-why a provider smoke test must not be presented as accuracy.
-
-\subsection{Algorithm Correctness, Grounding and Performance}
-\label{subsec:algo-grounding-perf}
-
-Deterministic algorithms are checked with hand-computed expected values,
-the absolute error $AE=|\hat y-y|$ and invariants such as the unchanged
-total of a wallet transfer. For narration, let $N_{all}$ be the number of
-numeric expressions in the response and $N_{supported}$ the number that map
-to facts or an equivalent formatting operation:
-
-\begin{equation}
-  Numeric\ Faithfulness=\frac{N_{supported}}{N_{all}}.
-\end{equation}
-\begin{equation}
-  Unsupported\ Rate=1-Numeric\ Faithfulness.
-\end{equation}
-
-This is a \textbf{target evaluation method}; a checker covering every
-number is not yet fully implemented. Latency uses percentiles: p50 is the
-median, p95 is the value that 95\% of samples do not exceed; text/media,
-cache hit/miss must be separated and the provider, hardware and number of
-runs recorded.
-
-\section{The Controlled Supporting Role of the LLM}
-\label{sec:llm-role}
-
-\subsection{Function Calling Instead of Delegating Business Authority}
-\label{subsec:function-calling}
-
-The transformer uses attention to model token relationships and is the
-foundation of modern LLMs \cite{vaswani2017}. PERFIN leverages the ability
-to understand varied phrasing, but does not use the model to compute the
-ledger or statistics. Tools are declared by schema using the provider's
-function-calling mechanism \cite{geminifunctioncalling}; the LLM proposes
-the tool name and arguments, while the application validates, creates the
-preview, awaits confirmation and only then executes. Structured output only
-guarantees the JSON shape, not that the category is correct, that the two
-wallets are distinct or that the date is within the valid domain.
-
-\subsection{Responsibility Boundaries and Grounding}
-\label{subsec:llm-boundary-theory}
-
-\begin{table}[htbp]
+\begin{table}[H]
   \centering
-  \caption{Responsibility boundary between the deterministic core and the LLM}
-  \label{tab:llm-responsibility}
-  \small
-  \begin{tabularx}{\textwidth}{|p{3.8cm}|p{4.0cm}|X|}
-    \hline
-    \textbf{Task} & \textbf{Responsible component} &
-    \textbf{Rationale} \\ \hline
-    Total income--expense, balance, limits & SQL and business service &
-    Accurate and repeatable \\ \hline
-    Trend, anomaly, runway, correlation & Deterministic algorithm functions
-    & Have formulas and independent tests \\ \hline
-    Budget and goals & Budget/Goal Planner & Have constraints and simulation
-    \\ \hline
-    Understanding dates, currency units, multiple intents & LLM or local
-    parser & A language/context problem \\ \hline
-    Selecting the tool and filling parameters & LLM, then the service checks
-    & Bridge from utterance to API \\ \hline
-    Writing the interpretation/persona & LLM or template fallback & Must not
-    change the facts \\ \hline
-    Write, delete, transfer, re-tag & Service after confirmation & Has data
-    impact and needs audit \\ \hline
+  \caption{Selected analytical techniques}
+  \label{tab:algorithm-selection}
+  \begin{tabularx}{\textwidth}{@{}L{3.0cm}Y Y@{}}
+    \toprule
+    \textbf{Technique} & \textbf{Role} & \textbf{Reason for selection} \\
+    \midrule
+    OLS & Trend and short-horizon forecast. & Few parameters; slope and fit are explainable. \\
+    Z-score + IQR & Unusual amounts or days. & Combines distribution sensitivity with quantile robustness. \\
+    Runway & Cash-depletion warning. & Direct calculation with explicit assumptions. \\
+    Rule-based grouping & Recurring-spending discovery. & Suits small data and requires no training. \\
+    Pearson & Co-moving category pairs. & Standardized coefficient with clear interpretation. \\
+    Budget/Goal planner & Limits, forecasts and progress. & Hand-checkable results and what-if simulation. \\
+    \bottomrule
   \end{tabularx}
 \end{table}
 
-Insight facts must include the value, unit, observation window, sample
-count, method and a missing-data warning. The persona may change the tone
-in the spirit of behavioral design \cite{thaler2009} but does not change
-the facts. The system currently separates the facts from the narrator and
-has a template fallback; a comprehensive numeric checker is still a target
-design that needs evaluation. The LLM does not connect directly to
-PostgreSQL and does not execute tools on its own.
+\section{OCR, STT and Language Models}
 
-\subsection{Conditions for the Use of the LLM to Be Meaningful}
-\label{subsec:llm-conditions}
+\subsection{OCR and Speech-to-Text}
+\label{subsec:ocr-stt}
 
-The LLM is only valuable if it delivers a measurable improvement over the
-form and the local parser: higher field F1 or exact match, fewer
-clarification rounds or actions, while latency, cost and the
-unsupported-number rate stay within acceptable thresholds. An ablation must
-use the same data and the same task. If it does not create a benefit
-sufficient to offset the risk, the direct flow or the local parser is
-preferred. This approach keeps the thesis focused on data and algorithms,
-with the LLM as a controlled communication layer.
+OCR generally includes image preprocessing, text-region detection, recognition and post-processing; Tesseract is a representative architecture \cite{smith2007}. STT converts audio to a transcript, and Whisper illustrates recognition learned from large-scale data \cite{radford2022}. In PERFIN, both services only return raw text and provider metadata. The result follows the same normalization, preview and confirmation pipeline as manual input.
 
-\section{Infrastructure, Technology and Selection Rationale}
+Quality requires ground truth. CER/WER measure text error, while transaction-field accuracy measures the effect on amount, date, category and line items. A smoke test on a few files establishes provider execution, not accuracy.
+
+\subsection{Local Parser and LLM}
+
+Transformers use attention to model token relationships and underpin modern LLMs \cite{vaswani2017}. Multimodal models such as Gemini extend this ability to text and media \cite{gemini2023}. Structured output constrains shape but cannot prove that an amount is correct, a category belongs to the user or an operation is authorized.
+
+\begin{table}[H]
+  \centering
+  \caption{Comparison of the local parser and an LLM}
+  \label{tab:parser-llm-comparison}
+  \begin{tabularx}{\textwidth}{@{}L{3.0cm}Y Y@{}}
+    \toprule
+    \textbf{Criterion} & \textbf{Local parser} & \textbf{LLM via function calling} \\
+    \midrule
+    Language coverage & Strong on known patterns; weak on free-form input. & Better at variations and context. \\
+    Reproducibility & High, offline and no API cost. & Model/provider dependent and slower. \\
+    Control & Rules and failures are traceable. & Requires locked schema, validation and fallback. \\
+    PERFIN role & Baseline, fallback and quality gate. & Primary extraction/routing when configured. \\
+    Business authority & Returns a typed draft; never writes directly. & Proposes a tool and arguments; never writes directly. \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+PERFIN uses provider-schema function calling \cite{geminifunctioncalling}. The LLM proposes a tool and arguments; the backend validates, builds a preview and waits for confirmation. For insight narration, the LLM only receives precomputed facts. This preserves interaction benefits without making the model a source of truth.
+
+\section{Technologies and Rationale}
 \label{sec:tech-rationale}
 
-\begin{table}[htbp]
+\begin{longtable}{@{}L{3.0cm}L{5.6cm}L{5.3cm}@{}}
+  \caption{Technologies, roles and alternatives}\label{tab:technology-rationale}\\
+  \toprule
+  \textbf{Technology} & \textbf{Reason for selection} & \textbf{Limitation or alternative} \\
+  \midrule
+  \endfirsthead
+  \toprule
+  \textbf{Technology} & \textbf{Reason for selection} & \textbf{Limitation or alternative} \\
+  \midrule
+  \endhead
+  React Native + Expo & One codebase for forms, chat, image, audio and mobile preview. & Separate native apps are only needed for device-specific requirements. \\
+  Node.js + Express & Fits I/O-oriented APIs and shares JavaScript with business functions and tests. & A modular monolith is sufficient; microservices add operations cost. \\
+  PostgreSQL \cite{postgresql2026} & Foreign keys, \code{DECIMAL}, transactions and aggregates fit a ledger. & File/NoSQL designs provide weaker constraints and rollback. \\
+  Redis \cite{redisexpire} & TTL for pending state, clarification, cache and queue data. & Never the system of record; memory fallback is development-only. \\
+  BullMQ \cite{bullmq2026} & Scheduling, retry and job IDs for idempotent work. & Basic cron lacks equivalent queue and retry controls. \\
+  Gemini + local parser & Combines language coverage with a testable fallback. & Provider adapters prevent business-logic lock-in. \\
+  Local or cloud OCR/STT & PaddleOCR/PhoWhisper favour privacy; cloud providers remain replaceable. & Every raw output still follows validation and preview. \\
+  \bottomrule
+\end{longtable}
+
+\section{Related Applications and Selected Direction}
+
+Money Lover \cite{moneylover} and MISA MoneyKeeper \cite{misamoneykeeper} represent form- and dashboard-oriented finance applications. They are strong at structured records but require many entry steps. Chatbots reduce entry work yet risk untraceable numbers; specialist analytics are often difficult for general users.
+
+PERFIN does not attempt commercial feature completeness. It targets the intersection of a relational ledger, deterministic algorithms, human confirmation and a bounded language layer. This direction fits the project's data-and-algorithm focus and allows each part to be evaluated independently.
+
+\begin{table}[H]
   \centering
-  \caption{Technologies, selection criteria and alternatives}
-  \label{tab:technology-rationale}
-  \small
-  \begin{tabularx}{\textwidth}{|p{3.2cm}|X|X|}
-    \hline
-    \textbf{Technology} & \textbf{Why it fits the problem} &
-    \textbf{Boundary or alternative} \\ \hline
-    React Native + Expo & One codebase for text, image, audio input and
-    preview on mobile & Contains no formulas; separate native only needed
-    when a device-specific requirement arises \\ \hline
-    Node.js + Express & I/O-oriented API; shares JavaScript with the pure
-    functions and tests; suits a modular monolith & No need for the
-    operational cost of microservices \\ \hline
-    PostgreSQL \cite{postgresql2026} & Foreign keys, \texttt{DECIMAL},
-    transactions and aggregate queries suit a ledger & Files or NoSQL struggle to guarantee the same
-    level of constraints and rollback \\ \hline
-    Redis \cite{redisexpire} & TTL, cache-aside, pending state and queue & Not a source of
-    truth; the memory fallback is used only in development \\ \hline
-    BullMQ \cite{bullmq2026} & Scheduling, retry and job IDs for idempotent
-    proactive tasks &
-    A simple cron lacks the same queue/retry mechanism \\ \hline
-    Gemini or local parser & The LLM extends language coverage; the parser
-    guarantees a testable fallback & The provider sits behind an adapter and
-    does not lock the business logic \\ \hline
-    Local or cloud OCR/STT & Allows comparison of accuracy, latency, cost
-    and privacy & Raw output always passes through the same
-    validation/preview \\ \hline
-  \end{tabularx}
-\end{table}
-
-Redis/BullMQ serve recurring reminders, runway scans, subscription scans,
-month-end reports and export cleanup. Jobs must be small and idempotent; a
-unique event key in the internal message prevents a duplicate effect on
-retry. Scheduled auto-backup does not yet have a corresponding worker and
-must not be regarded as operational.
-
-\section{Related Research and Applications}
-\label{sec:related-work}
-
-Research on financial literacy points to the role of planning and
-long-term decision-making~\cite{lusardi2014}. Linear
-regression~\cite{montgomery2012}, z-score, IQR~\cite{tukey1977} and
-correlation~\cite{pearson1895} are explainable techniques, suited to the
-thesis goal because their output can be checked independently.
-OCR~\cite{smith2007}, STT~\cite{radford2022} and multimodal
-LLMs~\cite{gemini2023} extend the input channels but do not on their own
-guarantee the correctness of a financial record.
-
-Commercial financial-management systems typically fall into three groups.
-The first is form/dashboard applications such as Money
-Lover~\cite{moneylover} or MISA MoneyKeeper~\cite{misamoneykeeper}: they
-have well-structured data and rich visual reports, but entry still follows
-multi-step forms and offers little support for everyday Vietnamese natural
-language. The second is financial chatbots: natural to talk to, but the
-numbers they return are often hard to trace back to a source and prone to
-drift. The third is deep analytic models: strong on statistics but lacking
-a confirmation loop for the everyday user. PERFIN does not compete on
-commercial completeness. The chosen gap is to combine a relational ledger,
-deterministic algorithms, a human in the loop and a bounded language
-layer.
-
-\begin{table}[htbp]
-  \centering
-  \caption{Gaps and PERFIN's approach to addressing them}
+  \caption{Research gaps and PERFIN responses}
   \label{tab:research-gaps}
-  \small
-  \begin{tabularx}{\textwidth}{|X|X|X|}
-    \hline
-    \textbf{Gap} & \textbf{Risk} &
-    \textbf{Approach} \\ \hline
-    Natural entry but easy to record incorrectly & Dirty data spreads into
-    reports & Typed draft, validation, preview, confirm \\ \hline
-    Media has raw text but the fields are not certainly correct & Wrong
-    amount, date, category & Measure CER/WER and field accuracy; confirm
-    before writing \\ \hline
-    Chatbot returns numbers of unclear origin & Hallucination and hard to
-    audit & Query tools, JSON facts, target grounding checker \\ \hline
-    Dashboard has numbers but lacks interpretation & Hard to notice patterns
-    & Deterministic algorithms; the narrator only reads facts \\ \hline
-    Non-adaptive classification & Repeats the same error & Correction
-    retrieval, fuzzy threshold and margin \\ \hline
-    Retry creates duplicate notifications & Poor experience and wrong data &
-    Job ID, unique event key, idempotent handler \\ \hline
+  \begin{tabularx}{\textwidth}{@{}Y Y Y@{}}
+    \toprule
+    \textbf{Gap} & \textbf{Risk} & \textbf{Selected response} \\
+    \midrule
+    Natural input may be miswritten & Dirty data propagates to reports & Typed draft, validation, preview and confirmation. \\
+    Media provides raw text only & Wrong amount, date or category & Ground truth, field accuracy and confirmation. \\
+    Chatbot numbers lack provenance & Hallucination and weak auditability & SQL/analytics creates facts; narrator only explains. \\
+    Classification does not adapt & Repeated errors & Thresholded, controlled correction retrieval. \\
+    Retry duplicates effects & Corrupt data or duplicate alerts & Job IDs, fingerprints and idempotent operations. \\
+    \bottomrule
   \end{tabularx}
 \end{table}

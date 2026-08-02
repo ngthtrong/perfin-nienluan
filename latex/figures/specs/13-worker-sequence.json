@@ -1,5 +1,5 @@
 {
-  "title": "Tác vụ chủ động và chống trùng",
+  "title": "Proactive Jobs and Deduplication",
   "participants": [
     {"id": "scheduler", "label": "BullMQ Scheduler"},
     {"id": "redis", "label": "Redis Queue"},
@@ -13,20 +13,20 @@
   "messages": [
     {"from": "scheduler", "to": "redis", "label": "Upsert recurring schedules"},
     {"from": "redis", "to": "worker", "label": "Job + attempts + exponential backoff"},
-    {"from": "worker", "to": "db", "label": "Resolve user scope / due data"},
+    {"from": "worker", "to": "db", "label": "Resolve user scope and due data"},
     {"from": "db", "to": "worker", "label": "Bills · balances · transactions", "return": true},
-    {"from": "worker", "to": "analytics", "label": "Run reminder / runway / subscription / month-end"},
-    {"from": "analytics", "to": "analytics", "label": "Tính facts và ngưỡng cảnh báo"},
+    {"from": "worker", "to": "analytics", "label": "Run reminder, runway, subscription or month-end"},
+    {"from": "analytics", "to": "analytics", "label": "Compute facts and alert thresholds"},
     {"from": "analytics", "to": "worker", "label": "Structured facts", "return": true},
-    {"from": "worker", "to": "narrator", "label": "Trang trí persona · grounded narration"},
-    {"from": "narrator", "to": "worker", "label": "Message hoặc deterministic fallback", "return": true},
+    {"from": "worker", "to": "narrator", "label": "Apply persona to grounded narration"},
+    {"from": "narrator", "to": "worker", "label": "Message or deterministic fallback", "return": true},
     {"from": "worker", "to": "chat", "label": "persist(event_key, dedupeHours)"},
-    {"from": "chat", "to": "db", "label": "INSERT chat_messages với unique event_key"},
-    {"from": "db", "to": "chat", "label": "created hoặc duplicate", "return": true},
+    {"from": "chat", "to": "db", "label": "INSERT chat_messages with unique event_key"},
+    {"from": "db", "to": "chat", "label": "Created or duplicate", "return": true},
     {"from": "chat", "to": "worker", "label": "Idempotent result", "return": true},
-    {"from": "worker", "to": "redis", "label": "Complete · retry nếu lỗi", "return": true},
+    {"from": "worker", "to": "redis", "label": "Complete or retry on failure", "return": true},
     {"from": "app", "to": "db", "label": "GET /api/chat/messages"},
-    {"from": "db", "to": "app", "label": "Thông báo chủ động đã lưu", "return": true},
-    {"note": "Redis lỗi: worker tắt an toàn; API tương tác vẫn chạy", "over": "redis"}
+    {"from": "db", "to": "app", "label": "Stored proactive message", "return": true},
+    {"note": "If Redis fails, the worker stops safely while the interactive API continues", "over": "redis"}
   ]
 }

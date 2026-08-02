@@ -1161,18 +1161,16 @@ def diagram_03() -> str:
 
 def diagram_04() -> str:
     c: list[str] = [
-        title("t", "Mô hình lớp miền theo aggregate nghiệp vụ", 40, 16, 1080),
+        title("t", "UML Domain Class Model by Business Aggregate", 40, 16, 1080),
         subtitle(
             "st",
-            "Quan hệ ghi đầy đủ ký hiệu UML: hình thoi đặc = composition, hình "
-            "thoi rỗng = aggregation, mũi tên = navigability, bội số ghi ở cả "
-            "hai đầu kèm role name. User là gốc sở hữu của cả bốn aggregate.",
+            "The model keeps only ownership and lifecycle relationships needed "
+            "to explain the domain. Detailed foreign keys are shown separately "
+            "in the physical ERD.",
             40,
             46,
-            1250,
+            1320,
         ),
-        # User đứng riêng ở hàng trên: là gốc sở hữu (composition) của cả bốn
-        # aggregate nên phải nhìn thấy được quan hệ ownership, không lược bỏ.
         card(
             "user",
             "User",
@@ -1182,64 +1180,61 @@ def diagram_04() -> str:
                 "+ payday: int",
                 "+ personalizationConsent: bool",
             ],
-            560,
-            110,
-            330,
-            120,
+            610,
+            105,
+            280,
+            115,
             "blue",
             font_size=13,
         ),
-        lane("profile", "Hồ sơ & cá nhân hóa", 40, 285, 330, 545, "purple"),
-        lane("ledger", "Sổ cái", 390, 285, 330, 545, "green"),
-        lane("planning", "Kế hoạch & định kỳ", 740, 285, 330, 700, "yellow"),
-        lane("conversation", "Hội thoại & phản hồi", 1090, 285, 330, 545, "blue"),
-        card("personality", "AIPersonality", ["+ id: int", "+ key, name: string", "+ stylePrompt: text"], 20, 55, 290, 105, "purple", parent="profile", font_size=13),
-        card("trait", "UserTrait", ["+ id: int", "+ traitType: string", "+ traitValue: string"], 20, 195, 290, 100, "purple", parent="profile", font_size=13),
-        card("wallet", "Wallet", ["+ id: int", "+ name, type: string", "+ balance: decimal", "+ updateBalance(amount)"], 20, 55, 290, 120, "green", parent="ledger", font_size=13),
-        card("transaction", "Transaction", ["+ id: int", "+ description: string", "+ amount: decimal", "+ type, source: string", "+ transactionDate: date", "+ softDelete() / restore()"], 20, 210, 290, 160, "green", parent="ledger", font_size=13),
-        card("category", "Category", ["+ id: int", "+ name, type: string", "+ parentId: int"], 20, 405, 290, 100, "green", parent="ledger", font_size=13),
-        card("budget", "Budget", ["+ id: int", "+ amountLimit: decimal", "+ month, year: int", "+ progress() / forecast()"], 20, 55, 290, 120, "yellow", parent="planning", font_size=13),
-        card("goal", "FinancialGoal", ["+ id: int", "+ goalType: string", "+ target/currentAmount: decimal", "+ targetDate: date", "+ buildPlan() / assessProgress()"], 20, 210, 290, 145, "yellow", parent="planning", font_size=13),
-        card("bill", "RecurringBill", ["+ id: int", "+ name, frequency: string", "+ amount: decimal", "+ nextDueDate: date", "+ pay() / pause()"], 20, 390, 290, 135, "yellow", parent="planning", font_size=13),
-        card("payment", "RecurringPayment", ["+ id: int", "+ periodDueDate / paidDate", "+ amount: decimal", "+ status: string"], 20, 560, 290, 115, "yellow", parent="planning", font_size=13),
-        card("chat", "ChatMessage", ["+ id: int", "+ role: string", "+ content: text", "+ metadata: json"], 20, 55, 290, 115, "blue", parent="conversation", font_size=13),
-        card("feedback", "AIFeedback", ["+ id: int", "+ feedbackType: string", "+ aiResult: json", "+ correctedResult: json"], 20, 205, 290, 120, "purple", parent="conversation", font_size=13),
-        # Ownership: composition. Trong draw.io, startArrow nằm ở đầu source nên
-        # hình thoi đặc phải đặt bằng start_arrow để nằm ở phía User (đầu
-        # "whole"); đầu part mang mũi tên mở thể hiện navigability.
+        lane("profile", "Profile and Personalization", 20, 285, 350, 680, "purple"),
+        lane("ledger", "Ledger", 390, 285, 350, 680, "green"),
+        lane("planning", "Planning and Recurring", 760, 285, 350, 680, "yellow"),
+        lane("conversation", "Conversation and Feedback", 1130, 285, 350, 680, "blue"),
+        card("trait", "UserTrait", ["+ id: int", "+ traitType: string", "+ traitValue: string"], 25, 65, 300, 105, "purple", parent="profile", font_size=13),
+        card("personality", "AIPersonality", ["+ id: int", "+ key, name: string", "+ stylePrompt: text"], 25, 225, 300, 105, "purple", parent="profile", font_size=13),
+        card("wallet", "Wallet", ["+ id: int", "+ name, type: string", "+ balance: decimal", "+ updateBalance(amount)"], 25, 65, 300, 120, "green", parent="ledger", font_size=13),
+        card("transaction", "Transaction", ["+ id: int", "+ description: string", "+ amount: decimal", "+ type, source: string", "+ transactionDate: date", "+ softDelete() / restore()"], 25, 225, 300, 160, "green", parent="ledger", font_size=13),
+        card("category", "Category", ["+ id: int", "+ name, type: string", "+ parentId: int"], 25, 445, 300, 105, "green", parent="ledger", font_size=13),
+        card("budget", "Budget", ["+ id: int", "+ amountLimit: decimal", "+ month, year: int", "+ progress() / forecast()"], 25, 65, 300, 120, "yellow", parent="planning", font_size=13),
+        card("goal", "FinancialGoal", ["+ id: int", "+ goalType: string", "+ target/currentAmount: decimal", "+ targetDate: date", "+ buildPlan() / assessProgress()"], 25, 225, 300, 145, "yellow", parent="planning", font_size=13),
+        card("bill", "RecurringBill", ["+ id: int", "+ name, frequency: string", "+ amount: decimal", "+ nextDueDate: date", "+ pay() / pause()"], 25, 400, 300, 130, "yellow", parent="planning", font_size=13),
+        card("payment", "RecurringPayment", ["+ id: int", "+ periodDueDate / paidDate", "+ amount: decimal", "+ status: string"], 25, 580, 300, 85, "yellow", parent="planning", font_size=13),
+        card("chat", "ChatMessage", ["+ id: int", "+ role: string", "+ content: text", "+ metadata: json"], 25, 65, 300, 115, "blue", parent="conversation", font_size=13),
+        card("feedback", "AIFeedback", ["+ id: int", "+ feedbackType: string", "+ aiResult: json", "+ correctedResult: json"], 25, 235, 300, 120, "purple", parent="conversation", font_size=13),
+        # Four clear ownership lines fan out from User to the aggregate roots.
         edge(
-            "own_wallet", "user", "wallet", "owns",
-            color="green", start_arrow="diamondThin", start_fill=1,
-            end_arrow="openThin", exit_xy=(0.25, 1), entry_xy=(0.5, 0),
-            src_label="1", tgt_label="1..*", points=[(642, 262), (555, 262)],
-        ),
-        edge(
-            "own_budget", "user", "budget", "owns",
-            color="yellow", start_arrow="diamondThin", start_fill=1,
-            end_arrow="openThin", exit_xy=(0.75, 1), entry_xy=(0.5, 0),
-            src_label="1", tgt_label="0..*", points=[(808, 262), (905, 262)],
-        ),
-        edge(
-            "own_profile", "user", "trait", "owns",
+            "own_trait", "user", "trait", "",
             color="purple", start_arrow="diamondThin", start_fill=1,
-            end_arrow="openThin", exit_xy=(0, 0.5), entry_xy=(0.5, 0),
-            src_label="1", tgt_label="0..*", points=[(205, 170)],
+            end_arrow="openThin", exit_xy=(0.05, 1), entry_xy=(0.5, 0),
+            src_label="1", tgt_label="0..*", points=[(624, 250), (195, 250)],
         ),
         edge(
-            "own_chat", "user", "chat", "owns",
-            color="blue", start_arrow="diamondThin", start_fill=1,
-            end_arrow="openThin", exit_xy=(1, 0.5), entry_xy=(0.5, 0),
-            src_label="1", tgt_label="0..*", points=[(1255, 170)],
+            "own_wallet", "user", "wallet", "",
+            color="green", start_arrow="diamondThin", start_fill=1,
+            end_arrow="openThin", exit_xy=(0.38, 1), entry_xy=(0.5, 0),
+            src_label="1", tgt_label="1..*", points=[(716, 260), (565, 260)],
         ),
-        # Aggregation: hình thoi RỖNG ở phía User vì AIPersonality tồn tại độc
-        # lập với hồ sơ đang bật nó.
+        edge(
+            "own_budget", "user", "budget", "",
+            color="yellow", start_arrow="diamondThin", start_fill=1,
+            end_arrow="openThin", exit_xy=(0.62, 1), entry_xy=(0.5, 0),
+            src_label="1", tgt_label="0..*", points=[(784, 260), (935, 260)],
+        ),
+        edge(
+            "own_chat", "user", "chat", "",
+            color="blue", start_arrow="diamondThin", start_fill=1,
+            end_arrow="openThin", exit_xy=(0.95, 1), entry_xy=(0.5, 0),
+            src_label="1", tgt_label="0..*", points=[(876, 250), (1305, 250)],
+        ),
+        # A personality is selected by a user but has an independent lifecycle.
         edge(
             "u_p", "user", "personality", "activates",
             color="purple", start_arrow="diamondThin", start_fill=0,
-            end_arrow="openThin", exit_xy=(0.1, 1), entry_xy=(1, 0.5),
-            src_label="0..1", tgt_label="1", points=[(593, 392)],
+            end_arrow="openThin", exit_xy=(0, 0.5), entry_xy=(0, 0.5),
+            src_label="0..1", tgt_label="1",
+            points=[(590, 162), (5, 162), (5, 562)],
         ),
-        # Association một chiều: mũi tên mở ở đầu đích thể hiện navigability.
         edge(
             "w_tx", "wallet", "transaction", "funds",
             color="green", end_arrow="openThin", exit_xy=(0.3, 1),
@@ -1258,62 +1253,42 @@ def diagram_04() -> str:
             end_arrow="openThin", exit_xy=(0.5, 1), entry_xy=(0.5, 0),
             src_label="1", tgt_label="0..*",
         ),
-        edge(
-            "p_c", "personality", "chat", "styles",
-            color="purple", dashed=True, end_arrow="openThin",
-            exit_xy=(1, 0.75), entry_xy=(0, 0.5),
-            src_label="0..1", tgt_label="0..*",
-            points=[(378, 418), (378, 850), (1070, 850), (1070, 397)],
-        ),
-        edge(
-            "f_tx", "feedback", "transaction", "corrects",
-            color="purple", dashed=True, end_arrow="openThin",
-            exit_xy=(0, 0.5), entry_xy=(1, 0.75),
-            src_label="0..*", tgt_label="0..1", points=[(730, 555)],
-        ),
-        edge(
-            "w_g", "wallet", "goal", "links",
-            color="green", end_arrow="openThin", exit_xy=(1, 0.35),
-            entry_xy=(0, 0.35), src_label="0..1", tgt_label="0..*",
-        ),
         *legend(
             "lg",
-            40,
-            110,
+            20,
+            995,
             [
-                ("blue", "Người dùng và hội thoại"),
-                ("green", "Sổ cái xác định"),
-                ("yellow", "Kế hoạch và khoản định kỳ"),
-                ("purple", "Thành phần liên quan LLM"),
+                ("blue", "User and conversation"),
+                ("green", "Deterministic ledger"),
+                ("yellow", "Planning and recurring data"),
+                ("purple", "Personalization and AI feedback"),
             ],
-            width=250,
+            title_text="Color Legend",
+            width=300,
         ),
         *legend_line(
             "lgl",
-            940,
-            110,
+            350,
+            995,
             [
                 (
                     "endArrow=diamondThin;endFill=1;endSize=14;html=1;rounded=0;",
-                    "Composition: con phụ thuộc vòng đời cha",
+                    "Composition: child lifecycle depends on parent",
                 ),
                 (
                     "endArrow=diamondThin;endFill=0;endSize=14;html=1;rounded=0;",
-                    "Aggregation: con tồn tại độc lập",
+                    "Aggregation: child exists independently",
                 ),
                 (
                     "endArrow=openThin;endFill=0;endSize=12;html=1;rounded=0;",
-                    "Association có navigability (hướng đọc)",
-                ),
-                (
-                    "endArrow=openThin;endFill=0;endSize=12;dashed=1;html=1;rounded=0;",
-                    "Tham chiếu lỏng qua FK nullable",
+                    "Directed association with navigability",
                 ),
             ],
-            width=300,
+            title_text="UML Notation",
+            width=500,
         ),
     ]
-    return build("04-domain-class", "Domain class", 1460, 1010, c)
+    return build("04-domain-class", "Domain class", 1500, 1170, c)
 
 
 def diagram_05() -> str:

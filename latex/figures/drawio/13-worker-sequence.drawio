@@ -1,11 +1,11 @@
 <?xml version='1.0' encoding='utf-8'?>
 <mxfile>
-  <diagram id="seqlayout" name="Tác vụ chủ động và chống trùng">
+  <diagram id="seqlayout" name="Proactive Jobs and Deduplication">
     <mxGraphModel dx="800" dy="600" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1580" pageHeight="880" math="0" shadow="0" reportStyled="1">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
-        <mxCell id="report-title" value="Sơ đồ tuần tự tác vụ chủ động và chống trùng" style="text;html=1;align=left;verticalAlign=middle;fontSize=18;fontStyle=1;fontColor=#22303F;" vertex="1" parent="1"><mxGeometry x="40" y="14" width="1500" height="28" as="geometry" /></mxCell><mxCell id="report-subtitle" value="Queue điều phối retry; unique event key bảo đảm tác dụng lưu thông báo là idempotent." style="text;html=1;align=left;verticalAlign=middle;fontSize=12;fontColor=#5A6A78;whiteSpace=wrap;" vertex="1" parent="1"><mxGeometry x="40" y="44" width="1500" height="30" as="geometry" /></mxCell><mxCell id="scheduler" value="&lt;b&gt;BullMQ Scheduler&lt;/b&gt;" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;fillColor=#FBF3D9;strokeColor=#B08900;fontColor=#5A4700;fontSize=13;strokeWidth=1.2;size=44;" vertex="1" parent="1">
+        <mxCell id="report-title" value="Proactive Job and Deduplication Sequence" style="text;html=1;align=left;verticalAlign=middle;fontSize=18;fontStyle=1;fontColor=#22303F;" vertex="1" parent="1"><mxGeometry x="40" y="14" width="1500" height="28" as="geometry" /></mxCell><mxCell id="report-subtitle" value="The queue coordinates retries; a unique event key makes message persistence idempotent." style="text;html=1;align=left;verticalAlign=middle;fontSize=12;fontColor=#5A6A78;whiteSpace=wrap;" vertex="1" parent="1"><mxGeometry x="40" y="44" width="1500" height="30" as="geometry" /></mxCell><mxCell id="scheduler" value="&lt;b&gt;BullMQ Scheduler&lt;/b&gt;" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;fillColor=#FBF3D9;strokeColor=#B08900;fontColor=#5A4700;fontSize=13;strokeWidth=1.2;size=44;" vertex="1" parent="1">
           <mxGeometry x="40" y="95" width="100" height="747.4" as="geometry" />
         </mxCell>
         <mxCell id="redis" value="&lt;b&gt;Redis Queue&lt;/b&gt;" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;fillColor=#FBF3D9;strokeColor=#B08900;fontColor=#5A4700;fontSize=13;strokeWidth=1.2;size=44;" vertex="1" parent="1">
@@ -59,16 +59,16 @@
         <mxCell id="m1" value="Job + attempts + exponential backoff" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;exitX=1;exitY=0.0568;entryX=0;entryY=0.0;fontSize=12;labelBackgroundColor=#FFFFFF;fontColor=#3D4B5A;strokeWidth=1.15;strokeColor=#5B7290;" edge="1" parent="1" source="act7" target="act5">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="m2" value="Resolve user scope / due data" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;exitX=1;exitY=0.0806;entryX=0;entryY=0.0;fontSize=12;labelBackgroundColor=#FFFFFF;fontColor=#3D4B5A;strokeWidth=1.15;strokeColor=#5B7290;" edge="1" parent="1" source="act5" target="act0">
+        <mxCell id="m2" value="Resolve user scope and due data" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;exitX=1;exitY=0.0806;entryX=0;entryY=0.0;fontSize=12;labelBackgroundColor=#FFFFFF;fontColor=#3D4B5A;strokeWidth=1.15;strokeColor=#5B7290;" edge="1" parent="1" source="act5" target="act0">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
         <mxCell id="m3" value="Bills · balances · transactions" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;curved=0;rounded=0;exitX=0;exitY=1.0;entryX=1;entryY=0.1613;fontSize=12;labelBackgroundColor=#FFFFFF;fontColor=#6B7A89;strokeWidth=1.15;strokeColor=#9AA7B4;" edge="1" parent="1" source="act0" target="act5">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="m4" value="Run reminder / runway / subscription / month-end" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;exitX=1;exitY=0.2419;entryX=0;entryY=0.0;fontSize=12;labelBackgroundColor=#FFFFFF;fontColor=#3D4B5A;strokeWidth=1.15;strokeColor=#5B7290;" edge="1" parent="1" source="act5" target="act1">
+        <mxCell id="m4" value="Run reminder, runway, subscription or month-end" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;exitX=1;exitY=0.2419;entryX=0;entryY=0.0;fontSize=12;labelBackgroundColor=#FFFFFF;fontColor=#3D4B5A;strokeWidth=1.15;strokeColor=#5B7290;" edge="1" parent="1" source="act5" target="act1">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="m5" value="Tính facts và ngưỡng cảnh báo" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;exitX=1;exitY=0.4167;entryX=1;entryY=0.6667;fontSize=12;labelBackgroundColor=#FFFFFF;fontColor=#3D4B5A;strokeWidth=1.15;strokeColor=#5B7290;" edge="1" parent="1" source="act1" target="act1">
+        <mxCell id="m5" value="Compute facts and alert thresholds" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;exitX=1;exitY=0.4167;entryX=1;entryY=0.6667;fontSize=12;labelBackgroundColor=#FFFFFF;fontColor=#3D4B5A;strokeWidth=1.15;strokeColor=#5B7290;" edge="1" parent="1" source="act1" target="act1">
           <mxGeometry relative="1" as="geometry">
             <Array as="points"><mxPoint x="950" y="346.6" /><mxPoint x="950" y="368.8" /></Array>
           </mxGeometry>
@@ -76,34 +76,34 @@
         <mxCell id="m6" value="Structured facts" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;curved=0;rounded=0;exitX=0;exitY=1.0;entryX=1;entryY=0.4355;fontSize=12;labelBackgroundColor=#FFFFFF;fontColor=#6B7A89;strokeWidth=1.15;strokeColor=#9AA7B4;" edge="1" parent="1" source="act1" target="act5">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="m7" value="Trang trí persona · grounded narration" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;exitX=1;exitY=0.5161;entryX=0;entryY=0.0;fontSize=12;labelBackgroundColor=#FFFFFF;fontColor=#3D4B5A;strokeWidth=1.15;strokeColor=#5B7290;" edge="1" parent="1" source="act5" target="act2">
+        <mxCell id="m7" value="Apply persona to grounded narration" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;exitX=1;exitY=0.5161;entryX=0;entryY=0.0;fontSize=12;labelBackgroundColor=#FFFFFF;fontColor=#3D4B5A;strokeWidth=1.15;strokeColor=#5B7290;" edge="1" parent="1" source="act5" target="act2">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="m8" value="Message hoặc deterministic fallback" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;curved=0;rounded=0;exitX=0;exitY=1.0;entryX=1;entryY=0.5968;fontSize=12;labelBackgroundColor=#FFFFFF;fontColor=#6B7A89;strokeWidth=1.15;strokeColor=#9AA7B4;" edge="1" parent="1" source="act2" target="act5">
+        <mxCell id="m8" value="Message or deterministic fallback" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;curved=0;rounded=0;exitX=0;exitY=1.0;entryX=1;entryY=0.5968;fontSize=12;labelBackgroundColor=#FFFFFF;fontColor=#6B7A89;strokeWidth=1.15;strokeColor=#9AA7B4;" edge="1" parent="1" source="act2" target="act5">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
         <mxCell id="m9" value="persist(event_key, dedupeHours)" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;exitX=1;exitY=0.6774;entryX=0;entryY=0.0;fontSize=12;labelBackgroundColor=#FFFFFF;fontColor=#3D4B5A;strokeWidth=1.15;strokeColor=#5B7290;" edge="1" parent="1" source="act5" target="act4">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="m10" value="INSERT chat_messages với unique event_key" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;exitX=0;exitY=0.3333;entryX=1;entryY=0.0;fontSize=12;labelBackgroundColor=#FFFFFF;fontColor=#3D4B5A;strokeWidth=1.15;strokeColor=#5B7290;" edge="1" parent="1" source="act4" target="act3">
+        <mxCell id="m10" value="INSERT chat_messages with unique event_key" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;exitX=0;exitY=0.3333;entryX=1;entryY=0.0;fontSize=12;labelBackgroundColor=#FFFFFF;fontColor=#3D4B5A;strokeWidth=1.15;strokeColor=#5B7290;" edge="1" parent="1" source="act4" target="act3">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="m11" value="created hoặc duplicate" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;curved=0;rounded=0;exitX=1;exitY=1.0;entryX=0;entryY=0.6667;fontSize=12;labelBackgroundColor=#FFFFFF;fontColor=#6B7A89;strokeWidth=1.15;strokeColor=#9AA7B4;" edge="1" parent="1" source="act3" target="act4">
+        <mxCell id="m11" value="Created or duplicate" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;curved=0;rounded=0;exitX=1;exitY=1.0;entryX=0;entryY=0.6667;fontSize=12;labelBackgroundColor=#FFFFFF;fontColor=#6B7A89;strokeWidth=1.15;strokeColor=#9AA7B4;" edge="1" parent="1" source="act3" target="act4">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
         <mxCell id="m12" value="Idempotent result" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;curved=0;rounded=0;exitX=0;exitY=1.0;entryX=1;entryY=0.9194;fontSize=12;labelBackgroundColor=#FFFFFF;fontColor=#6B7A89;strokeWidth=1.15;strokeColor=#9AA7B4;" edge="1" parent="1" source="act4" target="act5">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="m13" value="Complete · retry nếu lỗi" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;curved=0;rounded=0;exitX=0;exitY=1.0;entryX=1;entryY=0.7614;fontSize=12;labelBackgroundColor=#FFFFFF;fontColor=#6B7A89;strokeWidth=1.15;strokeColor=#9AA7B4;" edge="1" parent="1" source="act5" target="act7">
+        <mxCell id="m13" value="Complete or retry on failure" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;curved=0;rounded=0;exitX=0;exitY=1.0;entryX=1;entryY=0.7614;fontSize=12;labelBackgroundColor=#FFFFFF;fontColor=#6B7A89;strokeWidth=1.15;strokeColor=#9AA7B4;" edge="1" parent="1" source="act5" target="act7">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
         <mxCell id="m14" value="GET /api/chat/messages" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;exitX=0.5;exitY=0.802;entryX=1;entryY=0.0;fontSize=12;labelBackgroundColor=#FFFFFF;fontColor=#3D4B5A;strokeWidth=1.15;strokeColor=#5B7290;" edge="1" parent="1" source="app" target="act6">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="m15" value="Thông báo chủ động đã lưu" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;curved=0;rounded=0;exitX=1;exitY=1.0;entryX=0.5;entryY=0.8515;fontSize=12;labelBackgroundColor=#FFFFFF;fontColor=#6B7A89;strokeWidth=1.15;strokeColor=#9AA7B4;" edge="1" parent="1" source="act6" target="app">
+        <mxCell id="m15" value="Stored proactive message" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;curved=0;rounded=0;exitX=1;exitY=1.0;entryX=0.5;entryY=0.8515;fontSize=12;labelBackgroundColor=#FFFFFF;fontColor=#6B7A89;strokeWidth=1.15;strokeColor=#9AA7B4;" edge="1" parent="1" source="act6" target="app">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="note16" value="Redis lỗi: worker tắt an toàn; API tương tác vẫn chạy" style="shape=note;whiteSpace=wrap;html=1;size=14;fillColor=#FBF3D9;strokeColor=#B08900;fontColor=#5A4700;fontSize=12;strokeWidth=1.1;" vertex="1" parent="1">
+        <mxCell id="note16" value="If Redis fails, the worker stops safely while the interactive API continues" style="shape=note;whiteSpace=wrap;html=1;size=14;fillColor=#FBF3D9;strokeColor=#B08900;fontColor=#5A4700;fontSize=12;strokeWidth=1.1;" vertex="1" parent="1">
           <mxGeometry x="310" y="753.6" width="140" height="46" as="geometry" />
         </mxCell>
       </root>

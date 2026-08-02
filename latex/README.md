@@ -4,7 +4,7 @@
 
 ## Biên dịch
 
-Yêu cầu XeLaTeX và các gói TeX Live thông dụng. Dự án hỗ trợ hai ngôn ngữ từ cùng một mã nguồn; chỉ nội dung văn xuôi tách theo ngôn ngữ, còn preamble, font, heading và hình dùng chung. Từ thư mục `latex_vn/`:
+Yêu cầu XeLaTeX và các gói TeX Live thông dụng. Dự án hỗ trợ hai ngôn ngữ từ cùng một mã nguồn; chỉ nội dung văn xuôi tách theo ngôn ngữ, còn preamble, font, heading và hình dùng chung. Từ thư mục `latex/`:
 
 ```bash
 make vi    # -> main-vi.pdf (tiếng Việt)
@@ -47,13 +47,13 @@ Nếu máy thiếu Times New Roman hoặc Arial, cấu hình tự dùng TeX Gyre
 - `chapters/<lang>/chapter1.tex` đến `chapter4.tex`: bốn chương theo guideline.
 - `chapters/<lang>/references.tex`: tài liệu tham khảo IEEE (tiêu đề mục lục dùng `\bibname`).
 - `chapters/<lang>/appendices.tex`: sơ đồ, lệnh tái lập, biên bản và tiêu chí ổn định.
-- `figures/drawio/`: 13 tệp nguồn có thể chỉnh sửa (dùng chung cho cả hai ngôn ngữ).
+- `figures/drawio/`: 14 tệp nguồn có nhãn tiếng Anh, có thể chỉnh sửa và dùng chung cho cả hai ngôn ngữ.
 - `figures/rendered/`: bản PDF/PNG/SVG đã xuất (dùng chung).
 
 Trang bìa tái sử dụng logo CTU tại `../archive/latex/images/ctu_logo.png`; nếu tệp không tồn tại, tài liệu dùng khung logo dự phòng và vẫn biên dịch.
 
 ## Quy ước bằng chứng
 
-Các nhãn “đã hiện thực”, “đã đo”, “mục tiêu”, “thiết kế đích” và “chưa đo” không được dùng thay thế cho nhau. Kết quả sau ổn định hóa được công bố là: backend 182/182 test pass; local-parser quality gate 31/31 strict; full smoke API--PostgreSQL--media 23/23; Expo web/Android export 653/960 module; mobile-web smoke không overflow và hiển thị ảnh thật trong chat. PostgreSQL demo có 5.265 giao dịch đã đối soát. Baseline 13/13 và 27/31 được giữ để phân tích tác động bản sửa. Báo cáo không tuyên bố Redis worker đã chạy live hoặc đã đo độ chính xác LLM, OCR, STT.
+Các nhãn “đã hiện thực”, “đã đo”, “mục tiêu”, “thiết kế đích” và “chưa đo” không được dùng thay thế cho nhau. Kết quả được công bố là: backend 182/182 test pass; local-parser quality gate 31/31 strict; full smoke API--PostgreSQL--media 23/23; mobile-web smoke 4/4 cổng tại viewport 390×844. PostgreSQL demo có 5.265 giao dịch đã đối soát. Báo cáo không tuyên bố Redis worker đã chạy live hoặc đã đo accuracy OCR/STT, numeric faithfulness, p95 hay UAT.
 
 Các PDF Draw.io được chèn trực tiếp bằng `graphicx` và đã được xuất lại ở chế độ crop/one-page để giữ trọn sơ đồ dưới dạng vector. Khi chỉnh sửa, cần tiếp tục xuất PDF với tùy chọn crop; không thay nguồn `.drawio` bằng ảnh raster.

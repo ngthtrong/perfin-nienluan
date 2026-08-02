@@ -6,64 +6,64 @@
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
 
-        <mxCell id="t" value="Sơ đồ use case tổng thể hệ thống PERFIN" style="text;html=1;align=left;verticalAlign=middle;fontSize=20;fontColor=#22303F;fontStyle=1;whiteSpace=wrap;" vertex="1" parent="1">
+        <mxCell id="t" value="PERFIN Overall Use Case Diagram" style="text;html=1;align=left;verticalAlign=middle;fontSize=20;fontColor=#22303F;fontStyle=1;whiteSpace=wrap;" vertex="1" parent="1">
           <mxGeometry x="40" y="18" width="1000" height="30" as="geometry" />
         </mxCell>
-        <mxCell id="st" value="Mỗi tác nhân được vẽ đúng một ký hiệu duy nhất theo quy tắc UML. Use case được xếp theo bốn nhóm chức năng; chi tiết từng nhóm nằm ở các sơ đồ FR-01 đến FR-12." style="text;html=1;align=left;verticalAlign=middle;fontSize=11;fontColor=#5A6A78;whiteSpace=wrap;" vertex="1" parent="1">
+        <mxCell id="st" value="Each actor appears once. The twelve observable goals are grouped by domain; detailed behavior is specified with flow tables in Chapter 3." style="text;html=1;align=left;verticalAlign=middle;fontSize=11;fontColor=#5A6A78;whiteSpace=wrap;" vertex="1" parent="1">
           <mxGeometry x="40" y="52" width="1080" height="34" as="geometry" />
         </mxCell>
-        <mxCell id="gA" value="Nhóm 1 · Thu nhận và hiểu đầu vào" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;align=left;spacingLeft=12;spacingTop=6;fontStyle=1;fontSize=14;fillColor=none;strokeColor=#5B7290;fontColor=#22303F;strokeWidth=1;dashed=1;" vertex="1" parent="1">
+        <mxCell id="gA" value="Group 1 · Input Capture and Understanding" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;align=left;spacingLeft=12;spacingTop=6;fontStyle=1;fontSize=14;fillColor=none;strokeColor=#5B7290;fontColor=#22303F;strokeWidth=1;dashed=1;" vertex="1" parent="1">
           <mxGeometry x="396" y="132" width="648" height="362" as="geometry" />
         </mxCell>
-        <mxCell id="uc1" value="FR-01 · Nhập giao dịch bằng văn bản tự nhiên" style="ellipse;whiteSpace=wrap;html=1;fillColor=#F0EAF9;strokeColor=#7C5CBF;fontColor=#3A2A5F;fontSize=18;strokeWidth=1.2;spacing=6;" vertex="1" parent="1">
+        <mxCell id="uc1" value="FR-01 · Enter Transactions from Natural-Language Text" style="ellipse;whiteSpace=wrap;html=1;fillColor=#F0EAF9;strokeColor=#7C5CBF;fontColor=#3A2A5F;fontSize=18;strokeWidth=1.2;spacing=6;" vertex="1" parent="1">
           <mxGeometry x="416" y="162" width="608" height="64" as="geometry" />
         </mxCell>
-        <mxCell id="uc2" value="FR-02 · Nhập giao dịch bằng ảnh và giọng nói" style="ellipse;whiteSpace=wrap;html=1;fillColor=#F0EAF9;strokeColor=#7C5CBF;fontColor=#3A2A5F;fontSize=18;strokeWidth=1.2;spacing=6;" vertex="1" parent="1">
+        <mxCell id="uc2" value="FR-02 · Enter Transactions from Images and Speech" style="ellipse;whiteSpace=wrap;html=1;fillColor=#F0EAF9;strokeColor=#7C5CBF;fontColor=#3A2A5F;fontSize=18;strokeWidth=1.2;spacing=6;" vertex="1" parent="1">
           <mxGeometry x="416" y="244" width="608" height="64" as="geometry" />
         </mxCell>
-        <mxCell id="uc3" value="FR-03 · Clarification và giao dịch chờ xác nhận" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FBF3D9;strokeColor=#B08900;fontColor=#5A4700;fontSize=18;strokeWidth=1.2;spacing=6;" vertex="1" parent="1">
+        <mxCell id="uc3" value="FR-03 · Clarify and Confirm Pending Transactions" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FBF3D9;strokeColor=#B08900;fontColor=#5A4700;fontSize=18;strokeWidth=1.2;spacing=6;" vertex="1" parent="1">
           <mxGeometry x="416" y="326" width="608" height="64" as="geometry" />
         </mxCell>
-        <mxCell id="uc4" value="FR-04 · Phân loại và học từ phản hồi" style="ellipse;whiteSpace=wrap;html=1;fillColor=#E6F4EA;strokeColor=#2E7D46;fontColor=#1B4429;fontSize=18;strokeWidth=1.2;spacing=6;" vertex="1" parent="1">
+        <mxCell id="uc4" value="FR-04 · Classify and Learn from Corrections" style="ellipse;whiteSpace=wrap;html=1;fillColor=#E6F4EA;strokeColor=#2E7D46;fontColor=#1B4429;fontSize=18;strokeWidth=1.2;spacing=6;" vertex="1" parent="1">
           <mxGeometry x="416" y="408" width="608" height="64" as="geometry" />
         </mxCell>
-        <mxCell id="gB" value="Nhóm 2 · Quản lý sổ cái" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;align=left;spacingLeft=12;spacingTop=6;fontStyle=1;fontSize=14;fillColor=none;strokeColor=#2E7D46;fontColor=#1B4429;strokeWidth=1;dashed=1;" vertex="1" parent="1">
+        <mxCell id="gB" value="Group 2 · Ledger Management" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;align=left;spacingLeft=12;spacingTop=6;fontStyle=1;fontSize=14;fillColor=none;strokeColor=#2E7D46;fontColor=#1B4429;strokeWidth=1;dashed=1;" vertex="1" parent="1">
           <mxGeometry x="396" y="512" width="648" height="198" as="geometry" />
         </mxCell>
-        <mxCell id="uc5" value="FR-05 · Quản lý giao dịch, ví và danh mục" style="ellipse;whiteSpace=wrap;html=1;fillColor=#E6F4EA;strokeColor=#2E7D46;fontColor=#1B4429;fontSize=18;strokeWidth=1.2;spacing=6;" vertex="1" parent="1">
+        <mxCell id="uc5" value="FR-05 · Manage Transactions, Wallets and Categories" style="ellipse;whiteSpace=wrap;html=1;fillColor=#E6F4EA;strokeColor=#2E7D46;fontColor=#1B4429;fontSize=18;strokeWidth=1.2;spacing=6;" vertex="1" parent="1">
           <mxGeometry x="416" y="542" width="608" height="64" as="geometry" />
         </mxCell>
-        <mxCell id="uc6" value="FR-06 · Chuyển ví và dòng tiền đặc biệt" style="ellipse;whiteSpace=wrap;html=1;fillColor=#E6F4EA;strokeColor=#2E7D46;fontColor=#1B4429;fontSize=18;strokeWidth=1.2;spacing=6;" vertex="1" parent="1">
+        <mxCell id="uc6" value="FR-06 · Transfer Funds and Record Special Cash Flows" style="ellipse;whiteSpace=wrap;html=1;fillColor=#E6F4EA;strokeColor=#2E7D46;fontColor=#1B4429;fontSize=18;strokeWidth=1.2;spacing=6;" vertex="1" parent="1">
           <mxGeometry x="416" y="624" width="608" height="64" as="geometry" />
         </mxCell>
-        <mxCell id="gC" value="Nhóm 3 · Phân tích, insight và kế hoạch" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;align=left;spacingLeft=12;spacingTop=6;fontStyle=1;fontSize=14;fillColor=none;strokeColor=#2E7D46;fontColor=#1B4429;strokeWidth=1;dashed=1;" vertex="1" parent="1">
+        <mxCell id="gC" value="Group 3 · Analytics, Insights and Planning" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;align=left;spacingLeft=12;spacingTop=6;fontStyle=1;fontSize=14;fillColor=none;strokeColor=#2E7D46;fontColor=#1B4429;strokeWidth=1;dashed=1;" vertex="1" parent="1">
           <mxGeometry x="396" y="728" width="648" height="362" as="geometry" />
         </mxCell>
-        <mxCell id="uc8" value="FR-08 · Sinh insight có căn cứ và persona" style="ellipse;whiteSpace=wrap;html=1;fillColor=#F0EAF9;strokeColor=#7C5CBF;fontColor=#3A2A5F;fontSize=18;strokeWidth=1.2;spacing=6;" vertex="1" parent="1">
+        <mxCell id="uc8" value="FR-08 · Generate Grounded Insights" style="ellipse;whiteSpace=wrap;html=1;fillColor=#F0EAF9;strokeColor=#7C5CBF;fontColor=#3A2A5F;fontSize=18;strokeWidth=1.2;spacing=6;" vertex="1" parent="1">
           <mxGeometry x="416" y="758" width="608" height="64" as="geometry" />
         </mxCell>
-        <mxCell id="uc7" value="FR-07 · Phân tích dữ liệu tài chính" style="ellipse;whiteSpace=wrap;html=1;fillColor=#E6F4EA;strokeColor=#2E7D46;fontColor=#1B4429;fontSize=18;strokeWidth=1.2;spacing=6;" vertex="1" parent="1">
+        <mxCell id="uc7" value="FR-07 · Analyze Financial Data" style="ellipse;whiteSpace=wrap;html=1;fillColor=#E6F4EA;strokeColor=#2E7D46;fontColor=#1B4429;fontSize=18;strokeWidth=1.2;spacing=6;" vertex="1" parent="1">
           <mxGeometry x="416" y="840" width="608" height="64" as="geometry" />
         </mxCell>
-        <mxCell id="uc9" value="FR-09 · Ngân sách, đề xuất và dự báo" style="ellipse;whiteSpace=wrap;html=1;fillColor=#E6F4EA;strokeColor=#2E7D46;fontColor=#1B4429;fontSize=18;strokeWidth=1.2;spacing=6;" vertex="1" parent="1">
+        <mxCell id="uc9" value="FR-09 · Manage and Forecast Budgets" style="ellipse;whiteSpace=wrap;html=1;fillColor=#E6F4EA;strokeColor=#2E7D46;fontColor=#1B4429;fontSize=18;strokeWidth=1.2;spacing=6;" vertex="1" parent="1">
           <mxGeometry x="416" y="922" width="608" height="64" as="geometry" />
         </mxCell>
-        <mxCell id="uc10" value="FR-10 · Mục tiêu tài chính và mô phỏng what-if" style="ellipse;whiteSpace=wrap;html=1;fillColor=#E6F4EA;strokeColor=#2E7D46;fontColor=#1B4429;fontSize=18;strokeWidth=1.2;spacing=6;" vertex="1" parent="1">
+        <mxCell id="uc10" value="FR-10 · Plan Goals and Run What-if Scenarios" style="ellipse;whiteSpace=wrap;html=1;fillColor=#E6F4EA;strokeColor=#2E7D46;fontColor=#1B4429;fontSize=18;strokeWidth=1.2;spacing=6;" vertex="1" parent="1">
           <mxGeometry x="416" y="1004" width="608" height="64" as="geometry" />
         </mxCell>
-        <mxCell id="gD" value="Nhóm 4 · Vận hành chủ động và dữ liệu ra" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;align=left;spacingLeft=12;spacingTop=6;fontStyle=1;fontSize=14;fillColor=none;strokeColor=#B08900;fontColor=#5A4700;strokeWidth=1;dashed=1;" vertex="1" parent="1">
+        <mxCell id="gD" value="Group 4 · Proactive Operations and Data Output" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;align=left;spacingLeft=12;spacingTop=6;fontStyle=1;fontSize=14;fillColor=none;strokeColor=#B08900;fontColor=#5A4700;strokeWidth=1;dashed=1;" vertex="1" parent="1">
           <mxGeometry x="396" y="1108" width="648" height="198" as="geometry" />
         </mxCell>
-        <mxCell id="uc11" value="FR-11 · Khoản định kỳ và tác vụ chủ động" style="ellipse;whiteSpace=wrap;html=1;fillColor=#E6F4EA;strokeColor=#2E7D46;fontColor=#1B4429;fontSize=18;strokeWidth=1.2;spacing=6;" vertex="1" parent="1">
+        <mxCell id="uc11" value="FR-11 · Manage Recurring Bills and Proactive Jobs" style="ellipse;whiteSpace=wrap;html=1;fillColor=#E6F4EA;strokeColor=#2E7D46;fontColor=#1B4429;fontSize=18;strokeWidth=1.2;spacing=6;" vertex="1" parent="1">
           <mxGeometry x="416" y="1138" width="608" height="64" as="geometry" />
         </mxCell>
-        <mxCell id="uc12" value="FR-12 · Xuất dữ liệu và dọn tệp hết hạn" style="ellipse;whiteSpace=wrap;html=1;fillColor=#E6F4EA;strokeColor=#2E7D46;fontColor=#1B4429;fontSize=18;strokeWidth=1.2;spacing=6;" vertex="1" parent="1">
+        <mxCell id="uc12" value="FR-12 · Export Data and Remove Expired Files" style="ellipse;whiteSpace=wrap;html=1;fillColor=#E6F4EA;strokeColor=#2E7D46;fontColor=#1B4429;fontSize=18;strokeWidth=1.2;spacing=6;" vertex="1" parent="1">
           <mxGeometry x="416" y="1220" width="608" height="64" as="geometry" />
         </mxCell>
-        <mxCell id="bnd" value="Hệ thống PERFIN (API + dịch vụ nghiệp vụ)" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;align=center;fontStyle=1;fontSize=18;fillColor=none;strokeColor=#5B7290;fontColor=#22303F;spacingTop=7;strokeWidth=1.2;dashed=0;" vertex="1" parent="1">
+        <mxCell id="bnd" value="PERFIN System (API and Business Services)" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;align=center;fontStyle=1;fontSize=18;fillColor=none;strokeColor=#5B7290;fontColor=#22303F;spacingTop=7;strokeWidth=1.2;dashed=0;" vertex="1" parent="1">
           <mxGeometry x="380" y="100" width="680" height="1226" as="geometry" />
         </mxCell>
-        <mxCell id="aUser" value="Người dùng" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;fillColor=#EEF2F7;strokeColor=#5B7290;fontColor=#22303F;fontSize=17;fontStyle=1;whiteSpace=wrap;" vertex="1" parent="1">
+        <mxCell id="aUser" value="User" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;fillColor=#EEF2F7;strokeColor=#5B7290;fontColor=#22303F;fontSize=17;fontStyle=1;whiteSpace=wrap;" vertex="1" parent="1">
           <mxGeometry x="70" y="671" width="58" height="104" as="geometry" />
         </mxCell>
         <mxCell id="eu0" value="" style="edgeStyle=orthogonalEdgeStyle;curved=0;rounded=0;html=1;endArrow=none;strokeColor=#5B7290;fontColor=#3D4B5A;fontSize=14;strokeWidth=1.2;labelBackgroundColor=#FFFFFF;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="aUser" target="uc1">
@@ -150,7 +150,7 @@
             </Array>
           </mxGeometry>
         </mxCell>
-        <mxCell id="aAI" value="Dịch vụ AI ngoài" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;dashed=1;fillColor=#F0EAF9;strokeColor=#7C5CBF;fontColor=#3A2A5F;fontSize=17;fontStyle=1;whiteSpace=wrap;" vertex="1" parent="1">
+        <mxCell id="aAI" value="External AI Services" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;dashed=1;fillColor=#F0EAF9;strokeColor=#7C5CBF;fontColor=#3A2A5F;fontSize=17;fontStyle=1;whiteSpace=wrap;" vertex="1" parent="1">
           <mxGeometry x="1140" y="440" width="58" height="104" as="geometry" />
         </mxCell>
         <mxCell id="eaAI_uc1" value="" style="edgeStyle=orthogonalEdgeStyle;curved=0;rounded=0;html=1;endArrow=none;strokeColor=#7C5CBF;fontColor=#3D4B5A;fontSize=14;strokeWidth=1.2;labelBackgroundColor=#FFFFFF;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="aAI" target="uc1">
@@ -174,7 +174,7 @@
             </Array>
           </mxGeometry>
         </mxCell>
-        <mxCell id="aWorker" value="Worker nền" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;fillColor=#FBF3D9;strokeColor=#B08900;fontColor=#5A4700;fontSize=17;fontStyle=1;whiteSpace=wrap;" vertex="1" parent="1">
+        <mxCell id="aWorker" value="Background Worker" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;fillColor=#FBF3D9;strokeColor=#B08900;fontColor=#5A4700;fontSize=17;fontStyle=1;whiteSpace=wrap;" vertex="1" parent="1">
           <mxGeometry x="1140" y="1010" width="58" height="104" as="geometry" />
         </mxCell>
         <mxCell id="eaWorker_uc7" value="" style="edgeStyle=orthogonalEdgeStyle;curved=0;rounded=0;html=1;endArrow=none;strokeColor=#B08900;fontColor=#3D4B5A;fontSize=14;strokeWidth=1.2;labelBackgroundColor=#FFFFFF;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="aWorker" target="uc7">
@@ -198,34 +198,34 @@
             </Array>
           </mxGeometry>
         </mxCell>
-        <mxCell id="lg" value="Chú giải màu" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingTop=6;spacingLeft=9;fillColor=#FFFFFF;strokeColor=#9AA7B4;fontColor=#3D4B5A;fontSize=13;fontStyle=1;strokeWidth=1;dashed=0;" vertex="1" parent="1">
+        <mxCell id="lg" value="Color Legend" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingTop=6;spacingLeft=9;fillColor=#FFFFFF;strokeColor=#9AA7B4;fontColor=#3D4B5A;fontSize=13;fontStyle=1;strokeWidth=1;dashed=0;" vertex="1" parent="1">
           <mxGeometry x="40" y="132" width="300" height="130" as="geometry" />
         </mxCell>
         <mxCell id="lg-s0" value="" style="rounded=0;html=1;fillColor=#EEF2F7;strokeColor=#5B7290;strokeWidth=1.2;" vertex="1" parent="1">
           <mxGeometry x="49" y="162" width="26" height="14" as="geometry" />
         </mxCell>
-        <mxCell id="lg-t0" value="Tác nhân và tương tác người dùng" style="text;html=1;align=left;verticalAlign=middle;fontSize=12;fontColor=#3D4B5A;whiteSpace=wrap;" vertex="1" parent="1">
+        <mxCell id="lg-t0" value="User actor and interaction" style="text;html=1;align=left;verticalAlign=middle;fontSize=12;fontColor=#3D4B5A;whiteSpace=wrap;" vertex="1" parent="1">
           <mxGeometry x="82" y="158" width="244" height="22" as="geometry" />
         </mxCell>
         <mxCell id="lg-s1" value="" style="rounded=0;html=1;fillColor=#E6F4EA;strokeColor=#2E7D46;strokeWidth=1.2;" vertex="1" parent="1">
           <mxGeometry x="49" y="184" width="26" height="14" as="geometry" />
         </mxCell>
-        <mxCell id="lg-t1" value="Use case xử lý xác định trong lõi" style="text;html=1;align=left;verticalAlign=middle;fontSize=12;fontColor=#3D4B5A;whiteSpace=wrap;" vertex="1" parent="1">
+        <mxCell id="lg-t1" value="Deterministic-core use case" style="text;html=1;align=left;verticalAlign=middle;fontSize=12;fontColor=#3D4B5A;whiteSpace=wrap;" vertex="1" parent="1">
           <mxGeometry x="82" y="180" width="244" height="22" as="geometry" />
         </mxCell>
         <mxCell id="lg-s2" value="" style="rounded=0;html=1;fillColor=#F0EAF9;strokeColor=#7C5CBF;strokeWidth=1.2;" vertex="1" parent="1">
           <mxGeometry x="49" y="206" width="26" height="14" as="geometry" />
         </mxCell>
-        <mxCell id="lg-t2" value="Use case phụ thuộc thành phần LLM / AI" style="text;html=1;align=left;verticalAlign=middle;fontSize=12;fontColor=#3D4B5A;whiteSpace=wrap;" vertex="1" parent="1">
+        <mxCell id="lg-t2" value="Use case assisted by an external AI service" style="text;html=1;align=left;verticalAlign=middle;fontSize=12;fontColor=#3D4B5A;whiteSpace=wrap;" vertex="1" parent="1">
           <mxGeometry x="82" y="202" width="244" height="22" as="geometry" />
         </mxCell>
         <mxCell id="lg-s3" value="" style="rounded=0;html=1;fillColor=#FBF3D9;strokeColor=#B08900;strokeWidth=1.2;" vertex="1" parent="1">
           <mxGeometry x="49" y="228" width="26" height="14" as="geometry" />
         </mxCell>
-        <mxCell id="lg-t3" value="Use case do worker nền hoặc state store" style="text;html=1;align=left;verticalAlign=middle;fontSize=12;fontColor=#3D4B5A;whiteSpace=wrap;" vertex="1" parent="1">
+        <mxCell id="lg-t3" value="Use case involving state or a background worker" style="text;html=1;align=left;verticalAlign=middle;fontSize=12;fontColor=#3D4B5A;whiteSpace=wrap;" vertex="1" parent="1">
           <mxGeometry x="82" y="224" width="244" height="22" as="geometry" />
         </mxCell>
-        <mxCell id="lgl" value="Chú giải ký hiệu" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingTop=6;spacingLeft=9;fillColor=#FFFFFF;strokeColor=#9AA7B4;fontColor=#3D4B5A;fontSize=13;fontStyle=1;strokeWidth=1;dashed=0;" vertex="1" parent="1">
+        <mxCell id="lgl" value="Notation Legend" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingTop=6;spacingLeft=9;fillColor=#FFFFFF;strokeColor=#9AA7B4;fontColor=#3D4B5A;fontSize=13;fontStyle=1;strokeWidth=1;dashed=0;" vertex="1" parent="1">
           <mxGeometry x="40" y="306" width="300" height="168" as="geometry" />
         </mxCell>
         <mxCell id="lgl-l0" value="" style="edgeStyle=none;endArrow=none;rounded=0;strokeColor=#5B7290;html=1;strokeWidth=1.4;" edge="1" parent="1">
@@ -234,7 +234,7 @@
             <mxPoint x="102" y="338" as="targetPoint" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="lgl-t0" value="Association giữa tác nhân và use case" style="text;html=1;align=left;verticalAlign=middle;fontSize=12;fontColor=#3D4B5A;whiteSpace=wrap;" vertex="1" parent="1">
+        <mxCell id="lgl-t0" value="Actor-to-use-case association" style="text;html=1;align=left;verticalAlign=middle;fontSize=12;fontColor=#3D4B5A;whiteSpace=wrap;" vertex="1" parent="1">
           <mxGeometry x="114" y="319" width="214" height="42" as="geometry" />
         </mxCell>
         <mxCell id="lgl-l1" value="" style="edgeStyle=orthogonalEdgeStyle;endArrow=none;rounded=0;strokeColor=#B08900;html=1;strokeWidth=1.4;" edge="1" parent="1">
@@ -243,7 +243,7 @@
             <mxPoint x="102" y="380" as="targetPoint" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="lgl-t1" value="Association gấp khúc vuông góc, dùng trục dọc chung cho cùng một tác nhân" style="text;html=1;align=left;verticalAlign=middle;fontSize=12;fontColor=#3D4B5A;whiteSpace=wrap;" vertex="1" parent="1">
+        <mxCell id="lgl-t1" value="Orthogonal association using one corridor per actor" style="text;html=1;align=left;verticalAlign=middle;fontSize=12;fontColor=#3D4B5A;whiteSpace=wrap;" vertex="1" parent="1">
           <mxGeometry x="114" y="361" width="214" height="42" as="geometry" />
         </mxCell>
         <mxCell id="lgl-l2" value="" style="edgeStyle=none;endArrow=none;rounded=0;dashed=1;strokeColor=#7C5CBF;html=1;strokeWidth=1.4;" edge="1" parent="1">
@@ -252,13 +252,13 @@
             <mxPoint x="102" y="422" as="targetPoint" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="lgl-t2" value="Nét đứt: tác nhân hoặc dịch vụ nằm ngoài biên hệ thống" style="text;html=1;align=left;verticalAlign=middle;fontSize=12;fontColor=#3D4B5A;whiteSpace=wrap;" vertex="1" parent="1">
+        <mxCell id="lgl-t2" value="Dashed actor: service outside the system boundary" style="text;html=1;align=left;verticalAlign=middle;fontSize=12;fontColor=#3D4B5A;whiteSpace=wrap;" vertex="1" parent="1">
           <mxGeometry x="114" y="403" width="214" height="42" as="geometry" />
         </mxCell>
-        <mxCell id="n1" value="Cách đọc: mỗi tác nhân chỉ có một ký hiệu; đường nối rời tác nhân, đi vào trục dọc riêng của tác nhân đó rồi rẽ ngang vào từng use case. Nhờ vậy không có cạnh nào cắt nhau và không cần vẽ trùng tác nhân ở hai phía." style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingTop=6;spacingLeft=9;spacingRight=8;fillColor=#F7F9FB;strokeColor=#9AA7B4;fontColor=#3D4B5A;fontSize=12;strokeWidth=1;dashed=1;" vertex="1" parent="1">
+        <mxCell id="n1" value="How to read: each actor appears once. Its associations use a dedicated vertical corridor and branch horizontally to the related use cases, which avoids crossing connectors." style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingTop=6;spacingLeft=9;spacingRight=8;fillColor=#F7F9FB;strokeColor=#9AA7B4;fontColor=#3D4B5A;fontSize=12;strokeWidth=1;dashed=1;" vertex="1" parent="1">
           <mxGeometry x="40" y="520" width="300" height="132" as="geometry" />
         </mxCell>
-        <mxCell id="n2" value="Thứ tự use case trong mỗi nhóm được xếp sao cho các use case cùng tác nhân phụ nằm liền kề, nên hai trục dọc bên phải không chồng khoảng chiều dọc. Số hiệu FR vẫn giữ nguyên để tra cứu sang Chương 3." style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingTop=6;spacingLeft=9;spacingRight=8;fillColor=#F7F9FB;strokeColor=#9AA7B4;fontColor=#3D4B5A;fontSize=12;strokeWidth=1;dashed=1;" vertex="1" parent="1">
+        <mxCell id="n2" value="FR identifiers are preserved for traceability to Chapter 3. Parser, validation, TTL and transaction steps are intentionally documented in sequence diagrams and flow tables instead of as use cases." style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingTop=6;spacingLeft=9;spacingRight=8;fillColor=#F7F9FB;strokeColor=#9AA7B4;fontColor=#3D4B5A;fontSize=12;strokeWidth=1;dashed=1;" vertex="1" parent="1">
           <mxGeometry x="40" y="900" width="300" height="132" as="geometry" />
         </mxCell>
 

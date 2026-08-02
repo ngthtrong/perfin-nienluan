@@ -25,8 +25,8 @@ COLORS = {
 
 SPECS = {
     "08-text-sequence": {
-        "title": "Sơ đồ tuần tự nhập giao dịch bằng văn bản",
-        "subtitle": "LLM chỉ tạo ứng viên có kiểu; transaction ghi dữ liệu chỉ bắt đầu sau khi người dùng xác nhận.",
+        "title": "Text Transaction Entry Sequence",
+        "subtitle": "The LLM only proposes a typed candidate; the database transaction starts after user confirmation.",
         "participants": {
             "user": "blue",
             "app": "blue",
@@ -39,8 +39,8 @@ SPECS = {
         "external": {"provider"},
     },
     "11-insight-sequence": {
-        "title": "Sơ đồ tuần tự sinh insight có căn cứ",
-        "subtitle": "Analytics tính facts trước; persona và LLM chỉ điều chỉnh cách diễn giải.",
+        "title": "Grounded Insight Generation Sequence",
+        "subtitle": "Analytics computes facts first; the persona and LLM only adjust the wording.",
         "participants": {
             "user": "blue",
             "screen": "blue",
@@ -54,8 +54,8 @@ SPECS = {
         "external": {"llm"},
     },
     "13-worker-sequence": {
-        "title": "Sơ đồ tuần tự tác vụ chủ động và chống trùng",
-        "subtitle": "Queue điều phối retry; unique event key bảo đảm tác dụng lưu thông báo là idempotent.",
+        "title": "Proactive Job and Deduplication Sequence",
+        "subtitle": "The queue coordinates retries; a unique event key makes message persistence idempotent.",
         "participants": {
             "scheduler": "yellow",
             "redis": "yellow",
