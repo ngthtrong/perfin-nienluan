@@ -5,6 +5,16 @@ const AccountModel = require('../models/account.model');
 
 const userId = 'default_user';
 
+function localDayKey(date = new Date()) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+}
+
+function localDateOffset(date, days) {
+  const shifted = new Date(date);
+  shifted.setDate(shifted.getDate() + days);
+  return localDayKey(shifted);
+}
+
 // ─── Net Worth (FR-06-03) ─────────────────────────────────────────────────────
 
 /**
@@ -44,18 +54,18 @@ router.get('/report', async (req, res, next) => {
       const now = new Date();
       if (period === 'week') {
         const day = now.getDay() || 7;
-        filters.from = new Date(now - (day - 1) * 86400000).toISOString().slice(0, 10);
-        filters.to = new Date(now - (day - 7) * 86400000).toISOString().slice(0, 10);
+        filters.from = localDateOffset(now, -(day - 1));
+        filters.to = localDateOffset(now, 7 - day);
       } else if (period === 'month') {
         filters.from = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
-        filters.to = now.toISOString().slice(0, 10);
+        filters.to = localDayKey(now);
       } else if (period === 'quarter') {
         const q = Math.floor(now.getMonth() / 3);
         filters.from = `${now.getFullYear()}-${String(q * 3 + 1).padStart(2, '0')}-01`;
-        filters.to = now.toISOString().slice(0, 10);
+        filters.to = localDayKey(now);
       } else if (period === 'year') {
         filters.from = `${now.getFullYear()}-01-01`;
-        filters.to = now.toISOString().slice(0, 10);
+        filters.to = localDayKey(now);
       }
     }
 

@@ -1,5 +1,4 @@
-
-# Regulations on the Format and Content of the Report
+Regulations on the Format and Content of the Report
 
 The report must follow the regulations below.
 
@@ -219,6 +218,7 @@ Include additional information such as:
 - User manuals or guides (if applicable).
 - Additional diagrams or schematics.
 - Any other supplementary material.
+- Phần phụ lục có thể là phần mở rộng nếu muốn mô tả cụ thể hơn nội dung của báo, vì phần nội dung cốt lỗi đã nằm trong session 3 của báo cáo và có giới hạn độ dài, nên phần phụ lục này đóng vai trò như phần mở rộng, để làm rõ hơn các ý không được mô tả trong phần chính
 
 ---
 

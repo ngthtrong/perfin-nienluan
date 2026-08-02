@@ -12,6 +12,9 @@ test('expense percentages use the same date window as the category rows', () => 
   assert.match(EXPENSE_BREAKDOWN_SQL, /total_tx\.transaction_date <= \$3::date/);
   assert.equal((EXPENSE_BREAKDOWN_SQL.match(/transaction_date >= \$2::date/g) || []).length, 2);
   assert.equal((EXPENSE_BREAKDOWN_SQL.match(/transaction_date <= \$3::date/g) || []).length, 2);
+  assert.match(EXPENSE_BREAKDOWN_SQL, /JOIN wallets w ON w\.id = t\.wallet_id/);
+  assert.match(EXPENSE_BREAKDOWN_SQL, /total_w\.currency = 'VND'/);
+  assert.match(EXPENSE_BREAKDOWN_SQL, /w\.currency = 'VND'/);
 });
 
 test('HTML report escapes every user-controlled display field', () => {

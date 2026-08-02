@@ -5,7 +5,7 @@
 
 \subsection{Mô tả tổng quan}
 
-PERFIN là nguyên mẫu ứng dụng di động phục vụ nhập, chuẩn hóa, quản lý và phân tích dữ liệu tài chính cá nhân. Giao diện chat và media là cổng thu nhận bổ sung cho biểu mẫu. Mọi phép tính tài chính, kiểm tra ràng buộc và thay đổi dữ liệu do backend thực hiện; LLM, OCR và STT không truy cập trực tiếp PostgreSQL và không được xem là nguồn số liệu chuẩn. Cách mã hóa FR/NFR và truy vết sang ca kiểm thử vận dụng tinh thần của IEEE~830 \cite{ieee830}.
+PERFIN là nguyên mẫu ứng dụng di động phục vụ nhập, chuẩn hóa, quản lý và phân tích dữ liệu tài chính cá nhân. Giao diện chat và media là cổng thu nhận bổ sung cho biểu mẫu. Mọi phép tính tài chính, kiểm tra ràng buộc và thay đổi dữ liệu do backend thực hiện; LLM, OCR và STT không truy cập trực tiếp PostgreSQL và không được xem là nguồn số liệu chuẩn. Cách mã hóa FR/NFR và truy vết sang ca kiểm thử vận dụng hướng dẫn kỹ nghệ yêu cầu của ISO/IEC/IEEE~29148:2018 \cite{iso29148}.
 
 \begin{table}[H]
   \centering
@@ -18,7 +18,7 @@ PERFIN là nguyên mẫu ứng dụng di động phục vụ nhập, chuẩn hó
     Người dùng & Một người dùng phổ thông cần ghi chép và hiểu dữ liệu tài chính; không yêu cầu kiến thức thống kê. \\
     Môi trường & React Native/Expo trên mobile hoặc web; Express API; PostgreSQL; Redis và worker là thành phần tùy cấu hình. \\
     Dữ liệu chuẩn & PostgreSQL lưu dữ liệu nghiệp vụ; Redis chỉ lưu pending, clarification, cache và queue có TTL. \\
-    Ràng buộc & Phiên bản demo dùng \code{default_user}, chưa có authentication/authorization production; tiền mặc định là VND. \\
+    Ràng buộc & Phiên bản demo dùng \code{default_user}, chưa có authentication/authorization production; tiền mặc định là VND và chưa có quy đổi ngoại tệ. \\
     Phụ thuộc & Provider LLM/OCR/STT có thể thay thế qua adapter; khi không khả dụng phải trả lỗi hoặc fallback thật, không tạo dữ liệu giả. \\
     Giả định & Người dùng kiểm tra bản xem trước; gợi ý không thay thế tư vấn tài chính chuyên nghiệp. \\
     \bottomrule
@@ -130,7 +130,7 @@ Hình~\ref{fig:usecase-overview} chỉ mô tả mục tiêu quan sát được c
   \textbf{Các mối quan hệ} & Dùng thực thể ví/giao dịch của FR-05. \frtablerow
   \textbf{Luồng xử lý bình thường của sự kiện} & \textbf{Bước 1:} Nhập ví nguồn, ví đích, amount và ngày. \textbf{Bước 2:} Validation hai ví khác nhau. \textbf{Bước 3:} Khóa theo thứ tự. \textbf{Sub 1:} Debit, credit và ghi lịch sử. \textbf{Bước 4:} Commit và trả kết quả. \frtablerow
   \textbf{Các luồng sự kiện con (Subflows)} & \textbf{Sub 1 --- Transaction:} (1) Trừ nguồn; (2) cộng đích; (3) ghi \code{wallet_transfers}; tổng biến thiên bằng 0. \frtablerow
-  \textbf{Luồng luân phiên/đặc biệt} & Ví trùng/thiếu, amount/date sai hoặc ví ngoài hồ sơ làm rollback. Không từ chối chỉ vì ví nguồn sẽ âm. \frtablerow
+  \textbf{Luồng luân phiên/đặc biệt} & Ví trùng/thiếu, amount/date sai, ví ngoài hồ sơ hoặc hai ví khác tiền tệ làm rollback. Không từ chối chỉ vì ví nguồn sẽ âm. \frtablerow
 \end{frtable}
 
 \begin{frtable}{Đặc tả FR-07 --- Phân tích dữ liệu tài chính}{tab:fr07}
@@ -140,9 +140,9 @@ Hình~\ref{fig:usecase-overview} chỉ mô tả mục tiêu quan sát được c
   \textbf{Mức độ cần thiết} & Bắt buộc. \frtablerow
   \textbf{Phân loại} & Phức tạp. \frtablerow
   \textbf{Các thành phần tham gia và mối quan tâm} & Analytics Engine cần dữ liệu sạch; người dùng cần kết quả có kỳ, số mẫu và phương pháp. \frtablerow
-  \textbf{Mô tả tóm tắt} & Tính facts bằng hàm xác định trên dữ liệu chưa xóa và trục thời gian có zero-fill. \frtablerow
+  \textbf{Mô tả tóm tắt} & Tính facts bằng hàm xác định trên dữ liệu chưa xóa; trend/correlation dùng kỳ hoàn tất và các trục lịch cố định được zero-fill. \frtablerow
   \textbf{Các mối quan hệ} & Đọc FR-05; cung cấp facts cho FR-08 và FR-11. \frtablerow
-  \textbf{Luồng xử lý bình thường của sự kiện} & \textbf{Bước 1:} Chọn loại phân tích và kỳ. \textbf{Bước 2:} Truy vấn dữ liệu theo hồ sơ. \textbf{Bước 3:} Zero-fill và kiểm tra số mẫu. \textbf{Sub 1:} Chạy giải thuật. \textbf{Bước 4:} Trả facts, method và warning. \frtablerow
+  \textbf{Luồng xử lý bình thường của sự kiện} & \textbf{Bước 1:} Chọn loại phân tích và kỳ. \textbf{Bước 2:} Truy vấn dữ liệu theo hồ sơ. \textbf{Bước 3:} Chuẩn hóa trục lịch và kiểm tra số mẫu. \textbf{Sub 1:} Chạy giải thuật. \textbf{Bước 4:} Trả facts cùng metadata về kỳ, phương pháp, tham số và warning. \frtablerow
   \textbf{Các luồng sự kiện con (Subflows)} & \textbf{Sub 1 --- Analytics:} chạy OLS, z-score/IQR, runway, recurring hoặc Pearson theo cùng contract kết quả. \frtablerow
   \textbf{Luồng luân phiên/đặc biệt} & Dữ liệu thiếu/phương sai 0 thì trả kết quả suy giảm hoặc \code{null}; không suy ra nhân quả và không tự tạo giao dịch. \frtablerow
 \end{frtable}
@@ -185,8 +185,8 @@ Hình~\ref{fig:usecase-overview} chỉ mô tả mục tiêu quan sát được c
   \textbf{Mô tả tóm tắt} & Tính mức góp, thời gian, thiếu hụt và kịch bản thay đổi mà không sửa kế hoạch gốc. \frtablerow
   \textbf{Các mối quan hệ} & Đọc dữ liệu FR-05; dùng FR-03 khi lưu từ chat. \frtablerow
   \textbf{Luồng xử lý bình thường của sự kiện} & \textbf{Bước 1:} Nhập loại, target, current, date và contribution/rate. \textbf{Bước 2:} Validation. \textbf{Sub 1:} Goal Planner tính kế hoạch. \textbf{Bước 3:} Hiển thị preview/what-if. \textbf{Bước 4:} Xác nhận lưu. \frtablerow
-  \textbf{Các luồng sự kiện con (Subflows)} & \textbf{Sub 1 --- Tính toán:} (1) Saving/purchase tính phần còn thiếu; (2) debt payoff mô phỏng dư nợ theo tháng. \frtablerow
-  \textbf{Luồng luân phiên/đặc biệt} & Contribution bằng 0 trả thời gian không xác định; payment không bù lãi hoặc horizon quá 600 tháng trả cảnh báo, không bịa ngày hoàn tất. \frtablerow
+  \textbf{Các luồng sự kiện con (Subflows)} & \textbf{Sub 1 --- Tính toán:} (1) Saving/purchase tính phần còn thiếu; (2) debt payoff mô phỏng dư nợ theo tháng; (3) what-if chỉ thêm contribution cho saving/purchase và không ghi kế hoạch gốc. \frtablerow
+  \textbf{Luồng luân phiên/đặc biệt} & Contribution bằng 0 trả thời gian không xác định; payment nhỏ hơn hoặc bằng lãi tháng đầu, payment bằng 0 hoặc horizon quá 600 tháng trả cảnh báo, không bịa ngày hoàn tất. \frtablerow
 \end{frtable}
 
 \begin{frtable}{Đặc tả FR-11 --- Khoản định kỳ và tác vụ nền}{tab:fr11}
@@ -236,7 +236,7 @@ Hình~\ref{fig:usecase-overview} chỉ mô tả mục tiêu quan sát được c
   NFR-05 & Tính đúng & Giải thuật trả expected ở ca thường/biên; số dư âm hợp lệ; narrator không được tự tạo số. & Unit test, invariant và checker facts--response. \\
   NFR-06 & Riêng tư & Media tạm được dọn sau xử lý; traits chỉ dùng khi consent; truy vấn theo ID kèm user scope. & Kiểm tra file tạm, consent và test truy cập chéo. \\
   NFR-07 & Nhất quán worker & Retry cùng event/job không tạo payment, message hoặc export trùng. & Chạy lặp fingerprint và đếm hiệu ứng. \\
-  NFR-08 & Khả năng truy vết & Kết quả phân tích có kỳ, số mẫu, method, facts và trạng thái suy giảm. & Contract test và ma trận FR--test--artifact. \\
+  NFR-08 & Khả năng truy vết & Kết quả phân tích có phiên bản schema, thời điểm, value và metadata theo component gồm đơn vị, kỳ, số mẫu, method, parameters, warning và trạng thái suy giảm. & Contract test và ma trận FR--test--artifact. \\
   \bottomrule
 \end{longtable}
 
@@ -310,7 +310,7 @@ Hình~\ref{fig:domain-class} mô tả các lớp miền và bội số quan hệ
   \bottomrule
 \end{longtable}
 
-Tiền dùng \code{DECIMAL(15,2)}; truy vấn báo cáo loại bản ghi soft delete; xóa danh mục có giao dịch phải bị chặn hoặc re-tag có kiểm soát; pending/clarification chỉ nằm trong Redis; mọi truy vấn theo ID trong thiết kế đích phải kèm \code{user_id/user_key}.
+Tiền dùng \code{DECIMAL(15,2)}; truy vấn báo cáo loại bản ghi soft delete; xóa danh mục có giao dịch phải bị chặn hoặc re-tag có kiểm soát; pending/clarification chỉ nằm trong Redis; mọi truy vấn theo ID trong thiết kế đích phải kèm \code{user_id/user_key}. Chuyển nội bộ chỉ nhận hai ví cùng tiền tệ; runway chỉ cộng các ví VND thanh khoản thuộc loại \code{cash}, \code{bank} hoặc \code{e_wallet}. Ngoại tệ, tiết kiệm, đầu tư và thẻ tín dụng bị loại vì nguyên mẫu chưa có tỷ giá hoặc mô hình thanh khoản.
 
 \subsection{Thiết kế chi tiết}
 \label{subsec:detailed-design}
@@ -340,21 +340,60 @@ OCR/STT chỉ trả raw text và metadata provider. Phiên bản hiện tại ch
   s=\max(s_{edit},\;0{,}92s_{dice},\;s_{contain}).
 \end{equation}
 
-Thứ tự chọn là exact tên, exact alias rồi fuzzy. Input dài dùng ngưỡng $\tau=0{,}82$, input không quá bốn ký tự dùng $\tau=0{,}90$; ứng viên tốt nhất phải hơn ứng viên thứ hai ít nhất $m=0{,}08$. Đây là tham số khởi đầu của nguyên mẫu, chưa phải ngưỡng tối ưu cho mọi người dùng. Correction retrieval nạp tối đa 200 mẫu gần đây, chọn tối đa năm mẫu tương tự; correction mâu thuẫn làm hạ confidence thay vì ép nhãn.
+Với $U,V$ là hai tập token sau chuẩn hóa và chọn $|U|\leq|V|$, điểm bao hàm trong mã nguồn được định nghĩa là
+
+\begin{equation}
+  s_{contain}=\begin{cases}
+    \min\!\left(0{,}94,\;0{,}82+0{,}12\dfrac{|U|}{|V|}\right),
+      & U\subseteq V\ \text{và}\ |U|\geq2,\\
+    0, & \text{trường hợp khác}.
+  \end{cases}
+\end{equation}
+
+Thứ tự chọn là exact tên, exact alias rồi fuzzy. Độ dài input được tính sau chuẩn hóa; input trên bốn ký tự dùng ngưỡng $\tau=0{,}82$, input không quá bốn ký tự dùng $\tau=0{,}90$; ứng viên tốt nhất phải hơn ứng viên thứ hai ít nhất $m=0{,}08$. Đây là tham số khởi đầu của nguyên mẫu, chưa phải ngưỡng tối ưu cho mọi người dùng. Correction retrieval nạp tối đa 200 mẫu gần đây và chỉ override bằng bản ghi có cùng loại thu/chi; bản ghi cũ thiếu type không đủ điều kiện. Fuzzy correction cần điểm ít nhất 0,88; khi có nhãn cạnh tranh, nhãn tốt nhất cần agreement ít nhất 0,8. Nhiều nhãn cho cùng exact text trả fallback/làm rõ thay vì bỏ phiếu đa số.
 
 \subsubsection{Giải thuật phân tích và lập kế hoạch}
 \label{subsec:analytics-design}
 
-Các cửa sổ mặc định là 14 ngày cho runway, 30 ngày cho anomaly, 90 ngày cho recurring, 6 tháng cho trend và 12 tuần cho correlation. Đây là cấu hình của nguyên mẫu và luôn phải xuất hiện cùng kết quả.
+Các cửa sổ mặc định là 14 ngày lịch cho runway, 30 ngày lịch cho anomaly, 200 ngày cho recurring, 6 tháng hoàn tất cho trend, 60 ngày lịch cho phân tích theo thứ và 12 tuần ISO hoàn tất cho correlation. Trục ngày/tháng/tuần cố định được điền 0 ở kỳ không phát sinh. Kỳ tháng/tuần hiện tại còn dở không được đưa vào phép so sánh. Payday là ngày trong tháng theo lịch địa phương; ngày 31 được chặn ở ngày cuối của tháng đích.
 
-Với tổng số dư $B$, chi ngày $e_j$ và cửa sổ $W=14$, runway dùng
+Runway chỉ dùng số dư thanh khoản VND:
+
+\begin{equation}
+  B=\sum_{\substack{w.currency=\mathrm{VND}\\
+  w.type\in\{\mathrm{cash},\mathrm{bank},\mathrm{e\_wallet}\}}} balance_w.
+\end{equation}
+
+Với chi ngày $e_j$ và cửa sổ $W=14$, phép tính là
 
 \begin{equation}
   \bar e_W=\frac{1}{W}\sum_{j=1}^{W}e_j,\qquad
   d=\left\lfloor\frac{B}{\bar e_W}\right\rfloor.
 \end{equation}
 
-Nếu $B\leq0$ thì $d=0$; nếu $\bar e_W=0$ thì ngày cạn không xác định. Recurring grouping dùng số tiền trung bình $\bar a$, độ lệch tương đối $\delta_i=|a_i-\bar a|/\bar a$ và cadence trung bình; cụm ổn định khi mọi $\delta_i\leq0{,}15$, cadence 20--40 ngày hoặc có ít nhất ba lần xuất hiện.
+Nếu $B\leq0$ thì $d=0$; nếu $\bar e_W=0$ thì ngày cạn không xác định. Với chuỗi chi tháng $y_j$, trend vẫn giữ trục 6 tháng có zero-fill nhưng cần ít nhất ba tháng quan sát có chi dương; sau đó dùng OLS và chỉ phát tín hiệu khi slope $b>0$, $R^2\geq0{,}5$ và trung bình biến đổi theo bước (chỉ ở bước có mẫu trước dương) ít nhất 10\%.
+
+Anomaly dùng trung bình và độ lệch chuẩn mẫu trên đủ 30 ngày. Chỉ tính anomaly khi có ít nhất bốn ngày lịch có chi dương; quan sát chỉ được gắn cờ ở phía tăng khi
+
+\begin{equation}
+  z_i=\frac{e_i-\bar e}{s}\geq2{,}5
+  \quad\text{hoặc}\quad
+  e_i>Q_3+1{,}5\,IQR.
+\end{equation}
+
+Khi $s=0$, mã nguồn đặt $z_i=0$; khi $IQR=0$, nhánh IQR bị tắt. Vì vậy chuỗi hằng không bị gắn cờ chỉ do mẫu số không xác định.
+
+Recurring grouping chuẩn hóa mô tả và cần đồng thời ít nhất ba lần xuất hiện, mọi $\delta_i=|a_i-\bar a|/\bar a\leq0{,}15$, và hệ số biến thiên của khoảng ngày $CV_g=\sigma_g/\bar g\leq0{,}12$ ($\sigma_g$ theo population trên các khoảng dương). Mọi khoảng phải cùng thuộc một cadence: tuần 5--9 ngày, tháng 26--35 ngày hoặc quý 80--100 ngày. Candidate chỉ còn active nếu lần gần nhất không cũ hơn khoảng tối đa của cadence; output ghi thêm \code{lastSeen} và \code{nextExpected} theo lịch có clamp ngày cuối tháng. Không có trần tiền mặc định. Ước tính theo tháng là
+
+\begin{equation}
+  \widehat a_{month}=\begin{cases}
+    \bar a\,52/12, & \text{tuần},\\
+    \bar a, & \text{tháng},\\
+    \bar a/3, & \text{quý}.
+  \end{cases}
+\end{equation}
+
+Correlation điền 0 trên cùng trục 12 tuần, chỉ giữ danh mục có phát sinh ở ít nhất bốn tuần và bỏ cặp Pearson không xác định (ít hơn ba cặp quan sát hoặc một chuỗi không có phương sai). Hệ thống chỉ trả cặp đồng biến mạnh nhất nếu $r\geq0{,}6$; kết quả không hàm ý nhân quả. Phân tích theo thứ dùng cửa sổ 60 ngày, cần ít nhất bốn thứ có dữ liệu và chỉ phát tín hiệu khi tỷ lệ đỉnh so với trung bình đạt 1,8.
 
 Với chi danh mục $s_{c,j}$ trong $m$ tháng, hạn mức nền có buffer 5\% là
 
@@ -362,15 +401,15 @@ Với chi danh mục $s_{c,j}$ trong $m$ tháng, hạn mức nền có buffer 5\
   b_c=1{,}05\left(\frac{1}{m}\sum_{j=1}^{m}s_{c,j}\right).
 \end{equation}
 
-Forecast cuối tháng dùng $\widehat S_D=(S/d_e)D$, trong đó $S$ là số đã chi, $d_e$ là số ngày đã qua và $D$ là số ngày trong tháng. Chiến lược 50/30/20 và hybrid chỉ co tỷ trọng khi tổng hạn mức vượt trần; mọi đề xuất cần xác nhận.
+Forecast cuối tháng dùng $\widehat S_D=(S/d_e)D$, trong đó $S$ là số đã chi, $d_e$ là số ngày lịch đã trôi qua tính cả ngày hiện tại và $D$ là số ngày trong tháng. Chiến lược 50/30/20 và hybrid co tỷ trọng khi tổng hạn mức thô vượt trần; bước đối soát sau làm tròn bảo đảm tổng từng nhóm không vượt trần. Các tỷ lệ nhu cầu, mong muốn và tiết kiệm không được có tổng lớn hơn 1; mọi đề xuất cần xác nhận.
 
-Với mục tiêu còn thiếu $R$ và mức góp tháng $M>0$, số tháng là $n=\lceil R/M\rceil$. Với khoản nợ $L$, lãi suất tháng $r$ và hạn $n$, khoản trả đều là
+Với mục tiêu saving/purchase còn thiếu $R$ và mức góp tháng $M>0$, số tháng là $n_s=\lceil R/M\rceil$. Với khoản nợ hiện còn $L$, lãi suất năm danh nghĩa $i$ tính theo phần trăm, mã nguồn dùng lãi suất tháng $r=i/(12\times100)$. Nếu có hạn nợ trong $n_d$ tháng, mức trả đều cuối tháng cần thiết là
 
 \begin{equation}
-  P=\frac{Lr}{1-(1+r)^{-n}}
+  P=\frac{Lr}{1-(1+r)^{-n_d}}
 \end{equation}
 
-khi $r>0$; nếu $r=0$ thì $P=L/n$. Payment không bù được lãi tháng đầu tạo cảnh báo negative amortization. What-if chạy lại cùng hàm với tham số mới và không sửa kế hoạch gốc.
+khi $r>0$; nếu $r=0$ thì $P=L/n_d$. Payment nhỏ hơn hoặc bằng lãi tháng đầu tạo cảnh báo negative amortization; payment bằng 0 được báo riêng. Không có deadline, mã nguồn mô phỏng từng tháng tối đa 600 tháng. What-if hiện chỉ chạy lại hàm saving/purchase với khoản góp thêm; không thay đổi kế hoạch debt và không ghi dữ liệu.
 
 \widereportfigure{12-goal-flow.pdf}{Flowchart lập kế hoạch mục tiêu và what-if; chỉ bước xác nhận cuối cùng mới lưu dữ liệu.}{fig:goal-flow}
 
@@ -378,7 +417,7 @@ khi $r>0$; nếu $r=0$ thì $P=L/n$. Payment không bù được lãi tháng đ�
 
 \widereportfigure{11-insight-sequence.pdf}{Sơ đồ tuần tự sinh insight; Analytics Engine trả facts trước khi persona/LLM diễn giải.}{fig:insight-sequence}
 
-Insight facts gồm giá trị, đơn vị, cửa sổ, số mẫu, phương pháp và cảnh báo. Persona chỉ thay giọng điệu khi consent bật. Response trả đồng thời narration và facts để UI và test có thể đối chiếu. Numeric checker bao phủ mọi biểu thức số vẫn là thiết kế đích.
+Contract facts phiên bản 1.0 trả \code{schema_version}, \code{generated_at}, value của từng component và \code{metadata.components}. Metadata mỗi component có \code{unit}, \code{window}, \code{sample_count}, \code{method}, \code{parameters}, \code{warnings} và \code{status} thuộc \code{ok/no_signal/degraded}. Object window ghi \code{size}, \code{unit} và \code{zero_filled}; một số component thêm \code{category_count} hoặc \code{wallet_count}. Lỗi cục bộ được ghi trong \code{degraded_components} mà không làm mất contract. Persona chỉ thay giọng điệu khi consent bật; response trả narration cùng facts để UI/test đối chiếu. Numeric checker bao phủ mọi biểu thức số vẫn là thiết kế đích.
 
 \section{Kiểm thử}
 \label{sec:testing}
@@ -398,14 +437,14 @@ Insight facts gồm giá trị, đơn vị, cửa sổ, số mẫu, phương ph�
   Unit & Matching, analytics, budget, goal, validation. & Ca thường, biên, expected tính tay và invariant. & \code{node:test}, pass/fail từng ca. \\
   Integration & Route--service--model, PostgreSQL, Redis. & DB test, rollback, TTL và claim đồng thời. & Log, snapshot DB và mã thoát. \\
   System & Text/voice/image đến preview/DB. & Smoke theo kịch bản end-to-end. & HTTP response, DB assertion, ảnh UI. \\
-  AI contract & Parser, tool schema và LLM. & Tập câu gán nhãn, cùng nhiệm vụ và cách tính. & JSON prediction, accuracy, macro-F1. \\
+  AI contract & Parser, tool schema, LLM và correction. & Nhãn joint type/category; abstention giữ trong mẫu số; split nguyên nhóm. & JSON records, coverage, accuracy/F1, helped/harmed/net. \\
   Media & OCR/STT adapter. & Ảnh/audio có ground truth. & CER/WER và field accuracy. \\
   Worker & Retry, dedup và lịch chạy. & Lặp cùng fingerprint, fault injection. & Số hiệu ứng trước--sau. \\
   UAT & Người dùng mục tiêu. & Nhiệm vụ có thời gian và số bước. & Completion rate, thời gian, SUS. \\
   \bottomrule
 \end{longtable}
 
-Bộ dữ liệu văn bản cần bao phủ đơn vị tiền, số bằng chữ, phép nhân, ngày tương đối, nhiều giao dịch, typo, Việt--Anh, trường hợp thiếu/mơ hồ và correction xung đột. Dữ liệu analytics dùng chuỗi tổng hợp hoặc ẩn danh có slope, outlier, cadence và correlation biết trước. Tập media phải lưu ảnh/audio cùng transcript hoặc bảng hóa đơn chuẩn.
+Bộ dữ liệu văn bản cần bao phủ đơn vị tiền, số bằng chữ, phép nhân, ngày tương đối, nhiều giao dịch, typo, Việt--Anh, trường hợp thiếu/mơ hồ và correction xung đột. Khi đánh giá correction, mọi dòng cùng loại và mô tả chuẩn hóa phải nằm hoàn toàn ở seed hoặc evaluation. Dữ liệu analytics dùng chuỗi tổng hợp hoặc ẩn danh có slope, outlier, cadence và correlation biết trước. Tập media phải lưu ảnh/audio cùng transcript hoặc bảng hóa đơn chuẩn.
 
 \subsection{Kết quả và phân tích}
 \label{subsec:results}
@@ -422,14 +461,14 @@ Bộ dữ liệu văn bản cần bao phủ đơn vị tiền, số bằng chữ
   \textbf{Hạng mục} & \textbf{Kết quả} & \textbf{Trạng thái} & \textbf{Phạm vi kết luận} \\
   \midrule
   \endhead
-  Backend \code{npm test} & 182/182 test đạt. & \statusmeasured & Unit/service trên 38 tệp; không đại diện UAT hay production. \\
+  Backend \code{npm test} & 44/44 tệp kiểm thử đạt. & \statusmeasured & Node 24 báo theo tệp; không được diễn giải thành 182 test case hay bằng chứng UAT/production. \\
   Local parser quality gate & 31/31 strict pass. & \statusmeasured & Tập 31 câu cố định; không phải benchmark độc lập. \\
   Full API/DB/media smoke & 23/23 kiểm tra đạt. & \statusmeasured & Chứng minh các fixture chọn trước chạy qua HTTP--PostgreSQL/provider; không gồm Redis worker. \\
   Mobile-web UI smoke & 4/4 cổng đạt ở 390$\times$844. & \statusmeasured & Không overflow và ảnh hiển thị; không phải UAT. \\
   Import dữ liệu & 5.265 dòng, 0 reject. & \statusmeasured & Importer có provenance và đã đối soát trên PostgreSQL demo. \\
-  Parser trên 5.265 dòng & Accuracy 29,36\%; macro-F1 0,177. & \statusmeasured & Nhãn lịch sử lệch taxonomy hiện tại; dùng để phân tích lỗi. \\
-  Parser vs Gemini & Macro-F1 0,204 vs 0,607. & \statusmeasured & Cùng mẫu phân tầng 63 câu; p50 Gemini 964 ms. \\
-  Correction retrieval & Accuracy 68,19\% trên holdout parser-sai. & \statusmeasured & Baseline 0\% do cách chọn mẫu; không suy rộng thành mức cải thiện toàn hệ thống. \\
+  Parser trên 5.265 dòng & Joint type/category: accuracy 26,12\%; macro-F1 0,1559. & \statusmeasured & Category-only 29,36\%/0,177 chỉ là đối chiếu phụ. \\
+  Parser vs Gemini & Accuracy toàn mẫu 22,22\% vs 39,68\%. & \statusmeasured & Gemini coverage 42/63; macro-F1 0,6068 chỉ có điều kiện trên 42 câu trả lời. \\
+  Correction retrieval & Với parser đúng type và loại \textit{Khác}: accuracy 34,46\% $\rightarrow$ 61,22\%; coverage 891/2.612; net $+26,76$ điểm. & \statusmeasured & 4.756 dòng đủ điều kiện; loại 76 dòng sai type; split nguyên nhóm type+mô tả chuẩn hóa; overlap seed/evaluation bằng 0. \\
   OCR/STT accuracy & Chưa công bố. & \statusmissing & Smoke 2 ảnh và 1 audio không đủ để tính CER/WER/field accuracy. \\
   Redis worker live & Chưa xác nhận. & \statusmissing & Payment logic có test nhưng queue/worker thực chưa được đo trong đợt này. \\
   Grounding, p95, UAT & Chưa công bố. & \statusmissing & Cần checker, tối thiểu 30 lượt/luồng và người dùng mục tiêu. \\
@@ -440,63 +479,69 @@ Smoke test chỉ chứng minh khả năng hoàn tất kịch bản đã chọn. 
 
 \subsubsection{Thí nghiệm phân loại}
 
-Ba thí nghiệm ngày 24/07/2026 dùng \code{dataFinance.csv} có 5.265 dòng; mã và artifact JSON/Markdown nằm trong \code{demo/backend/tests/experiments/} và \code{log/}. Benchmark toàn tập cho kết quả ở Bảng~\ref{tab:exp-classification}.
+Các thí nghiệm dùng \code{dataFinance.csv} có 5.265 dòng. Classification và correction được chạy lại offline ngày 02/08/2026; ablation Gemini là phép đo lịch sử ngày 24/07/2026 và có artifact tái phân tích ngày 02/08. Mã cùng JSON/Markdown nằm trong \code{demo/backend/tests/experiments/} và \code{log/}.
 
 \begin{table}[H]
   \centering
-  \caption{Kết quả local parser trên 5.265 giao dịch}
+  \caption{Benchmark local parser trên 5.265 giao dịch}
   \label{tab:exp-classification}
-  \begin{tabularx}{0.78\textwidth}{@{}Y R{3.0cm}@{}}
+  \begin{tabularx}{0.9\textwidth}{@{}Y R{3.2cm}@{}}
     \toprule
     \textbf{Chỉ số} & \textbf{Giá trị} \\
     \midrule
-    Accuracy & 29,36\% \\
-    Macro-F1 (12 lớp có mẫu) & 0,177 \\
-    Weighted-F1 & 0,301 \\
-    Số ca sai & 3.719/5.265 \\
-    Sai liên quan lớp ``Khác'' & 2.957 \\
+    Joint type/category accuracy & 26,12\% \\
+    Joint macro-F1 (13 lớp có mẫu) & 0,1559 \\
+    Joint weighted-F1 & 0,2913 \\
+    Số ca joint sai & 3.890/5.265 \\
+    Sai liên quan lớp ``Khác'' & 3.128 \\
+    Sai loại thu/chi & 427 \\
+    Đúng tên category nhưng sai loại & 171 \\
+    Category-only accuracy (phụ) & 29,36\% \\
+    Category-only macro-F1/weighted-F1 (phụ) & 0,1770/0,3013 \\
     \bottomrule
   \end{tabularx}
 \end{table}
 
-Phần lớn sai số liên quan lớp ``Khác'' vì nhãn lịch sử có lúc phản ánh nguồn tiền, trong khi parser phân loại theo nội dung chi. Kết quả này cho thấy taxonomy và quy trình gán nhãn cần được khóa trước khi tối ưu mô hình.
+Metric chính ghép loại giao dịch với tên danh mục, nên \code{income/Khác} và \code{expense/Khác} là hai nhãn khác nhau. Phần lớn sai số vẫn liên quan ``Khác'' vì nhãn lịch sử có lúc phản ánh nguồn tiền, trong khi parser phân loại theo nội dung. Chênh lệch so với category-only còn cho thấy dự đoán đúng tên nhưng sai chiều thu/chi không được phép tính là đúng.
 
 \begin{table}[H]
   \centering
   \caption{Ablation parser cục bộ và Gemini trên cùng mẫu 63 câu}
   \label{tab:exp-ablation}
-  \begin{tabularx}{\textwidth}{@{}L{3.0cm}R{2.0cm}R{2.3cm}R{2.2cm}Y@{}}
+  \begin{tabularx}{\textwidth}{@{}L{2.4cm}R{2.0cm}R{2.1cm}R{2.2cm}R{2.4cm}R{1.6cm}@{}}
     \toprule
-    \textbf{Nhánh} & \textbf{Accuracy} & \textbf{Macro-F1} & \textbf{p50} & \textbf{Ghi chú} \\
+    \textbf{Nhánh} & \textbf{Coverage} & \textbf{Accuracy toàn mẫu} & \textbf{Accuracy đã trả lời} & \textbf{Macro-F1 đã trả lời} & \textbf{p50} \\
     \midrule
-    Local parser & 22,2\% & 0,204 & 0 ms & Không gọi API. \\
-    Gemini & 59,5\% & 0,607 & 964 ms & 63/63 call thành công; 21 nhãn rỗng tính là sai. \\
+    Local parser & 63/63 & 22,22\% & 22,22\% & 0,2039 & 0 ms \\
+    Gemini & 42/63 & 39,68\% & 59,52\% & 0,6068 & 964 ms \\
     \bottomrule
   \end{tabularx}
 \end{table}
 
-Trên mẫu nhỏ này, Gemini có macro-F1 cao hơn parser nhưng phát sinh độ trễ và phụ thuộc provider. Kết quả hỗ trợ việc tiếp tục thử nghiệm LLM như lớp trích xuất; chưa đủ để khẳng định một model luôn tốt hơn trên mọi người dùng hoặc taxonomy.
+Runner lịch sử đã loại 21 nhãn \code{null} trước khi tính 59,52\% và macro-F1 0,6068; hai số này vì vậy chỉ mô tả 42 câu có trả lời. Khi abstention được tính sai trên toàn bộ mẫu, Gemini đúng 25/63 câu (39,68\%). Artifact cũ không lưu đủ prediction theo mẫu nên không thể khôi phục macro-F1 toàn mẫu; báo cáo để chỉ số đó là chưa xác định thay vì suy diễn. Cả 63 call đều hoàn tất, không ghi nhận lỗi provider, nhưng 21 output không có category. Mẫu nhỏ và p50 964 ms chỉ hỗ trợ tiếp tục thử nghiệm LLM, không chứng minh ưu thế phổ quát.
 
 \subsubsection{Thí nghiệm correction retrieval}
 
-Sau khi loại lớp ``Khác'', thí nghiệm chọn riêng 3.502 câu mà parser dự đoán sai, rồi chia seed/holdout. Do tiêu chí chọn mẫu đã bảo đảm parser sai ở holdout, accuracy trước correction tất yếu bằng 0\%. Bảng~\ref{tab:exp-feedback} vì vậy đo tỷ lệ lỗi được sửa trong tập đã chọn, không phải mức tăng so với baseline đại diện cho dữ liệu chung.
+Sau khi loại \textit{Khác}, 4.832 mẫu được phân hoạch thành các nhóm nguyên vẹn theo mô tả chuẩn hóa trong từng loại giao dịch. Correction category chỉ được đánh giá khi parser đoán cùng transaction type với gold: 4.756 dòng đủ điều kiện, còn 76 dòng sai type bị loại vì retrieval category không thể sửa type. Khóa mô tả dùng \code{normalizeForMatch}. Phía seed được chọn gồm 1.714 ca parser-sai và 430 thành viên parser-đúng cùng nhóm (2.144 dòng thuộc 636 nhóm); thuật toán tham lam nhắm 1.713 ca parser-sai nhưng không thể tách một nhóm. Tập đánh giá giữ 1.712 ca parser-sai holdout và 900 ca parser-đúng làm control ngoài toàn bộ seed groups; 430 thành viên cùng nhóm seed này bị loại dù không ghi correction. Giao giữa khóa seed và evaluation bằng 0, nên không còn exact-match leakage.
 
 \begin{table}[H]
   \centering
-  \caption{Correction retrieval trên holdout gồm các câu parser-sai}
+  \caption{Correction retrieval trên tập đánh giá group-split 2.612 mẫu}
   \label{tab:exp-feedback}
-  \begin{tabularx}{0.82\textwidth}{@{}L{3.6cm}R{2.2cm}R{2.2cm}Y@{}}
+  \begin{tabularx}{0.9\textwidth}{@{}L{4.1cm}R{2.2cm}R{2.2cm}R{2.2cm}@{}}
     \toprule
-    \textbf{Chỉ số} & \textbf{Trước} & \textbf{Sau} & \textbf{Diễn giải} \\
+    \textbf{Chỉ số} & \textbf{Trước} & \textbf{Sau} & \textbf{Chênh lệch} \\
     \midrule
-    Accuracy & 0,00\% & 68,19\% & 1.194 câu sai được sửa đúng. \\
-    Macro-F1 & 0,000 & 0,544 & Tính trong cùng holdout đã chọn. \\
-    Weighted-F1 & 0,000 & 0,782 & Bị chi phối bởi phân bố lớp của holdout. \\
+    Accuracy & 34,46\% & 61,22\% & $+26,76$ điểm \\
+    Macro-F1 & 0,3080 & 0,5898 & $+0,2818$ \\
+    Weighted-F1 & 0,3990 & 0,7072 & $+0,3082$ \\
+    Correction coverage & 0\% & 34,11\% & 891/2.612 \\
+    Helped/harmed/net & -- & 740/41/699 & net $+26,76$ điểm \\
     \bottomrule
   \end{tabularx}
 \end{table}
 
-Nhóm chứng gồm 1.330 câu parser vốn đúng; 466 câu bị correction đổi sai, trong đó 430 câu có cùng văn bản nhưng nhiều nhãn lịch sử khác nhau. Suy giảm trên câu đơn nghĩa là 36/1.330 (2,7\%). Kết quả cho thấy retrieval có tiềm năng sửa lỗi lặp lại nhưng nhạy với nhiễu nhãn; thí nghiệm tiếp theo cần lấy mẫu ngẫu nhiên từ toàn bộ phân bố và báo cáo khoảng tin cậy.
+Toàn bộ 891 lần áp dụng là fuzzy; exact bằng 0 đúng như thiết kế split. Trong cohort parser-sai holdout, accuracy tăng từ 0\% lên 43,22\% (740 ca được giúp trong 1.712 mẫu; 796 correction được áp dụng). Trong 900 control parser-đúng, 95 correction được áp dụng và 41 ca bị làm sai, nên accuracy còn 95,44\%. Một trong 41 ca liên quan nhãn lịch sử xung đột; 40 ca còn lại là harmful flip thực. Net 699 ca trên 2.612 mẫu đúng bằng $+26,76$ điểm accuracy. Kết quả kiểm soát leakage và đo cả lợi--hại, nhưng vẫn dùng một dataset lịch sử, một seed và chưa có khoảng tin cậy; vì vậy chưa phải ước lượng production.
 
 \subsection{Truy vết yêu cầu và bằng chứng}
 
@@ -514,7 +559,8 @@ Ma trận truy vết ở Bảng~\ref{tab:traceability} liên kết mục tiêu q
   \endhead
   FR-01, FR-03--FR-06 & Typed draft, preview có TTL, service và SQL transaction. & Parser gate; backend unit/service; API--DB smoke. & Đã có bằng chứng cho các fixture chọn trước và invariant rollback; chưa đo thao tác người dùng trên tập nhiệm vụ độc lập. \\
   FR-02 & Media adapter, raw-text review và pipeline FR-01 dùng chung. & Upload/media smoke; kế hoạch CER, WER và field accuracy. & Đã chứng minh luồng mẫu đi qua provider; chưa đủ ground truth để công bố accuracy OCR/STT. \\
-  FR-07--FR-10 & Analytics Engine, facts contract, Budget/Goal service và narrator có căn cứ. & Unit với expected tính tay; benchmark phân loại; numeric checker dự kiến. & Công thức và một số hàm đã có test; grounding toàn bộ response và các ngưỡng cảnh báo chưa được đo đầy đủ. \\
+  FR-04 & Joint classifier, correction theo type, ngưỡng conflict và group split. & Benchmark classification; ablation coverage; correction helped/harmed/net. & Có artifact theo record và overlap bằng 0; nhãn lịch sử, mẫu nhỏ và thiếu khoảng tin cậy vẫn giới hạn kết luận. \\
+  FR-07--FR-10 & Analytics Engine, facts contract, Budget/Goal service và narrator có căn cứ. & Unit với expected tính tay; contract metadata; numeric checker dự kiến. & Công thức, kỳ lịch và metadata có test; grounding toàn bộ response và hiệu chỉnh ngưỡng trên dữ liệu đại diện chưa hoàn tất. \\
   FR-11 & Recurring service, BullMQ, event key và retry. & Unit payment/handler; fault injection và live worker dự kiến. & Logic nghiệp vụ có test nhưng chưa có bằng chứng queue/worker chạy live trong đợt đánh giá. \\
   FR-12 & CSV exporter, export history và TTL cleanup. & Unit escaping; API smoke; kiểm tra file hết hạn dự kiến. & CSV có bằng chứng; nhánh từng gọi là PDF thực chất mới tạo HTML và không được công bố là PDF. \\
   NFR-01--NFR-08 & Constraint, user scope, fallback, idempotency và facts metadata. & Rollback, cross-scope, load, recovery, worker, UAT. & Toàn vẹn trong test đã có bằng chứng; recovery ba giờ, p95, UAT, worker live và numeric faithfulness vẫn là mục tiêu. \\
@@ -525,12 +571,12 @@ Ma trận truy vết ở Bảng~\ref{tab:traceability} liên kết mục tiêu q
 
 \subsubsection{Tính hợp lệ nội tại}
 
-Các benchmark phụ thuộc nhãn lịch sử. Việc cùng một mô tả xuất hiện với nhiều category cho thấy nhiễu nhãn có thể làm giảm cả parser lẫn retrieval dù dự đoán hợp lý theo taxonomy mới. Mẫu 63 câu dùng cho ablation nhỏ, còn holdout correction được chọn có điều kiện từ các câu parser sai; vì vậy không thể xem chênh lệch quan sát được là ước lượng không chệch cho toàn bộ lưu lượng. Provider Gemini cũng là dịch vụ biến đổi theo phiên bản và thời điểm, nên artifact phải lưu model, tham số, timestamp và raw response.
+Các benchmark phụ thuộc nhãn lịch sử; cùng một mô tả có thể mang nhiều category. Correction mới tách nguyên nhóm theo type+mô tả chuẩn hóa và có overlap bằng 0, nhưng seed/evaluation vẫn đến từ cùng một dataset, chỉ dùng một seed và không có khoảng tin cậy. Mẫu ablation 63 câu nhỏ; hơn nữa artifact lịch sử không lưu đủ prediction và đã tính metric có điều kiện sau khi loại 21 abstention, nên macro-F1 toàn mẫu Gemini không thể khôi phục. Provider cũng biến đổi theo phiên bản/thời điểm; runner mới vì vậy lưu model, tham số, timestamp và records có cấu trúc đã loại trường nhạy cảm.
 
 \subsubsection{Tính hợp lệ cấu trúc}
 
-Quality gate 31/31 đo việc vượt qua các câu được thiết kế, không đo xác suất đúng ngoài mẫu. Smoke test đo khả năng hoàn tất kịch bản, không đo accuracy hoặc mức dễ dùng. Accuracy có thể che khuất lớp hiếm, nên báo cáo kèm macro-F1, weighted-F1, confusion theo lớp và số mẫu. Với OCR/STT, chỉ CER/WER cũng chưa đủ: field accuracy của amount, date và merchant mới gắn trực tiếp với rủi ro sổ cái.
+Quality gate 31/31 đo việc vượt qua các câu được thiết kế, không đo xác suất đúng ngoài mẫu. Smoke test đo khả năng hoàn tất kịch bản, không đo accuracy hoặc mức dễ dùng. Accuracy có thể che khuất lớp hiếm; abstention còn có thể làm metric có điều kiện trông cao hơn. Vì vậy báo cáo kèm coverage, macro-F1, weighted-F1, confusion theo lớp, helped/harmed/net và số mẫu. Với OCR/STT, chỉ CER/WER cũng chưa đủ: field accuracy của amount, date và merchant mới gắn trực tiếp với rủi ro sổ cái.
 
 \subsubsection{Tính hợp lệ ngoại suy}
 
-Dữ liệu thuộc một hồ sơ demo, tiền VND và ngôn ngữ chủ yếu là tiếng Việt; kết quả không tự suy rộng sang nhiều người dùng, taxonomy khác, ảnh hóa đơn đa dạng hoặc môi trường tải production. Để giảm rủi ro này, vòng đánh giá kế tiếp cần khóa taxonomy, lấy mẫu ngẫu nhiên theo thời gian, tách train/validation/test theo mô tả chuẩn hóa, chạy lặp với seed cố định và bổ sung ít nhất một tập người dùng mục tiêu cho UAT. Các kết luận hiện tại vì vậy chỉ áp dụng cho phiên bản mã nguồn, dataset và môi trường được ghi trong artifact ngày 24/07/2026.
+Dữ liệu thuộc một hồ sơ demo, tiền VND và ngôn ngữ chủ yếu là tiếng Việt; kết quả không tự suy rộng sang nhiều người dùng, taxonomy khác, ảnh hóa đơn đa dạng hoặc môi trường tải production. Vòng đánh giá kế tiếp cần khóa taxonomy, lấy mẫu ngẫu nhiên theo thời gian, giữ group split hiện có nhưng chạy nhiều seed/khoảng tin cậy, và bổ sung người dùng mục tiêu cho UAT. Kết luận chỉ áp dụng cho mã nguồn, dataset và môi trường ghi trong artifact ablation 24/07 cùng classification/correction 02/08/2026.

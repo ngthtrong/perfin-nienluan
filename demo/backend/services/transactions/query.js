@@ -9,6 +9,7 @@ const SORT_EXPRESSIONS = Object.freeze({
 
 const DEFAULT_PAGE_SIZE = 50;
 const MAX_PAGE_SIZE = 100;
+const SUPPORTED_CURRENCIES = new Set(['VND', 'USD']);
 
 function bad(message) {
   const error = new Error(message);
@@ -67,6 +68,12 @@ function normalizeTransactionQuery(input = {}) {
     if (!search) search = null;
   }
 
+  let currency = null;
+  if (input.currency !== undefined && input.currency !== null && input.currency !== '') {
+    currency = String(scalar(input.currency, 'Đơn vị tiền tệ')).trim().toUpperCase();
+    if (!SUPPORTED_CURRENCIES.has(currency)) throw bad('Đơn vị tiền tệ không hợp lệ');
+  }
+
   const sortBy = input.sort_by === undefined || input.sort_by === ''
     ? 'transaction_date'
     : String(scalar(input.sort_by, 'Trường sắp xếp')).trim();
@@ -85,6 +92,7 @@ function normalizeTransactionQuery(input = {}) {
     category_id: categoryId,
     type,
     search,
+    currency,
     sort_by: sortBy,
     sort_order: sortOrder,
     page: positiveInteger(input.page, 'Trang', 1),

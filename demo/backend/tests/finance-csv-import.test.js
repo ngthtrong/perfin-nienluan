@@ -126,7 +126,7 @@ function validReplacementPlan() {
   };
 }
 
-function replacementClient({ reconciliationMatches = true } = {}) {
+function replacementClient({ reconciliationMatches = true, walletCurrency = 'VND' } = {}) {
   const events = [];
   return {
     events,
@@ -147,8 +147,8 @@ function replacementClient({ reconciliationMatches = true } = {}) {
           rowCount: 2,
         };
       }
-      if (normalized.startsWith('SELECT id, name, balance FROM wallets')) {
-        return { rows: [{ id: 7, name: 'Tiền mặt', balance: '50000' }], rowCount: 1 };
+      if (normalized.startsWith('SELECT id, name, balance, currency FROM wallets')) {
+        return { rows: [{ id: 7, name: 'Tiền mặt', balance: '50000', currency: walletCurrency }], rowCount: 1 };
       }
       if (normalized.startsWith('SELECT wallet_id, COUNT(*)')) {
         return { rows: [{ wallet_id: 7, total_count: 2, active_count: 1, active_net: '30000' }], rowCount: 1 };
@@ -196,4 +196,13 @@ test('replacement rolls back when final reconciliation differs', async () => {
   );
   assert.equal(client.events.at(-1).sql, 'ROLLBACK');
   assert.ok(!client.events.some((event) => event.sql === 'COMMIT'));
+});
+
+test('replacement refuses a foreign-currency target wallet', async () => {
+  const client = replacementClient({ walletCurrency: 'USD' });
+  await assert.rejects(
+    replaceTransactions(client, validReplacementPlan()),
+    (error) => error.code === 'UNSUPPORTED_IMPORT_CURRENCY'
+  );
+  assert.equal(client.events.at(-1).sql, 'ROLLBACK');
 });

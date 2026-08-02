@@ -9,9 +9,9 @@
  *   AI_PROVIDER=gemini node tests/experiments/ablation-parser-vs-llm.js
  *   node tests/experiments/ablation-parser-vs-llm.js --per-class 25 --out ../../resource/report/evidence
  *
- * Suy giảm nhẹ nhàng: nếu không có GEMINI_API_KEY hoặc mọi lần gọi thất bại,
- * nhánh LLM được đánh dấu "design-only" và chỉ báo kết quả nhánh parser cục bộ;
- * báo cáo phải trình bày đúng trạng thái này, không suy diễn accuracy LLM.
+ * Suy giảm nhẹ nhàng: nếu không có GEMINI_API_KEY, nhánh LLM được đánh dấu
+ * "design-only". Nếu đã bắt đầu gọi nhưng không hoàn tất, mọi mẫu vẫn ở trong
+ * mẫu số và trạng thái là "incomplete", không được diễn giải như phép đo đầy đủ.
  */
 process.env.TZ = process.env.TZ || 'Asia/Ho_Chi_Minh';
 // Tắt Redis cache trong thí nghiệm để mỗi câu là một lần gọi provider độc lập.
@@ -21,7 +21,7 @@ require('dotenv').config({ path: require('path').resolve(__dirname, '../../.env'
 
 const { parseLocalTransaction } = require('../../services/parser.service');
 const { loadLabeledSamples, stratifiedSample, DEFAULT_CATEGORIES } = require('./lib/dataset');
-const { classificationReport } = require('./lib/metrics');
+const { predictionCoverageReport } = require('./lib/metrics');
 const { writeArtifact, runMeta, parseOutDir } = require('./lib/report');
 
 function readIntOption(argv, name, fallback) {
@@ -55,22 +55,42 @@ function median(values) {
 }
 
 function summarizeArm(records) {
-  const answered = records.filter((r) => r.pred !== null);
-  const pairs = answered.map((r) => ({ gold: r.gold, pred: r.pred }));
-  const report = pairs.length ? classificationReport(pairs) : null;
+  const evaluation = predictionCoverageReport(records);
   const clarifications = records.filter((r) => r.needsClarification).length;
   const latencies = records.map((r) => r.latencyMs).filter((v) => v != null);
   return {
-    n: records.length,
-    answered: answered.length,
-    accuracy: report ? report.accuracy : 0,
-    macroF1: report ? report.macroF1 : 0,
-    weightedF1: report ? report.weightedF1 : 0,
+    n: evaluation.total,
+    answered: evaluation.answered,
+    abstained: evaluation.abstained,
+    coverage: evaluation.coverage,
+    // Các trường cấp cao là metric trên TOÀN BỘ mẫu. Null/abstention được tính sai.
+    accuracy: evaluation.full.accuracy,
+    macroF1: evaluation.full.macroF1,
+    weightedF1: evaluation.full.weightedF1,
+    conditional_metrics: {
+      n: evaluation.conditional.total,
+      accuracy: evaluation.conditional.accuracy,
+      macroF1: evaluation.conditional.macroF1,
+      weightedF1: evaluation.conditional.weightedF1,
+    },
     clarification_rate: records.length ? Number((clarifications / records.length).toFixed(4)) : 0,
     latency_ms_median: median(latencies),
-    api_calls: records.filter((r) => r.apiCall).length,
+    api_calls: records.reduce((sum, r) => sum + Number(r.apiCalls || (r.apiCall ? 1 : 0)), 0),
     errors: records.filter((r) => r.error).length,
   };
+}
+
+// Chỉ lưu kết quả có cấu trúc mà parser/provider đã trả về; loại các khóa có
+// khả năng chứa prompt, credential hoặc raw provider payload khỏi artifact.
+function sanitizeParsedRecord(value) {
+  if (Array.isArray(value)) return value.map(sanitizeParsedRecord);
+  if (!value || typeof value !== 'object') return value;
+  const safe = {};
+  for (const [key, nested] of Object.entries(value)) {
+    if (/(api.?key|authorization|credential|prompt|raw.?response|access.?token|refresh.?token|password|secret)/i.test(key)) continue;
+    safe[key] = sanitizeParsedRecord(nested);
+  }
+  return safe;
 }
 
 async function run() {
@@ -80,17 +100,24 @@ async function run() {
   const sample = stratifiedSample(dataset.samples, perClass);
 
   // Nhánh parser cục bộ: hoàn toàn xác định, không gọi mạng.
-  const localRecords = sample.map((s) => {
+  const localRecords = sample.map((s, sampleIndex) => {
     const start = Date.now();
     const result = parseLocalTransaction(s.text, DEFAULT_CATEGORIES);
+    const tx = result && result.transaction ? result.transaction : null;
     return {
+      sampleIndex,
+      sourceRow: s.sourceRow,
       text: s.text,
       gold: s.goldCategory,
-      pred: result.transaction.category_name,
-      needsClarification: Boolean(result.needs_clarification),
+      goldType: s.type,
+      pred: tx ? tx.category_name : null,
+      predType: tx ? tx.type : null,
+      needsClarification: Boolean(result && result.needs_clarification),
       latencyMs: Date.now() - start,
       apiCall: false,
+      apiCalls: 0,
       error: false,
+      parsed: sanitizeParsedRecord(result),
     };
   });
 
@@ -107,9 +134,13 @@ async function run() {
     llm_note: llm.note,
     arms: {
       local_parser: summarizeArm(localRecords),
-      llm: llm.status === 'measured' ? summarizeArm(llm.records) : null,
+      llm: llm.status === 'design-only' ? null : summarizeArm(llm.records),
     },
-    disagreements: llm.status === 'measured'
+    records: {
+      local_parser: localRecords,
+      llm: llm.records,
+    },
+    disagreements: llm.status !== 'design-only'
       ? buildDisagreements(localRecords, llm.records).slice(0, 25)
       : [],
   };
@@ -154,6 +185,7 @@ async function runLlmArm(sample) {
     const start = Date.now();
     let parsed = null;
     let lastError = null;
+    let apiCalls = 0;
 
     // Thử lại có tôn trọng retryDelay khi gặp 429 (hết hạn mức tức thời), để một
     // đợt giới hạn tốc độ không biến cả nhánh LLM thành "chưa đo".
@@ -161,6 +193,7 @@ async function runLlmArm(sample) {
       try {
         // Gọi thẳng parseWithGemini để bỏ qua cache và local routing, bảo đảm mỗi
         // câu là một lần đo LLM thực sự.
+        apiCalls += 1;
         parsed = await AIService.parseWithGemini(s.text, DEFAULT_CATEGORIES);
         lastError = null;
         break;
@@ -176,51 +209,96 @@ async function runLlmArm(sample) {
     if (!lastError) {
       const tx = parsed && parsed.transaction ? parsed.transaction : null;
       records.push({
+        sampleIndex: i,
+        sourceRow: s.sourceRow,
         text: s.text,
         gold: s.goldCategory,
+        goldType: s.type,
         pred: tx ? tx.category_name : null,
+        predType: tx ? tx.type : null,
         needsClarification: Boolean(parsed && parsed.needs_clarification) || !tx,
         latencyMs: Date.now() - start,
         apiCall: true,
+        apiCalls,
         error: false,
+        parsed: sanitizeParsedRecord(parsed),
       });
       consecutiveFailures = 0;
     } else {
       records.push({
+        sampleIndex: i,
+        sourceRow: s.sourceRow,
         text: s.text,
         gold: s.goldCategory,
+        goldType: s.type,
         pred: null,
+        predType: null,
         needsClarification: true,
         latencyMs: Date.now() - start,
         apiCall: true,
+        apiCalls,
         error: true,
-        errorMessage: lastError.message,
+        errorName: lastError.name || 'Error',
+        errorMessage: String(lastError.message || 'Provider call failed').slice(0, 500),
+        parsed: null,
       });
       consecutiveFailures += 1;
       // Nếu hỏng liên tiếp (thường do hết hạn mức kéo dài/không mạng), dừng sớm
       // và báo design-only thay vì tiêu tốn thời gian và quota.
       if (consecutiveFailures >= 5) {
+        // Giữ đúng mẫu số của tập đã chọn: các câu chưa gọi vì circuit breaker
+        // cũng là abstention, nhưng được đánh dấu rõ là chưa thử để không nhầm
+        // với một dự đoán mô hình thực sự.
+        for (let j = i + 1; j < sample.length; j += 1) {
+          const pending = sample[j];
+          records.push({
+            sampleIndex: j,
+            sourceRow: pending.sourceRow,
+            text: pending.text,
+            gold: pending.goldCategory,
+            goldType: pending.type,
+            pred: null,
+            predType: null,
+            needsClarification: true,
+            latencyMs: null,
+            apiCall: false,
+            apiCalls: 0,
+            error: true,
+            notAttempted: true,
+            errorName: 'CircuitBreakerOpen',
+            errorMessage: 'Không gọi provider sau 5 lỗi liên tiếp.',
+            parsed: null,
+          });
+        }
         return {
-          status: 'design-only',
-          note: `Dừng sau ${consecutiveFailures} lần gọi Gemini thất bại liên tiếp (${lastError.message}). Nhánh LLM chưa đo được trong lần chạy này.`,
-          records: [],
+          status: 'incomplete',
+          note: `Dừng gọi provider sau ${consecutiveFailures} lỗi liên tiếp; mọi abstention và mẫu chưa thử vẫn nằm trong mẫu số. Không diễn giải nhánh này như một phép đo hoàn chỉnh.`,
+          records,
         };
       }
     }
   }
 
-  const answered = records.filter((r) => !r.error).length;
+  const answered = records.filter((r) => r.pred !== null).length;
   if (answered === 0) {
-    return { status: 'design-only', note: 'Mọi lần gọi Gemini đều thất bại; nhánh LLM chưa đo.', records: [] };
+    return {
+      status: 'incomplete',
+      note: 'Không có dự đoán danh mục nào; toàn bộ mẫu được tính là abstention/sai. Không diễn giải như một phép đo mô hình hoàn chỉnh.',
+      records,
+    };
   }
-  return { status: 'measured', note: `Đo trên ${answered}/${records.length} câu gọi Gemini thành công.`, records };
+  return {
+    status: 'measured',
+    note: `Có dự đoán danh mục cho ${answered}/${records.length} câu; metric chính dùng toàn bộ ${records.length} câu, metric có điều kiện chỉ dùng ${answered} câu đã trả lời.`,
+    records,
+  };
 }
 
 function buildDisagreements(localRecords, llmRecords) {
-  const llmByText = new Map(llmRecords.map((r) => [r.text, r]));
+  const llmBySample = new Map(llmRecords.map((record) => [record.sampleIndex, record]));
   const rows = [];
   for (const local of localRecords) {
-    const llm = llmByText.get(local.text);
+    const llm = llmBySample.get(local.sampleIndex);
     if (!llm || llm.error) continue;
     if (local.pred !== llm.pred) {
       rows.push({ text: local.text, gold: local.gold, local: local.pred, llm: llm.pred });
@@ -238,7 +316,7 @@ function printSummary(result) {
   console.log(`Dataset   : ${result.dataset.file} — mẫu phân tầng ${result.dataset.sampled} câu`);
   console.log(`LLM status: ${result.llm_status} — ${result.llm_note}`);
   console.log('');
-  const header = 'Arm'.padEnd(16) + 'Acc'.padStart(8) + 'MacroF1'.padStart(10) + 'Clarify'.padStart(10) + 'p50 ms'.padStart(9) + 'API'.padStart(7);
+  const header = 'Arm'.padEnd(16) + 'Acc(all)'.padStart(10) + 'Coverage'.padStart(10) + 'Acc(ans)'.padStart(10) + 'MacroF1'.padStart(10) + 'p50 ms'.padStart(9) + 'API'.padStart(7);
   console.log(header);
   console.log('-'.repeat(header.length));
   printArm('local parser', local);
@@ -249,9 +327,10 @@ function printSummary(result) {
 function printArm(name, arm) {
   console.log(
     name.padEnd(16) +
-    `${(arm.accuracy * 100).toFixed(1)}%`.padStart(8) +
+    `${(arm.accuracy * 100).toFixed(1)}%`.padStart(10) +
+    `${(arm.coverage * 100).toFixed(1)}%`.padStart(10) +
+    `${(arm.conditional_metrics.accuracy * 100).toFixed(1)}%`.padStart(10) +
     arm.macroF1.toFixed(3).padStart(10) +
-    `${(arm.clarification_rate * 100).toFixed(1)}%`.padStart(10) +
     String(arm.latency_ms_median ?? '-').padStart(9) +
     String(arm.api_calls).padStart(7)
   );
@@ -264,17 +343,19 @@ function buildMarkdown(result) {
   lines.push('# Thí nghiệm: Ablation local parser vs LLM');
   lines.push('');
   lines.push(`- Ngày chạy: ${result.meta.timestamp}`);
-  lines.push(`- Commit: \`${result.meta.commit}\` · Node ${result.meta.node} · provider \`${result.meta.ai_provider}\` · model \`${result.meta.gemini_model || '-'}\``);
+  lines.push(`- Commit: \`${result.meta.commit}\` · working tree dirty: ${result.meta.working_tree_dirty ? 'yes' : 'no'} · Node ${result.meta.node} · provider \`${result.meta.ai_provider}\` · model \`${result.meta.gemini_model || '-'}\``);
   lines.push(`- Dataset: \`${result.dataset.file}\` — mẫu phân tầng ${result.dataset.sampled} câu (${result.dataset.per_class}/lớp, seed ${result.dataset.seed})`);
   lines.push(`- Trạng thái nhánh LLM: **${result.llm_status}** — ${result.llm_note}`);
   lines.push('');
   lines.push('## So sánh hai nhánh');
   lines.push('');
-  lines.push('| Nhánh | Accuracy | Macro-F1 | Weighted-F1 | Clarification rate | p50 latency (ms) | Số gọi API |');
-  lines.push('|---|---|---|---|---|---|---|');
+  lines.push('Accuracy/Macro-F1 chính dùng toàn bộ mẫu; mọi null/abstention được tính sai. Các chỉ số "đã trả lời" chỉ là metric có điều kiện và luôn đi kèm coverage.');
+  lines.push('');
+  lines.push('| Nhánh | N | Coverage | Accuracy (toàn mẫu) | Macro-F1 (toàn mẫu) | Accuracy (đã trả lời) | Macro-F1 (đã trả lời) | Clarification rate | p50 latency (ms) | Số gọi API |');
+  lines.push('|---|---|---|---|---|---|---|---|---|---|');
   lines.push(armRow('Local parser', local));
   if (llm) lines.push(armRow('LLM (Gemini)', llm));
-  else lines.push('| LLM (Gemini) | — | — | — | — | — | — (design-only) |');
+  else lines.push('| LLM (Gemini) | — | — | — | — | — | — | — | — | — (design-only) |');
   lines.push('');
   if (result.disagreements.length) {
     lines.push('## Ca hai nhánh bất đồng (tối đa 25)');
@@ -293,14 +374,25 @@ function buildMarkdown(result) {
 }
 
 function armRow(name, arm) {
-  return `| ${name} | ${(arm.accuracy * 100).toFixed(1)}% | ${arm.macroF1.toFixed(3)} | ${arm.weightedF1.toFixed(3)} | ${(arm.clarification_rate * 100).toFixed(1)}% | ${arm.latency_ms_median ?? '-'} | ${arm.api_calls} |`;
+  return `| ${name} | ${arm.n} | ${(arm.coverage * 100).toFixed(1)}% (${arm.answered}/${arm.n}) | ${(arm.accuracy * 100).toFixed(1)}% | ${arm.macroF1.toFixed(3)} | ${(arm.conditional_metrics.accuracy * 100).toFixed(1)}% | ${arm.conditional_metrics.macroF1.toFixed(3)} | ${(arm.clarification_rate * 100).toFixed(1)}% | ${arm.latency_ms_median ?? '-'} | ${arm.api_calls} |`;
 }
 
 function escapePipe(text) {
   return String(text).replace(/\|/g, '\\|');
 }
 
-run().catch((error) => {
-  console.error('Ablation runner error:', error);
-  process.exitCode = 1;
-});
+if (require.main === module) {
+  run().catch((error) => {
+    console.error('Ablation runner error:', error);
+    process.exitCode = 1;
+  });
+}
+
+module.exports = {
+  buildDisagreements,
+  median,
+  retryDelayMs,
+  run,
+  sanitizeParsedRecord,
+  summarizeArm,
+};

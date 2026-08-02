@@ -169,6 +169,9 @@ async function exportCSV(userId = DEFAULT_USER, filters = {}) {
   if (filters.category_id) add('t.category_id = ?', filters.category_id);
   if (filters.wallet_id) add('t.wallet_id = ?', filters.wallet_id);
   if (filters.type) add('t.type = ?', filters.type);
+  // The current ledger/reporting contract is VND-only. Foreign-currency wallets
+  // remain visible in account management but must not enter VND exports.
+  where.push("w.currency = 'VND'");
 
   const result = await query(
     `SELECT t.transaction_date, t.description, t.amount, t.type,
@@ -226,15 +229,19 @@ const EXPENSE_BREAKDOWN_SQL = `SELECT c.name AS category_name, c.icon, SUM(t.amo
        ROUND(100.0 * SUM(t.amount) / NULLIF((
          SELECT SUM(total_tx.amount)
          FROM transactions total_tx
+         JOIN wallets total_w ON total_w.id = total_tx.wallet_id
          WHERE total_tx.deleted_at IS NULL
            AND total_tx.user_id = $1
            AND total_tx.type = 'expense'
+           AND total_w.currency = 'VND'
            AND ($2::date IS NULL OR total_tx.transaction_date >= $2::date)
            AND ($3::date IS NULL OR total_tx.transaction_date <= $3::date)
        ), 0), 1) AS percentage
 FROM transactions t
 JOIN categories c ON c.id = t.category_id
+JOIN wallets w ON w.id = t.wallet_id
 WHERE t.deleted_at IS NULL AND t.user_id = $1 AND t.type = 'expense'
+  AND w.currency = 'VND'
   AND ($2::date IS NULL OR t.transaction_date >= $2::date)
   AND ($3::date IS NULL OR t.transaction_date <= $3::date)
 GROUP BY c.id, c.name, c.icon
@@ -250,10 +257,11 @@ async function exportPDF(userId = DEFAULT_USER, filters = {}) {
        COALESCE(SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END), 0) AS total_income,
        COALESCE(SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END), 0) AS total_expense,
        COUNT(*) AS transaction_count
-     FROM transactions
-     WHERE deleted_at IS NULL AND user_id = $1
-       AND ($2::date IS NULL OR transaction_date >= $2::date)
-       AND ($3::date IS NULL OR transaction_date <= $3::date)`,
+     FROM transactions t
+     JOIN wallets w ON w.id = t.wallet_id AND w.user_id = t.user_id
+     WHERE t.deleted_at IS NULL AND t.user_id = $1 AND w.currency = 'VND'
+       AND ($2::date IS NULL OR t.transaction_date >= $2::date)
+       AND ($3::date IS NULL OR t.transaction_date <= $3::date)`,
     [userId, from || null, to || null]
   );
 
@@ -264,7 +272,7 @@ async function exportPDF(userId = DEFAULT_USER, filters = {}) {
      FROM transactions t
      JOIN categories c ON c.id = t.category_id
      JOIN wallets w ON w.id = t.wallet_id
-     WHERE t.deleted_at IS NULL AND t.user_id = $1
+     WHERE t.deleted_at IS NULL AND t.user_id = $1 AND w.currency = 'VND'
        AND ($2::date IS NULL OR t.transaction_date >= $2::date)
        AND ($3::date IS NULL OR t.transaction_date <= $3::date)
      ORDER BY t.transaction_date DESC, t.created_at DESC
@@ -541,6 +549,28 @@ async function restoreBackup(userId = DEFAULT_USER, filePath) {
 
     // Restore transactions (simplified: re-insert with new IDs)
     const data = backupData.data;
+    const referencedWalletIds = [...new Set([
+      ...(data.transactions || []).filter((tx) => !tx.deleted_at).map((tx) => tx.wallet_id),
+      ...(data.wallet_transfers || []).flatMap((transfer) => [transfer.from_wallet_id, transfer.to_wallet_id]),
+      ...(data.investment_pnl || []).map((entry) => entry.wallet_id),
+    ])]
+      .map((id) => Number(id))
+      .filter((id) => Number.isInteger(id) && id > 0);
+    if (referencedWalletIds.length) {
+      const walletRows = await client.query(
+        `SELECT id, currency
+         FROM wallets
+         WHERE user_id = $1 AND id = ANY($2::int[])
+         FOR SHARE`,
+        [userId, referencedWalletIds]
+      );
+      const invalid = walletRows.rows.filter((wallet) => String(wallet.currency || '').toUpperCase() !== 'VND');
+      if (walletRows.rowCount !== referencedWalletIds.length || invalid.length) {
+        const error = new Error('Backup chứa giao dịch/luồng tham chiếu ví không tồn tại hoặc không dùng VND');
+        error.code = 'UNSUPPORTED_BACKUP_CURRENCY';
+        throw error;
+      }
+    }
     for (const tx of (data.transactions || [])) {
       if (tx.deleted_at) continue;
       await client.query(

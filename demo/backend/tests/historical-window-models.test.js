@@ -46,6 +46,48 @@ test('goal cashflow history uses completed months and preserves zero months', as
   ]);
 });
 
+test('category trend history excludes the current partial month and fills missing completed months', async () => {
+  let captured;
+  queryImpl = async (sql, params) => {
+    captured = { sql: String(sql), params };
+    return {
+      rows: [
+        { category_name: 'Ăn uống', icon: '🍜', ym: '2026-04', total: 400_000 },
+        { category_name: 'Ăn uống', icon: '🍜', ym: '2026-06', total: 600_000 },
+      ],
+      rowCount: 2,
+    };
+  };
+
+  const result = await AnalyticsModel.monthlyByCategory('u1', 3, { asOf: '2026-07-17' });
+
+  assert.deepEqual(captured.params, ['u1', '2026-07-17', 3]);
+  assert.match(captured.sql, /transaction_date < date_trunc\('month', \$2::date\)/);
+  assert.deepEqual(result['Ăn uống'].series, [
+    { ym: '2026-04', total: 400_000 },
+    { ym: '2026-05', total: 0 },
+    { ym: '2026-06', total: 600_000 },
+  ]);
+});
+
+test('category correlation query reads exactly the requested completed ISO weeks', async () => {
+  let captured;
+  queryImpl = async (sql, params) => {
+    captured = { sql: String(sql), params };
+    return {
+      rows: [{ category_name: 'Ăn uống', yw: '2026-27', total: 125_000 }],
+      rowCount: 1,
+    };
+  };
+
+  const rows = await AnalyticsModel.weeklyByCategory('u1', 12, { asOf: '2026-07-17' });
+
+  assert.deepEqual(captured.params, ['u1', '2026-07-17', 12]);
+  assert.match(captured.sql, /transaction_date >= date_trunc\('week', \$2::date\) - \(\$3::int \* INTERVAL '1 week'\)/);
+  assert.match(captured.sql, /transaction_date < date_trunc\('week', \$2::date\)/);
+  assert.deepEqual(rows, [{ category: 'Ăn uống', yw: '2026-27', total: 125_000 }]);
+});
+
 test('budget recommendation history excludes the current partial month', async () => {
   let captured;
   queryImpl = async (sql, params) => {

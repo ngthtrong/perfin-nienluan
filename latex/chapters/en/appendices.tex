@@ -67,13 +67,16 @@ cd demo/backend
 npm test
 npm run test:ai
 npm run smoke:full
+node --test tests/experiment-metrics.test.js
+node tests/experiments/classification-benchmark.js --out ../../log
+node tests/experiments/feedback-before-after.js --out ../../log
 
 cd ../frontend
 npm run ui:smoke
 npx expo export --platform web --output-dir /tmp/perfin-web
 \end{verbatim}
 
-Media smoke tests require a real provider and fixtures. Without ground truth, report availability pass/fail only. Integration tests need a separate test database and cleanup after each group.
+In the Node 24 artifact environment, \code{npm test} aggregates results by test file; 44/44 does not mean 44 or 182 individual test cases. The final test summary is stored at \path{log/backend-test-run_2026-08-02.json}. The final two runners are offline. Do not rerun the Gemini ablation without deliberately supplying provider access/quota; its historical measurement and reanalysis are under \code{log/}. Media smoke tests require a real provider and fixtures. Without ground truth, report availability pass/fail only. Integration tests need a separate test database and cleanup after each group.
 
 \chapter{Diagram Sources}
 

@@ -10,7 +10,7 @@
         <mxCell id="t" value="&lt;b&gt;Physical Entity–Relationship Diagram&lt;/b&gt;" style="text;html=1;align=left;verticalAlign=middle;fontSize=18;fontColor=#22303F;" vertex="1" parent="1">
           <mxGeometry x="40" y="16" width="1180" height="28" as="geometry" />
         </mxCell>
-        <mxCell id="st" value="Columns are grouped for readability; migrations 001–008 define complete types and constraints. The free-form layout assigns a separate corridor to each principal business FK. Repeated user_id/user_key ownership FKs remain declared inside table boxes instead of becoming long crossing edges." style="text;html=1;align=left;verticalAlign=middle;fontSize=12;fontColor=#5A6A78;whiteSpace=wrap;" vertex="1" parent="1">
+        <mxCell id="st" value="Columns are grouped for readability; migrations 001–009 define complete types and constraints. The free-form layout assigns a separate corridor to each principal business FK. Repeated user_id/user_key ownership FKs remain declared inside table boxes instead of becoming long crossing edges." style="text;html=1;align=left;verticalAlign=middle;fontSize=12;fontColor=#5A6A78;whiteSpace=wrap;" vertex="1" parent="1">
           <mxGeometry x="40" y="46" width="1800" height="36" as="geometry" />
         </mxCell>
         <mxCell id="users" value="&lt;b&gt;USERS&lt;/b&gt;&#xa;PK id · UK user_key&#xa;username · payday&#xa;FK active_personality_id&#xa;personalization_consent" style="rounded=1;arcSize=6;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingTop=7;spacingLeft=9;spacingRight=6;fillColor=#EEF2F7;strokeColor=#5B7290;fontColor=#22303F;fontSize=14;strokeWidth=1.1;" vertex="1" parent="1">

@@ -52,7 +52,7 @@ function ownedReferenceResult(sql, params, { categoryType = 'expense', walletBal
   }
   if (/FROM wallets/.test(sql)) {
     return {
-      rows: (params[0] || []).map((id) => ({ id, balance: walletBalance })),
+      rows: (params[0] || []).map((id) => ({ id, balance: walletBalance, currency: 'VND' })),
       rowCount: (params[0] || []).length,
     };
   }
@@ -201,6 +201,33 @@ test('expense creation may take a wallet balance below zero', async () => {
   assert.equal(events.includes('ROLLBACK'), false);
 });
 
+test('transaction ledger rejects a non-VND wallet before writing a 1:1 amount', async () => {
+  const events = mockClient(async (sql, params) => {
+    if (/FROM categories/.test(sql)) {
+      return { rows: [{ id: 4, type: 'expense', name: 'Ăn uống' }], rowCount: 1 };
+    }
+    if (/FROM wallets/.test(sql)) {
+      return { rows: [{ id: 8, balance: '100', currency: 'USD' }], rowCount: 1 };
+    }
+    return { rows: [], rowCount: 0 };
+  });
+
+  await assert.rejects(
+    TransactionModel.create({
+      userId: 'u1',
+      description: 'Coffee',
+      amount: 5,
+      type: 'expense',
+      category_id: 4,
+      wallet_id: 8,
+      transaction_date: '2026-07-16',
+    }),
+    (error) => error.code === 'UNSUPPORTED_TRANSACTION_CURRENCY'
+  );
+  assert.ok(events.includes('ROLLBACK'));
+  assert.equal(events.some((event) => event.startsWith('INSERT INTO transactions')), false);
+});
+
 test('update atomically moves the financial effect when wallet, type, and amount change', async () => {
   const oldTransaction = {
     id: 21,
@@ -227,7 +254,7 @@ test('update atomically moves the financial effect when wallet, type, and amount
     }
     if (/FROM wallets/.test(sql)) {
       assert.deepEqual(params, [[1, 2], 'u1']);
-      return { rows: [{ id: 1, balance: '900000' }, { id: 2, balance: '500000' }], rowCount: 2 };
+      return { rows: [{ id: 1, balance: '900000', currency: 'VND' }, { id: 2, balance: '500000', currency: 'VND' }], rowCount: 2 };
     }
     if (/UPDATE transactions\s+SET/.test(sql)) {
       assert.equal(params[1], 'u1');
@@ -278,7 +305,7 @@ test('wallet failure during update rolls back transaction row and both balance e
     if (/SELECT \* FROM transactions/.test(sql)) return { rows: [oldTransaction], rowCount: 1 };
     if (/FROM categories/.test(sql)) return { rows: [{ id: 10, type: 'expense' }], rowCount: 1 };
     if (/FROM wallets/.test(sql)) {
-      return { rows: [{ id: 1, balance: '900000' }, { id: 2, balance: '500000' }], rowCount: 2 };
+      return { rows: [{ id: 1, balance: '900000', currency: 'VND' }, { id: 2, balance: '500000', currency: 'VND' }], rowCount: 2 };
     }
     if (/UPDATE transactions\s+SET/.test(sql)) {
       return { rows: [{ ...oldTransaction, wallet_id: 2 }], rowCount: 1 };

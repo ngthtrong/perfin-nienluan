@@ -5,6 +5,7 @@
  */
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
 const { execFileSync } = require('child_process');
 
 function gitCommit() {
@@ -16,15 +17,47 @@ function gitCommit() {
   }
 }
 
-function runMeta() {
-  return {
+function gitWorkingTreeDirty() {
+  try {
+    return execFileSync('git', ['status', '--porcelain'], { stdio: ['ignore', 'pipe', 'ignore'] })
+      .toString().trim().length > 0;
+  } catch {
+    return null;
+  }
+}
+
+function codeFingerprint(files = []) {
+  const normalized = [...new Set(files.map((file) => path.resolve(file)))].sort();
+  if (!normalized.length) return null;
+  const digest = crypto.createHash('sha256');
+  for (const file of normalized) {
+    digest.update(path.basename(file));
+    digest.update('\0');
+    digest.update(fs.readFileSync(file));
+    digest.update('\0');
+  }
+  return digest.digest('hex');
+}
+
+function runMeta(options = {}) {
+  const has = (key) => Object.prototype.hasOwnProperty.call(options, key);
+  const codeFiles = Array.isArray(options.codeFiles) ? options.codeFiles : [];
+  const meta = {
     timestamp: new Date().toISOString(),
     commit: gitCommit(),
+    working_tree_dirty: gitWorkingTreeDirty(),
     node: process.version,
-    ai_provider: process.env.AI_PROVIDER || 'gemini',
-    gemini_model: process.env.GEMINI_MODEL || null,
+    ai_provider: has('aiProvider') ? options.aiProvider : (process.env.AI_PROVIDER || 'gemini'),
+    gemini_model: has('geminiModel') ? options.geminiModel : (process.env.GEMINI_MODEL || null),
     tz: process.env.TZ || null,
   };
+  if (options.executionMode) meta.execution_mode = options.executionMode;
+  if (Number.isInteger(options.providerCalls)) meta.provider_calls = options.providerCalls;
+  if (codeFiles.length) {
+    meta.code_sha256 = codeFingerprint(codeFiles);
+    meta.code_files = codeFiles.map((file) => path.relative(process.cwd(), path.resolve(file)) || path.basename(file));
+  }
+  return meta;
 }
 
 // Đọc --out DIR từ argv; trả null nếu không có (chỉ in ra màn hình).
@@ -47,4 +80,4 @@ function writeArtifact(outDir, slug, jsonResult, markdown) {
   return { json: jsonPath, md: mdPath };
 }
 
-module.exports = { gitCommit, runMeta, parseOutDir, writeArtifact };
+module.exports = { codeFingerprint, gitCommit, gitWorkingTreeDirty, runMeta, parseOutDir, writeArtifact };

@@ -3,7 +3,7 @@
 
 \section{Objective Completion}
 
-PERFIN now forms a prototype with a clear separation between data, algorithms and the LLM layer. It contains 18 physical tables, transaction, analytics, feedback, budget, goal and state modules, and an automated test suite. Its central contribution is not replacing business logic with an LLM, but using the model as a language-conversion layer while the backend retains validation, computation and data-write authority.
+PERFIN now forms a prototype with a clear separation between data, algorithms and the LLM layer. It contains 18 business tables plus the technical \code{_migrations} table, transaction, analytics, feedback, budget, goal and state modules, and an automated test suite. Its central contribution is not replacing business logic with an LLM, but using the model as a language-conversion layer while the backend retains validation, computation and data-write authority.
 
 \begin{table}[H]
   \centering
@@ -17,18 +17,18 @@ PERFIN now forms a prototype with a clear separation between data, algorithms an
     O2 & Text/media adapters, typed draft, clarification, preview and confirmation. & Flow executes; OCR/STT accuracy is unmeasured. \\
     O3 & Trend, anomaly, runway, recurring, correlation, budget and goal planner. & Implemented with unit tests; thresholds need representative calibration. \\
     O4 & Tool schema, service validation, facts--narrator flow and fallback. & Boundary implemented; complete numeric faithfulness is unmeasured. \\
-    O5 & 182/182 backend tests, 23/23 full smoke and three classification experiments. & Evidence supports the demo core, not live worker, p95, UAT or production. \\
+    O5 & 44/44 backend test files, 23/23 full smoke and experiments with coverage/group splitting. & Evidence supports the demo core, not live worker, p95, UAT or production. \\
     \bottomrule
   \end{tabularx}
 \end{table}
 
-On 5,265 transactions, the local parser obtains macro-F1 0.177. In the same-sample 63-sentence ablation, parser and Gemini obtain 0.204 and 0.607. Correction retrieval repairs 68.19\% of a holdout selected from sentences the parser had already misclassified. Its 0\% baseline follows from selection, so the result demonstrates partial repair of repeated errors, not representative improvement over the whole distribution.
+On 5,265 transactions, the parser obtains 26.12\% accuracy and macro-F1 0.1559 under joint type/category labels; category-only 29.36\%/0.177 is auxiliary. In the 63-sentence ablation, full-set accuracy is 22.22\% for the parser and 39.68\% for Gemini, but Gemini returns a category for only 42/63 sentences; macro-F1 0.6068 is conditional on those 42. Conditional on a correct parser transaction type and excluding \textit{Other}, correction group splitting has zero overlap and raises accuracy from 34.46\% to 61.22\% on 2,612 evaluation rows (4,756 eligible; 76 wrong-type rows excluded), with 740 helped, 41 harmed, net $+26.76$ points and 891/2,612 coverage. This is evidence for the disclosed dataset/seed, not a production estimate.
 
 \section{Deliverables}
 
 Deliverables include mobile/backend source, PostgreSQL migrations, Redis/BullMQ configuration, LLM/OCR/STT adapters, tests, a reconciled demo dataset, experiment artifacts and this LaTeX report. The prototype supports text/media entry with review, ledger management, analytics, budgets and goals, and returns facts with controlled narration.
 
-The LLM handles free-form language better than the parser on the ablation sample, at the cost of latency and provider dependence. This value exists only behind four controls: schema, validation, preview/confirmation and fact grounding. PERFIN is therefore a financial-data system with an LLM interaction layer, not a chatbot that calculates or decides on the user's behalf.
+On the small ablation sample, Gemini has higher full-set accuracy than the parser but abstains on one third of inputs and adds latency/provider dependence; full-sample macro-F1 cannot be recovered from the old artifact. This potential value is safe only behind four controls: schema, validation, preview/confirmation and fact grounding. PERFIN is therefore a financial-data system with an LLM interaction layer, not a chatbot that calculates or decides on the user's behalf.
 
 \section{Limitations}
 
@@ -37,13 +37,13 @@ The LLM handles free-form language better than the parser on the ablation sample
   \item Smoke tests on two images and one audio file cannot establish CER, WER or transaction-field accuracy.
   \item Live Redis worker behaviour, retry/idempotency, p95 and UAT were not confirmed in a version-locked environment.
   \item Fuzzy, anomaly, recurring and correlation thresholds and time windows are initial configurations rather than universal optima.
-  \item Historical taxonomy is inconsistent; similar text sometimes has different labels.
+  \item Historical taxonomy is inconsistent; the ablation lacks full prediction records, while correction has only one seed and no confidence interval.
   \item The numeric-grounding checker remains target design, and persona effects have not been evaluated.
   \item Remaining gaps include true PDF export, full backup/restore, push notification and complete fresh-install wallet creation.
 \end{enumerate}
 
 \section{Future Work}
 
-Next priorities are to lock taxonomy and create an independent random evaluation set; build image/audio ground truth for CER/WER and field accuracy; run the Redis worker with fault injection and duplicate-effect checks; implement numeric grounding and measure p50/p95 over at least 30 runs per flow; conduct UAT comparing chat and forms; and add authentication, authorization, audit and secret management before real deployment.
+Next priorities are to lock taxonomy, create an independent evaluation set and run group splits over multiple seeds/confidence intervals; build image/audio ground truth for CER/WER and field accuracy; run the Redis worker with fault injection and duplicate-effect checks; implement numeric grounding and measure p50/p95 over at least 30 runs per flow; conduct UAT comparing chat and forms; and add authentication, authorization, audit and secret management before real deployment.
 
 Bank synchronization, shared wallets and high availability should follow only after data correctness and empirical evidence stabilize. This ordering preserves the basic-topic project's intended focus: data and algorithms are the core, while the LLM is a replaceable, measurable supporting component.

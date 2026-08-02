@@ -10,6 +10,7 @@ test('transaction query normalizes every supported filter and pagination field',
     category_id: '9',
     type: 'expense',
     search: '  bida  ',
+    currency: 'vnd',
     sort_by: 'amount',
     sort_order: 'ASC',
     page: '3',
@@ -22,6 +23,7 @@ test('transaction query normalizes every supported filter and pagination field',
     category_id: 9,
     type: 'expense',
     search: 'bida',
+    currency: 'VND',
     sort_by: 'amount',
     sort_order: 'asc',
     page: 3,
@@ -37,6 +39,7 @@ test('transaction query rejects malformed dates, ranges, filters and unsafe sort
   );
   assert.throws(() => normalizeTransactionQuery({ type: 'transfer' }), /Loại giao dịch/);
   assert.throws(() => normalizeTransactionQuery({ category_id: '-2' }), /Danh mục/);
+  assert.throws(() => normalizeTransactionQuery({ currency: 'EUR' }), /tiền tệ/);
   assert.throws(() => normalizeTransactionQuery({ sort_by: 'amount; DROP TABLE transactions' }), /sắp xếp/);
   assert.throws(() => normalizeTransactionQuery({ limit: '101' }), /Số dòng/);
   assert.throws(() => normalizeTransactionQuery({ page: ['1', '2'] }), /Trang/);

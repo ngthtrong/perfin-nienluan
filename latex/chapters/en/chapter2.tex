@@ -10,7 +10,7 @@ This chapter summarizes the concepts, models and technologies used by the projec
 
 A financial transaction minimally contains an amount, type, date, description, category and wallet. Income increases a balance, expense decreases it, and a wallet transfer creates two opposite changes that must not be counted as income or expense. Multi-record changes belong in one database transaction so they either complete or roll back together.
 
-A relational database provides foreign keys, decimal types, domain constraints and aggregate queries. Durable business data must remain separate from short-lived clarification, preview, cache and queue state. Daily, weekly and monthly series must preserve the calendar axis and zero-fill inactive periods; dropping zero periods distorts slopes, burn rate and correlation.
+A relational database provides foreign keys, decimal types, domain constraints and aggregate queries. Durable business data must remain separate from short-lived clarification, preview, cache and queue state. Analyses defined on a fixed calendar axis zero-fill inactive periods: trends use completed months, correlations use completed ISO weeks, and runway/anomaly preserve every calendar day. Partial current months/weeks are excluded from comparisons; dropping zero periods distorts slopes, burn rate and correlation.
 
 \subsection{Normalization and Text Similarity}
 \label{subsec:text-similarity}
@@ -51,10 +51,13 @@ Pearson's coefficient \cite{pearson1895} measures linear co-movement:
 \end{equation}
 
 Correlation is interpreted only within the observed window and does not imply causation.
+The coefficient is undefined with fewer than three paired observations or when either
+series has zero variance; that case must be represented as a null value rather than
+being reported as $r=0$.
 
 \subsection{Runway, Recurring Items, Budgets and Goals}
 
-Runway extrapolates how long the current balance can support the recent spending rate. Recurring-item discovery groups transactions by description, amount and date interval. Budget forecasting uses spending pace over elapsed days, while goal planning uses the remaining amount, deadline, contribution and debt simulation. These techniques prioritize transparent assumptions and boundary handling. PERFIN's formulas and windows appear in Section~\ref{subsec:analytics-design}.
+Runway extrapolates how long liquid balance in the reporting currency can support the recent spending rate; it is not total wealth. Recurring-item discovery groups transactions by description, amount and date interval. Budget forecasting uses spending pace over elapsed days, while goal planning uses the remaining amount, deadline, contribution and debt simulation. These techniques prioritize transparent assumptions and boundary handling. PERFIN's formulas and windows appear in Section~\ref{subsec:analytics-design}.
 
 \begin{table}[H]
   \centering

@@ -3,7 +3,7 @@
 
 \section{Mức độ hoàn thành mục tiêu}
 
-PERFIN đã hình thành một nguyên mẫu tách rõ dữ liệu, giải thuật và lớp LLM. Hệ thống có 18 bảng vật lý, các module transaction, analytics, feedback, budget, goal và state, cùng bộ kiểm thử tự động. Đóng góp chính không phải là để LLM thay thế nghiệp vụ, mà là dùng mô hình như lớp chuyển đổi ngôn ngữ trong khi backend vẫn giữ toàn bộ quyền validation, tính toán và ghi dữ liệu.
+PERFIN đã hình thành một nguyên mẫu tách rõ dữ liệu, giải thuật và lớp LLM. Hệ thống có 18 bảng nghiệp vụ cùng bảng kỹ thuật \code{_migrations}, các module transaction, analytics, feedback, budget, goal và state, cùng bộ kiểm thử tự động. Đóng góp chính không phải là để LLM thay thế nghiệp vụ, mà là dùng mô hình như lớp chuyển đổi ngôn ngữ trong khi backend vẫn giữ toàn bộ quyền validation, tính toán và ghi dữ liệu.
 
 \begin{table}[H]
   \centering
@@ -17,18 +17,18 @@ PERFIN đã hình thành một nguyên mẫu tách rõ dữ liệu, giải thu�
     O2 & Text/media adapter, typed draft, clarification, preview và confirm. & Luồng đã chạy; accuracy OCR/STT chưa được đo. \\
     O3 & Trend, anomaly, runway, recurring, correlation, budget và goal planner. & Đã hiện thực và có unit test; ngưỡng cần hiệu chỉnh trên dữ liệu đại diện. \\
     O4 & Tool schema, service validation, facts--narrator flow và fallback. & Ranh giới đã hiện thực; numeric faithfulness toàn diện chưa được đo. \\
-    O5 & 182/182 backend test, 23/23 full smoke và ba thí nghiệm phân loại. & Có bằng chứng cho lõi demo; chưa đủ cho worker live, p95, UAT hoặc production. \\
+    O5 & 44/44 tệp backend test, 23/23 full smoke và thí nghiệm có coverage/group split. & Có bằng chứng cho lõi demo; chưa đủ cho worker live, p95, UAT hoặc production. \\
     \bottomrule
   \end{tabularx}
 \end{table}
 
-Trên 5.265 giao dịch, parser cục bộ đạt macro-F1 0,177. Trong ablation dùng cùng mẫu 63 câu, parser và Gemini lần lượt đạt 0,204 và 0,607. Correction retrieval sửa đúng 68,19\% holdout được lấy riêng từ các câu parser ban đầu dự đoán sai. Baseline 0\% của thí nghiệm này là hệ quả của tiêu chí chọn mẫu, nên kết quả chỉ chứng minh khả năng sửa một phần lỗi lặp lại, không phải mức cải thiện đại diện cho toàn bộ dữ liệu.
+Trên 5.265 giao dịch, parser cục bộ đạt accuracy 26,12\% và macro-F1 0,1559 theo nhãn joint type/category; 29,36\%/0,177 category-only chỉ là đối chiếu phụ. Trong ablation 63 câu, accuracy toàn mẫu là 22,22\% cho parser và 39,68\% cho Gemini, nhưng Gemini chỉ có category ở 42/63 câu; macro-F1 0,6068 chỉ áp dụng có điều kiện cho 42 câu đó. Với điều kiện parser đoán đúng type và loại \textit{Khác}, correction group-split có overlap bằng 0 và tăng accuracy từ 34,46\% lên 61,22\% trên 2.612 mẫu đánh giá (4.756 mẫu đủ điều kiện; loại 76 dòng sai type), với 740 ca được giúp, 41 ca bị hại, net $+26,76$ điểm và coverage 891/2.612. Đây là bằng chứng trong dataset/seed đã công bố, không phải ước lượng production.
 
 \section{Kết quả và sản phẩm bàn giao}
 
 Sản phẩm gồm mã nguồn mobile/backend, migration PostgreSQL, cấu hình Redis/BullMQ, adapter LLM/OCR/STT, bộ test, tập dữ liệu demo đã đối soát, artifact thí nghiệm và báo cáo LaTeX. Hệ thống hỗ trợ nhập text/media, xem trước và xác nhận; quản lý sổ cái; phân tích, ngân sách và mục tiêu; đồng thời trả facts cùng lời diễn giải có kiểm soát.
 
-LLM đem lại khả năng hiểu câu tự do tốt hơn parser trên mẫu ablation, nhưng đổi lại có độ trễ và phụ thuộc provider. Giá trị này chỉ tồn tại khi giữ bốn hàng rào: schema, validation, preview/confirm và facts grounding. Do đó PERFIN được kết luận là hệ thống xử lý dữ liệu tài chính có lớp giao tiếp LLM, không phải chatbot tự tính toán hay tự quyết định thay người dùng.
+Trên mẫu ablation nhỏ, Gemini có accuracy toàn mẫu cao hơn parser nhưng abstain một phần ba câu, đồng thời phát sinh độ trễ và phụ thuộc provider; full-sample macro-F1 chưa thể khôi phục từ artifact cũ. Giá trị tiềm năng này chỉ an toàn khi giữ bốn hàng rào: schema, validation, preview/confirm và facts grounding. Do đó PERFIN được kết luận là hệ thống xử lý dữ liệu tài chính có lớp giao tiếp LLM, không phải chatbot tự tính toán hay tự quyết định thay người dùng.
 
 \section{Hạn chế}
 
@@ -37,13 +37,13 @@ LLM đem lại khả năng hiểu câu tự do tốt hơn parser trên mẫu abl
   \item Smoke test 2 ảnh và 1 audio không đủ để suy ra CER, WER hoặc transaction-field accuracy.
   \item Redis worker, retry/idempotency live, p95 và UAT chưa được xác nhận trong môi trường khóa phiên bản.
   \item Các ngưỡng fuzzy, anomaly, recurring, correlation và cửa sổ thời gian là cấu hình khởi đầu, chưa tối ưu cho mọi người dùng.
-  \item Dataset lịch sử có taxonomy không nhất quán; nhiều câu giống nhau mang nhãn khác nhau, làm hạn chế khả năng diễn giải benchmark.
+  \item Dataset lịch sử có taxonomy không nhất quán; ablation thiếu full prediction records, còn correction mới chỉ chạy một seed và chưa có khoảng tin cậy.
   \item Numeric grounding checker mới là thiết kế đích; persona chưa được đánh giá tác động hành vi.
   \item Một số chức năng hỗ trợ còn thiếu: PDF thật, backup/restore hoàn chỉnh, push notification và luồng tạo ví đầy đủ trên fresh install.
 \end{enumerate}
 
 \section{Hướng phát triển}
 
-Ưu tiên tiếp theo là: (1) khóa taxonomy và tạo tập đánh giá ngẫu nhiên độc lập; (2) xây ground truth ảnh/audio để đo CER/WER và field accuracy; (3) chạy Redis worker live với fault injection và kiểm tra duplicate-effect; (4) hiện thực numeric checker và đo p50/p95 trên ít nhất 30 lượt mỗi luồng; (5) thực hiện UAT so chat với form; (6) bổ sung authentication, authorization, audit và quản lý secret trước triển khai thật.
+Ưu tiên tiếp theo là: (1) khóa taxonomy, tạo tập đánh giá độc lập và chạy group split trên nhiều seed/khoảng tin cậy; (2) xây ground truth ảnh/audio để đo CER/WER và field accuracy; (3) chạy Redis worker live với fault injection và kiểm tra duplicate-effect; (4) hiện thực numeric checker và đo p50/p95 trên ít nhất 30 lượt mỗi luồng; (5) thực hiện UAT so chat với form; (6) bổ sung authentication, authorization, audit và quản lý secret trước triển khai thật.
 
 Các mở rộng như đồng bộ ngân hàng, shared wallet hoặc high availability chỉ nên thực hiện sau khi tính đúng dữ liệu và bằng chứng thực nghiệm ổn định. Cách phát triển này giữ đúng trọng tâm của niên luận cơ sở ngành: dữ liệu và giải thuật là lõi, còn LLM là thành phần hỗ trợ có thể thay thế và đo lường.

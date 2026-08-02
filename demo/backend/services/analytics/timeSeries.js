@@ -51,6 +51,38 @@ function recentMonthKeys(months, anchorMonth = localDayKey().slice(0, 7)) {
   });
 }
 
+function isoWeekKeyFromMonday(monday) {
+  // ISO week-years are defined by the Thursday in the same week. Keep the
+  // calculation in UTC so daylight-saving changes cannot move the calendar
+  // axis (the application itself currently runs in a non-DST timezone).
+  const thursday = new Date(monday.getTime() + 3 * DAY_MS);
+  const isoYear = thursday.getUTCFullYear();
+  const firstThursday = new Date(Date.UTC(isoYear, 0, 4));
+  const firstMonday = new Date(firstThursday.getTime());
+  const firstDow = firstMonday.getUTCDay() || 7;
+  firstMonday.setUTCDate(firstMonday.getUTCDate() - firstDow + 1);
+  const week = Math.floor((monday - firstMonday) / (7 * DAY_MS)) + 1;
+  return `${isoYear}-${String(week).padStart(2, '0')}`;
+}
+
+// ISO-week keys for the most recent *completed* calendar weeks. The week that
+// contains `anchorDay` is deliberately excluded because it is still partial
+// until the following Monday. This gives correlation a stable, reproducible
+// denominator instead of a rolling interval with a truncated first/last week.
+function recentCompletedWeekKeys(weeks, anchorDay = localDayKey()) {
+  const count = windowSize(weeks, 1);
+  const match = String(anchorDay).match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) throw new RangeError('anchorDay must use YYYY-MM-DD');
+  const anchor = new Date(Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3])));
+  const isoDow = anchor.getUTCDay() || 7;
+  const currentMonday = new Date(anchor.getTime() - (isoDow - 1) * DAY_MS);
+  return Array.from({ length: count }, (_, index) => {
+    const weeksBack = count - index;
+    const monday = new Date(currentMonday.getTime() - weeksBack * 7 * DAY_MS);
+    return isoWeekKeyFromMonday(monday);
+  });
+}
+
 function completeDailyTotals(rows, days, anchorDay = localDayKey()) {
   const axis = recentDayKeys(days, anchorDay);
   const totals = new Map(axis.map((day) => [day, 0]));
@@ -96,11 +128,35 @@ function completeMonthlyCashflow(rows, months, anchorMonth = localDayKey().slice
   return axis.map((ym) => ({ ym, ...totals.get(ym) }));
 }
 
+function completeWeeklyByCategory(rows, weeks, anchorDay = localDayKey()) {
+  const axis = recentCompletedWeekKeys(weeks, anchorDay);
+  const axisSet = new Set(axis);
+  const categories = new Map();
+  for (const row of rows || []) {
+    const category = row.category ?? row.category_name;
+    const yw = String(row.yw || '');
+    if (!category || !axisSet.has(yw)) continue;
+    if (!categories.has(category)) categories.set(category, new Map());
+    const totals = categories.get(category);
+    const total = Number(row.total);
+    if (Number.isFinite(total)) totals.set(yw, (totals.get(yw) || 0) + total);
+  }
+  return {
+    axis,
+    categories: Object.fromEntries([...categories].map(([category, totals]) => [category, {
+      observedPeriods: totals.size,
+      series: axis.map((yw) => ({ yw, total: totals.get(yw) || 0 })),
+    }])),
+  };
+}
+
 module.exports = {
   localDayKey,
   recentDayKeys,
   recentMonthKeys,
+  recentCompletedWeekKeys,
   completeDailyTotals,
   completeMonthlyByCategory,
   completeMonthlyCashflow,
+  completeWeeklyByCategory,
 };

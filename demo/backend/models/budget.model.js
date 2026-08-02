@@ -1,5 +1,6 @@
 const { pool, query, rollbackAfterFailure } = require('../config/database');
 const CategoryModel = require('./category.model');
+const { localDayKey } = require('../services/analytics/timeSeries');
 
 const DEFAULT_USER = 'default_user';
 
@@ -84,6 +85,10 @@ const BudgetModel = {
          AND t.user_id = b.user_id
          AND t.type = 'expense'
          AND t.deleted_at IS NULL
+         AND EXISTS (
+           SELECT 1 FROM wallets w
+           WHERE w.id = t.wallet_id AND w.user_id = t.user_id AND w.currency = 'VND'
+         )
          AND EXTRACT(MONTH FROM t.transaction_date) = b.month
          AND EXTRACT(YEAR FROM t.transaction_date) = b.year
        WHERE b.user_id = $1 AND b.month = $2 AND b.year = $3
@@ -102,7 +107,12 @@ const BudgetModel = {
   },
 
   async getRecommendationHistory(userId = DEFAULT_USER, options = {}) {
-    const months = Math.min(Math.max(Number(options.months || 6), 1), 24);
+    const months = Number(options.months ?? 6);
+    if (!Number.isInteger(months) || months < 1 || months > 24) {
+      const error = new Error('Số tháng lịch sử phải là số nguyên từ 1 đến 24');
+      error.status = 400;
+      throw error;
+    }
     const asOf = options.asOf ? new Date(options.asOf) : new Date();
     if (Number.isNaN(asOf.getTime())) {
       const error = new Error('Ngày kết thúc lịch sử không hợp lệ');
@@ -117,13 +127,17 @@ const BudgetModel = {
               SUM(t.amount)::numeric AS total
        FROM transactions t
        JOIN categories c ON c.id = t.category_id
+       JOIN wallets w ON w.id = t.wallet_id AND w.user_id = t.user_id
        WHERE t.user_id = $1
          AND t.deleted_at IS NULL
+         AND w.currency = 'VND'
          AND t.transaction_date >= DATE_TRUNC('month', $2::date) - ($3::int * INTERVAL '1 month')
          AND t.transaction_date < DATE_TRUNC('month', $2::date)
        GROUP BY DATE_TRUNC('month', t.transaction_date), t.type, t.category_id, c.name
        ORDER BY period ASC, t.type ASC, c.name ASC`,
-      [userId, asOf.toISOString().slice(0, 10), months]
+      [userId, typeof options.asOf === 'string' && /^\d{4}-\d{2}-\d{2}/.test(options.asOf)
+        ? options.asOf.slice(0, 10)
+        : localDayKey(asOf), months]
     );
     return result.rows;
   },

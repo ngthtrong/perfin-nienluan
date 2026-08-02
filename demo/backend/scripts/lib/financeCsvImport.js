@@ -376,7 +376,7 @@ async function replaceTransactions(client, plan, {
     }
 
     const walletResult = await client.query(
-      `SELECT id, name, balance
+      `SELECT id, name, balance, currency
        FROM wallets
        WHERE user_id = $1
        ORDER BY id ASC
@@ -390,6 +390,11 @@ async function replaceTransactions(client, plan, {
       throw error;
     }
     const targetWallet = matchingWallets[0];
+    if (String(targetWallet.currency || '').toUpperCase() !== 'VND') {
+      const error = new Error(`Ví đích "${walletName}" không dùng VND; import ledger hiện chỉ hỗ trợ VND`);
+      error.code = 'UNSUPPORTED_IMPORT_CURRENCY';
+      throw error;
+    }
 
     const oldResult = await client.query(
       `SELECT wallet_id,

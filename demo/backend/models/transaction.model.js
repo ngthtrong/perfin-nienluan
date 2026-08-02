@@ -4,6 +4,7 @@ const { EDITABLE_FIELDS, validateTransactionPayload } = require('../services/tra
 const { SORT_EXPRESSIONS, normalizeTransactionQuery } = require('../services/transactions/query');
 
 const DEFAULT_USER = 'default_user';
+const REPORTING_CURRENCY = 'VND';
 
 function balanceDelta(type, amount) {
   return type === 'income' ? Number(amount) : -Number(amount);
@@ -26,7 +27,8 @@ function referenceError(message) {
 
 async function getJoinedById(id, userId = DEFAULT_USER, includeDeleted = false) {
   const result = await query(
-    `SELECT t.*, c.name AS category_name, c.icon AS category_icon, w.name AS wallet_name, w.balance AS wallet_balance
+    `SELECT t.*, c.name AS category_name, c.icon AS category_icon, w.name AS wallet_name,
+            w.balance AS wallet_balance, w.currency AS wallet_currency
      FROM transactions t
      JOIN categories c ON c.id = t.category_id AND c.user_id = t.user_id
      JOIN wallets w ON w.id = t.wallet_id AND w.user_id = t.user_id
@@ -55,7 +57,7 @@ async function lockOwnedCategories(client, categoryIds, userId) {
 async function lockOwnedWallets(client, walletIds, userId) {
   const ids = [...new Set(walletIds.map(Number))].sort((a, b) => a - b);
   const result = await client.query(
-    `SELECT id, balance
+    `SELECT id, balance, currency
      FROM wallets
      WHERE id = ANY($1::int[]) AND user_id = $2
      ORDER BY id
@@ -66,6 +68,16 @@ async function lockOwnedWallets(client, walletIds, userId) {
     throw referenceError('Ví giao dịch không tồn tại hoặc không thuộc người dùng');
   }
   return new Map(result.rows.map((row) => [Number(row.id), row]));
+}
+
+function assertTransactionWalletCurrency(wallets) {
+  const unsupported = [...wallets.values()].find((wallet) => (
+    String(wallet.currency || '').toUpperCase() !== REPORTING_CURRENCY
+  ));
+  if (!unsupported) return;
+  const error = referenceError(`Sổ giao dịch hiện chỉ hỗ trợ ví ${REPORTING_CURRENCY}; chưa có quy đổi ngoại tệ`);
+  error.code = 'UNSUPPORTED_TRANSACTION_CURRENCY';
+  throw error;
 }
 
 function assertCategoryMatches(category, type) {
@@ -121,7 +133,8 @@ const TransactionModel = {
       await client.query('BEGIN');
       const categories = await lockOwnedCategories(client, [data.category_id], ownerId);
       assertCategoryMatches(categories.get(Number(data.category_id)), data.type);
-      await lockOwnedWallets(client, [data.wallet_id], ownerId);
+      const wallets = await lockOwnedWallets(client, [data.wallet_id], ownerId);
+      assertTransactionWalletCurrency(wallets);
       const result = await client.query(
         `INSERT INTO transactions (user_id, description, amount, type, category_id, wallet_id, transaction_date, source, note, original_text, ai_parsed)
          VALUES ($1, $2, $3, $4::transaction_type, $5, $6, COALESCE($7, CURRENT_DATE), COALESCE($8, 'manual')::transaction_source, $9, $10, COALESCE($11::jsonb, '{}'::jsonb))
@@ -172,7 +185,8 @@ const TransactionModel = {
       for (const item of items) {
         assertCategoryMatches(categories.get(Number(item.category_id)), item.type);
       }
-      await lockOwnedWallets(client, items.map((item) => item.wallet_id), userId);
+      const wallets = await lockOwnedWallets(client, items.map((item) => item.wallet_id), userId);
+      assertTransactionWalletCurrency(wallets);
       for (const data of items) {
         const result = await client.query(
           `INSERT INTO transactions (user_id, description, amount, type, category_id, wallet_id, transaction_date, source, note, original_text, ai_parsed)
@@ -223,7 +237,15 @@ const TransactionModel = {
     if (normalized.category_id) add('t.category_id = ?', normalized.category_id);
     if (normalized.type) add('t.type = ?', normalized.type);
     if (normalized.search) add('t.description ILIKE ?', `%${normalized.search}%`);
-    const count = await query(`SELECT COUNT(*) FROM transactions t WHERE ${where.join(' AND ')}`, params);
+    if (normalized.currency) add('w.currency = ?', normalized.currency);
+    const count = await query(
+      `SELECT COUNT(*)
+       FROM transactions t
+       JOIN categories c ON c.id = t.category_id AND c.user_id = t.user_id
+       JOIN wallets w ON w.id = t.wallet_id AND w.user_id = t.user_id
+       WHERE ${where.join(' AND ')}`,
+      params
+    );
     const direction = normalized.sort_order.toUpperCase();
     const primarySort = `${SORT_EXPRESSIONS[normalized.sort_by]} ${direction}`;
     const orderBy = normalized.sort_by === 'transaction_date'
@@ -231,7 +253,8 @@ const TransactionModel = {
       : `${primarySort}, t.transaction_date DESC, t.created_at DESC, t.id DESC`;
     params.push(limit, offset);
     const result = await query(
-      `SELECT t.*, c.name AS category_name, c.icon AS category_icon, w.name AS wallet_name
+      `SELECT t.*, c.name AS category_name, c.icon AS category_icon,
+              w.name AS wallet_name, w.currency AS wallet_currency
        FROM transactions t
        JOIN categories c ON c.id = t.category_id AND c.user_id = t.user_id
        JOIN wallets w ON w.id = t.wallet_id AND w.user_id = t.user_id
@@ -283,6 +306,7 @@ const TransactionModel = {
       const categories = await lockOwnedCategories(client, [next.category_id], userId);
       assertCategoryMatches(categories.get(Number(next.category_id)), next.type);
       const wallets = await lockOwnedWallets(client, [old.wallet_id, next.wallet_id], userId);
+      assertTransactionWalletCurrency(wallets);
       const updated = await client.query(
         `UPDATE transactions
          SET description = $3, amount = $4, type = $5, category_id = $6,
@@ -481,7 +505,8 @@ const TransactionModel = {
       .slice(0, 200);
     if (!safeIds.length) return [];
     const result = await query(
-      `SELECT t.*, c.name AS category_name, c.icon AS category_icon, w.name AS wallet_name
+      `SELECT t.*, c.name AS category_name, c.icon AS category_icon,
+              w.name AS wallet_name, w.currency AS wallet_currency
        FROM transactions t
        JOIN categories c ON c.id = t.category_id AND c.user_id = t.user_id
        JOIN wallets w ON w.id = t.wallet_id AND w.user_id = t.user_id
@@ -496,23 +521,24 @@ const TransactionModel = {
   // paginated, so summing its first page would silently recreate the old
   // "recent transactions only" bug in chat answers.
   async getFilteredTotals(userId = DEFAULT_USER, filters = {}) {
-    const where = ['deleted_at IS NULL', 'user_id = $1'];
+    const where = ["t.deleted_at IS NULL", "t.user_id = $1", "w.currency = 'VND'"];
     const params = [userId];
     const add = (clause, value) => {
       params.push(value);
       where.push(clause.replace('?', `$${params.length}`));
     };
-    if (filters.from) add('transaction_date >= ?', filters.from);
-    if (filters.to) add('transaction_date <= ?', filters.to);
-    if (filters.category_id) add('category_id = ?', filters.category_id);
-    if (filters.type && ['income', 'expense'].includes(filters.type)) add('type = ?::transaction_type', filters.type);
-    if (filters.search) add('description ILIKE ?', `%${String(filters.search).trim()}%`);
+    if (filters.from) add('t.transaction_date >= ?', filters.from);
+    if (filters.to) add('t.transaction_date <= ?', filters.to);
+    if (filters.category_id) add('t.category_id = ?', filters.category_id);
+    if (filters.type && ['income', 'expense'].includes(filters.type)) add('t.type = ?::transaction_type', filters.type);
+    if (filters.search) add('t.description ILIKE ?', `%${String(filters.search).trim()}%`);
     const result = await query(
       `SELECT COUNT(*) AS transaction_count,
-              COALESCE(SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END), 0) AS total_income,
-              COALESCE(SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END), 0) AS total_expense,
-              COALESCE(SUM(amount), 0) AS total_amount
-       FROM transactions
+              COALESCE(SUM(CASE WHEN t.type = 'income' THEN t.amount ELSE 0 END), 0) AS total_income,
+              COALESCE(SUM(CASE WHEN t.type = 'expense' THEN t.amount ELSE 0 END), 0) AS total_expense,
+              COALESCE(SUM(t.amount), 0) AS total_amount
+       FROM transactions t
+       JOIN wallets w ON w.id = t.wallet_id AND w.user_id = t.user_id
        WHERE ${where.join(' AND ')}`,
       params
     );
@@ -530,13 +556,14 @@ const TransactionModel = {
     const m = Number(month || now.getMonth() + 1);
     const y = Number(year || now.getFullYear());
     const result = await query(
-      `SELECT COALESCE(SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END), 0) AS total_income,
-              COALESCE(SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END), 0) AS total_expense,
+      `SELECT COALESCE(SUM(CASE WHEN t.type = 'income' THEN t.amount ELSE 0 END), 0) AS total_income,
+              COALESCE(SUM(CASE WHEN t.type = 'expense' THEN t.amount ELSE 0 END), 0) AS total_expense,
               COUNT(*) AS transaction_count
-       FROM transactions
-       WHERE deleted_at IS NULL AND user_id = $1
-         AND EXTRACT(MONTH FROM transaction_date) = $2
-         AND EXTRACT(YEAR FROM transaction_date) = $3`,
+       FROM transactions t
+       JOIN wallets w ON w.id = t.wallet_id AND w.user_id = t.user_id
+       WHERE t.deleted_at IS NULL AND t.user_id = $1 AND w.currency = 'VND'
+         AND EXTRACT(MONTH FROM t.transaction_date) = $2
+         AND EXTRACT(YEAR FROM t.transaction_date) = $3`,
       [userId, m, y]
     );
     const row = result.rows[0];

@@ -8,8 +8,20 @@ const userId = 'default_user';
 router.get('/balance', async (req, res, next) => {
   try {
     const wallets = await AccountModel.getAll(userId);
-    const totalBalance = wallets.reduce((sum, wallet) => sum + Number(wallet.balance), 0);
-    res.json({ success: true, data: { total_balance: totalBalance, wallets } });
+    const totalsByCurrency = wallets.reduce((totals, wallet) => {
+      const currency = String(wallet.currency || 'VND').toUpperCase();
+      totals[currency] = (totals[currency] || 0) + Number(wallet.balance);
+      return totals;
+    }, {});
+    res.json({
+      success: true,
+      data: {
+        total_balance: totalsByCurrency.VND || 0,
+        total_balance_currency: 'VND',
+        totals_by_currency: totalsByCurrency,
+        wallets,
+      },
+    });
   } catch (error) {
     next(error);
   }

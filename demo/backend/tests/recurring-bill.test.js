@@ -115,7 +115,7 @@ test('recordPayment rejects a future paid date before opening a database transac
   assert.equal(connections, 0);
 });
 
-function createPaymentClient({ failWallet = false } = {}) {
+function createPaymentClient({ failWallet = false, walletCurrency = 'VND' } = {}) {
   const events = [];
   const bill = {
     id: 5,
@@ -146,6 +146,9 @@ function createPaymentClient({ failWallet = false } = {}) {
         return { rows: [], rowCount: 0 };
       }
       if (normalized.includes('FOR UPDATE OF b')) return { rows: [{ ...bill }], rowCount: 1 };
+      if (normalized.startsWith('SELECT id, balance, currency FROM wallets')) {
+        return { rows: [{ id: 3, balance: '1000000', currency: walletCurrency }], rowCount: 1 };
+      }
       if (normalized.startsWith('INSERT INTO transactions')) return { rows: [{ ...transaction }], rowCount: 1 };
       if (normalized.startsWith('UPDATE wallets')) {
         return failWallet ? { rows: [], rowCount: 0 } : { rows: [{ balance: '750000' }], rowCount: 1 };
@@ -155,9 +158,9 @@ function createPaymentClient({ failWallet = false } = {}) {
         bill.next_due_date = params[1];
         return { rows: [], rowCount: 1 };
       }
-      if (normalized.startsWith('SELECT b.*, c.name')) return { rows: [{ ...bill, wallet_name: 'Tiền mặt' }], rowCount: 1 };
+      if (normalized.startsWith('SELECT b.*, c.name')) return { rows: [{ ...bill, wallet_name: 'Tiền mặt', wallet_currency: walletCurrency }], rowCount: 1 };
       if (normalized.startsWith('SELECT t.*, c.name')) {
-        return { rows: [{ ...transaction, wallet_name: 'Tiền mặt', wallet_balance: '750000' }], rowCount: 1 };
+        return { rows: [{ ...transaction, wallet_name: 'Tiền mặt', wallet_balance: '750000', wallet_currency: walletCurrency }], rowCount: 1 };
       }
       throw new Error(`Unexpected SQL: ${normalized}`);
     },
@@ -256,6 +259,21 @@ test('recordPayment rolls back every write when the selected wallet is invalid',
   assert.ok(!sqlEvents.includes('COMMIT'));
   assert.equal(sqlEvents.at(-1), 'ROLLBACK');
   assert.equal(events.at(-1).type, 'release');
+});
+
+test('recordPayment rejects a USD wallet before inserting a VND ledger row', async () => {
+  const { client, events } = createPaymentClient({ walletCurrency: 'USD' });
+  connectImpl = async () => client;
+
+  await assert.rejects(
+    RecurringBillModel.recordPayment(5, { periodDueDate: '2026-07-15' }),
+    (error) => error.code === 'UNSUPPORTED_RECURRING_CURRENCY'
+  );
+
+  const sqlEvents = events.filter((event) => event.type === 'query').map((event) => event.sql);
+  assert.ok(sqlEvents.some((sql) => sql.startsWith('SELECT id, balance, currency FROM wallets')));
+  assert.ok(!sqlEvents.some((sql) => sql.startsWith('INSERT INTO transactions')));
+  assert.equal(sqlEvents.at(-1), 'ROLLBACK');
 });
 
 test('post-commit cache failure does not turn a durable payment into an API failure', async () => {

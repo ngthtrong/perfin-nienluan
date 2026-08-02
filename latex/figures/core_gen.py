@@ -1297,7 +1297,7 @@ def diagram_05() -> str:
         title("t", "Physical Entity–Relationship Diagram", 40, 16, 1180),
         subtitle(
             "st",
-            "Columns are grouped for readability; migrations 001–008 define "
+            "Columns are grouped for readability; migrations 001–009 define "
             "complete types and constraints. The free-form layout assigns a "
             "separate corridor to each principal business FK. Repeated "
             "user_id/user_key ownership FKs remain declared inside table boxes "

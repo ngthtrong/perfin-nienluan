@@ -64,7 +64,7 @@ graph TD
   * Hệ thống UI riêng (`src/components/ui`) với theme/tokens, hỗ trợ chạy web smoke test.
 * **Backend (RESTful API Server):**
   * **Node.js** + **Express 5**: các endpoint xử lý logic nghiệp vụ tài chính và điều phối AI, có rate limiting và health check (`/api/health/live`, `/api/health/ready`).
-  * **PostgreSQL** (gói `pg`): cơ sở dữ liệu quan hệ, quản lý bằng hệ thống **migration** đánh số (`001`–`008`).
+  * **PostgreSQL** (gói `pg`): cơ sở dữ liệu quan hệ, quản lý bằng hệ thống **migration** đánh số (`001`–`009`).
   * **BullMQ + Redis** (`ioredis`): hàng đợi và **worker chạy nền** cho các tác vụ chủ động (nhắc chi phí định kỳ, tổng kết cuối tháng, quét runway/subscription, tự sao lưu, dọn file export).
 * **AI & Xử lý Dữ liệu:**
   * **Google Gemini API** (`@google/genai`, mặc định `gemini-3.1-flash-lite` với danh sách fallback): LLM cốt lõi dùng **function calling** làm intent router. Các tool đã khai báo: `record_transactions`, `manage_recurring_bill`, `create_financial_goal`, `query_financial_data`, `suggest_budget`, `export_financial_data`, `transfer_money`, `record_investment_pnl`.
@@ -94,7 +94,7 @@ perfin-nienluan/
 │   │   ├── services/       # Logic nghiệp vụ + AI (ai.service, parser, analytics,
 │   │   │                   #   jobs/worker, media-ai, persona, report, goals...)
 │   │   ├── models/         # Truy vấn PostgreSQL theo bảng
-│   │   ├── migrations/     # 001–008: schema, seed, cashflow, recurring, users...
+│   │   ├── migrations/     # 001–009: schema, seed, cashflow, recurring, users, invariants...
 │   │   ├── prompts/        # Prompt template cho Gemini
 │   │   ├── scripts/        # migrate, worker, seed-demo, import-finance-csv,
 │   │   │                   #   smoke-test, paddleocr_ocr.py, phowhisper_speech.py
@@ -140,7 +140,7 @@ perfin-nienluan/
 ### 💻 B. Mã nguồn Ứng dụng (Demo MVP)
 
 * [X] Backend Express đầy đủ với 12 nhóm route (chat, giao dịch, danh mục, ngân sách, tài khoản, báo cáo, dòng tiền, export, chi phí định kỳ, persona, mục tiêu, AI)
-* [X] Cơ sở dữ liệu PostgreSQL theo migration đánh số (001–008) + seed danh mục/ví mặc định
+* [X] Cơ sở dữ liệu PostgreSQL theo migration đánh số (001–009) + seed danh mục/ví mặc định
 * [X] Tích hợp Gemini function-calling làm intent router (8 tool) + local parser fallback
 * [X] Luồng OCR (PaddleOCR/Google Vision) & Speech-to-Text (PhoWhisper/Google STT)
 * [X] Worker chạy nền (BullMQ + Redis) cho nhắc nhở & thông báo chủ động

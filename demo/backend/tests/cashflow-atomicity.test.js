@@ -55,7 +55,7 @@ test('a successful transfer debits and credits the same amount without changing 
     }
     if (/SELECT id, name, type, balance/.test(sql)) {
       return {
-        rows: params[1].map((id) => ({ id, name: `Ví ${id}`, type: 'cash', balance: String(balances[id]) })),
+        rows: params[1].map((id) => ({ id, name: `Ví ${id}`, type: 'cash', balance: String(balances[id]), currency: 'VND' })),
         rowCount: params[1].length,
       };
     }
@@ -106,7 +106,7 @@ test('a transfer may take its source wallet balance below zero', async () => {
   const events = mockClient(async (sql, params) => {
     if (/SELECT id, name, type, balance/.test(sql)) {
       return {
-        rows: params[1].map((id) => ({ id, name: `Ví ${id}`, type: 'cash', balance: String(balances[id]) })),
+        rows: params[1].map((id) => ({ id, name: `Ví ${id}`, type: 'cash', balance: String(balances[id]), currency: 'VND' })),
         rowCount: params[1].length,
       };
     }
@@ -150,7 +150,7 @@ test('fault injection before transfer-log insert rolls back both wallet updates'
     }
     if (/SELECT id, name, type, balance/.test(sql)) {
       return {
-        rows: params[1].map((id) => ({ id, name: `Ví ${id}`, type: 'cash', balance: String(balances[id]) })),
+        rows: params[1].map((id) => ({ id, name: `Ví ${id}`, type: 'cash', balance: String(balances[id]), currency: 'VND' })),
         rowCount: params[1].length,
       };
     }
@@ -182,13 +182,42 @@ test('fault injection before transfer-log insert rolls back both wallet updates'
   assert.equal(events.at(-1), 'RELEASE');
 });
 
+test('a cross-currency transfer is rejected and rolled back before balances change', async () => {
+  const balances = { 1: 2_000_000, 2: 100 };
+  const events = mockClient(async (sql, params) => {
+    if (/SELECT id, name, type, balance, currency/.test(sql)) {
+      return {
+        rows: [
+          { id: params[1][0], name: 'Ví VND', type: 'bank', balance: String(balances[1]), currency: 'VND' },
+          { id: params[1][1], name: 'Ví USD', type: 'bank', balance: String(balances[2]), currency: 'USD' },
+        ],
+        rowCount: 2,
+      };
+    }
+    if (/UPDATE wallets|INSERT INTO wallet_transfers/.test(sql)) {
+      throw new Error('must reject before mutating balances');
+    }
+    return { rows: [], rowCount: 0 };
+  });
+
+  await assert.rejects(
+    TransferModel.create({ userId: 'u1', from_wallet_id: 1, to_wallet_id: 2, amount: 75_000 }),
+    (error) => error.code === 'CURRENCY_MISMATCH' && /quy đổi ngoại tệ chưa được hỗ trợ/.test(error.message)
+  );
+
+  assert.deepEqual(balances, { 1: 2_000_000, 2: 100 });
+  assert.ok(events.includes('ROLLBACK'));
+  assert.equal(events.includes('COMMIT'), false);
+  assert.equal(events.at(-1), 'RELEASE');
+});
+
 test('post-commit cache and hydration failures still return the durable transfer', async (t) => {
   t.mock.method(console, 'warn', () => {});
   const created = { id: 44, user_id: 'u1', from_wallet_id: 1, to_wallet_id: 2, amount: 10000, transfer_type: 'transfer' };
   const events = mockClient(async (sql, params) => {
     if (/SELECT id, name, type, balance/.test(sql)) {
       return {
-        rows: params[1].map((id) => ({ id, name: `Ví ${id}`, type: 'cash', balance: '100000' })),
+        rows: params[1].map((id) => ({ id, name: `Ví ${id}`, type: 'cash', balance: '100000', currency: 'VND' })),
         rowCount: params[1].length,
       };
     }
@@ -224,9 +253,9 @@ test('missing investment P&L update closes its transaction before releasing the 
 
 test('investment P&L create remains successful when cache invalidation fails after commit', async (t) => {
   t.mock.method(console, 'warn', () => {});
-  const created = { id: 51, user_id: 'u1', wallet_id: 8, amount: 25000 };
+  const created = { id: 51, user_id: 'u1', wallet_id: 8, amount: 25000, wallet_currency: 'VND' };
   const events = mockClient(async (sql) => {
-    if (/SELECT id, type FROM wallets/.test(sql)) return { rows: [{ id: 8, type: 'investment' }], rowCount: 1 };
+    if (/SELECT id, type, currency FROM wallets/.test(sql)) return { rows: [{ id: 8, type: 'investment', currency: 'VND' }], rowCount: 1 };
     if (/INSERT INTO investment_pnl/.test(sql)) return { rows: [created], rowCount: 1 };
     return { rows: [], rowCount: 1 };
   });

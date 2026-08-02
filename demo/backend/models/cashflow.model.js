@@ -89,7 +89,7 @@ const TransferModel = {
 
       const walletIds = [...new Set([from_wallet_id, to_wallet_id].filter(Boolean).map(Number))];
       const wallets = await client.query(
-        `SELECT id, name, type, balance
+        `SELECT id, name, type, balance, currency
          FROM wallets
          WHERE user_id = $1 AND id = ANY($2::int[])
          ORDER BY id
@@ -100,6 +100,17 @@ const TransferModel = {
         const error = new Error('Ví nguồn hoặc ví nhận không tồn tại');
         error.status = 400;
         throw error;
+      }
+      if (from_wallet_id && to_wallet_id) {
+        const byId = new Map(wallets.rows.map((wallet) => [Number(wallet.id), wallet]));
+        const fromCurrency = byId.get(from_wallet_id)?.currency;
+        const toCurrency = byId.get(to_wallet_id)?.currency;
+        if (!fromCurrency || !toCurrency || fromCurrency !== toCurrency) {
+          const error = new Error('Không thể chuyển tiền giữa hai ví khác đơn vị tiền tệ; quy đổi ngoại tệ chưa được hỗ trợ');
+          error.status = 400;
+          error.code = 'CURRENCY_MISMATCH';
+          throw error;
+        }
       }
       // Debit source wallet
       if (from_wallet_id) {
@@ -148,7 +159,9 @@ const TransferModel = {
     const result = await query(
       `SELECT wt.*,
               fw.name AS from_wallet_name, fw.type AS from_wallet_type,
-              tw.name AS to_wallet_name, tw.type AS to_wallet_type
+              fw.currency AS from_wallet_currency,
+              tw.name AS to_wallet_name, tw.type AS to_wallet_type,
+              tw.currency AS to_wallet_currency
        FROM wallet_transfers wt
        LEFT JOIN wallets fw ON fw.id = wt.from_wallet_id
        LEFT JOIN wallets tw ON tw.id = wt.to_wallet_id
@@ -181,7 +194,9 @@ const TransferModel = {
     const result = await query(
       `SELECT wt.*,
               fw.name AS from_wallet_name, fw.type AS from_wallet_type,
-              tw.name AS to_wallet_name, tw.type AS to_wallet_type
+              fw.currency AS from_wallet_currency,
+              tw.name AS to_wallet_name, tw.type AS to_wallet_type,
+              tw.currency AS to_wallet_currency
        FROM wallet_transfers wt
        LEFT JOIN wallets fw ON fw.id = wt.from_wallet_id
        LEFT JOIN wallets tw ON tw.id = wt.to_wallet_id
@@ -224,7 +239,7 @@ const InvestmentPnLModel = {
       await client.query('BEGIN');
 
       const wallet = await client.query(
-        `SELECT id, type FROM wallets
+        `SELECT id, type, currency FROM wallets
          WHERE id = $1 AND user_id = $2 AND type IN ('investment'::wallet_type, 'savings'::wallet_type)
          FOR UPDATE`,
         [wallet_id, userId]
@@ -250,7 +265,7 @@ const InvestmentPnLModel = {
 
       await client.query('COMMIT');
       transactionClosed = true;
-      created = result.rows[0];
+      created = { ...result.rows[0], wallet_currency: wallet.rows[0].currency };
     } catch (err) {
       if (!transactionClosed) await rollbackAfterFailure(client, err);
       throw err;
@@ -355,7 +370,7 @@ const InvestmentPnLModel = {
 
   async getByWallet(walletId, userId = DEFAULT_USER) {
     const result = await query(
-      `SELECT p.*, w.name AS wallet_name
+      `SELECT p.*, w.name AS wallet_name, w.currency AS wallet_currency
        FROM investment_pnl p
        JOIN wallets w ON w.id = p.wallet_id
        WHERE p.wallet_id = $1 AND p.user_id = $2
@@ -376,14 +391,14 @@ const NetWorthModel = {
          COALESCE(SUM(CASE WHEN type IN ('investment','savings') THEN balance ELSE 0 END), 0)              AS investment_wallets,
          COALESCE(SUM(balance), 0)                                                                         AS total_balance
        FROM wallets
-       WHERE user_id = $1`,
+       WHERE user_id = $1 AND currency = 'VND'`,
       [userId]
     );
     const row = result.rows[0];
     const regular = Number(row.regular_wallets);
     const investment = Number(row.investment_wallets);
     const net_worth = regular + investment; // loans/debts are tracked in wallets (negative balance)
-    return { regular_wallets: regular, investment_wallets: investment, net_worth };
+    return { currency: 'VND', regular_wallets: regular, investment_wallets: investment, net_worth };
   },
 };
 
@@ -396,43 +411,61 @@ const CashflowModel = {
     // Operating cashflow: income & expense transactions
     const txResult = await query(
       `SELECT
-         COALESCE(SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END), 0)  AS total_income,
-         COALESCE(SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END), 0) AS total_expense
-       FROM transactions
-       WHERE deleted_at IS NULL AND user_id = $1
-         AND ($2::date IS NULL OR transaction_date >= $2::date)
-         AND ($3::date IS NULL OR transaction_date <= $3::date)`,
+         COALESCE(SUM(CASE WHEN t.type = 'income' THEN t.amount ELSE 0 END), 0)  AS total_income,
+         COALESCE(SUM(CASE WHEN t.type = 'expense' THEN t.amount ELSE 0 END), 0) AS total_expense
+       FROM transactions t
+       JOIN wallets w ON w.id = t.wallet_id AND w.user_id = t.user_id
+       WHERE t.deleted_at IS NULL AND t.user_id = $1 AND w.currency = 'VND'
+         AND ($2::date IS NULL OR t.transaction_date >= $2::date)
+         AND ($3::date IS NULL OR t.transaction_date <= $3::date)`,
       [userId, from || null, to || null]
     );
 
     // Investment cashflow: inflows, outflows, P&L
     const investResult = await query(
       `SELECT
-         COALESCE(SUM(CASE WHEN transfer_type = 'investment_inflow'  THEN amount ELSE 0 END), 0) AS investment_inflow,
-         COALESCE(SUM(CASE WHEN transfer_type = 'investment_outflow' THEN amount ELSE 0 END), 0) AS investment_outflow
-       FROM wallet_transfers
-       WHERE user_id = $1
-         AND ($2::date IS NULL OR transaction_date >= $2::date)
-         AND ($3::date IS NULL OR transaction_date <= $3::date)`,
+         COALESCE(SUM(CASE WHEN wt.transfer_type = 'investment_inflow'  THEN wt.amount ELSE 0 END), 0) AS investment_inflow,
+         COALESCE(SUM(CASE WHEN wt.transfer_type = 'investment_outflow' THEN wt.amount ELSE 0 END), 0) AS investment_outflow
+       FROM wallet_transfers wt
+       WHERE wt.user_id = $1
+         AND (wt.from_wallet_id IS NULL OR EXISTS (
+           SELECT 1 FROM wallets w
+           WHERE w.user_id = wt.user_id AND w.currency = 'VND' AND w.id = wt.from_wallet_id
+         ))
+         AND (wt.to_wallet_id IS NULL OR EXISTS (
+           SELECT 1 FROM wallets w
+           WHERE w.user_id = wt.user_id AND w.currency = 'VND' AND w.id = wt.to_wallet_id
+         ))
+         AND ($2::date IS NULL OR wt.transaction_date >= $2::date)
+         AND ($3::date IS NULL OR wt.transaction_date <= $3::date)`,
       [userId, from || null, to || null]
     );
 
     const pnlResult = await query(
-      `SELECT COALESCE(SUM(amount), 0) AS total_pnl
-       FROM investment_pnl
-       WHERE user_id = $1
-         AND ($2::date IS NULL OR recorded_at >= $2::date)
-         AND ($3::date IS NULL OR recorded_at <= $3::date)`,
+      `SELECT COALESCE(SUM(p.amount), 0) AS total_pnl
+       FROM investment_pnl p
+       JOIN wallets w ON w.id = p.wallet_id AND w.user_id = p.user_id
+       WHERE p.user_id = $1 AND w.currency = 'VND'
+         AND ($2::date IS NULL OR p.recorded_at >= $2::date)
+         AND ($3::date IS NULL OR p.recorded_at <= $3::date)`,
       [userId, from || null, to || null]
     );
 
     // Transfer cashflow: transfers between regular wallets
     const transferResult = await query(
-      `SELECT COALESCE(SUM(amount), 0) AS total_transfer
-       FROM wallet_transfers
-       WHERE user_id = $1 AND transfer_type = 'transfer'
-         AND ($2::date IS NULL OR transaction_date >= $2::date)
-         AND ($3::date IS NULL OR transaction_date <= $3::date)`,
+      `SELECT COALESCE(SUM(wt.amount), 0) AS total_transfer
+       FROM wallet_transfers wt
+       WHERE wt.user_id = $1 AND wt.transfer_type = 'transfer'
+         AND (wt.from_wallet_id IS NULL OR EXISTS (
+           SELECT 1 FROM wallets w
+           WHERE w.user_id = wt.user_id AND w.currency = 'VND' AND w.id = wt.from_wallet_id
+         ))
+         AND (wt.to_wallet_id IS NULL OR EXISTS (
+           SELECT 1 FROM wallets w
+           WHERE w.user_id = wt.user_id AND w.currency = 'VND' AND w.id = wt.to_wallet_id
+         ))
+         AND ($2::date IS NULL OR wt.transaction_date >= $2::date)
+         AND ($3::date IS NULL OR wt.transaction_date <= $3::date)`,
       [userId, from || null, to || null]
     );
 
@@ -453,6 +486,7 @@ const CashflowModel = {
     const transfer_total = Number(trRow.total_transfer);
 
     return {
+      currency: 'VND',
       period: { from: from || null, to: to || null },
       operating: {
         income: operating_income,

@@ -39,8 +39,17 @@ const {
 const router = express.Router();
 const userId = 'default_user';
 
+function formatMoney(amount, currency = 'VND') {
+  const code = String(currency || 'VND').toUpperCase();
+  try {
+    return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: code }).format(Number(amount));
+  } catch {
+    return `${Number(amount).toLocaleString('vi-VN')} ${code}`;
+  }
+}
+
 function formatVND(amount) {
-  return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(Number(amount));
+  return formatMoney(amount, 'VND');
 }
 
 // Cheap persona decoration for short system messages. Longer advice is narrated by
@@ -123,6 +132,7 @@ function categorySnapshot(transaction = {}) {
   return {
     category_id: Number.isInteger(categoryId) && categoryId > 0 ? categoryId : null,
     category_name: String(transaction.category_name || '').trim() || null,
+    type: ['income', 'expense'].includes(transaction.type) ? transaction.type : null,
   };
 }
 
@@ -296,7 +306,7 @@ function queryWindow(querySpec = {}, now = new Date()) {
 function transactionListLine(transaction, index) {
   const sign = transaction.type === 'income' ? '+' : '-';
   const date = RecurringBillModel.formatDateOnly(transaction.transaction_date);
-  return `${index + 1}. ${date} • ${transaction.description} • ${sign}${formatVND(transaction.amount)} • ${transaction.category_name}`;
+  return `${index + 1}. ${date} • ${transaction.description} • ${sign}${formatMoney(transaction.amount, transaction.wallet_currency)} • ${transaction.category_name}`;
 }
 
 function coveredRecurringBillIds(messages, dateKey) {
@@ -701,7 +711,8 @@ async function handleTransactionQuery(parsed) {
         message: await applyPersona('Mình chưa tìm thấy nhóm giao dịch vừa được phân loại để liệt kê. Bạn hãy yêu cầu lại gợi ý danh mục nhé.'),
       };
     }
-    const exact = await TransactionModel.getByIds(transactionIds, userId);
+    const exact = (await TransactionModel.getByIds(transactionIds, userId))
+      .filter((transaction) => String(transaction.wallet_currency || 'VND').toUpperCase() === 'VND');
     totals = totalsFromTransactions(exact);
     transactions = exact.slice(0, limit);
     filters = { transaction_ids: transactionIds };
@@ -736,6 +747,7 @@ async function handleTransactionQuery(parsed) {
       type: ['income', 'expense'].includes(spec.type) ? spec.type : undefined,
       category_id: categoryId || undefined,
       search: String(spec.search || '').trim().slice(0, 150) || undefined,
+      currency: 'VND',
     };
     const [page, aggregate] = await Promise.all([
       TransactionModel.getAll(userId, { ...filters, page: 1, limit }),
@@ -800,13 +812,16 @@ async function handleFinancialQuery(parsed) {
     }
     case 'query_subscriptions': {
       const window = queryWindow(parsed.query || {});
-      const subscriptions = await AnalyticsEngine.subscriptionFacts(userId, Math.max(window.days, 90));
-      return narrateFacts({ subscriptions }, window.explicit ? window.label : 'gần đây');
+      const analysisDays = Math.max(window.days, AnalyticsEngine.ANALYTICS_WINDOWS.subscriptionDays);
+      const subscriptions = await AnalyticsEngine.subscriptionFacts(
+        userId,
+        analysisDays
+      );
+      return narrateFacts({ subscriptions }, `${analysisDays} ngày gần nhất`);
     }
     case 'query_insights': {
-      const window = queryWindow(parsed.query || {});
       const facts = await AnalyticsEngine.buildInsightFacts(userId, { payday: await resolveUserPayday(userId) });
-      return narrateFacts(facts, window.explicit ? window.label : 'gần đây');
+      return narrateFacts(facts, 'theo cửa sổ cố định của từng chỉ số');
     }
     case 'query_summary': {
       const window = queryWindow(parsed.query || {});
@@ -843,7 +858,11 @@ async function handleFinancialQuery(parsed) {
       if (!wallets.length) {
         return { type: 'chat_response', message: await applyPersona('Bạn chưa có ví nào. Mình có thể tạo ví "Tiền mặt" để bắt đầu nhé?') };
       }
-      const total = wallets.reduce((sum, wallet) => sum + Number(wallet.balance || 0), 0);
+      const totalsByCurrency = wallets.reduce((totals, wallet) => {
+        const currency = String(wallet.currency || 'VND').toUpperCase();
+        totals[currency] = (totals[currency] || 0) + Number(wallet.balance || 0);
+        return totals;
+      }, {});
       const typeLabels = {
         cash: 'tiền mặt',
         bank: 'ngân hàng',
@@ -854,13 +873,19 @@ async function handleFinancialQuery(parsed) {
       };
       const lines = wallets.map((wallet, index) => {
         const label = typeLabels[wallet.type] || wallet.type;
-        return `${index + 1}. ${wallet.name} (${label}): ${formatVND(wallet.balance)}${wallet.is_default ? ' • mặc định' : ''}`;
+        return `${index + 1}. ${wallet.name} (${label}): ${formatMoney(wallet.balance, wallet.currency)}${wallet.is_default ? ' • mặc định' : ''}`;
       }).join('\n');
+      const totalLines = Object.entries(totalsByCurrency)
+        .map(([currency, amount]) => formatMoney(amount, currency))
+        .join(', ');
+      const currencies = Object.keys(totalsByCurrency);
       return {
         type: 'wallet_list',
-        message: await applyPersona(`Bạn có ${wallets.length} ví, tổng số dư ${formatVND(total)}:\n${lines}`),
+        message: await applyPersona(`Bạn có ${wallets.length} ví, số dư theo tiền tệ ${totalLines}:\n${lines}`),
         wallets,
-        total_balance: total,
+        total_balance: currencies.length === 1 ? totalsByCurrency[currencies[0]] : null,
+        total_balance_currency: currencies.length === 1 ? currencies[0] : null,
+        totals_by_currency: totalsByCurrency,
       };
     }
     case 'query_goals': {
@@ -970,9 +995,20 @@ async function handleTransferPreview(parsed) {
     return { type: 'clarification', message: await applyPersona('Bạn nói rõ ví nguồn, ví nhận và số tiền cần chuyển nhé.'), wallets: wallets.map(({ id, name }) => ({ id, name })) };
   }
   if (from.id === to.id) return { type: 'chat_response', message: await applyPersona('Ví nguồn và ví nhận phải khác nhau.') };
-  const draft = { ...transfer, from_wallet_id: from.id, to_wallet_id: to.id, from_wallet_name: from.name, to_wallet_name: to.name };
+  if (!from.currency || !to.currency || from.currency !== to.currency) {
+    return { type: 'chat_response', message: await applyPersona('Hai ví phải cùng đơn vị tiền tệ vì hệ thống chưa hỗ trợ quy đổi ngoại tệ.') };
+  }
+  const draft = {
+    ...transfer,
+    from_wallet_id: from.id,
+    to_wallet_id: to.id,
+    from_wallet_name: from.name,
+    to_wallet_name: to.name,
+    from_wallet_currency: from.currency,
+    to_wallet_currency: to.currency,
+  };
   const pendingId = await pending.set(userId, draft, 'transfer');
-  return { type: 'transfer_preview', message: await applyPersona(`Chuyển ${formatVND(draft.amount)} từ ${from.name} sang ${to.name}. Bạn xác nhận nhé?`), transfer: draft, pending_id: pendingId };
+  return { type: 'transfer_preview', message: await applyPersona(`Chuyển ${formatMoney(draft.amount, from.currency)} từ ${from.name} sang ${to.name}. Bạn xác nhận nhé?`), transfer: draft, pending_id: pendingId };
 }
 
 async function handleInvestmentPreview(parsed) {
@@ -986,9 +1022,9 @@ async function handleInvestmentPreview(parsed) {
       investment_wallets: wallets.filter((item) => ['investment', 'savings'].includes(item.type)).map(({ id, name }) => ({ id, name })),
     };
   }
-  const draft = { ...investment, wallet_id: wallet.id, wallet_name: wallet.name };
+  const draft = { ...investment, wallet_id: wallet.id, wallet_name: wallet.name, wallet_currency: wallet.currency };
   const pendingId = await pending.set(userId, draft, 'investment_pnl');
-  return { type: 'investment_preview', message: await applyPersona(`${Number(draft.amount) > 0 ? 'Lãi' : 'Lỗ'} ${formatVND(Math.abs(draft.amount))} tại ví ${wallet.name}. Bạn xác nhận nhé?`), investment: draft, pending_id: pendingId };
+  return { type: 'investment_preview', message: await applyPersona(`${Number(draft.amount) > 0 ? 'Lãi' : 'Lỗ'} ${formatMoney(Math.abs(draft.amount), wallet.currency)} tại ví ${wallet.name}. Bạn xác nhận nhé?`), investment: draft, pending_id: pendingId };
 }
 
 async function handleExport(parsed) {
@@ -1009,12 +1045,16 @@ async function handleExport(parsed) {
 async function parseWithLearnedFeedback(text, categories) {
   const examples = await FeedbackService.getFewShotExamples(userId, text, { limit: 5 }).catch(() => []);
   const fewShot = examples.length
-    ? `Phân tích yêu cầu: "${text}". Các sửa danh mục trước đây của chính người dùng (chỉ dùng khi ngữ nghĩa tương tự):\n${examples.map((example) => `- "${example.input}" -> ${example.corrected_category?.category_name || example.corrected_category?.category_id}`).join('\n')}`
+    ? `Phân tích yêu cầu: "${text}". Các sửa danh mục trước đây của chính người dùng (chỉ dùng khi ngữ nghĩa và loại giao dịch tương tự):\n${examples.map((example) => `- "${example.input}" [${example.corrected_category?.type}] -> ${example.corrected_category?.category_name || example.corrected_category?.category_id}`).join('\n')}`
     : undefined;
   const parsed = await AIService.parseTransaction(text, categories, fewShot);
   const transactions = parsed.transactions || (parsed.transaction ? [parsed.transaction] : []);
   for (const transaction of transactions) {
-    const correction = await FeedbackService.findCategoryCorrection(userId, transaction.description || text).catch(() => null);
+    const correction = await FeedbackService.findCategoryCorrection(
+      userId,
+      transaction.description || text,
+      { type: transaction.type }
+    ).catch(() => null);
     if (!correction) continue;
     const category = correction.category_id
       ? categories.find((item) => Number(item.id) === Number(correction.category_id))
@@ -1142,10 +1182,10 @@ async function commitPendingItem(item) {
     data = { type: 'system_message', message: await applyPersona(`Đã tạo danh mục "${result.category.name}" và phân loại lại ${result.retagged_count} giao dịch.`), category_retag: result };
   } else if (item.kind === 'transfer') {
     const transfer = await TransferModel.create({ ...item.data, userId });
-    data = { type: 'system_message', message: await applyPersona(`Đã chuyển ${formatVND(transfer.amount)} từ ${transfer.from_wallet_name} sang ${transfer.to_wallet_name}.`), transfer };
+    data = { type: 'system_message', message: await applyPersona(`Đã chuyển ${formatMoney(transfer.amount, transfer.from_wallet_currency || item.data.from_wallet_currency)} từ ${transfer.from_wallet_name} sang ${transfer.to_wallet_name}.`), transfer };
   } else if (item.kind === 'investment_pnl') {
     const investment = await InvestmentPnLModel.create({ ...item.data, userId });
-    data = { type: 'system_message', message: await applyPersona(`Đã ghi nhận ${Number(investment.amount) >= 0 ? 'lãi' : 'lỗ'} ${formatVND(Math.abs(investment.amount))}.`), investment };
+    data = { type: 'system_message', message: await applyPersona(`Đã ghi nhận ${Number(investment.amount) >= 0 ? 'lãi' : 'lỗ'} ${formatMoney(Math.abs(investment.amount), investment.wallet_currency || item.data.wallet_currency)}.`), investment };
   } else {
     const saved = await TransactionModel.create({ ...item.data, userId });
     await recordPendingClassificationFeedback(item, [saved]);

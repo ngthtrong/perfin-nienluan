@@ -67,13 +67,16 @@ cd demo/backend
 npm test
 npm run test:ai
 npm run smoke:full
+node --test tests/experiment-metrics.test.js
+node tests/experiments/classification-benchmark.js --out ../../log
+node tests/experiments/feedback-before-after.js --out ../../log
 
 cd ../frontend
 npm run ui:smoke
 npx expo export --platform web --output-dir /tmp/perfin-web
 \end{verbatim}
 
-Smoke media cần provider và fixture thật. Nếu không có ground truth thì chỉ được báo pass/fail khả dụng, không tính accuracy. Kiểm thử tích hợp phải dùng database test riêng và dọn dữ liệu sau mỗi nhóm ca.
+Trong Node 24 của artifact hiện tại, \code{npm test} tổng hợp kết quả theo tệp kiểm thử; 44/44 không có nghĩa là 44 hay 182 test case riêng lẻ. Tóm tắt lần chạy cuối nằm tại \path{log/backend-test-run_2026-08-02.json}. Hai runner cuối chạy offline. Không chạy lại ablation Gemini nếu chưa chủ động cấp provider/quota; phép đo lịch sử và bản tái phân tích nằm trong \code{log/}. Smoke media cần provider và fixture thật. Nếu không có ground truth thì chỉ được báo pass/fail khả dụng, không tính accuracy. Kiểm thử tích hợp phải dùng database test riêng và dọn dữ liệu sau mỗi nhóm ca.
 
 \chapter{Nguồn sơ đồ}
 

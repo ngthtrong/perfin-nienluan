@@ -62,8 +62,8 @@ router.put('/:id/category', validateTransactionCategoryUpdate, async (req, res, 
           userId,
           transactionId: data.id,
           originalText: before.original_text || before.description,
-          aiResult: { category_id: before.category_id, category_name: before.category_name },
-          correctedResult: { category_id: data.category_id, category_name: data.category_name },
+          aiResult: { category_id: before.category_id, category_name: before.category_name, type: before.type },
+          correctedResult: { category_id: data.category_id, category_name: data.category_name, type: data.type },
         })
       ));
     }
@@ -85,8 +85,8 @@ router.put('/:id', validateTransactionUpdate, async (req, res, next) => {
             userId,
             transactionId: data.id,
             originalText: before.original_text || before.description,
-            aiResult: { category_id: before.category_id, category_name: before.category_name },
-            correctedResult: { category_id: data.category_id, category_name: data.category_name },
+            aiResult: { category_id: before.category_id, category_name: before.category_name, type: before.type },
+            correctedResult: { category_id: data.category_id, category_name: data.category_name, type: data.type },
           })
         ));
       }

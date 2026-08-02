@@ -84,8 +84,8 @@ test('pending metadata tracks category corrections but not date edits and remove
 
   assert.deepEqual(metadata.classification_corrections, {
     0: {
-      original_category: { category_id: 2, category_name: 'Ăn uống' },
-      corrected_category: { category_id: 3, category_name: 'Di chuyển' },
+      original_category: { category_id: 2, category_name: 'Ăn uống', type: 'expense' },
+      corrected_category: { category_id: 3, category_name: 'Di chuyển', type: 'expense' },
     },
   });
   const dateOnly = updateClassificationCorrectionMetadata(metadata, { ...current, ...corrected }, {
@@ -115,8 +115,8 @@ test('classification learning is recorded only from committed AI previews with a
     metadata: {
       classification_corrections: {
         0: {
-          original_category: { category_id: 2, category_name: 'Ăn uống' },
-          corrected_category: { category_id: 3, category_name: 'Di chuyển' },
+          original_category: { category_id: 2, category_name: 'Ăn uống', type: 'expense' },
+          corrected_category: { category_id: 3, category_name: 'Di chuyển', type: 'expense' },
         },
       },
     },
@@ -125,6 +125,7 @@ test('classification learning is recorded only from committed AI previews with a
     id: 91,
     category_id: 3,
     category_name: 'Di chuyển',
+    type: 'expense',
   }], {
     feedbackService: {
       async recordClassificationCorrection(payload) {
@@ -143,8 +144,8 @@ test('classification learning is recorded only from committed AI previews with a
     userId: 'default_user',
     transactionId: 91,
     originalText: 'cà phê sáng 45k',
-    aiResult: { category_id: 2, category_name: 'Ăn uống' },
-    correctedResult: { category_id: 3, category_name: 'Di chuyển' },
+    aiResult: { category_id: 2, category_name: 'Ăn uống', type: 'expense' },
+    correctedResult: { category_id: 3, category_name: 'Di chuyển', type: 'expense' },
   }]);
 
   assert.equal(await recordPendingClassificationFeedback(

@@ -14,8 +14,11 @@ const ReportService = {
     const y = Number(year || now.getFullYear());
     const result = await query(
       `SELECT c.id AS category_id, c.name AS category_name, c.icon, SUM(t.amount) AS total, COUNT(t.id) AS count
-       FROM transactions t JOIN categories c ON t.category_id = c.id
+       FROM transactions t
+       JOIN categories c ON t.category_id = c.id
+       JOIN wallets w ON w.id = t.wallet_id AND w.user_id = t.user_id
        WHERE t.user_id = $1 AND t.deleted_at IS NULL AND t.type = 'expense'
+         AND w.currency = 'VND'
          AND EXTRACT(MONTH FROM t.transaction_date) = $2
          AND EXTRACT(YEAR FROM t.transaction_date) = $3
        GROUP BY c.id, c.name, c.icon
@@ -34,12 +37,14 @@ const ReportService = {
   async getMonthlyTrend(userId = DEFAULT_USER, year) {
     const y = Number(year || new Date().getFullYear());
     const result = await query(
-      `SELECT EXTRACT(MONTH FROM transaction_date) AS month,
-              COALESCE(SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END), 0) AS income,
-              COALESCE(SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END), 0) AS expense
-       FROM transactions
-       WHERE user_id = $1 AND deleted_at IS NULL AND EXTRACT(YEAR FROM transaction_date) = $2
-       GROUP BY EXTRACT(MONTH FROM transaction_date)
+      `SELECT EXTRACT(MONTH FROM t.transaction_date) AS month,
+              COALESCE(SUM(CASE WHEN t.type = 'income' THEN t.amount ELSE 0 END), 0) AS income,
+              COALESCE(SUM(CASE WHEN t.type = 'expense' THEN t.amount ELSE 0 END), 0) AS expense
+       FROM transactions t
+       JOIN wallets w ON w.id = t.wallet_id AND w.user_id = t.user_id
+       WHERE t.user_id = $1 AND t.deleted_at IS NULL AND w.currency = 'VND'
+         AND EXTRACT(YEAR FROM t.transaction_date) = $2
+       GROUP BY EXTRACT(MONTH FROM t.transaction_date)
        ORDER BY month`,
       [userId, y]
     );

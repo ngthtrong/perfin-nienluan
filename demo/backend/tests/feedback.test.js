@@ -29,12 +29,12 @@ const aliases = {
   'Điện tử': ['điện thoại'],
 };
 
-function classificationLog(originalText, correctedName, aiName = 'Khác', createdAt = '2026-07-01') {
+function classificationLog(originalText, correctedName, aiName = 'Khác', createdAt = '2026-07-01', type = null) {
   return {
     feedback_type: 'classification',
     original_text: originalText,
-    ai_result: { category_name: aiName },
-    corrected_result: { category_name: correctedName },
+    ai_result: { category_name: aiName, type },
+    corrected_result: { category_name: correctedName, type },
     created_at: createdAt,
   };
 }
@@ -80,13 +80,36 @@ test('lookup dùng correction chính xác và từ chối lịch sử xung độ
     classificationLog('mua apple service', 'Hóa đơn & Dịch vụ'),
   ], 'mua apple service');
   assert.equal(conflict, null);
+
+  const majorityConflict = lookupCategoryCorrection([
+    classificationLog('mua apple service', 'Điện tử'),
+    classificationLog('mua apple service', 'Điện tử'),
+    classificationLog('mua apple service', 'Hóa đơn & Dịch vụ'),
+  ], 'mua apple service');
+  assert.equal(majorityConflict, null);
+});
+
+test('lookup correction giữ đúng loại giao dịch khi lịch sử có cùng câu chữ', () => {
+  const logs = [
+    classificationLog('tiền thưởng', 'Thưởng', 'Khác', '2026-07-02', 'income'),
+    classificationLog('tiền thưởng', 'Mua sắm', 'Khác', '2026-07-01', 'expense'),
+  ];
+  const income = lookupCategoryCorrection(logs, 'tiền thưởng', { type: 'income' });
+  const expense = lookupCategoryCorrection(logs, 'tiền thưởng', { type: 'expense' });
+  assert.equal(income.category_name, 'Thưởng');
+  assert.equal(expense.category_name, 'Mua sắm');
+
+  const legacyUntyped = lookupCategoryCorrection([
+    classificationLog('tiền thưởng', 'Mua sắm'),
+  ], 'tiền thưởng', { type: 'income' });
+  assert.equal(legacyUntyped, null);
 });
 
 test('few-shot chỉ lấy correction hữu ích và xếp ví dụ gần nhất trước', () => {
   const logs = [
-    classificationLog('cà phê sáng 40k', 'Ăn uống'),
-    classificationLog('đóng tiền điện thoại', 'Hóa đơn & Dịch vụ'),
-    classificationLog('cà phê sáng 40k', 'Khác', 'Khác'),
+    classificationLog('cà phê sáng 40k', 'Ăn uống', 'Khác', '2026-07-01', 'expense'),
+    classificationLog('đóng tiền điện thoại', 'Hóa đơn & Dịch vụ', 'Khác', '2026-07-01', 'expense'),
+    classificationLog('cà phê sáng 40k', 'Khác', 'Khác', '2026-07-01', 'expense'),
   ];
   const ranked = rankFewShotExamples(logs, 'cà phê sáng 45k', { minimumScore: 0.2, limit: 2 });
   assert.equal(ranked.length, 1);
@@ -95,5 +118,19 @@ test('few-shot chỉ lấy correction hữu ích và xếp ví dụ gần nhất
     user_input: 'cà phê sáng 40k',
     incorrect_category: 'Khác',
     correct_category: 'Ăn uống',
+    transaction_type: 'expense',
   });
+});
+
+test('name-only và id+name cùng nhãn không tạo xung đột giả', () => {
+  const logs = [
+    classificationLog('cà phê công ty', 'Ăn uống', 'Khác', '2026-07-01', 'expense'),
+    {
+      ...classificationLog('cà phê công ty', 'Ăn uống', 'Khác', '2026-07-02', 'expense'),
+      corrected_result: { category_id: 1, category_name: 'Ăn uống', type: 'expense' },
+    },
+  ];
+  const correction = lookupCategoryCorrection(logs, 'cà phê công ty', { type: 'expense' });
+  assert.equal(correction.category_name, 'Ăn uống');
+  assert.equal(correction.support, 2);
 });

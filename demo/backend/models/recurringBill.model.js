@@ -170,7 +170,8 @@ function inferRecurringCadence(transactions) {
 // chạm vào bản ghi của người dùng khác.
 async function getJoined(id, runQuery = query, userId = null) {
   const result = await runQuery(
-    `SELECT b.*, c.name AS category_name, c.icon AS category_icon, w.name AS wallet_name
+    `SELECT b.*, c.name AS category_name, c.icon AS category_icon,
+            w.name AS wallet_name, w.currency AS wallet_currency
      FROM recurring_bills b
      LEFT JOIN categories c ON c.id = b.category_id
      LEFT JOIN wallets w ON w.id = b.wallet_id
@@ -183,7 +184,7 @@ async function getJoined(id, runQuery = query, userId = null) {
 async function getTransactionJoined(id, runQuery = query) {
   const result = await runQuery(
     `SELECT t.*, c.name AS category_name, c.icon AS category_icon,
-            w.name AS wallet_name, w.balance AS wallet_balance
+            w.name AS wallet_name, w.balance AS wallet_balance, w.currency AS wallet_currency
      FROM transactions t
      JOIN categories c ON c.id = t.category_id
      JOIN wallets w ON w.id = t.wallet_id
@@ -212,6 +213,19 @@ const RecurringBillModel = {
     const frequency = schedule.frequency;
     const dueDay = schedule.due_day;
     const nextDue = data.next_due_date || computeNextDueDate(frequency, dueDay, new Date(), true);
+    if (data.wallet_id) {
+      const wallet = await query(
+        `SELECT id FROM wallets
+         WHERE id = $1 AND user_id = $2 AND currency = 'VND'::currency_code`,
+        [data.wallet_id, userId]
+      );
+      if (!wallet.rowCount) {
+        const error = new Error('Khoản định kỳ hiện chỉ hỗ trợ ví VND');
+        error.status = 400;
+        error.code = 'UNSUPPORTED_RECURRING_CURRENCY';
+        throw error;
+      }
+    }
     const result = await query(
       `INSERT INTO recurring_bills
          (user_id, name, amount, category_id, wallet_id, frequency, due_day, next_due_date, remind_days_before, is_variable_amount, note)
@@ -256,6 +270,19 @@ const RecurringBillModel = {
     const recompute = (data.frequency && data.frequency !== bill.frequency)
       || (data.due_day != null && Number(data.due_day) !== bill.due_day);
     const nextDue = recompute ? computeNextDueDate(frequency, dueDay, new Date(), true) : bill.next_due_date;
+    if (data.wallet_id) {
+      const wallet = await query(
+        `SELECT id FROM wallets
+         WHERE id = $1 AND user_id = $2 AND currency = 'VND'::currency_code`,
+        [data.wallet_id, userId]
+      );
+      if (!wallet.rowCount) {
+        const error = new Error('Khoản định kỳ hiện chỉ hỗ trợ ví VND');
+        error.status = 400;
+        error.code = 'UNSUPPORTED_RECURRING_CURRENCY';
+        throw error;
+      }
+    }
     await query(
       `UPDATE recurring_bills SET
          name = COALESCE($2, name),
@@ -396,6 +423,24 @@ const RecurringBillModel = {
       }
       const payWallet = walletId ?? bill.wallet_id;
       const payCategory = categoryId ?? bill.category_id;
+      const lockedWallet = await client.query(
+        `SELECT id, balance, currency FROM wallets
+         WHERE id = $1 AND user_id = $2
+         FOR UPDATE`,
+        [payWallet, bill.user_id]
+      );
+      if (!lockedWallet.rowCount) {
+        const error = new Error('Ví giao dịch không tồn tại hoặc không thuộc người dùng');
+        error.status = 400;
+        error.code = 'INVALID_PAYMENT_WALLET';
+        throw error;
+      }
+      if (lockedWallet.rows[0].currency !== 'VND') {
+        const error = new Error('Thanh toán định kỳ hiện chỉ hỗ trợ ví VND');
+        error.status = 400;
+        error.code = 'UNSUPPORTED_RECURRING_CURRENCY';
+        throw error;
+      }
       const inserted = await client.query(
         `INSERT INTO transactions
            (user_id, description, amount, type, category_id, wallet_id, transaction_date, source, note)
@@ -510,7 +555,9 @@ const RecurringBillModel = {
     const txResult = await query(
       `SELECT t.description, t.amount, t.transaction_date, t.category_id, t.wallet_id
        FROM transactions t
+       JOIN wallets w ON w.id = t.wallet_id AND w.user_id = t.user_id
        WHERE t.user_id = $1 AND t.type = 'expense' AND t.deleted_at IS NULL
+         AND w.currency = 'VND'
          AND t.transaction_date >= CURRENT_DATE - INTERVAL '6 months'
        ORDER BY t.transaction_date ASC`,
       [userId]

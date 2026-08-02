@@ -19,12 +19,15 @@ process.env.TZ = process.env.TZ || 'Asia/Ho_Chi_Minh';
 
 const { parseLocalTransaction } = require('../../services/parser.service');
 const { loadLabeledSamples, DEFAULT_CATEGORIES } = require('./lib/dataset');
-const { classificationReport, confusionToMarkdown } = require('./lib/metrics');
+const { classificationReport, confusionToMarkdown, jointCategoryLabel } = require('./lib/metrics');
 const { writeArtifact, runMeta, parseOutDir } = require('./lib/report');
 
 function classifyLocal(text) {
   const result = parseLocalTransaction(text, DEFAULT_CATEGORIES);
-  return result.transaction.category_name;
+  return {
+    type: result.transaction.type,
+    categoryName: result.transaction.category_name,
+  };
 }
 
 function run() {
@@ -33,35 +36,82 @@ function run() {
   const { samples } = dataset;
 
   const pairs = [];
+  const categoryOnlyPairs = [];
   const pairsNoOther = [];
+  const categoryOnlyPairsNoOther = [];
+  const records = [];
   const misses = [];
   for (const sample of samples) {
     const pred = classifyLocal(sample.text);
-    pairs.push({ gold: sample.goldCategory, pred });
+    const goldJoint = jointCategoryLabel(sample.type, sample.goldCategory);
+    const predJoint = jointCategoryLabel(pred.type, pred.categoryName);
+    pairs.push({ gold: goldJoint, pred: predJoint });
+    categoryOnlyPairs.push({ gold: sample.goldCategory, pred: pred.categoryName });
+    records.push({
+      sourceRow: sample.sourceRow,
+      text: sample.text,
+      goldType: sample.type,
+      goldCategory: sample.goldCategory,
+      gold: goldJoint,
+      predType: pred.type,
+      predCategory: pred.categoryName,
+      pred: predJoint,
+      correct: predJoint === goldJoint,
+      legacyCategory: sample.legacyCategory,
+    });
     // Tập con loại nhãn catch-all "Khác": nhãn lịch sử phân loại theo NGUỒN
     // tiền (vd "Family"->"Khác"), còn parser phân loại theo NỘI DUNG câu; loại
     // "Khác" cho ta thước đo công bằng hơn trên các danh mục có nội dung rõ.
-    if (sample.goldCategory !== 'Khác') pairsNoOther.push({ gold: sample.goldCategory, pred });
-    if (pred !== sample.goldCategory) {
-      misses.push({ text: sample.text, gold: sample.goldCategory, pred, legacy: sample.legacyCategory });
+    if (sample.goldCategory !== 'Khác') {
+      pairsNoOther.push({ gold: goldJoint, pred: predJoint });
+      categoryOnlyPairsNoOther.push({ gold: sample.goldCategory, pred: pred.categoryName });
+    }
+    if (predJoint !== goldJoint) {
+      misses.push({
+        text: sample.text,
+        gold: goldJoint,
+        pred: predJoint,
+        gold_type: sample.type,
+        gold_category: sample.goldCategory,
+        pred_type: pred.type,
+        pred_category: pred.categoryName,
+        legacy: sample.legacyCategory,
+      });
     }
   }
 
   const report = classificationReport(pairs);
+  const categoryOnlyReport = classificationReport(categoryOnlyPairs);
   const reportNoOther = classificationReport(pairsNoOther);
+  const categoryOnlyReportNoOther = classificationReport(categoryOnlyPairsNoOther);
 
   // Phần lớn lỗi rơi vào lớp "Khác": parser đoán một danh mục cụ thể trong khi
   // nhãn lịch sử là "Khác", hoặc ngược lại. Tách riêng để phân tích trong báo cáo.
-  const otherConfusions = misses.filter((m) => m.gold === 'Khác' || m.pred === 'Khác').length;
+  const otherConfusions = misses.filter((m) => m.gold_category === 'Khác' || m.pred_category === 'Khác').length;
+  const wrongTypeTotal = records.filter((record) => record.goldType !== record.predType).length;
+  const typeOnlyErrors = misses.filter((m) => m.gold_category === m.pred_category && m.gold_type !== m.pred_type).length;
 
   const result = {
     experiment: 'classification-benchmark',
     description: 'Độ chính xác phân loại danh mục của local parser trên tập gán nhãn dataFinance.csv',
-    meta: runMeta(),
+    meta: runMeta({
+      executionMode: 'offline',
+      aiProvider: 'none',
+      geminiModel: null,
+      providerCalls: 0,
+      codeFiles: [
+        __filename,
+        require.resolve('../../services/parser.service'),
+        require.resolve('./lib/dataset'),
+        require.resolve('./lib/metrics'),
+      ],
+    }),
     dataset: dataset.source,
-    mapping_sha256: dataset.mapping_sha256,
+    mapping: dataset.mapping,
     method: {
       classifier: 'local parser (services/parser.service.parseLocalTransaction)',
+      primary_label: 'joint transaction type/category name',
+      auxiliary_label: 'category name only (for comparison with historical result)',
       label_space: DEFAULT_CATEGORIES.map((c) => `${c.type}/${c.name}`),
       note: 'Nhãn gold ánh xạ từ taxonomy lịch sử; alias parser trùng một phần lược đồ nên đánh giá độc lập về câu chữ, không hoàn toàn độc lập về lược đồ danh mục.',
     },
@@ -73,6 +123,14 @@ function run() {
       classesWithSupport: report.classesWithSupport,
       perClass: report.perClass,
     },
+    metrics_category_name_only: {
+      total: categoryOnlyReport.total,
+      accuracy: categoryOnlyReport.accuracy,
+      macroF1: categoryOnlyReport.macroF1,
+      weightedF1: categoryOnlyReport.weightedF1,
+      classesWithSupport: categoryOnlyReport.classesWithSupport,
+      perClass: categoryOnlyReport.perClass,
+    },
     metrics_excluding_other: {
       total: reportNoOther.total,
       accuracy: reportNoOther.accuracy,
@@ -80,11 +138,22 @@ function run() {
       weightedF1: reportNoOther.weightedF1,
       classesWithSupport: reportNoOther.classesWithSupport,
     },
+    metrics_category_name_only_excluding_other: {
+      total: categoryOnlyReportNoOther.total,
+      accuracy: categoryOnlyReportNoOther.accuracy,
+      macroF1: categoryOnlyReportNoOther.macroF1,
+      weightedF1: categoryOnlyReportNoOther.weightedF1,
+      classesWithSupport: categoryOnlyReportNoOther.classesWithSupport,
+    },
     error_analysis: {
       total_misses: misses.length,
       other_class_involved: otherConfusions,
+      wrong_type_total: wrongTypeTotal,
+      same_category_wrong_type: typeOnlyErrors,
       examples: misses.slice(0, 25),
     },
+    // Lưu toàn bộ dự đoán để metric có thể được kiểm tra/tính lại độc lập.
+    records,
     confusion_labels: report.labels,
     confusion: report.confusion,
   };
@@ -104,9 +173,12 @@ function printSummary(result, report) {
   console.log('='.repeat(64));
   console.log(`Dataset      : ${result.dataset.file} (${result.dataset.labeled_rows} dòng gán nhãn)`);
   console.log(`SHA-256      : ${result.dataset.sha256}`);
+  console.log('Metric chính: joint type/category');
   console.log(`Accuracy     : ${(m.accuracy * 100).toFixed(2)}%`);
   console.log(`Macro-F1     : ${m.macroF1.toFixed(4)} (trên ${m.classesWithSupport} lớp có mẫu)`);
   console.log(`Weighted-F1  : ${m.weightedF1.toFixed(4)}`);
+  const categoryOnly = result.metrics_category_name_only;
+  console.log(`Category-only: acc ${(categoryOnly.accuracy * 100).toFixed(2)}% · macro-F1 ${categoryOnly.macroF1.toFixed(4)} (chỉ để đối chiếu)`);
   const mo = result.metrics_excluding_other;
   console.log(`— loại "Khác": acc ${(mo.accuracy * 100).toFixed(2)}% · macro-F1 ${mo.macroF1.toFixed(4)} (${mo.total} mẫu)`);
   console.log('');
@@ -122,6 +194,8 @@ function printSummary(result, report) {
   console.log('');
   console.log(`Sai tổng cộng : ${result.error_analysis.total_misses} / ${m.total}`);
   console.log(`Liên quan "Khác": ${result.error_analysis.other_class_involved}`);
+  console.log(`Sai loại thu/chi: ${result.error_analysis.wrong_type_total}`);
+  console.log(`Đúng tên nhưng sai type: ${result.error_analysis.same_category_wrong_type}`);
   console.log('='.repeat(64));
 }
 
@@ -131,11 +205,13 @@ function buildMarkdown(result, report) {
   lines.push(`# Thí nghiệm: Classification benchmark (local parser)`);
   lines.push('');
   lines.push(`- Ngày chạy: ${result.meta.timestamp}`);
-  lines.push(`- Commit: \`${result.meta.commit}\` · Node ${result.meta.node}`);
+  lines.push(`- Commit: \`${result.meta.commit}\` · working tree dirty: ${result.meta.working_tree_dirty ? 'yes' : 'no'} · Node ${result.meta.node}`);
   lines.push(`- Dataset: \`${result.dataset.file}\` — ${result.dataset.labeled_rows} dòng gán nhãn`);
   lines.push(`- SHA-256 dữ liệu: \`${result.dataset.sha256}\``);
+  lines.push(`- SHA-256 mapping: \`${result.mapping.sha256}\``);
+  lines.push(`- SHA-256 mã runner/runtime: \`${result.meta.code_sha256}\``);
   lines.push('');
-  lines.push(`## Kết quả tổng hợp`);
+  lines.push(`## Kết quả chính: joint type/category`);
   lines.push('');
   lines.push(`| Chỉ số | Giá trị |`);
   lines.push(`|---|---|`);
@@ -148,7 +224,22 @@ function buildMarkdown(result, report) {
   lines.push(`| Accuracy (loại "Khác") | ${(mo.accuracy * 100).toFixed(2)}% |`);
   lines.push(`| Macro-F1 (loại "Khác") | ${mo.macroF1.toFixed(4)} |`);
   lines.push('');
-  lines.push(`## Chỉ số theo từng danh mục`);
+  lines.push(`Metric chính ghép loại giao dịch với tên danh mục, ví dụ \`expense/Khác\``);
+  lines.push(`và \`income/Khác\` là hai nhãn khác nhau.`);
+  lines.push('');
+  lines.push(`## Đối chiếu phụ: category name only`);
+  lines.push('');
+  const categoryOnly = result.metrics_category_name_only;
+  const categoryOnlyNoOther = result.metrics_category_name_only_excluding_other;
+  lines.push(`| Chỉ số | Giá trị |`);
+  lines.push(`|---|---|`);
+  lines.push(`| Accuracy | ${(categoryOnly.accuracy * 100).toFixed(2)}% |`);
+  lines.push(`| Macro-F1 | ${categoryOnly.macroF1.toFixed(4)} |`);
+  lines.push(`| Weighted-F1 | ${categoryOnly.weightedF1.toFixed(4)} |`);
+  lines.push(`| Accuracy (loại "Khác") | ${(categoryOnlyNoOther.accuracy * 100).toFixed(2)}% |`);
+  lines.push(`| Macro-F1 (loại "Khác") | ${categoryOnlyNoOther.macroF1.toFixed(4)} |`);
+  lines.push('');
+  lines.push(`## Chỉ số theo từng nhãn joint`);
   lines.push('');
   lines.push(`| Danh mục | Support | Precision | Recall | F1 |`);
   lines.push(`|---|---|---|---|---|`);
@@ -162,6 +253,8 @@ function buildMarkdown(result, report) {
   lines.push('');
   lines.push(`- Tổng số sai: ${result.error_analysis.total_misses} / ${m.total}`);
   lines.push(`- Số ca liên quan lớp "Khác": ${result.error_analysis.other_class_involved}`);
+  lines.push(`- Sai loại giao dịch thu/chi (bất kể tên danh mục): ${result.error_analysis.wrong_type_total}`);
+  lines.push(`- Đúng tên danh mục nhưng sai loại thu/chi: ${result.error_analysis.same_category_wrong_type}`);
   lines.push('');
   lines.push(`Ví dụ ca sai (tối đa 25):`);
   lines.push('');
@@ -185,4 +278,6 @@ function escapePipe(text) {
   return String(text).replace(/\|/g, '\\|');
 }
 
-run();
+if (require.main === module) run();
+
+module.exports = { classifyLocal, run };

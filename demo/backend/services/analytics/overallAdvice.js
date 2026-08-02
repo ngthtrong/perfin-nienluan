@@ -25,7 +25,7 @@ function buildOverallAdvice(facts = {}) {
 
   if (facts.subscriptions?.subscriptions?.length) {
     actions.push('Rà soát các khoản chi định kỳ và hủy hoặc hạ gói những dịch vụ ít dùng.');
-    basis.push('subscriptions_90_days');
+    basis.push('subscriptions_200_days');
   }
 
   const leadingAnomaly = Array.isArray(facts.anomaly) ? facts.anomaly[0] : null;

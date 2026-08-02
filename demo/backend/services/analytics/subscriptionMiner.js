@@ -1,7 +1,14 @@
-// Detects recurring/subscription-like spending hidden across many small transactions
-// (Flow 18, LLM.md §2.4 "subscription bị bỏ quên"). Pure function over a transaction
-// list so it is unit-testable. Groups by normalized description, then keeps groups
-// that look periodic: repeated, stable amount, roughly monthly cadence.
+// Detects recurring/subscription-like spending hidden across transactions.
+// The function is deliberately deterministic: a repeated description is only a
+// candidate when both its amount and its observed intervals are stable.
+
+const DAYS_PER_MONTH = 365.25 / 12;
+
+const CADENCES = Object.freeze([
+  Object.freeze({ frequency: 'weekly', expectedDays: 7, minDays: 5, maxDays: 9, monthlyFactor: 52 / 12 }),
+  Object.freeze({ frequency: 'monthly', expectedDays: DAYS_PER_MONTH, minDays: 26, maxDays: 35, monthlyFactor: 1 }),
+  Object.freeze({ frequency: 'quarterly', expectedDays: DAYS_PER_MONTH * 3, minDays: 80, maxDays: 100, monthlyFactor: 1 / 3 }),
+]);
 
 function normalizeDesc(s = '') {
   return String(s)
@@ -15,61 +22,160 @@ function normalizeDesc(s = '') {
     .trim();
 }
 
-function daysBetween(a, b) {
-  return Math.abs((new Date(a) - new Date(b)) / (1000 * 60 * 60 * 24));
+function toTimestamp(value) {
+  if (typeof value === 'string') {
+    const match = value.match(/^(\d{4})-(\d{2})-(\d{2})(?:$|T)/);
+    if (match) {
+      const year = Number(match[1]);
+      const month = Number(match[2]) - 1;
+      const day = Number(match[3]);
+      const timestamp = Date.UTC(year, month, day);
+      const parsed = new Date(timestamp);
+      return parsed.getUTCFullYear() === year && parsed.getUTCMonth() === month && parsed.getUTCDate() === day
+        ? timestamp
+        : null;
+    }
+  }
+  const date = value instanceof Date ? value : new Date(value);
+  if (!Number.isFinite(date.getTime())) return null;
+  return Date.UTC(date.getFullYear(), date.getMonth(), date.getDate());
+}
+
+function nextExpectedTimestamp(lastTimestamp, frequency) {
+  const next = new Date(lastTimestamp);
+  if (frequency === 'weekly') {
+    next.setUTCDate(next.getUTCDate() + 7);
+    return next.getTime();
+  }
+  const months = frequency === 'quarterly' ? 3 : 1;
+  const wantedDay = next.getUTCDate();
+  next.setUTCDate(1);
+  next.setUTCMonth(next.getUTCMonth() + months);
+  const lastDay = new Date(Date.UTC(next.getUTCFullYear(), next.getUTCMonth() + 1, 0)).getUTCDate();
+  next.setUTCDate(Math.min(wantedDay, lastDay));
+  return next.getTime();
+}
+
+function mean(values) {
+  return values.reduce((sum, value) => sum + value, 0) / values.length;
+}
+
+function coefficientOfVariation(values) {
+  if (!values.length) return null;
+  const avg = mean(values);
+  if (!(avg > 0)) return null;
+  const variance = values.reduce((sum, value) => sum + ((value - avg) ** 2), 0) / values.length;
+  return Math.sqrt(variance) / avg;
+}
+
+function inferCadence(gaps, maxCadenceCv) {
+  if (!gaps.length || gaps.some((gap) => !(gap > 0))) return null;
+  const cadenceDays = mean(gaps);
+  const dispersion = coefficientOfVariation(gaps);
+  if (dispersion === null || dispersion > maxCadenceCv) return null;
+
+  const matches = CADENCES
+    .filter((cadence) => gaps.every((gap) => gap >= cadence.minDays && gap <= cadence.maxDays))
+    .sort((left, right) => (
+      Math.abs(cadenceDays - left.expectedDays) - Math.abs(cadenceDays - right.expectedDays)
+    ));
+
+  if (!matches.length) return null;
+  return { ...matches[0], cadenceDays, dispersion };
 }
 
 // transactions: [{ description, amount, transaction_date, type }]
-// Returns [{ label, occurrences, avgAmount, monthlyEstimate, cadenceDays, amountStable }]
+// Returns { subscriptions: [{ label, frequency, occurrences, avgAmount,
+// monthlyEstimate, cadenceDays, cadenceDispersion, amountStable }], totalMonthly }
 function mineSubscriptions(transactions, {
-  minOccurrences = 2,
-  maxAmount = 500000,        // "small" recurring fees; large one-offs excluded
-  amountTolerance = 0.15,    // ±15% counts as the same recurring charge
-  cadenceMinDays = 20,       // roughly monthly window
-  cadenceMaxDays = 40,
+  minOccurrences = 3,
+  maxAmount = null,          // opt-in ceiling; no silent VND 500k exclusion by default
+  amountTolerance = 0.15,
+  maxCadenceCv = 0.12,
+  asOf = new Date(),
 } = {}) {
-  const expenses = transactions.filter((t) => t.type === 'expense' && Number(t.amount) <= maxAmount);
+  const occurrenceFloor = Number(minOccurrences);
+  if (!Number.isInteger(occurrenceFloor) || occurrenceFloor < 2) {
+    throw new RangeError('minOccurrences must be an integer of at least 2');
+  }
+  if (!Number.isFinite(Number(amountTolerance)) || Number(amountTolerance) < 0) {
+    throw new RangeError('amountTolerance must be a non-negative number');
+  }
+  if (!Number.isFinite(Number(maxCadenceCv)) || Number(maxCadenceCv) < 0) {
+    throw new RangeError('maxCadenceCv must be a non-negative number');
+  }
+  const asOfTimestamp = toTimestamp(asOf);
+  if (asOfTimestamp === null) throw new RangeError('asOf must be a valid date');
+
+  const hasAmountCeiling = maxAmount !== null && maxAmount !== undefined;
+  const amountCeiling = hasAmountCeiling ? Number(maxAmount) : null;
+  if (hasAmountCeiling && (!(amountCeiling > 0) || !Number.isFinite(amountCeiling))) {
+    throw new RangeError('maxAmount must be a positive finite number when provided');
+  }
+
   const groups = new Map();
-  for (const t of expenses) {
-    const key = normalizeDesc(t.description);
+  for (const transaction of Array.isArray(transactions) ? transactions : []) {
+    const amount = Number(transaction.amount);
+    const timestamp = toTimestamp(transaction.transaction_date);
+    if (
+      transaction.type !== 'expense'
+      || !(amount > 0)
+      || !Number.isFinite(amount)
+      || timestamp === null
+      || timestamp > asOfTimestamp
+    ) continue;
+    if (hasAmountCeiling && amount > amountCeiling) continue;
+
+    const key = normalizeDesc(transaction.description);
     if (!key) continue;
     if (!groups.has(key)) groups.set(key, []);
-    groups.get(key).push({ amount: Number(t.amount), date: t.transaction_date, desc: t.description });
+    groups.get(key).push({ amount, timestamp, desc: transaction.description });
   }
 
   const results = [];
-  for (const [key, items] of groups) {
-    if (items.length < minOccurrences) continue;
-    const amounts = items.map((i) => i.amount);
-    const avg = amounts.reduce((a, b) => a + b, 0) / amounts.length;
-    if (avg <= 0) continue;
+  for (const items of groups.values()) {
+    if (items.length < occurrenceFloor) continue;
+    const amounts = items.map((item) => item.amount);
+    const avgAmount = mean(amounts);
+    const amountStable = amounts.every((amount) => Math.abs(amount - avgAmount) / avgAmount <= Number(amountTolerance));
+    if (!amountStable) continue;
 
-    // amount stability: all within tolerance of the average
-    const amountStable = amounts.every((a) => Math.abs(a - avg) / avg <= amountTolerance);
+    const sorted = items.slice().sort((left, right) => left.timestamp - right.timestamp);
+    const gaps = sorted.slice(1).map((item, index) => (
+      (item.timestamp - sorted[index].timestamp) / 86400000
+    ));
+    const cadence = inferCadence(gaps, Number(maxCadenceCv));
+    if (!cadence) continue;
+    const lastTimestamp = sorted.at(-1).timestamp;
+    const ageDays = (asOfTimestamp - lastTimestamp) / 86400000;
+    // A regular series that stopped longer than one maximum cadence ago is no
+    // longer an active subscription candidate.
+    if (ageDays > cadence.maxDays) continue;
+    const expectedTimestamp = nextExpectedTimestamp(lastTimestamp, cadence.frequency);
 
-    // cadence: median gap between consecutive occurrences
-    const sorted = items.slice().sort((a, b) => new Date(a.date) - new Date(b.date));
-    const gaps = [];
-    for (let i = 1; i < sorted.length; i += 1) gaps.push(daysBetween(sorted[i].date, sorted[i - 1].date));
-    const cadence = gaps.length ? gaps.reduce((a, b) => a + b, 0) / gaps.length : null;
-    const periodic = cadence === null ? false : cadence >= cadenceMinDays && cadence <= cadenceMaxDays;
-
-    // Keep as a subscription candidate if amount is stable and (periodic OR simply repeated monthly-ish)
-    if (amountStable && (periodic || items.length >= 3)) {
-      results.push({
-        label: sorted[sorted.length - 1].desc,
-        occurrences: items.length,
-        avgAmount: Math.round(avg),
-        monthlyEstimate: Math.round(avg), // one charge per month assumption
-        cadenceDays: cadence ? Math.round(cadence) : null,
-        amountStable,
-      });
-    }
+    results.push({
+      label: sorted.at(-1).desc,
+      frequency: cadence.frequency,
+      cadence: cadence.frequency,
+      occurrences: items.length,
+      avgAmount: Math.round(avgAmount),
+      monthlyEstimate: Math.round(avgAmount * cadence.monthlyFactor),
+      cadenceDays: Math.round(cadence.cadenceDays),
+      cadenceDispersion: Number(cadence.dispersion.toFixed(3)),
+      lastSeen: new Date(lastTimestamp).toISOString().slice(0, 10),
+      nextExpected: new Date(expectedTimestamp).toISOString().slice(0, 10),
+      amountStable,
+    });
   }
 
-  results.sort((a, b) => b.monthlyEstimate - a.monthlyEstimate);
-  const totalMonthly = results.reduce((sum, r) => sum + r.monthlyEstimate, 0);
+  results.sort((left, right) => right.monthlyEstimate - left.monthlyEstimate);
+  const totalMonthly = results.reduce((sum, result) => sum + result.monthlyEstimate, 0);
   return { subscriptions: results, totalMonthly };
 }
 
-module.exports = { mineSubscriptions, normalizeDesc };
+module.exports = {
+  CADENCES,
+  inferCadence,
+  mineSubscriptions,
+  normalizeDesc,
+};

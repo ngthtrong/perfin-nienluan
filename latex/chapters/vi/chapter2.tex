@@ -10,7 +10,7 @@ Chương này tổng hợp các khái niệm, mô hình và công nghệ đượ
 
 Một giao dịch tài chính tối thiểu gồm số tiền, loại, ngày, mô tả, danh mục và ví. Thu nhập làm tăng số dư; chi phí làm giảm số dư; chuyển ví tạo hai biến thiên trái dấu nên không được tính thành thu hoặc chi. Các thay đổi liên quan nhiều bản ghi phải nằm trong cùng transaction để hoặc hoàn thành toàn bộ, hoặc được rollback toàn bộ.
 
-Cơ sở dữ liệu quan hệ phù hợp với bài toán vì hỗ trợ khóa ngoại, kiểu số thập phân, ràng buộc miền và truy vấn tổng hợp. Dữ liệu nghiệp vụ bền vững cần tách khỏi trạng thái ngắn hạn như câu hỏi đang chờ, bản xem trước, cache hoặc queue. Phân tích theo ngày/tuần/tháng phải giữ trục lịch và điền 0 cho kỳ không phát sinh; bỏ các kỳ 0 có thể làm sai slope, burn rate và tương quan.
+Cơ sở dữ liệu quan hệ phù hợp với bài toán vì hỗ trợ khóa ngoại, kiểu số thập phân, ràng buộc miền và truy vấn tổng hợp. Dữ liệu nghiệp vụ bền vững cần tách khỏi trạng thái ngắn hạn như câu hỏi đang chờ, bản xem trước, cache hoặc queue. Với các phép phân tích dùng trục lịch cố định, kỳ không phát sinh phải được điền 0: trend dùng tháng hoàn tất, correlation dùng tuần ISO hoàn tất, còn runway/anomaly giữ đủ ngày lịch. Kỳ đang dở bị loại khỏi phép so sánh tháng/tuần; bỏ kỳ 0 có thể làm sai slope, burn rate và tương quan.
 
 \subsection{Chuẩn hóa và độ tương đồng văn bản}
 \label{subsec:text-similarity}
@@ -53,10 +53,13 @@ Hệ số Pearson \cite{pearson1895} đo mức đồng biến tuyến tính củ
 \end{equation}
 
 Tương quan chỉ được diễn giải trong cửa sổ quan sát, không hàm ý quan hệ nhân quả.
+Hệ số không xác định khi có dưới ba cặp quan sát hoặc một trong hai chuỗi không có
+phương sai; trường hợp đó phải được biểu diễn bằng giá trị rỗng, không được thay
+bằng $r=0$.
 
 \subsection{Runway, khoản định kỳ, ngân sách và mục tiêu}
 
-Runway là ngoại suy số ngày số dư hiện tại có thể duy trì nếu tốc độ chi gần đây không đổi. Khai phá khoản định kỳ nhóm giao dịch theo mô tả, mức tiền và khoảng cách ngày. Dự báo ngân sách dùng tốc độ chi theo số ngày đã trôi qua; lập kế hoạch mục tiêu dùng phần tiền còn thiếu, hạn chót, mức góp và mô phỏng trả nợ. Các kỹ thuật này ưu tiên khả năng giải thích và xử lý điều kiện biên hơn độ phức tạp mô hình. Công thức, cửa sổ và quy tắc do PERFIN lựa chọn được trình bày ở mục~\ref{subsec:analytics-design}.
+Runway là ngoại suy số ngày số dư thanh khoản trong đồng tiền báo cáo có thể duy trì nếu tốc độ chi gần đây không đổi; đây không phải tổng tài sản. Khai phá khoản định kỳ nhóm giao dịch theo mô tả, mức tiền và khoảng cách ngày. Dự báo ngân sách dùng tốc độ chi theo số ngày đã trôi qua; lập kế hoạch mục tiêu dùng phần tiền còn thiếu, hạn chót, mức góp và mô phỏng trả nợ. Các kỹ thuật này ưu tiên khả năng giải thích và xử lý điều kiện biên hơn độ phức tạp mô hình. Công thức, cửa sổ và quy tắc do PERFIN lựa chọn được trình bày ở mục~\ref{subsec:analytics-design}.
 
 \begin{table}[H]
   \centering

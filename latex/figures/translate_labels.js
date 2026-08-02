@@ -110,7 +110,7 @@ const replacements = [
   ["Tham chiếu lỏng qua FK nullable", "Loose reference through a nullable FK"],
 
   ["Sơ đồ quan hệ thực thể vật lý", "Physical Entity–Relationship Diagram"],
-  ["Tên cột được rút gọn theo nhóm để giữ khả năng đọc; kiểu dữ liệu và constraint đầy đủ là chuỗi migration 001–008. Mọi cạnh FK đều ghi lực lượng bằng ký hiệu chân chim ở hai đầu. Các FK phạm vi người dùng (user_id) được khai báo trong hộp bảng thay cho đường dài; cạnh chỉ vẽ cho quan hệ nghiệp vụ chính và quan hệ 1:1 duy nhất (users–backup_config).", "Columns are grouped for readability; migrations 001–008 define complete types and constraints. FK edges use crow's-foot cardinality. User-scope FKs are declared inside table boxes to avoid long crossing edges; only key business relations and the users–backup_config 1:1 relation are drawn."],
+  ["Tên cột được rút gọn theo nhóm để giữ khả năng đọc; kiểu dữ liệu và constraint đầy đủ là chuỗi migration 001–009. Mọi cạnh FK đều ghi lực lượng bằng ký hiệu chân chim ở hai đầu. Các FK phạm vi người dùng (user_id) được khai báo trong hộp bảng thay cho đường dài; cạnh chỉ vẽ cho quan hệ nghiệp vụ chính và quan hệ 1:1 duy nhất (users–backup_config).", "Columns are grouped for readability; migrations 001–009 define complete types and constraints. FK edges use crow's-foot cardinality. User-scope FKs are declared inside table boxes to avoid long crossing edges; only key business relations and the users–backup_config 1:1 relation are drawn."],
   ["Hồ sơ &amp; AI", "Profile and AI"],
   ["Kế hoạch", "Planning"],
   ["Định kỳ &amp; vận hành", "Recurring and Operations"],

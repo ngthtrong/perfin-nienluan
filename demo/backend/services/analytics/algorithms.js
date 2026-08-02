@@ -109,6 +109,27 @@ function detectAnomalies(points, { zThreshold = 2.5, iqrK = 1.5 } = {}) {
   return out.sort((a, b) => b.value - a.value);
 }
 
+// Return the next local-calendar occurrence of a day-of-month payday. Date#setDate
+// otherwise rolls 31 April into May, which changes the intended payday rule.
+function nextPaydayDate(today, payday) {
+  const source = new Date(today);
+  const build = (year, month) => {
+    const lastDay = new Date(year, month + 1, 0).getDate();
+    return new Date(
+      year,
+      month,
+      Math.min(payday, lastDay),
+      source.getHours(),
+      source.getMinutes(),
+      source.getSeconds(),
+      source.getMilliseconds(),
+    );
+  };
+  let next = build(source.getFullYear(), source.getMonth());
+  if (next <= source) next = build(source.getFullYear(), source.getMonth() + 1);
+  return next;
+}
+
 // ── Cashflow runway ──────────────────────────────────────────────────────────────
 // Given current balance and recent daily burn rate, estimate the calendar date the
 // balance hits zero. `dailySpends` = numbers for the last N days (expense only).
@@ -130,9 +151,7 @@ function cashflowRunway(balance, dailySpends, { today = new Date(), payday = nul
     let beforePayday = false;
     let daysBeforePayday = null;
     if (payday) {
-      const nextPay = new Date(today);
-      nextPay.setDate(payday);
-      if (nextPay <= today) nextPay.setMonth(nextPay.getMonth() + 1);
+      const nextPay = nextPaydayDate(today, payday);
       beforePayday = true;
       daysBeforePayday = Math.max(0, Math.round((nextPay - depletion) / (1000 * 60 * 60 * 24)));
     }
@@ -163,9 +182,7 @@ function cashflowRunway(balance, dailySpends, { today = new Date(), payday = nul
   let daysBeforePayday = null;
   if (payday) {
     // payday = day-of-month (1..31); find the next occurrence from today
-    const nextPay = new Date(today);
-    nextPay.setDate(payday);
-    if (nextPay <= today) nextPay.setMonth(nextPay.getMonth() + 1);
+    const nextPay = nextPaydayDate(today, payday);
     beforePayday = depletion < nextPay;
     daysBeforePayday = Math.round((nextPay - depletion) / (1000 * 60 * 60 * 24));
   }
@@ -183,7 +200,10 @@ function cashflowRunway(balance, dailySpends, { today = new Date(), payday = nul
 // ── Pearson correlation between two equal-length series ──────────────────────────
 function pearson(a, b) {
   const n = Math.min(a.length, b.length);
-  if (n < 3) return 0;
+  // Correlation is undefined with fewer than three paired observations, or
+  // when either series has zero variance. Returning null keeps "undefined"
+  // distinct from a genuine coefficient of zero (no linear relationship).
+  if (n < 3) return null;
   const ma = mean(a.slice(0, n));
   const mb = mean(b.slice(0, n));
   let num = 0;
@@ -197,7 +217,7 @@ function pearson(a, b) {
     db += xb * xb;
   }
   const den = Math.sqrt(da * db);
-  return den === 0 ? 0 : Number((num / den).toFixed(3));
+  return den === 0 ? null : Number((num / den).toFixed(3));
 }
 
 module.exports = {

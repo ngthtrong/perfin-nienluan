@@ -70,3 +70,30 @@ test('thiếu thu nhập thì tự hạ về category_average', () => {
   assert.equal(result.categories[0].recommended_limit, 1000000);
   assert.ok(result.warnings.some((warning) => warning.includes('thu nhập')));
 });
+
+test('làm tròn từng danh mục không làm tổng nhóm vượt trần', () => {
+  const result = recommendCategoryBudgets([
+    { period: '2026-04', type: 'income', total: 100000 },
+    { period: '2026-04', type: 'expense', category_id: 1, category_name: 'Giải trí', total: 15000 },
+    { period: '2026-04', type: 'expense', category_id: 2, category_name: 'Mua sắm', total: 15000 },
+  ], {
+    strategy: '50-30-20',
+    historyPeriods: ['2026-04'],
+    bufferRate: 0,
+    roundingIncrement: 10000,
+  });
+
+  const wantsTotal = result.categories
+    .filter((category) => category.group === 'wants')
+    .reduce((sum, category) => sum + category.recommended_limit, 0);
+  assert.ok(wantsTotal <= result.framework.wants_cap);
+});
+
+test('khung tỷ lệ không cho phân bổ vượt quá toàn bộ thu nhập', () => {
+  assert.throws(() => recommendCategoryBudgets(history, {
+    strategy: 'hybrid',
+    needsRate: 0.6,
+    wantsRate: 0.3,
+    savingsRate: 0.2,
+  }), /không được vượt quá 100%/);
+});

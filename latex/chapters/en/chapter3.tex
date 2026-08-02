@@ -5,7 +5,7 @@
 
 \subsection{Overall Description}
 
-PERFIN is a mobile prototype for entering, normalizing, managing and analysing personal-finance data. Chat and media complement forms as input channels. The backend performs every financial calculation, constraint check and data change; LLM, OCR and STT services have no direct PostgreSQL access and are not authoritative numeric sources. FR/NFR identifiers and test traceability follow the intent of IEEE~830 \cite{ieee830}.
+PERFIN is a mobile prototype for entering, normalizing, managing and analysing personal-finance data. Chat and media complement forms as input channels. The backend performs every financial calculation, constraint check and data change; LLM, OCR and STT services have no direct PostgreSQL access and are not authoritative numeric sources. FR/NFR identifiers and test traceability follow the requirements-engineering guidance of ISO/IEC/IEEE~29148:2018 \cite{iso29148}.
 
 \begin{table}[H]
   \centering
@@ -18,7 +18,7 @@ PERFIN is a mobile prototype for entering, normalizing, managing and analysing p
     User & A general user records and interprets personal-finance data without requiring statistical expertise. \\
     Environment & React Native/Expo on mobile or web, Express API and PostgreSQL; Redis and a worker are configuration-dependent. \\
     System of record & PostgreSQL stores business data; Redis stores only TTL-bound pending, clarification, cache and queue state. \\
-    Constraints & The demo uses \code{default_user}, has no production authentication/authorization and defaults to VND. \\
+    Constraints & The demo uses \code{default_user}, has no production authentication/authorization, defaults to VND and has no foreign-exchange conversion. \\
     Dependencies & LLM/OCR/STT providers are replaceable; failure must produce a real error or fallback, never fabricated data. \\
     Assumption & The user reviews previews; guidance does not replace professional financial advice. \\
     \bottomrule
@@ -130,7 +130,7 @@ Figure~\ref{fig:usecase-overview} contains observable actor goals only. Parser, 
   \textbf{Relationships} & Uses FR-05 wallet and transaction entities. \frtablerow
   \textbf{Normal flow} & Enter source, target, amount and date; validate distinct wallets; lock in stable order; debit, credit and write history; commit. \frtablerow
   \textbf{Subflows} & In one transaction, subtract source, add target and write \code{wallet_transfers}; net change equals zero. \frtablerow
-  \textbf{Alternate flows} & Same/missing/out-of-scope wallets or invalid amount/date roll back. A future negative source balance alone is not rejected. \frtablerow
+  \textbf{Alternate flows} & Same, missing or out-of-scope wallets, invalid amount/date, or different wallet currencies roll back. A future negative source balance alone is not rejected. \frtablerow
 \end{frtable}
 
 \begin{frtable}{FR-07 --- Analyse Financial Data}{tab:fr07}
@@ -140,9 +140,9 @@ Figure~\ref{fig:usecase-overview} contains observable actor goals only. Parser, 
   \textbf{Necessity} & Mandatory. \frtablerow
   \textbf{Classification} & Complex. \frtablerow
   \textbf{Participants and concerns} & Analytics needs clean data; users need period, sample size and method. \frtablerow
-  \textbf{Summary} & Compute deterministic facts over non-deleted data and zero-filled time axes. \frtablerow
+  \textbf{Summary} & Compute deterministic facts over non-deleted data; trend/correlation use completed periods and fixed calendar axes are zero-filled. \frtablerow
   \textbf{Relationships} & Reads FR-05 and supplies FR-08 and FR-11. \frtablerow
-  \textbf{Normal flow} & Select analysis and period; query profile data; zero-fill and check sample count; run the algorithm; return facts, method and warnings. \frtablerow
+  \textbf{Normal flow} & Select analysis and period; query profile data; normalize the calendar axis and check sample count; run the algorithm; return facts with window, method, parameter and warning metadata. \frtablerow
   \textbf{Subflows} & Run OLS, z-score/IQR, runway, recurring or Pearson through one result contract. \frtablerow
   \textbf{Alternate flows} & Sparse data or zero variance returns a degraded result or \code{null}; no causal claim or fabricated transaction. \frtablerow
 \end{frtable}
@@ -156,9 +156,9 @@ Figure~\ref{fig:usecase-overview} contains observable actor goals only. Parser, 
   \textbf{Participants and concerns} & The user needs clear explanation; Analytics owns facts; the narrator cannot alter numbers. \frtablerow
   \textbf{Summary} & Explain precomputed facts and return them with the narration for traceability. \frtablerow
   \textbf{Relationships} & Includes FR-07 and may use a persona when consent is enabled. \frtablerow
-  \textbf{Normal flow} & Receive question/report request; generate facts; load permitted persona; narrate facts; validate response contract; return facts and narration. \frtablerow
-  \textbf{Subflows} & Cache facts with TTL and store narration metadata without treating it as authoritative. \frtablerow
-  \textbf{Alternate flows} & Sparse facts return a warning. Provider failure returns a deterministic template. Numeric-check failure falls back instead of emitting the response. \frtablerow
+  \textbf{Normal flow} & Receive a question/report request; generate facts; load a permitted persona; narrate facts; return narration, facts and provider metadata. \frtablerow
+  \textbf{Subflows} & Lock numbers/units in the prompt and use a deterministic template when the provider fails. \frtablerow
+  \textbf{Alternate flows} & Sparse facts return a warning. A complete numeric-grounding checker remains a design target and is not presented as measured. \frtablerow
 \end{frtable}
 
 \begin{frtable}{FR-09 --- Manage and Forecast Budgets}{tab:fr09}
@@ -166,13 +166,13 @@ Figure~\ref{fig:usecase-overview} contains observable actor goals only. Parser, 
   \textbf{ID} & FR-09. \frtablerow
   \textbf{User} & User. \frtablerow
   \textbf{Necessity} & Mandatory. \frtablerow
-  \textbf{Classification} & Complex. \frtablerow
-  \textbf{Participants and concerns} & Users need explicit limits; Budget Service needs consistent period and category data. \frtablerow
-  \textbf{Summary} & Manage limits, forecast month end and propose budgets from history. \frtablerow
+  \textbf{Classification} & Medium. \frtablerow
+  \textbf{Participants and concerns} & Users need progress visibility; Budget Engine needs sufficient history and must not apply limits automatically. \frtablerow
+  \textbf{Summary} & Compute spent/remaining, forecast month end and propose limits from history or a ratio framework. \frtablerow
   \textbf{Relationships} & Reads FR-05 and may invoke FR-03 from chat. \frtablerow
   \textbf{Normal flow} & Select month; query spending; compute progress and forecast; produce warning/recommendation; confirm before saving a recommendation. \frtablerow
-  \textbf{Subflows} & Baseline uses historical mean plus buffer; 50/30/20 and hybrid constrain total allocation. \frtablerow
-  \textbf{Alternate flows} & No history yields a setup request, not a prediction. Duplicate category-period updates atomically. \frtablerow
+  \textbf{Subflows} & Zero-fill months; compute limits; proportionally shrink raw allocations and reconcile rounding when a group exceeds its cap. \frtablerow
+  \textbf{Alternate flows} & Fewer than three history months produce a warning. A non-positive amount or non-expense category is rejected. \frtablerow
 \end{frtable}
 
 \begin{frtable}{FR-10 --- Plan Goals and What-if Scenarios}{tab:fr10}
@@ -185,8 +185,8 @@ Figure~\ref{fig:usecase-overview} contains observable actor goals only. Parser, 
   \textbf{Summary} & Calculate contribution, duration, amortization and what-if plans without modifying the original until confirmation. \frtablerow
   \textbf{Relationships} & Reads FR-05/FR-07 and may use FR-03. \frtablerow
   \textbf{Normal flow} & Enter goal; validate amount/date/rate; compute allocatable cash; run goal-specific formula; return plan and warnings; save after confirmation. \frtablerow
-  \textbf{Subflows} & What-if reruns the same pure function with an additional contribution and keeps the original plan unchanged. \frtablerow
-  \textbf{Alternate flows} & Invalid inputs request correction. Payment below first-month interest warns of negative amortization. Cancel causes no write. \frtablerow
+  \textbf{Subflows} & What-if reruns the saving/purchase function with an additional contribution; debt payoff uses monthly simulation. The original plan is unchanged and no scenario is persisted. \frtablerow
+  \textbf{Alternate flows} & Invalid inputs request correction. Payment less than or equal to first-month interest warns of negative amortization; zero payment and a 600-month horizon are reported explicitly. Cancel causes no write. \frtablerow
 \end{frtable}
 
 \begin{frtable}{FR-11 --- Manage Recurring Bills and Proactive Jobs}{tab:fr11}
@@ -236,7 +236,7 @@ Figure~\ref{fig:usecase-overview} contains observable actor goals only. Parser, 
   NFR-05 & Correctness & Algorithms match expected normal/boundary cases; negative balances are valid; narrator invents no number. & Unit tests, invariants and facts--response checker. \\
   NFR-06 & Privacy & Remove temporary media; use traits only with consent; ID queries include user scope. & Temporary-file, consent and cross-scope tests. \\
   NFR-07 & Worker consistency & Retrying an event/job creates no duplicate payment, message or export. & Repeat fingerprints and count effects. \\
-  NFR-08 & Traceability & Analysis includes period, sample size, method, facts and degradation status. & Contract tests and FR--test--artifact matrix. \\
+  NFR-08 & Traceability & Analysis includes schema version, timestamp, component value and metadata for unit, window, sample count, method, parameters, warnings and degradation status. & Contract tests and FR--test--artifact matrix. \\
   \bottomrule
 \end{longtable}
 
@@ -310,7 +310,7 @@ Microservices were considered but not selected because prototype scale does not 
   \bottomrule
 \end{longtable}
 
-Money uses \code{DECIMAL(15,2)}; report queries exclude soft-deleted records; deleting a referenced category is blocked or controlled by re-tagging; pending state exists only in Redis; and target-design ID queries include \code{user_id/user_key}.
+Money uses \code{DECIMAL(15,2)}; report queries exclude soft-deleted records; deleting a referenced category is blocked or controlled by re-tagging; pending state exists only in Redis; and target-design ID queries include \code{user_id/user_key}. Internal transfer requires matching wallet currencies. Runway sums only liquid VND \code{cash}, \code{bank} and \code{e_wallet} balances; foreign-currency, savings, investment and credit-card wallets are excluded because the prototype has neither exchange-rate nor liquidity modelling.
 
 \subsection{Detailed Design}
 \label{subsec:detailed-design}
@@ -340,21 +340,60 @@ The matcher uses
   s=\max(s_{edit},\;0.92s_{dice},\;s_{contain}).
 \end{equation}
 
-Selection proceeds through exact name, exact alias and fuzzy matching. Long input uses $\tau=0.82$, input of at most four characters uses $\tau=0.90$, and the best candidate must exceed the second by $m=0.08$. These are prototype starting values, not universal optima. Retrieval loads at most 200 recent corrections and selects at most five similar examples; conflict lowers confidence instead of forcing a label.
+Let $U,V$ be normalized token sets and choose $|U|\leq|V|$. The implementation defines containment as
+
+\begin{equation}
+  s_{contain}=\begin{cases}
+    \min\!\left(0.94,\;0.82+0.12\dfrac{|U|}{|V|}\right),
+      & U\subseteq V\ \text{and}\ |U|\geq2,\\
+    0, & \text{otherwise}.
+  \end{cases}
+\end{equation}
+
+Selection proceeds through exact name, exact alias and fuzzy matching. Input length is measured after normalization: input longer than four characters uses $\tau=0.82$, shorter input uses $\tau=0.90$, and the best candidate must exceed the second by $m=0.08$. These are prototype starting values, not universal optima. Retrieval loads at most 200 recent corrections and overrides only with a record of the same income/expense type; legacy records without type are ineligible. A fuzzy correction needs at least 0.88 similarity, and competing labels require at least 0.8 agreement for the winner. Multiple labels for one exact text return fallback/clarification instead of majority voting.
 
 \subsubsection{Analytics and Planning Algorithms}
 \label{subsec:analytics-design}
 
-Default windows are 14 days for runway, 30 days for anomaly, 90 days for recurring discovery, six months for trend and 12 weeks for correlation. Every result reports its configured window.
+Default windows are 14 calendar days for runway, 30 calendar days for anomaly, 200 days for recurring discovery, six completed months for trend, 60 calendar days for day-of-week analysis and 12 completed ISO weeks for correlation. Fixed day/month/week axes zero-fill inactive periods; an incomplete current month/week is excluded from comparisons. A payday is a local day-of-month and day 31 is clamped to the target month's last calendar day.
 
-For total balance $B$, daily expense $e_j$ and $W=14$,
+Runway uses only liquid VND balance:
+
+\begin{equation}
+  B=\sum_{\substack{w.currency=\mathrm{VND}\\
+  w.type\in\{\mathrm{cash},\mathrm{bank},\mathrm{e\_wallet}\}}} balance_w.
+\end{equation}
+
+For daily expense $e_j$ and $W=14$,
 
 \begin{equation}
   \bar e_W=\frac{1}{W}\sum_{j=1}^{W}e_j,\qquad
   d=\left\lfloor\frac{B}{\bar e_W}\right\rfloor.
 \end{equation}
 
-If $B\leq0$, then $d=0$; if $\bar e_W=0$, the depletion date is undefined. Recurring grouping uses mean amount $\bar a$, relative deviation $\delta_i=|a_i-\bar a|/\bar a$ and mean cadence. A group is stable when all $\delta_i\leq0.15$, cadence is 20--40 days or at least three occurrences exist.
+If $B\leq0$, then $d=0$; if $\bar e_W=0$, the depletion date is undefined. For monthly spending $y_j$, the trend detector keeps the zero-filled six-month axis but requires at least three positive observed months, then uses OLS and emits a signal only when slope $b>0$, $R^2\geq0.5$, and mean stepwise percentage change (over steps with a positive preceding value) is at least 10\%.
+
+Anomaly detection uses the sample standard deviation over all 30 days. It is evaluated only when at least four calendar days have positive spending, and flags only the upper tail when
+
+\begin{equation}
+  z_i=\frac{e_i-\bar e}{s}\geq2.5
+  \quad\text{or}\quad
+  e_i>Q_3+1.5\,IQR.
+\end{equation}
+
+When $s=0$, the implementation sets $z_i=0$; when $IQR=0$, the IQR branch is disabled. Thus a constant series cannot become anomalous merely because the denominator is undefined.
+
+Recurring grouping normalizes descriptions and simultaneously requires at least three occurrences, every $\delta_i=|a_i-\bar a|/\bar a\leq0.15$, and gap coefficient of variation $CV_g=\sigma_g/\bar g\leq0.12$ (population $\sigma_g$ over positive gaps). Every gap must fit one cadence: weekly 5--9 days, monthly 26--35 days or quarterly 80--100 days. A candidate is active only when its latest occurrence is no older than that cadence's maximum gap; the output also records \code{lastSeen} and the calendar-clamped \code{nextExpected}. There is no default amount ceiling. The monthly estimate is
+
+\begin{equation}
+  \widehat a_{month}=\begin{cases}
+    \bar a\,52/12, & \text{weekly},\\
+    \bar a, & \text{monthly},\\
+    \bar a/3, & \text{quarterly}.
+  \end{cases}
+\end{equation}
+
+Correlation zero-fills a shared 12-week axis, keeps categories observed in at least four weeks and skips undefined Pearson pairs (fewer than three paired observations or zero variance). It returns only the strongest positive pair when $r\geq0.6$; association does not imply causation. Day-of-week analysis uses the 60-day window, requires at least four observed weekdays and emits a signal only when the peak-to-mean ratio reaches 1.8.
 
 For category spending $s_{c,j}$ across $m$ months, a five-percent-buffer baseline is
 
@@ -362,15 +401,15 @@ For category spending $s_{c,j}$ across $m$ months, a five-percent-buffer baselin
   b_c=1.05\left(\frac{1}{m}\sum_{j=1}^{m}s_{c,j}\right).
 \end{equation}
 
-Month-end forecast is $\widehat S_D=(S/d_e)D$, where $S$ is spending so far, $d_e$ elapsed days and $D$ month length. 50/30/20 and hybrid strategies shrink allocations when their sum exceeds the cap; recommendations require confirmation.
+Month-end forecast is $\widehat S_D=(S/d_e)D$, where $S$ is spending so far, $d_e$ elapsed calendar days including today and $D$ month length. The 50/30/20 and hybrid strategies shrink raw allocations when they exceed a cap; post-rounding reconciliation keeps each group at or below its cap. Needs, wants and savings rates may not sum to more than 1; recommendations require confirmation.
 
-For remaining goal amount $R$ and monthly contribution $M>0$, $n=\lceil R/M\rceil$. For debt principal $L$, monthly rate $r$ and duration $n$, level payment is
+For a saving or purchase goal with remaining amount $R$ and monthly contribution $M>0$, $n_s=\lceil R/M\rceil$. For current debt principal $L$ and nominal annual percentage rate $i$, the implementation uses monthly rate $r=i/(12\times100)$. With a debt deadline of $n_d$ months, the required end-of-month level payment is
 
 \begin{equation}
-  P=\frac{Lr}{1-(1+r)^{-n}}
+  P=\frac{Lr}{1-(1+r)^{-n_d}}
 \end{equation}
 
-for $r>0$, and $P=L/n$ for $r=0$. A payment below first-month interest triggers a negative-amortization warning. What-if runs the same function with new parameters and does not modify the original plan.
+for $r>0$, and $P=L/n_d$ for $r=0$. A payment less than or equal to first-month interest triggers a negative-amortization warning; a zero payment is reported separately. Without a deadline, the implementation simulates month by month up to a 600-month default horizon. What-if currently reruns the saving/purchase function with an additional contribution; debt plans are not changed by that scenario, and no what-if result is persisted.
 
 \widereportfigure{12-goal-flow.pdf}{Goal planning and what-if flow; only final confirmation persists a goal.}{fig:goal-flow}
 
@@ -378,7 +417,7 @@ for $r>0$, and $P=L/n$ for $r=0$. A payment below first-month interest triggers 
 
 \widereportfigure{11-insight-sequence.pdf}{Grounded-insight sequence; Analytics returns facts before persona/LLM narration.}{fig:insight-sequence}
 
-Insight facts include value, unit, window, sample count, method and warnings. A persona changes tone only with consent. The response includes both narration and facts for UI/test comparison. A numeric checker covering every expression remains a target design.
+Facts contract version 1.0 returns \code{schema_version}, \code{generated_at}, each component value and \code{metadata.components}. Per-component metadata contains \code{unit}, \code{window}, \code{sample_count}, \code{method}, \code{parameters}, \code{warnings}, and \code{status} in \code{ok/no_signal/degraded}. The window object records \code{size}, \code{unit} and \code{zero_filled}; selected components add \code{category_count} or \code{wallet_count}. A local failure appears in \code{degraded_components} without removing the contract. A persona changes tone only with consent; the response includes narration and facts for UI/test comparison. A numeric checker covering every expression remains a target design.
 
 \section{Testing}
 \label{sec:testing}
@@ -398,14 +437,14 @@ Insight facts include value, unit, window, sample count, method and warnings. A 
   Unit & Matching, analytics, budget, goal and validation. & Normal, boundary, hand-computed expected values and invariants. & \code{node:test} pass/fail by case. \\
   Integration & Route--service--model, PostgreSQL and Redis. & Test DB, rollback, TTL and concurrent claim. & Logs, DB snapshots and exit code. \\
   System & Text/voice/image through preview and DB. & End-to-end scripted smoke. & HTTP response, DB assertion and UI image. \\
-  AI contract & Parser, tool schema and LLM. & Labelled inputs, same task and metrics. & JSON predictions, accuracy and macro-F1. \\
+  AI contract & Parser, tool schema, LLM and corrections. & Joint type/category labels; abstentions stay in the denominator; whole-group split. & JSON records, coverage, accuracy/F1 and helped/harmed/net. \\
   Media & OCR/STT adapters. & Ground-truth image/audio. & CER/WER and field accuracy. \\
   Worker & Retry, deduplication and schedule. & Repeated fingerprint and fault injection. & Before/after effect count. \\
   UAT & Target users. & Timed tasks and step count. & Completion, duration and SUS. \\
   \bottomrule
 \end{longtable}
 
-The text dataset must cover currency units, written numbers, multiplication, relative dates, multiple transactions, typos, mixed Vietnamese/English, missing or ambiguous fields and conflicting corrections. Analytics data needs known slopes, outliers, cadence and correlation. Media data must store image/audio with a reference transcript or receipt table.
+The text dataset must cover currency units, written numbers, multiplication, relative dates, multiple transactions, typos, mixed Vietnamese/English, missing or ambiguous fields and conflicting corrections. In correction evaluation, every row sharing transaction type and normalized description must lie wholly in seed or evaluation. Analytics data needs known slopes, outliers, cadence and correlation. Media data must store image/audio with a reference transcript or receipt table.
 
 \subsection{Results and Analysis}
 \label{subsec:results}
@@ -422,14 +461,14 @@ The text dataset must cover currency units, written numbers, multiplication, rel
   \textbf{Item} & \textbf{Result} & \textbf{Status} & \textbf{Permitted conclusion} \\
   \midrule
   \endhead
-  Backend \code{npm test} & 182/182 pass. & \statusmeasured & Unit/service tests across 38 files; not UAT or production evidence. \\
+  Backend \code{npm test} & 44/44 test files pass. & \statusmeasured & Node 24 reports file-level results; this is neither 182 test cases nor UAT/production evidence. \\
   Local-parser gate & 31/31 strict pass. & \statusmeasured & Fixed set of 31 sentences; not an independent benchmark. \\
   Full API/DB/media smoke & 23/23 checks pass. & \statusmeasured & Selected fixtures traverse HTTP--PostgreSQL/provider; Redis worker excluded. \\
   Mobile-web UI smoke & 4/4 gates pass at 390$\times$844. & \statusmeasured & No overflow and images render; not UAT. \\
   Data import & 5,265 rows, 0 rejects. & \statusmeasured & Provenance-aware importer reconciled on demo PostgreSQL. \\
-  Parser on 5,265 rows & Accuracy 29.36\%; macro-F1 0.177. & \statusmeasured & Historical labels conflict with current taxonomy; useful for error analysis. \\
-  Parser vs Gemini & Macro-F1 0.204 vs 0.607. & \statusmeasured & Same stratified 63-sentence sample; Gemini p50 964 ms. \\
-  Correction retrieval & Accuracy 68.19\% on parser-wrong holdout. & \statusmeasured & Baseline 0\% follows from sample selection; not a whole-system improvement. \\
+  Parser on 5,265 rows & Joint type/category: accuracy 26.12\%; macro-F1 0.1559. & \statusmeasured & Category-only 29.36\%/0.177 is an auxiliary comparison. \\
+  Parser vs Gemini & Full-set accuracy 22.22\% vs 39.68\%. & \statusmeasured & Gemini coverage is 42/63; macro-F1 0.6068 is conditional on those 42 answers. \\
+  Correction retrieval & Conditional on parser type correctness and excluding \textit{Other}: accuracy 34.46\% $\rightarrow$ 61.22\%; coverage 891/2,612; net $+26.76$ points. & \statusmeasured & 4,756 eligible rows; 76 wrong-type rows excluded; whole-group type+normalized-text split; zero seed/evaluation overlap. \\
   OCR/STT accuracy & Not reported. & \statusmissing & Two images and one audio smoke fixture cannot establish CER/WER/field accuracy. \\
   Live Redis worker & Not confirmed. & \statusmissing & Payment logic is tested, but live queue/worker was not measured. \\
   Grounding, p95 and UAT & Not reported. & \statusmissing & Requires checker, at least 30 runs per flow and target users. \\
@@ -440,63 +479,69 @@ Smoke testing only establishes completion of selected scenarios. It is not OCR/S
 
 \subsubsection{Classification Experiments}
 
-Three experiments on 24 July 2026 use \code{dataFinance.csv} with 5,265 rows. Reproduction code and JSON/Markdown artifacts reside under \path{demo/backend/tests/experiments/} and \path{log/}.
+The experiments use the 5,265-row \code{dataFinance.csv}. Classification and correction were rerun offline on 2 August 2026; the Gemini ablation is a historical measurement from 24 July with a 2 August reanalysis artifact. Code and JSON/Markdown artifacts reside under \path{demo/backend/tests/experiments/} and \path{log/}.
 
 \begin{table}[H]
   \centering
-  \caption{Local-parser result on 5,265 transactions}
+  \caption{Local-parser benchmark on 5,265 transactions}
   \label{tab:exp-classification}
-  \begin{tabularx}{0.78\textwidth}{@{}Y R{3.0cm}@{}}
+  \begin{tabularx}{0.9\textwidth}{@{}Y R{3.2cm}@{}}
     \toprule
     \textbf{Metric} & \textbf{Value} \\
     \midrule
-    Accuracy & 29.36\% \\
-    Macro-F1 (12 represented classes) & 0.177 \\
-    Weighted-F1 & 0.301 \\
-    Incorrect cases & 3,719/5,265 \\
-    Errors involving Other & 2,957 \\
+    Joint type/category accuracy & 26.12\% \\
+    Joint macro-F1 (13 represented classes) & 0.1559 \\
+    Joint weighted-F1 & 0.2913 \\
+    Incorrect joint predictions & 3,890/5,265 \\
+    Errors involving Other & 3,128 \\
+    Wrong income/expense type & 427 \\
+    Correct category name but wrong type & 171 \\
+    Category-only accuracy (auxiliary) & 29.36\% \\
+    Category-only macro/weighted-F1 (auxiliary) & 0.1770/0.3013 \\
     \bottomrule
   \end{tabularx}
 \end{table}
 
-Most errors involve Other because some historical labels describe the funding source while the parser categorizes spending purpose. Taxonomy and labelling policy therefore need to be locked before model optimization.
+The primary label joins transaction type and category name, so \code{income/Other} and \code{expense/Other} are distinct. Most errors still involve Other because some historical labels describe funding source while the parser classifies content. The gap from category-only metrics also shows why a correct name with the wrong income/expense direction cannot count as correct.
 
 \begin{table}[H]
   \centering
   \caption{Local parser and Gemini ablation on the same 63 sentences}
   \label{tab:exp-ablation}
-  \begin{tabularx}{\textwidth}{@{}L{3.0cm}R{2.0cm}R{2.3cm}R{2.2cm}Y@{}}
+  \begin{tabularx}{\textwidth}{@{}L{2.4cm}R{2.0cm}R{2.1cm}R{2.2cm}R{2.4cm}R{1.6cm}@{}}
     \toprule
-    \textbf{Branch} & \textbf{Accuracy} & \textbf{Macro-F1} & \textbf{p50} & \textbf{Note} \\
+    \textbf{Branch} & \textbf{Coverage} & \textbf{Full accuracy} & \textbf{Answered accuracy} & \textbf{Answered macro-F1} & \textbf{p50} \\
     \midrule
-    Local parser & 22.2\% & 0.204 & 0 ms & No API call. \\
-    Gemini & 59.5\% & 0.607 & 964 ms & 63/63 calls succeeded; 21 empty labels count as wrong. \\
+    Local parser & 63/63 & 22.22\% & 22.22\% & 0.2039 & 0 ms \\
+    Gemini & 42/63 & 39.68\% & 59.52\% & 0.6068 & 964 ms \\
     \bottomrule
   \end{tabularx}
 \end{table}
 
-Gemini performs better on this small sample but introduces latency and provider dependence. The result supports continued LLM extraction experiments; it does not show that one model is universally better for every user or taxonomy.
+The historical runner removed 21 \code{null} categories before computing 59.52\% and macro-F1 0.6068, so both describe only the 42 answered samples. Counting abstentions as incorrect, Gemini gets 25/63 (39.68\%) on the full set. The old artifact lacks every sample-level prediction, so full-set macro-F1 cannot be reconstructed and remains unavailable. All 63 calls completed without a recorded provider error, but 21 outputs had no category. This small sample and 964-ms p50 support further LLM experiments, not universal superiority.
 
 \subsubsection{Correction-retrieval Experiment}
 
-After removing Other, the experiment selected 3,502 sentences the parser had already classified incorrectly, then split seed and holdout. Because selection guarantees parser error in the holdout, pre-correction accuracy is necessarily 0\%. Table~\ref{tab:exp-feedback} measures errors repaired inside this selected set, not improvement over a representative baseline.
+After removing \textit{Other}, 4,832 samples are partitioned into whole normalized-text groups within each transaction type. Category correction is evaluated only when the parser transaction type equals the gold type: 4,756 rows are eligible and 76 wrong-type rows are excluded because category retrieval cannot repair the type. Group keys use \code{normalizeForMatch}. The selected seed side contains 1,714 parser-wrong records and 430 parser-correct co-members (2,144 rows across 636 groups); the greedy group selection targeted 1,713 parser-wrong records but cannot split a group. Evaluation retains 1,712 parser-wrong holdout records and 900 parser-correct controls outside all seed groups; those 430 co-members are excluded even though they do not become corrections. Seed/evaluation key overlap is zero, eliminating exact-match leakage.
 
 \begin{table}[H]
   \centering
-  \caption{Correction retrieval on a parser-wrong holdout}
+  \caption{Correction retrieval on the 2,612-sample group-split evaluation}
   \label{tab:exp-feedback}
-  \begin{tabularx}{0.82\textwidth}{@{}L{3.6cm}R{2.2cm}R{2.2cm}Y@{}}
+  \begin{tabularx}{0.9\textwidth}{@{}L{4.1cm}R{2.2cm}R{2.2cm}R{2.2cm}@{}}
     \toprule
-    \textbf{Metric} & \textbf{Before} & \textbf{After} & \textbf{Interpretation} \\
+    \textbf{Metric} & \textbf{Before} & \textbf{After} & \textbf{Difference} \\
     \midrule
-    Accuracy & 0.00\% & 68.19\% & 1,194 selected errors repaired. \\
-    Macro-F1 & 0.000 & 0.544 & Computed within the selected holdout. \\
-    Weighted-F1 & 0.000 & 0.782 & Influenced by holdout class distribution. \\
+    Accuracy & 34.46\% & 61.22\% & $+26.76$ points \\
+    Macro-F1 & 0.3080 & 0.5898 & $+0.2818$ \\
+    Weighted-F1 & 0.3990 & 0.7072 & $+0.3082$ \\
+    Correction coverage & 0\% & 34.11\% & 891/2,612 \\
+    Helped/harmed/net & -- & 740/41/699 & net $+26.76$ points \\
     \bottomrule
   \end{tabularx}
 \end{table}
 
-The control group contains 1,330 parser-correct sentences; correction changed 466 incorrectly, 430 of which shared text with conflicting historical labels. Degradation on unambiguous sentences is 36/1,330 (2.7\%). Retrieval can repair recurring errors but is label-noise sensitive; a future experiment needs random whole-distribution sampling and confidence intervals.
+All 891 applications are fuzzy; exact applications are zero as required by the split. In the parser-wrong holdout cohort, accuracy rises from 0\% to 43.22\% (740 helped cases among 1,712; 796 corrections applied). Among 900 parser-correct controls, 95 corrections apply and 41 cause errors, leaving 95.44\% accuracy. One of the 41 flips is consistent with conflicting historical labels and 40 are genuine harmful flips. The net 699 cases over 2,612 equal the $+26.76$-point accuracy change. This controls leakage and measures both benefit and harm, but still uses one historical dataset, one seed and no confidence interval; it is not a production estimate.
 
 \subsection{Requirements-to-Evidence Traceability}
 
@@ -514,7 +559,8 @@ Table~\ref{tab:traceability} links observable requirements to design, tests and 
   \endhead
   FR-01, FR-03--FR-06 & Typed draft, TTL preview, service and SQL transaction. & Parser gate, backend tests and API--DB smoke. & Selected fixtures and rollback invariants pass; no independent task-based user measurement. \\
   FR-02 & Media adapter, raw-text review and shared FR-01 pipeline. & Upload/media smoke; planned CER/WER and field accuracy. & Sample provider flow executes; insufficient ground truth for OCR/STT accuracy. \\
-  FR-07--FR-10 & Analytics, facts contract, Budget/Goal service and grounded narrator. & Hand-expected unit tests, classification benchmark and planned checker. & Formulas and functions have tests; response-wide grounding and warning thresholds remain incomplete. \\
+  FR-04 & Joint classifier, type-scoped corrections, conflict thresholds and group split. & Classification benchmark, ablation coverage and correction helped/harmed/net. & Record-level artifacts and zero overlap exist; historical labels, small sample and no confidence interval still limit conclusions. \\
+  FR-07--FR-10 & Analytics, facts contract, Budget/Goal service and grounded narrator. & Hand-expected unit tests, metadata contract and planned checker. & Formulas, calendar windows and metadata have tests; response-wide grounding and representative threshold calibration remain incomplete. \\
   FR-11 & Recurring service, BullMQ, event key and retry. & Payment/handler unit tests; planned live worker and fault injection. & Business logic is tested; no live queue/worker evidence in this evaluation. \\
   FR-12 & CSV exporter, history and TTL cleanup. & Escaping tests, API smoke and planned expiry check. & CSV has evidence; the former PDF-labelled path only generates HTML. \\
   NFR-01--NFR-08 & Constraints, user scope, fallback, idempotency and fact metadata. & Rollback, cross-scope, load, recovery, worker and UAT. & Test integrity has evidence; three-hour recovery, p95, UAT, live worker and faithfulness remain targets. \\
@@ -525,12 +571,12 @@ Table~\ref{tab:traceability} links observable requirements to design, tests and 
 
 \subsubsection{Internal Validity}
 
-Benchmarks depend on historical labels. Identical descriptions with different categories show that label noise can penalize both parser and retrieval even when a prediction follows the current taxonomy. The 63-sentence ablation is small, and the correction holdout is conditionally selected from parser errors, so observed differences are not unbiased whole-traffic estimates. Gemini is version- and time-dependent; artifacts should retain model, parameters, timestamp and raw response.
+Benchmarks depend on historical labels, and identical descriptions may have different categories. The new correction experiment splits whole type+normalized-description groups with zero overlap, but seed and evaluation still come from one dataset, use one seed and have no confidence interval. The 63-sentence ablation is small; its historical artifact omitted complete prediction records and computed conditional metrics after removing 21 abstentions, so full-set Gemini macro-F1 cannot be recovered. Providers also vary by version and time; the updated runner therefore stores model, parameters, timestamp and sanitized structured records.
 
 \subsubsection{Construct Validity}
 
-The 31/31 gate measures success on designed sentences, not out-of-sample correctness. Smoke tests measure scenario completion, not accuracy or usability. Accuracy can hide rare classes, so macro-F1, weighted-F1, per-class confusion and support are also needed. For OCR/STT, CER/WER alone is insufficient: amount, date and merchant field accuracy maps more directly to ledger risk.
+The 31/31 gate measures success on designed sentences, not out-of-sample correctness. Smoke tests measure scenario completion, not accuracy or usability. Accuracy can hide rare classes, while abstention can inflate conditional metrics. Coverage, macro-F1, weighted-F1, per-class confusion, helped/harmed/net and support are therefore reported together. For OCR/STT, CER/WER alone is insufficient: amount, date and merchant field accuracy maps more directly to ledger risk.
 
 \subsubsection{External Validity}
 
-Data comes from one demo profile, uses VND and is primarily Vietnamese. Results do not automatically generalize to many users, other taxonomies, varied receipts or production load. The next evaluation should lock the taxonomy, sample randomly over time, split by normalized description, fix random seeds and add target-user UAT. Current conclusions apply only to the source, dataset and environment recorded in the 24 July 2026 artifacts.
+Data comes from one demo profile, uses VND and is primarily Vietnamese. Results do not automatically generalize to many users, other taxonomies, varied receipts or production load. The next evaluation should lock the taxonomy, sample randomly over time, retain group splitting while running multiple seeds/confidence intervals, and add target-user UAT. Conclusions apply only to the source, dataset and environment recorded in the 24 July ablation and 2 August 2026 classification/correction artifacts.

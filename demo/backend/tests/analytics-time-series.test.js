@@ -3,11 +3,18 @@ const assert = require('node:assert/strict');
 
 process.env.TZ = 'Asia/Ho_Chi_Minh';
 
-const { mean, linearTrend, cashflowRunway } = require('../services/analytics/algorithms');
+const {
+  mean,
+  linearTrend,
+  cashflowRunway,
+  pearson,
+} = require('../services/analytics/algorithms');
 const {
   completeDailyTotals,
   completeMonthlyByCategory,
   completeMonthlyCashflow,
+  completeWeeklyByCategory,
+  recentCompletedWeekKeys,
 } = require('../services/analytics/timeSeries');
 
 test('runway average preserves zero-spend calendar days', () => {
@@ -43,6 +50,16 @@ test('runway reports an already depleted balance as zero days without a past dat
   assert.equal(runway.alreadyDepleted, true);
   assert.equal(runway.beforePayday, true);
   assert.ok(runway.daysBeforePayday >= 0);
+});
+
+test('runway clamps a day-31 payday to the last day of a short month', () => {
+  const runway = cashflowRunway(0, [100], {
+    today: new Date(2026, 0, 31, 9, 0, 0, 0),
+    payday: 31,
+  });
+
+  assert.equal(runway.beforePayday, true);
+  assert.equal(runway.daysBeforePayday, 28);
 });
 
 test('runway still reports depletion when balance is zero and burn history is empty', () => {
@@ -85,4 +102,45 @@ test('monthly cashflow averages over the requested calendar window', () => {
   ]);
   assert.equal(mean(dense.map((row) => row.income)), 200);
   assert.equal(mean(dense.map((row) => row.expense)), 100);
+});
+
+test('completed ISO-week axis excludes the current partial week across an ISO year boundary', () => {
+  assert.deepEqual(recentCompletedWeekKeys(3, '2026-01-07'), [
+    '2025-51',
+    '2025-52',
+    '2026-01',
+  ]);
+});
+
+test('category correlation uses one shared completed-week axis with missing weeks filled by zero', () => {
+  const completed = completeWeeklyByCategory([
+    { category: 'Ăn uống', yw: '2025-51', total: 100 },
+    { category: 'Ăn uống', yw: '2026-01', total: 300 },
+    { category: 'Di chuyển', yw: '2025-51', total: 200 },
+    { category: 'Di chuyển', yw: '2026-01', total: 600 },
+  ], 3, '2026-01-07');
+
+  assert.deepEqual(completed.axis, ['2025-51', '2025-52', '2026-01']);
+  assert.deepEqual(completed.categories['Ăn uống'], {
+    observedPeriods: 2,
+    series: [
+      { yw: '2025-51', total: 100 },
+      { yw: '2025-52', total: 0 },
+      { yw: '2026-01', total: 300 },
+    ],
+  });
+  assert.equal(
+    pearson(
+      completed.categories['Ăn uống'].series.map((point) => point.total),
+      completed.categories['Di chuyển'].series.map((point) => point.total)
+    ),
+    1
+  );
+});
+
+test('Pearson reports undefined for insufficient or zero-variance series', () => {
+  assert.equal(pearson([1, 2], [1, 2]), null);
+  assert.equal(pearson([4, 4, 4], [1, 2, 3]), null);
+  assert.equal(pearson([1, 2, 3], [8, 8, 8]), null);
+  assert.equal(pearson([1, 2, 3], [2, 4, 6]), 1);
 });

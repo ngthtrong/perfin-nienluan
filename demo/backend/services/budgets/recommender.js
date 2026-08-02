@@ -37,6 +37,30 @@ function roundCurrency(value, increment = 10000) {
   return Math.max(Math.round(amount / step) * step, amount > 0 ? step : 0);
 }
 
+function enforceRoundedCap(items, cap, increment = 10000) {
+  const limit = Math.max(toFiniteNumber(cap), 0);
+  const step = Math.max(toFiniteNumber(increment, 10000), 1);
+  const adjusted = items.map((item) => ({ ...item }));
+  let total = adjusted.reduce((sum, item) => sum + item.recommended_limit, 0);
+
+  while (total > limit) {
+    const candidate = adjusted
+      .filter((item) => item.recommended_limit > 0)
+      .sort((left, right) => {
+        const leftOvershoot = left.recommended_limit - left.raw_limit;
+        const rightOvershoot = right.recommended_limit - right.raw_limit;
+        return rightOvershoot - leftOvershoot
+          || right.recommended_limit - left.recommended_limit;
+      })[0];
+    if (!candidate) break;
+    const reduction = Math.min(step, candidate.recommended_limit);
+    candidate.recommended_limit -= reduction;
+    total -= reduction;
+  }
+
+  return adjusted;
+}
+
 function summarizeHistory(rows = [], expectedPeriods = []) {
   const periods = new Set((expectedPeriods || []).map(normalizePeriod).filter(Boolean));
   const observedPeriods = new Set();
@@ -131,6 +155,11 @@ function recommendCategoryBudgets(rows = [], options = {}) {
   const wantsRate = Math.min(Math.max(toFiniteNumber(options.wantsRate, 0.3), 0), 1);
   const bufferRate = Math.min(Math.max(toFiniteNumber(options.bufferRate, 0.05), 0), 0.5);
   const increment = options.roundingIncrement || 10000;
+  if (strategy !== 'category_average' && needsRate + wantsRate + savingsRate > 1 + Number.EPSILON) {
+    const error = new Error('Tổng tỷ lệ nhu cầu, mong muốn và tiết kiệm không được vượt quá 100%');
+    error.status = 400;
+    throw error;
+  }
 
   const baseCategories = summary.categories.map((category) => ({
     ...category,
@@ -146,7 +175,7 @@ function recommendCategoryBudgets(rows = [], options = {}) {
     wants: monthlyIncome * wantsRate,
   };
 
-  const recommendations = baseCategories.map((category) => {
+  let recommendations = baseCategories.map((category) => {
     let rawLimit = category.buffered_average;
     if (strategy === '50-30-20') {
       rawLimit = groupAverage[category.group] > 0
@@ -165,13 +194,25 @@ function recommendCategoryBudgets(rows = [], options = {}) {
       category_id: category.category_id,
       category_name: category.category_name,
       group: category.group,
+      raw_limit: rawLimit,
       average_spend: Math.round(category.average_spend),
       recommended_limit: recommendedLimit,
       active_months: category.active_periods,
       confidence: confidenceFromMonths(category.active_periods),
       rationale,
     };
-  }).filter((category) => category.recommended_limit > 0);
+  });
+
+  if (strategy !== 'category_average') {
+    recommendations = ['needs', 'wants'].flatMap((group) => enforceRoundedCap(
+      recommendations.filter((category) => category.group === group),
+      groupCaps[group],
+      increment
+    ));
+  }
+  recommendations = recommendations
+    .filter((category) => category.recommended_limit > 0)
+    .map(({ raw_limit: _rawLimit, ...category }) => category);
 
   const totalRecommended = recommendations.reduce((sum, category) => sum + category.recommended_limit, 0);
   const savingsTarget = monthlyIncome > 0 ? monthlyIncome * savingsRate : 0;
@@ -197,6 +238,7 @@ module.exports = {
   normalizePeriod,
   classifyBudgetGroup,
   roundCurrency,
+  enforceRoundedCap,
   summarizeHistory,
   normalizeStrategy,
   recommendCategoryBudgets,
