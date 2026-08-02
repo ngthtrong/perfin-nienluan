@@ -11,6 +11,7 @@ cd "$(dirname "$0")" || exit 1
 SRC_DIR=drawio
 OUT_DIR=rendered
 DRAWIO=${DRAWIO:-/snap/bin/drawio}
+REPAIR_PNG=../../.codex/skills/drawio-skill/skills/drawio-skill/scripts/repair_png.py
 LOG=/tmp/rerender.log
 : >"$LOG"
 
@@ -54,9 +55,15 @@ render() {
   local src="$SRC_DIR/$base.drawio" out="$OUT_DIR/$base.$fmt"
   local attempt
   for attempt in 1 2; do
-    local args=(-x -f "$fmt" --disable-gpu --no-sandbox -o "$out" "$src")
-    [[ $fmt == png ]] && args=(-x -f png --width 2200 --disable-gpu --no-sandbox -o "$out" "$src")
+    local args=(-x -f "$fmt" -e --disable-gpu --no-sandbox -o "$out" "$src")
+    [[ $fmt == png ]] && args=(-x -f png -e --width 2200 --disable-gpu --no-sandbox -o "$out" "$src")
     if timeout 180 xvfb-run -a "$DRAWIO" "${args[@]}" >>"$LOG" 2>&1 && [[ -s $out ]]; then
+      if [[ $fmt == png ]]; then
+        python3 "$REPAIR_PNG" "$out" >>"$LOG" 2>&1 || {
+          log "  retry $base.$fmt (PNG repair failed)"
+          continue
+        }
+      fi
       log "  OK   $base.$fmt ($(stat -c%s "$out") bytes)"
       return 0
     fi

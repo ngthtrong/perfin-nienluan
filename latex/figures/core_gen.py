@@ -739,7 +739,7 @@ def erd_edge(
         "endSize=14",
         f"strokeColor={c.stroke}",
         f"fontColor={c.font}",
-        "fontSize=11",
+        "fontSize=13",
         "labelBackgroundColor=#FFFFFF",
         "strokeWidth=1.2",
         "dashed=1" if dashed else "",
@@ -1292,140 +1292,157 @@ def diagram_04() -> str:
 
 
 def diagram_05() -> str:
+    """Physical ERD in a free-form layout with dedicated edge corridors."""
     c: list[str] = [
-        title("t", "Sơ đồ quan hệ thực thể vật lý", 40, 16, 980),
+        title("t", "Physical Entity–Relationship Diagram", 40, 16, 1180),
         subtitle(
             "st",
-            "Tên cột được rút gọn theo nhóm để giữ khả năng đọc; kiểu dữ liệu và "
-            "constraint đầy đủ là chuỗi migration 001–008. Mọi cạnh FK đều ghi "
-            "lực lượng bằng ký hiệu chân chim ở hai đầu. Các FK phạm vi người "
-            "dùng (user_id) được khai báo trong hộp bảng thay cho đường dài; "
-            "cạnh chỉ vẽ cho quan hệ nghiệp vụ chính và quan hệ 1:1 duy nhất "
-            "(users–backup_config).",
+            "Columns are grouped for readability; migrations 001–008 define "
+            "complete types and constraints. The free-form layout assigns a "
+            "separate corridor to each principal business FK. Repeated "
+            "user_id/user_key ownership FKs remain declared inside table boxes "
+            "instead of becoming long crossing edges.",
             40,
             46,
-            1430,
+            1800,
         ),
-        lane("profile", "Hồ sơ & AI", 30, 105, 360, 745, "purple"),
-        lane("ledger", "Sổ cái", 410, 105, 360, 745, "green"),
-        lane("planning", "Kế hoạch", 790, 105, 360, 745, "yellow"),
-        lane("ops", "Định kỳ & vận hành", 1170, 105, 360, 745, "blue"),
-        card("users", "USERS", ["PK id · UK user_key", "username · payday", "FK active_personality_id", "personalization_consent"], 15, 50, 330, 105, "blue", parent="profile"),
-        card("personalities", "AI_PERSONALITIES", ["PK id · UK key", "FK user_key", "name · style_prompt · is_default"], 15, 175, 330, 92, "purple", parent="profile"),
-        card("traits", "USER_TRAITS", ["PK id · FK user_id", "trait_type · trait_value"], 15, 287, 330, 80, "purple", parent="profile"),
-        card("chat", "CHAT_MESSAGES", ["PK id · FK user_id", "FK personality_id", "role · content · metadata"], 15, 387, 330, 92, "blue", parent="profile"),
-        card("feedback", "AI_FEEDBACK_LOGS", ["PK id · FK user_id", "FK transaction_id", "feedback_type · original_text", "ai_result · corrected_result"], 15, 499, 330, 105, "purple", parent="profile"),
-        card("categories", "CATEGORIES", ["PK id · FK user_id", "FK parent_id", "name · type · is_default"], 15, 50, 330, 92, "green", parent="ledger"),
-        card("wallets", "WALLETS", ["PK id · FK user_id", "name · type", "balance · initial_balance"], 15, 162, 330, 92, "green", parent="ledger"),
-        card("transactions", "TRANSACTIONS", ["PK id · FK user/category/wallet", "amount · type · source", "transaction_date · deleted_at", "ai_parsed"], 15, 274, 330, 108, "green", parent="ledger"),
-        card("pnl", "INVESTMENT_PNL", ["PK id · FK user_id", "FK wallet_id", "amount · recorded_at"], 15, 402, 330, 92, "green", parent="ledger"),
-        card("transfers", "WALLET_TRANSFERS", ["PK id · FK user_id", "FK from_wallet_id · to_wallet_id", "amount · transfer_type", "transaction_date"], 15, 514, 330, 108, "green", parent="ledger"),
-        card("budgets", "BUDGETS", ["PK id · FK user/category", "amount_limit · month · year"], 15, 50, 330, 80, "yellow", parent="planning"),
-        card("budget_history", "BUDGET_HISTORY", ["PK id · FK budget_id", "change_type", "old_value · new_value"], 15, 150, 330, 92, "yellow", parent="planning"),
-        card("goals", "FINANCIAL_GOALS", ["PK id · FK user/linked_wallet", "goal_type · status", "target/current_amount", "target_date"], 15, 262, 330, 108, "yellow", parent="planning"),
-        card("bills", "RECURRING_BILLS", ["PK id · FK user/category/wallet", "name · amount · frequency", "next_due_date"], 15, 50, 330, 92, "yellow", parent="ops"),
-        card("payments", "RECURRING_BILL_PAYMENTS", ["PK id · FK user/bill", "FK transaction/wallet", "period_due_date · status"], 15, 162, 330, 92, "yellow", parent="ops"),
-        card("dismissed", "RECURRING_SUGGESTIONS_DISMISSED", ["PK id · FK user_id → users.id (N:1)", "signature · dismissed_at"], 15, 274, 330, 80, "yellow", parent="ops"),
-        card("exports", "EXPORT_HISTORY", ["PK id · FK user_id → users.id (N:1)", "export_type · file_path", "filters · expires_at"], 15, 374, 330, 92, "blue", parent="ops"),
-        card("backup", "BACKUP_CONFIG", ["PK id · FK user_id → users.id (1:1)", "auto_enabled · frequency", "keep_count"], 15, 486, 330, 92, "blue", parent="ops"),
-        # Mọi cạnh FK đều ghi lực lượng bằng ký hiệu chân chim ở hai đầu, nên
-        # đọc được 1:1 hay 1:N trực tiếp trên hình.
-        erd_edge("p_u", "personalities", "users", "active_for", color="purple",
-                 dashed=True, src_card="zero_one", tgt_card="one",
-                 exit_xy=(0.4, 0), entry_xy=(0.4, 1)),
-        erd_edge("p_c", "personalities", "chat", "styles", color="purple",
-                 dashed=True, src_card="zero_one", tgt_card="zero_many",
-                 exit_xy=(0.7, 1), entry_xy=(0.7, 0)),
-        erd_edge("cat_tx", "categories", "transactions", "classifies",
-                 color="green", src_card="zero_one", tgt_card="zero_many",
-                 exit_xy=(0, 0.45), entry_xy=(0, 0.45),
-                 points=[(400, 195), (400, 430)]),
-        erd_edge("w_tx", "wallets", "transactions", "funds", color="green",
-                 src_card="one", tgt_card="zero_many",
-                 exit_xy=(0.65, 1), entry_xy=(0.75, 0)),
-        erd_edge("cat_bud", "categories", "budgets", "limits", color="green",
-                 src_card="one", tgt_card="zero_many",
-                 exit_xy=(1, 0.35), entry_xy=(0, 0.35)),
-        erd_edge("bud_hist", "budgets", "budget_history", "audits",
-                 color="yellow", src_card="one", tgt_card="zero_many",
-                 exit_xy=(0.5, 1), entry_xy=(0.5, 0)),
-        erd_edge("w_goal", "wallets", "goals", "links", color="green",
-                 src_card="zero_one", tgt_card="zero_many",
-                 exit_xy=(1, 0.6), entry_xy=(0, 0.6)),
-        erd_edge("bill_pay", "bills", "payments", "history", color="yellow",
-                 src_card="one", tgt_card="zero_many",
-                 exit_xy=(0.5, 1), entry_xy=(0.5, 0)),
-        # Bảy bảng trước đây bị vẽ cô lập, nay đã nối đúng FK của chúng.
-        erd_edge("w_pnl", "wallets", "pnl", "records_pnl", color="green",
-                 src_card="one", tgt_card="zero_many",
-                 exit_xy=(0.25, 1), entry_xy=(0.25, 0),
-                 points=[(480, 400)]),
-        erd_edge("w_tf", "wallets", "transfers", "moves_between", color="green",
-                 src_card="one", tgt_card="zero_many",
-                 exit_xy=(1, 0.8), entry_xy=(1, 0.5),
-                 points=[(760, 245), (760, 673)]),
-        erd_edge("u_chat", "users", "chat", "writes", color="blue",
-                 src_card="one", tgt_card="zero_many",
-                 exit_xy=(0.15, 1), entry_xy=(0.15, 0),
-                 points=[(90, 200), (90, 480)]),
-        erd_edge("tx_fb", "transactions", "feedback", "corrected_by",
-                 color="purple", dashed=True, src_card="zero_one",
-                 tgt_card="zero_many", exit_xy=(0, 0.85), entry_xy=(1, 0.5),
-                 points=[(398, 700)]),
-        # EXPORT_HISTORY, BACKUP_CONFIG và RECURRING_SUGGESTIONS_DISMISSED chỉ có
-        # duy nhất FK user_id. Kéo ba đường từ lane ngoài cùng bên trái sang lane
-        # ngoài cùng bên phải sẽ tạo đúng loại cạnh vắt ngang cần tránh, nên ba
-        # bảng này dùng phương án khai báo FK trong hộp kèm lực lượng — nêu rõ ở
-        # ghi chú dưới đây và trong phụ đề hình.
+
+        # Free-form placement: no swimlanes or enclosing containers. Closely
+        # related tables sit near one another and the white space between rows
+        # is reserved for orthogonal relationship corridors.
+        card("users", "USERS", ["PK id · UK user_key", "username · payday", "FK active_personality_id", "personalization_consent"], 40, 140, 310, 105, "blue", font_size=14),
+        card("backup", "BACKUP_CONFIG", ["PK id · FK user_id → users.id (1:1)", "auto_enabled · frequency", "keep_count"], 410, 140, 310, 92, "blue", font_size=14),
+        card("categories", "CATEGORIES", ["PK id · FK user_id", "FK parent_id", "name · type · is_default"], 780, 140, 310, 92, "green", font_size=14),
+        card("budgets", "BUDGETS", ["PK id · FK user/category", "amount_limit · month · year"], 1150, 140, 310, 80, "yellow", font_size=14),
+        card("budget_history", "BUDGET_HISTORY", ["PK id · FK budget_id", "change_type", "old_value · new_value"], 1520, 140, 310, 92, "yellow", font_size=14),
+
+        card("personalities", "AI_PERSONALITIES", ["PK id · UK key", "FK user_key", "name · style_prompt · is_default"], 40, 350, 310, 92, "purple", font_size=14),
+        card("chat", "CHAT_MESSAGES", ["PK id · FK user_id", "FK personality_id", "role · content · metadata"], 410, 350, 310, 92, "blue", font_size=14),
+        card("transactions", "TRANSACTIONS", ["PK id · FK user/category/wallet", "amount · type · source", "transaction_date · deleted_at", "ai_parsed"], 780, 350, 310, 108, "green", font_size=14),
+        card("wallets", "WALLETS", ["PK id · FK user_id", "name · type", "balance · initial_balance"], 1150, 350, 310, 92, "green", font_size=14),
+        card("goals", "FINANCIAL_GOALS", ["PK id · FK user/linked_wallet", "goal_type · status", "target/current_amount", "target_date"], 1520, 350, 310, 108, "yellow", font_size=14),
+
+        card("traits", "USER_TRAITS", ["PK id · FK user_id", "trait_type · trait_value"], 40, 570, 310, 80, "purple", font_size=14),
+        card("feedback", "AI_FEEDBACK_LOGS", ["PK id · FK user_id", "FK transaction_id", "feedback_type · original_text", "ai_result · corrected_result"], 410, 570, 310, 105, "purple", font_size=14),
+        card("transfers", "WALLET_TRANSFERS", ["PK id · FK user_id", "FK from_wallet_id · to_wallet_id", "amount · transfer_type", "transaction_date"], 780, 570, 310, 108, "green", font_size=14),
+        card("pnl", "INVESTMENT_PNL", ["PK id · FK user_id", "FK wallet_id", "amount · recorded_at"], 1150, 570, 310, 92, "green", font_size=14),
+        card("exports", "EXPORT_HISTORY", ["PK id · FK user_id → users.id (N:1)", "export_type · file_path", "filters · expires_at"], 1520, 570, 310, 92, "blue", font_size=14),
+
+        card("bills", "RECURRING_BILLS", ["PK id · FK user/category/wallet", "name · amount · frequency", "next_due_date"], 40, 790, 310, 92, "yellow", font_size=14),
+        card("payments", "RECURRING_BILL_PAYMENTS", ["PK id · FK user/bill", "FK transaction/wallet", "period_due_date · status"], 410, 790, 310, 92, "yellow", font_size=14),
+        card("dismissed", "RECURRING_SUGGESTIONS_DISMISSED", ["PK id · FK user_id → users.id (N:1)", "signature · dismissed_at"], 780, 790, 310, 80, "yellow", font_size=14),
+
+        # Profile and conversation relations use three distinct corridors.
+        erd_edge(
+            "p_u", "personalities", "users", "active_for", color="purple",
+            dashed=True, src_card="zero_one", tgt_card="zero_many",
+            exit_xy=(0.5, 0), entry_xy=(0.5, 1),
+        ),
+        erd_edge(
+            "p_c", "personalities", "chat", "styles", color="purple",
+            dashed=True, src_card="zero_one", tgt_card="zero_many",
+            exit_xy=(1, 0.55), entry_xy=(0, 0.55),
+        ),
+        erd_edge(
+            "u_chat", "users", "chat", "writes", color="blue",
+            src_card="one", tgt_card="zero_many",
+            exit_xy=(0.85, 1), entry_xy=(0, 0.25),
+            points=[(304, 305), (390, 305), (390, 373)],
+        ),
+        erd_edge(
+            "u_backup", "users", "backup", "configuration", color="blue",
+            src_card="one", tgt_card="zero_one",
+            exit_xy=(0.80, 0), entry_xy=(0.50, 0),
+            points=[(288, 112), (565, 112)],
+        ),
+
+        # Ledger and planning relations are short or use the empty band between
+        # the second and third rows. No two edges share the same waypoint.
+        erd_edge(
+            "cat_tx", "categories", "transactions", "classifies",
+            color="green", src_card="one", tgt_card="zero_many",
+            exit_xy=(0.45, 1), entry_xy=(0.45, 0),
+        ),
+        erd_edge(
+            "cat_bud", "categories", "budgets", "limits",
+            color="green", src_card="one", tgt_card="zero_many",
+            exit_xy=(1, 0.35), entry_xy=(0, 0.35),
+        ),
+        erd_edge(
+            "bud_hist", "budgets", "budget_history", "audits",
+            color="yellow", src_card="one", tgt_card="zero_many",
+            exit_xy=(1, 0.65), entry_xy=(0, 0.65),
+        ),
+        erd_edge(
+            "w_tx", "wallets", "transactions", "funds", color="green",
+            src_card="one", tgt_card="zero_many",
+            exit_xy=(0, 0.42), entry_xy=(1, 0.42),
+        ),
+        erd_edge(
+            "w_goal", "wallets", "goals", "links", color="green",
+            src_card="zero_one", tgt_card="zero_many",
+            exit_xy=(1, 0.62), entry_xy=(0, 0.62),
+        ),
+        erd_edge(
+            "w_pnl", "wallets", "pnl", "records_pnl", color="green",
+            src_card="one", tgt_card="zero_many",
+            exit_xy=(0.72, 1), entry_xy=(0.72, 0),
+        ),
+        erd_edge(
+            "w_tf_from", "wallets", "transfers", "from_wallet", color="green",
+            src_card="one", tgt_card="zero_many",
+            exit_xy=(0.12, 1), entry_xy=(1, 0.30),
+            points=[(1187, 505), (1118, 505), (1118, 602)],
+        ),
+        erd_edge(
+            "w_tf_to", "wallets", "transfers", "to_wallet", color="green",
+            src_card="one", tgt_card="zero_many",
+            exit_xy=(0.34, 1), entry_xy=(1, 0.70),
+            points=[(1255, 530), (1135, 530), (1135, 646), (1090, 646)],
+        ),
+        erd_edge(
+            "tx_fb", "transactions", "feedback", "corrected_by",
+            color="purple", dashed=True, src_card="zero_one",
+            tgt_card="zero_many", exit_xy=(0.18, 1), entry_xy=(1, 0.5),
+            points=[(836, 510), (740, 510), (740, 622)],
+        ),
+        erd_edge(
+            "bill_pay", "bills", "payments", "history", color="yellow",
+            src_card="zero_one", tgt_card="zero_many",
+            exit_xy=(1, 0.5), entry_xy=(0, 0.5),
+        ),
+
         note_box(
-            "isolated_note",
-            "Ba bảng EXPORT_HISTORY, BACKUP_CONFIG và "
-            "RECURRING_SUGGESTIONS_DISMISSED chỉ tham chiếu USERS qua user_id. "
-            "Đường nối được thay bằng khai báo FK trong hộp bảng, lực lượng ghi "
-            "ngay cạnh tên FK (N:1, riêng BACKUP_CONFIG là 1:1).",
-            1170, 590, 360, 96, "gray",
+            "cardinality_note",
+            "<b>Relationship cardinality</b>\n"
+            "One bar = exactly one (1)\n"
+            "Circle + bar = zero or one (0..1)\n"
+            "Circle + crow's foot = zero or many (0..N)\n"
+            "Dashed = nullable / loose reference",
+            40,
+            970,
+            420,
+            135,
+            "gray",
+            font_size=13,
         ),
-        *legend_line(
-            "lgl",
-            30,
-            878,
-            [
-                (
-                    "endArrow=ERone;endFill=0;endSize=14;html=1;rounded=0;",
-                    "Đúng một bản ghi (1)",
-                ),
-                (
-                    "endArrow=ERzeroToOne;endFill=0;endSize=14;html=1;rounded=0;",
-                    "Không hoặc một (0..1)",
-                ),
-                (
-                    "endArrow=ERzeroToMany;endFill=0;endSize=14;html=1;rounded=0;",
-                    "Không hoặc nhiều (0..N)",
-                ),
-                (
-                    "endArrow=none;dashed=1;html=1;rounded=0;",
-                    "FK nullable / tham chiếu lỏng",
-                ),
-            ],
-            title_text="Chú giải lực lượng quan hệ",
-            width=330,
-        ),
-        *legend(
-            "lg",
-            400,
-            878,
-            [
-                ("blue", "Hồ sơ, hội thoại và vận hành"),
-                ("green", "Sổ cái xác định"),
-                ("yellow", "Kế hoạch và khoản định kỳ"),
-                ("purple", "Dữ liệu liên quan LLM"),
-            ],
-            width=320,
+        note_box(
+            "scope_note",
+            "Repeated ownership links to USERS are written in each table box "
+            "instead of being drawn across the canvas. The two wallet-transfer "
+            "roles use separate corridors; BACKUP_CONFIG is shown explicitly "
+            "as the sole 1:1 relationship. Fill colors distinguish profile/"
+            "operations, deterministic ledger, planning/recurring and "
+            "LLM-related data.",
+            500,
+            970,
+            1330,
+            115,
+            "gray",
+            font_size=13,
         ),
     ]
-    return build("05-physical-erd", "Physical ERD", 1560, 1010, c)
-
-
+    return build("05-physical-erd", "Physical ERD", 1880, 1150, c)
 def diagram_06() -> str:
     c: list[str] = [
         title("t", "Ranh giới trách nhiệm của LLM", 40, 16, 900),

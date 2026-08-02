@@ -118,20 +118,25 @@
 % Macro trạng thái (\statusmeasured ...) được định nghĩa trong config/lang-\doclang.
 
 % Mẫu bảng yêu cầu chức năng theo Guideline-report.md. Hai nhãn cột được
-% định nghĩa theo ngôn ngữ trong config/lang-<lang>.tex.
+% định nghĩa theo ngôn ngữ trong config/lang-<lang>.tex. Mỗi hàng dùng
+% \frtablerow để tạo lưới kín, kể cả khi longtable ngắt sang trang mới.
+\newcommand{\frtablerow}{\tabularnewline\hline}
+\newcommand{\startappendixpages}{%
+  \clearpage
+  \pagenumbering{arabic}%
+  \renewcommand{\thepage}{\appendixpageprefix-\arabic{page}}%
+}
+
 \newenvironment{frtable}[2]{%
-  \begin{longtable}{@{}L{3.8cm}L{10.8cm}@{}}
+  \begin{longtable}{|L{3.8cm}|L{10.7cm}|}
     \caption{#1}\label{#2}\\
-    \toprule
-    \textbf{\frfieldlabel} & \textbf{\frcontentlabel} \\
-    \midrule
+    \hline
+    \textbf{\frfieldlabel} & \textbf{\frcontentlabel} \frtablerow
     \endfirsthead
-    \toprule
-    \textbf{\frfieldlabel} & \textbf{\frcontentlabel} \\
-    \midrule
+    \hline
+    \textbf{\frfieldlabel} & \textbf{\frcontentlabel} \frtablerow
     \endhead
 }{%
-    \bottomrule
   \end{longtable}
 }
 

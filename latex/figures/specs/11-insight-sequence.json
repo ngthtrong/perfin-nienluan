@@ -19,7 +19,7 @@
     {"from": "analytics", "to": "db", "label": "Query monthly, daily, category and wallet series"},
     {"from": "db", "to": "analytics", "label": "Structured numeric data", "return": true},
     {"from": "analytics", "to": "analytics", "label": "Regression · z-score/IQR · runway · Pearson"},
-    {"note": "All numeric values are computed by deterministic algorithms", "over": "analytics"},
+    {"note": "Numbers come only from deterministic algorithms", "over": "analytics"},
     {"from": "analytics", "to": "cache", "label": "SET facts TTL", "activate": false},
     {"from": "analytics", "to": "route", "label": "Insight facts", "return": true},
     {"from": "route", "to": "persona", "label": "Load consented style prompt"},

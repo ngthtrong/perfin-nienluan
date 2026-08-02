@@ -45,176 +45,176 @@ Shared rules are: business amounts must be finite and valid; transaction dates c
 
 \subsection{Functional Requirements}
 
-\widereportfigure{14-usecase-overview.pdf}{Overall PERFIN use case diagram. Feature details are specified with flow tables instead of twelve separate diagrams.}{fig:usecase-overview}
+\reportfigure{14-usecase-overview.pdf}{Overall PERFIN use case diagram. Feature details are specified with flow tables instead of twelve separate diagrams.}{fig:usecase-overview}
 
 Figure~\ref{fig:usecase-overview} contains observable actor goals only. Parser, validation, transaction, TTL and retry behaviour belongs in the flow tables or the sequence/flow diagrams in Section~\ref{subsec:detailed-design}.
 
 \begin{frtable}{FR-01 --- Enter Transactions from Text}{tab:fr01}
-  \textbf{Feature name} & Enter transactions from natural-language text. \\
-  \textbf{ID} & FR-01. \\
-  \textbf{User} & User. \\
-  \textbf{Necessity} & Mandatory. \\
-  \textbf{Classification} & Complex. \\
-  \textbf{Participants and concerns} & The user needs fast entry; the AI Orchestrator returns a typed draft; Transaction Service protects the ledger. \\
-  \textbf{Summary} & Convert one sentence into one or more structured transactions and create a preview before writing. \\
-  \textbf{Relationships} & Includes FR-03 and FR-04; uses FR-05 after confirmation. \\
-  \textbf{Normal flow} & \textbf{Step 1:} User submits text. \textbf{Step 2:} Extract and normalize. \textbf{Step 3:} Validate schema, category and wallet. \textbf{Sub 1:} Build preview. \textbf{Step 4:} User confirms. \textbf{Step 5:} Commit atomically and return the result. \\
-  \textbf{Subflows} & \textbf{Sub 1 --- Preview:} (1) Store a TTL-bound draft; (2) show amount, type, date, category, wallet and warnings. \\
-  \textbf{Alternate flows} & \textbf{Step 2:} Provider failure uses the local parser or returns an error. \textbf{Step 3:} Missing/ambiguous fields invoke FR-03. \textbf{Step 4:} Edit or cancel causes no write. \\
+  \textbf{Feature name} & Enter transactions from natural-language text. \frtablerow
+  \textbf{ID} & FR-01. \frtablerow
+  \textbf{User} & User. \frtablerow
+  \textbf{Necessity} & Mandatory. \frtablerow
+  \textbf{Classification} & Complex. \frtablerow
+  \textbf{Participants and concerns} & The user needs fast entry; the AI Orchestrator returns a typed draft; Transaction Service protects the ledger. \frtablerow
+  \textbf{Summary} & Convert one sentence into one or more structured transactions and create a preview before writing. \frtablerow
+  \textbf{Relationships} & Includes FR-03 and FR-04; uses FR-05 after confirmation. \frtablerow
+  \textbf{Normal flow} & \textbf{Step 1:} User submits text. \textbf{Step 2:} Extract and normalize. \textbf{Step 3:} Validate schema, category and wallet. \textbf{Sub 1:} Build preview. \textbf{Step 4:} User confirms. \textbf{Step 5:} Commit atomically and return the result. \frtablerow
+  \textbf{Subflows} & \textbf{Sub 1 --- Preview:} (1) Store a TTL-bound draft; (2) show amount, type, date, category, wallet and warnings. \frtablerow
+  \textbf{Alternate flows} & \textbf{Step 2:} Provider failure uses the local parser or returns an error. \textbf{Step 3:} Missing/ambiguous fields invoke FR-03. \textbf{Step 4:} Edit or cancel causes no write. \frtablerow
 \end{frtable}
 
 \begin{frtable}{FR-02 --- Enter Transactions from Image or Speech}{tab:fr02}
-  \textbf{Feature name} & Enter a transaction from a receipt image or speech. \\
-  \textbf{ID} & FR-02. \\
-  \textbf{User} & User; External AI service. \\
-  \textbf{Necessity} & Desirable. \\
-  \textbf{Classification} & Complex. \\
-  \textbf{Participants and concerns} & The user needs visible raw text; adapters report the provider and failures; the backend rejects invalid files. \\
-  \textbf{Summary} & Convert image/audio into reviewable text, then reuse FR-01. \\
-  \textbf{Relationships} & Includes FR-01 and FR-03. \\
-  \textbf{Normal flow} & \textbf{Step 1:} Select a valid file. \textbf{Step 2:} Backend invokes OCR or STT. \textbf{Step 3:} Display raw text and provider. \textbf{Sub 1:} User edits/confirms text. \textbf{Step 4:} Continue with FR-01. \\
-  \textbf{Subflows} & \textbf{Sub 1 --- Media review:} (1) edit a voice transcript; (2) for a receipt, select total or individual items when present. \\
-  \textbf{Alternate flows} & Invalid type or size above 10 MB is rejected. A provider that returns no text produces an error and no mock or pending draft. \\
+  \textbf{Feature name} & Enter a transaction from a receipt image or speech. \frtablerow
+  \textbf{ID} & FR-02. \frtablerow
+  \textbf{User} & User; External AI service. \frtablerow
+  \textbf{Necessity} & Desirable. \frtablerow
+  \textbf{Classification} & Complex. \frtablerow
+  \textbf{Participants and concerns} & The user needs visible raw text; adapters report the provider and failures; the backend rejects invalid files. \frtablerow
+  \textbf{Summary} & Convert image/audio into reviewable text, then reuse FR-01. \frtablerow
+  \textbf{Relationships} & Includes FR-01 and FR-03. \frtablerow
+  \textbf{Normal flow} & \textbf{Step 1:} Select a valid file. \textbf{Step 2:} Backend invokes OCR or STT. \textbf{Step 3:} Display raw text and provider. \textbf{Sub 1:} User edits/confirms text. \textbf{Step 4:} Continue with FR-01. \frtablerow
+  \textbf{Subflows} & \textbf{Sub 1 --- Media review:} (1) edit a voice transcript; (2) for a receipt, select total or individual items when present. \frtablerow
+  \textbf{Alternate flows} & Invalid type or size above 10 MB is rejected. A provider that returns no text produces an error and no mock or pending draft. \frtablerow
 \end{frtable}
 
 \begin{frtable}{FR-03 --- Clarify and Confirm Pending Transactions}{tab:fr03}
-  \textbf{Feature name} & Clarification, preview and pending-transaction confirmation. \\
-  \textbf{ID} & FR-03. \\
-  \textbf{User} & User. \\
-  \textbf{Necessity} & Mandatory. \\
-  \textbf{Classification} & Complex. \\
-  \textbf{Participants and concerns} & The user can edit/cancel; the KV store applies TTL; a preview can be consumed once. \\
-  \textbf{Summary} & Collect missing fields across turns and prevent inferred data from being written. \\
-  \textbf{Relationships} & Used by FR-01, FR-02, FR-09, FR-10 and FR-12. \\
-  \textbf{Normal flow} & Store intent and missing fields; ask for the next field; merge and revalidate; build/edit a preview; atomically claim pending state; call the business service. \\
-  \textbf{Subflows} & \textbf{Preview:} attach a \code{pending_id} with five-minute TTL and update only with a valid payload. \\
-  \textbf{Alternate flows} & Continue asking while fields are missing. Expired, incorrect or claimed IDs cannot write; cancellation clears state. \\
+  \textbf{Feature name} & Clarification, preview and pending-transaction confirmation. \frtablerow
+  \textbf{ID} & FR-03. \frtablerow
+  \textbf{User} & User. \frtablerow
+  \textbf{Necessity} & Mandatory. \frtablerow
+  \textbf{Classification} & Complex. \frtablerow
+  \textbf{Participants and concerns} & The user can edit/cancel; the KV store applies TTL; a preview can be consumed once. \frtablerow
+  \textbf{Summary} & Collect missing fields across turns and prevent inferred data from being written. \frtablerow
+  \textbf{Relationships} & Used by FR-01, FR-02, FR-09, FR-10 and FR-12. \frtablerow
+  \textbf{Normal flow} & Store intent and missing fields; ask for the next field; merge and revalidate; build/edit a preview; atomically claim pending state; call the business service. \frtablerow
+  \textbf{Subflows} & \textbf{Preview:} attach a \code{pending_id} with five-minute TTL and update only with a valid payload. \frtablerow
+  \textbf{Alternate flows} & Continue asking while fields are missing. Expired, incorrect or claimed IDs cannot write; cancellation clears state. \frtablerow
 \end{frtable}
 
 \begin{frtable}{FR-04 --- Classify and Learn from Corrections}{tab:fr04}
-  \textbf{Feature name} & Category classification and correction retrieval. \\
-  \textbf{ID} & FR-04. \\
-  \textbf{User} & User. \\
-  \textbf{Necessity} & Mandatory. \\
-  \textbf{Classification} & Complex. \\
-  \textbf{Participants and concerns} & The matcher must be explainable; the user corrects labels; feedback failure must not corrupt a committed transaction. \\
-  \textbf{Summary} & Select a category by exact/alias/fuzzy/LLM methods and reuse confirmed corrections. \\
-  \textbf{Relationships} & Extends FR-01 and may be triggered by an FR-05 category edit. \\
-  \textbf{Normal flow} & Normalize description; load same-profile categories/corrections; rank candidates; apply a strong correction; return category, confidence and match kind; store feedback after confirmation. \\
-  \textbf{Subflows} & Select at most five similar corrections and use them as context or a controlled override. \\
-  \textbf{Alternate flows} & Low score, small margin or conflicting corrections return Other/request a selection. Feedback-write failure is logged only. \\
+  \textbf{Feature name} & Category classification and correction retrieval. \frtablerow
+  \textbf{ID} & FR-04. \frtablerow
+  \textbf{User} & User. \frtablerow
+  \textbf{Necessity} & Mandatory. \frtablerow
+  \textbf{Classification} & Complex. \frtablerow
+  \textbf{Participants and concerns} & The matcher must be explainable; the user corrects labels; feedback failure must not corrupt a committed transaction. \frtablerow
+  \textbf{Summary} & Select a category by exact/alias/fuzzy/LLM methods and reuse confirmed corrections. \frtablerow
+  \textbf{Relationships} & Extends FR-01 and may be triggered by an FR-05 category edit. \frtablerow
+  \textbf{Normal flow} & Normalize description; load same-profile categories/corrections; rank candidates; apply a strong correction; return category, confidence and match kind; store feedback after confirmation. \frtablerow
+  \textbf{Subflows} & Select at most five similar corrections and use them as context or a controlled override. \frtablerow
+  \textbf{Alternate flows} & Low score, small margin or conflicting corrections return Other/request a selection. Feedback-write failure is logged only. \frtablerow
 \end{frtable}
 
 \begin{frtable}{FR-05 --- Manage Financial Data}{tab:fr05}
-  \textbf{Feature name} & Manage transactions, wallets and categories. \\
-  \textbf{ID} & FR-05. \\
-  \textbf{User} & User. \\
-  \textbf{Necessity} & Mandatory. \\
-  \textbf{Classification} & Complex. \\
-  \textbf{Participants and concerns} & The user needs CRUD and restore; services maintain balance and history consistency. \\
-  \textbf{Summary} & Create, view, edit, soft-delete and restore transactions and manage profile-scoped categories/wallets. \\
-  \textbf{Relationships} & Used by FR-01/FR-02 and supplies FR-07--FR-12. \\
-  \textbf{Normal flow} & Select operation; validate payload and ownership; compute balance delta; update transaction and wallet atomically; return record and new balance. \\
-  \textbf{Subflows} & Write the transaction, update the wallet, commit, then invalidate cache best-effort. \\
-  \textbf{Alternate flows} & Out-of-scope IDs or invalid payloads are rejected. A negative balance remains valid. Any pre-commit failure rolls back. \\
+  \textbf{Feature name} & Manage transactions, wallets and categories. \frtablerow
+  \textbf{ID} & FR-05. \frtablerow
+  \textbf{User} & User. \frtablerow
+  \textbf{Necessity} & Mandatory. \frtablerow
+  \textbf{Classification} & Complex. \frtablerow
+  \textbf{Participants and concerns} & The user needs CRUD and restore; services maintain balance and history consistency. \frtablerow
+  \textbf{Summary} & Create, view, edit, soft-delete and restore transactions and manage profile-scoped categories/wallets. \frtablerow
+  \textbf{Relationships} & Used by FR-01/FR-02 and supplies FR-07--FR-12. \frtablerow
+  \textbf{Normal flow} & Select operation; validate payload and ownership; compute balance delta; update transaction and wallet atomically; return record and new balance. \frtablerow
+  \textbf{Subflows} & Write the transaction, update the wallet, commit, then invalidate cache best-effort. \frtablerow
+  \textbf{Alternate flows} & Out-of-scope IDs or invalid payloads are rejected. A negative balance remains valid. Any pre-commit failure rolls back. \frtablerow
 \end{frtable}
 
 \begin{frtable}{FR-06 --- Transfer Funds and Record Special Cash Flows}{tab:fr06}
-  \textbf{Feature name} & Wallet transfer and investment gain/loss. \\
-  \textbf{ID} & FR-06. \\
-  \textbf{User} & User. \\
-  \textbf{Necessity} & Desirable. \\
-  \textbf{Classification} & Complex. \\
-  \textbf{Participants and concerns} & One user action must update both wallets and history consistently. \\
-  \textbf{Summary} & Record internal transfers without changing total assets and classify investment cash flow correctly. \\
-  \textbf{Relationships} & Uses FR-05 wallet and transaction entities. \\
-  \textbf{Normal flow} & Enter source, target, amount and date; validate distinct wallets; lock in stable order; debit, credit and write history; commit. \\
-  \textbf{Subflows} & In one transaction, subtract source, add target and write \code{wallet_transfers}; net change equals zero. \\
-  \textbf{Alternate flows} & Same/missing/out-of-scope wallets or invalid amount/date roll back. A future negative source balance alone is not rejected. \\
+  \textbf{Feature name} & Wallet transfer and investment gain/loss. \frtablerow
+  \textbf{ID} & FR-06. \frtablerow
+  \textbf{User} & User. \frtablerow
+  \textbf{Necessity} & Desirable. \frtablerow
+  \textbf{Classification} & Complex. \frtablerow
+  \textbf{Participants and concerns} & One user action must update both wallets and history consistently. \frtablerow
+  \textbf{Summary} & Record internal transfers without changing total assets and classify investment cash flow correctly. \frtablerow
+  \textbf{Relationships} & Uses FR-05 wallet and transaction entities. \frtablerow
+  \textbf{Normal flow} & Enter source, target, amount and date; validate distinct wallets; lock in stable order; debit, credit and write history; commit. \frtablerow
+  \textbf{Subflows} & In one transaction, subtract source, add target and write \code{wallet_transfers}; net change equals zero. \frtablerow
+  \textbf{Alternate flows} & Same/missing/out-of-scope wallets or invalid amount/date roll back. A future negative source balance alone is not rejected. \frtablerow
 \end{frtable}
 
 \begin{frtable}{FR-07 --- Analyse Financial Data}{tab:fr07}
-  \textbf{Feature name} & Trend, anomaly, runway, recurring and correlation analysis. \\
-  \textbf{ID} & FR-07. \\
-  \textbf{User} & User; Background worker. \\
-  \textbf{Necessity} & Mandatory. \\
-  \textbf{Classification} & Complex. \\
-  \textbf{Participants and concerns} & Analytics needs clean data; users need period, sample size and method. \\
-  \textbf{Summary} & Compute deterministic facts over non-deleted data and zero-filled time axes. \\
-  \textbf{Relationships} & Reads FR-05 and supplies FR-08 and FR-11. \\
-  \textbf{Normal flow} & Select analysis and period; query profile data; zero-fill and check sample count; run the algorithm; return facts, method and warnings. \\
-  \textbf{Subflows} & Run OLS, z-score/IQR, runway, recurring or Pearson through one result contract. \\
-  \textbf{Alternate flows} & Sparse data or zero variance returns a degraded result or \code{null}; no causal claim or fabricated transaction. \\
+  \textbf{Feature name} & Trend, anomaly, runway, recurring and correlation analysis. \frtablerow
+  \textbf{ID} & FR-07. \frtablerow
+  \textbf{User} & User; Background worker. \frtablerow
+  \textbf{Necessity} & Mandatory. \frtablerow
+  \textbf{Classification} & Complex. \frtablerow
+  \textbf{Participants and concerns} & Analytics needs clean data; users need period, sample size and method. \frtablerow
+  \textbf{Summary} & Compute deterministic facts over non-deleted data and zero-filled time axes. \frtablerow
+  \textbf{Relationships} & Reads FR-05 and supplies FR-08 and FR-11. \frtablerow
+  \textbf{Normal flow} & Select analysis and period; query profile data; zero-fill and check sample count; run the algorithm; return facts, method and warnings. \frtablerow
+  \textbf{Subflows} & Run OLS, z-score/IQR, runway, recurring or Pearson through one result contract. \frtablerow
+  \textbf{Alternate flows} & Sparse data or zero variance returns a degraded result or \code{null}; no causal claim or fabricated transaction. \frtablerow
 \end{frtable}
 
 \begin{frtable}{FR-08 --- Generate Grounded Insights}{tab:fr08}
-  \textbf{Feature name} & Grounded insight and persona narration. \\
-  \textbf{ID} & FR-08. \\
-  \textbf{User} & User; External AI service. \\
-  \textbf{Necessity} & Desirable. \\
-  \textbf{Classification} & Complex. \\
-  \textbf{Participants and concerns} & The user needs clear explanation; Analytics owns facts; the narrator cannot alter numbers. \\
-  \textbf{Summary} & Explain precomputed facts and return them with the narration for traceability. \\
-  \textbf{Relationships} & Includes FR-07 and may use a persona when consent is enabled. \\
-  \textbf{Normal flow} & Receive question/report request; generate facts; load permitted persona; narrate facts; validate response contract; return facts and narration. \\
-  \textbf{Subflows} & Cache facts with TTL and store narration metadata without treating it as authoritative. \\
-  \textbf{Alternate flows} & Sparse facts return a warning. Provider failure returns a deterministic template. Numeric-check failure falls back instead of emitting the response. \\
+  \textbf{Feature name} & Grounded insight and persona narration. \frtablerow
+  \textbf{ID} & FR-08. \frtablerow
+  \textbf{User} & User; External AI service. \frtablerow
+  \textbf{Necessity} & Desirable. \frtablerow
+  \textbf{Classification} & Complex. \frtablerow
+  \textbf{Participants and concerns} & The user needs clear explanation; Analytics owns facts; the narrator cannot alter numbers. \frtablerow
+  \textbf{Summary} & Explain precomputed facts and return them with the narration for traceability. \frtablerow
+  \textbf{Relationships} & Includes FR-07 and may use a persona when consent is enabled. \frtablerow
+  \textbf{Normal flow} & Receive question/report request; generate facts; load permitted persona; narrate facts; validate response contract; return facts and narration. \frtablerow
+  \textbf{Subflows} & Cache facts with TTL and store narration metadata without treating it as authoritative. \frtablerow
+  \textbf{Alternate flows} & Sparse facts return a warning. Provider failure returns a deterministic template. Numeric-check failure falls back instead of emitting the response. \frtablerow
 \end{frtable}
 
 \begin{frtable}{FR-09 --- Manage and Forecast Budgets}{tab:fr09}
-  \textbf{Feature name} & Monthly budgets, recommendations and forecasts. \\
-  \textbf{ID} & FR-09. \\
-  \textbf{User} & User. \\
-  \textbf{Necessity} & Mandatory. \\
-  \textbf{Classification} & Complex. \\
-  \textbf{Participants and concerns} & Users need explicit limits; Budget Service needs consistent period and category data. \\
-  \textbf{Summary} & Manage limits, forecast month end and propose budgets from history. \\
-  \textbf{Relationships} & Reads FR-05 and may invoke FR-03 from chat. \\
-  \textbf{Normal flow} & Select month; query spending; compute progress and forecast; produce warning/recommendation; confirm before saving a recommendation. \\
-  \textbf{Subflows} & Baseline uses historical mean plus buffer; 50/30/20 and hybrid constrain total allocation. \\
-  \textbf{Alternate flows} & No history yields a setup request, not a prediction. Duplicate category-period updates atomically. \\
+  \textbf{Feature name} & Monthly budgets, recommendations and forecasts. \frtablerow
+  \textbf{ID} & FR-09. \frtablerow
+  \textbf{User} & User. \frtablerow
+  \textbf{Necessity} & Mandatory. \frtablerow
+  \textbf{Classification} & Complex. \frtablerow
+  \textbf{Participants and concerns} & Users need explicit limits; Budget Service needs consistent period and category data. \frtablerow
+  \textbf{Summary} & Manage limits, forecast month end and propose budgets from history. \frtablerow
+  \textbf{Relationships} & Reads FR-05 and may invoke FR-03 from chat. \frtablerow
+  \textbf{Normal flow} & Select month; query spending; compute progress and forecast; produce warning/recommendation; confirm before saving a recommendation. \frtablerow
+  \textbf{Subflows} & Baseline uses historical mean plus buffer; 50/30/20 and hybrid constrain total allocation. \frtablerow
+  \textbf{Alternate flows} & No history yields a setup request, not a prediction. Duplicate category-period updates atomically. \frtablerow
 \end{frtable}
 
 \begin{frtable}{FR-10 --- Plan Goals and What-if Scenarios}{tab:fr10}
-  \textbf{Feature name} & Savings, purchase and debt-payoff goal planning. \\
-  \textbf{ID} & FR-10. \\
-  \textbf{User} & User. \\
-  \textbf{Necessity} & Mandatory. \\
-  \textbf{Classification} & Complex. \\
-  \textbf{Participants and concerns} & The user needs formula-backed progress; Goal Planner must expose infeasible assumptions. \\
-  \textbf{Summary} & Calculate contribution, duration, amortization and what-if plans without modifying the original until confirmation. \\
-  \textbf{Relationships} & Reads FR-05/FR-07 and may use FR-03. \\
-  \textbf{Normal flow} & Enter goal; validate amount/date/rate; compute allocatable cash; run goal-specific formula; return plan and warnings; save after confirmation. \\
-  \textbf{Subflows} & What-if reruns the same pure function with an additional contribution and keeps the original plan unchanged. \\
-  \textbf{Alternate flows} & Invalid inputs request correction. Payment below first-month interest warns of negative amortization. Cancel causes no write. \\
+  \textbf{Feature name} & Savings, purchase and debt-payoff goal planning. \frtablerow
+  \textbf{ID} & FR-10. \frtablerow
+  \textbf{User} & User. \frtablerow
+  \textbf{Necessity} & Mandatory. \frtablerow
+  \textbf{Classification} & Complex. \frtablerow
+  \textbf{Participants and concerns} & The user needs formula-backed progress; Goal Planner must expose infeasible assumptions. \frtablerow
+  \textbf{Summary} & Calculate contribution, duration, amortization and what-if plans without modifying the original until confirmation. \frtablerow
+  \textbf{Relationships} & Reads FR-05/FR-07 and may use FR-03. \frtablerow
+  \textbf{Normal flow} & Enter goal; validate amount/date/rate; compute allocatable cash; run goal-specific formula; return plan and warnings; save after confirmation. \frtablerow
+  \textbf{Subflows} & What-if reruns the same pure function with an additional contribution and keeps the original plan unchanged. \frtablerow
+  \textbf{Alternate flows} & Invalid inputs request correction. Payment below first-month interest warns of negative amortization. Cancel causes no write. \frtablerow
 \end{frtable}
 
 \begin{frtable}{FR-11 --- Manage Recurring Bills and Proactive Jobs}{tab:fr11}
-  \textbf{Feature name} & Recurring bills, payments and proactive messages. \\
-  \textbf{ID} & FR-11. \\
-  \textbf{User} & User; Background worker. \\
-  \textbf{Necessity} & Desirable. \\
-  \textbf{Classification} & Complex. \\
-  \textbf{Participants and concerns} & The user needs correct due dates; the worker needs retry and idempotency; PostgreSQL must prevent duplicate effects. \\
-  \textbf{Summary} & Manage schedules, record one payment per period and generate grounded reminders/alerts. \\
-  \textbf{Relationships} & Reads FR-05/FR-07; may call FR-08 for wording only. \\
-  \textbf{Normal flow} & Scheduler enqueues a user-scoped job; worker loads due data; computes deterministic facts; persists an event by unique key; advances schedule after success. \\
-  \textbf{Subflows} & Payment writes payment history, transaction and next due date atomically. \\
-  \textbf{Alternate flows} & Duplicate event/job returns the existing result. Transient failure retries with backoff. Redis failure stops the worker while the interactive API may continue. \\
+  \textbf{Feature name} & Recurring bills, payments and proactive messages. \frtablerow
+  \textbf{ID} & FR-11. \frtablerow
+  \textbf{User} & User; Background worker. \frtablerow
+  \textbf{Necessity} & Desirable. \frtablerow
+  \textbf{Classification} & Complex. \frtablerow
+  \textbf{Participants and concerns} & The user needs correct due dates; the worker needs retry and idempotency; PostgreSQL must prevent duplicate effects. \frtablerow
+  \textbf{Summary} & Manage schedules, record one payment per period and generate grounded reminders/alerts. \frtablerow
+  \textbf{Relationships} & Reads FR-05/FR-07; may call FR-08 for wording only. \frtablerow
+  \textbf{Normal flow} & Scheduler enqueues a user-scoped job; worker loads due data; computes deterministic facts; persists an event by unique key; advances schedule after success. \frtablerow
+  \textbf{Subflows} & Payment writes payment history, transaction and next due date atomically. \frtablerow
+  \textbf{Alternate flows} & Duplicate event/job returns the existing result. Transient failure retries with backoff. Redis failure stops the worker while the interactive API may continue. \frtablerow
 \end{frtable}
 
 \begin{frtable}{FR-12 --- Export Data and Remove Expired Files}{tab:fr12}
-  \textbf{Feature name} & Data export, export history and expired-file cleanup. \\
-  \textbf{ID} & FR-12. \\
-  \textbf{User} & User; Background worker. \\
-  \textbf{Necessity} & Optional. \\
-  \textbf{Classification} & Medium. \\
-  \textbf{Participants and concerns} & The user needs correct data; the exporter needs safe escaping; cleanup cannot remove valid files. \\
-  \textbf{Summary} & Generate filtered CSV, store history and delete files after TTL. \\
-  \textbf{Relationships} & Reads FR-05, may use FR-03 from chat, and delegates cleanup to the worker. \\
-  \textbf{Normal flow} & Select format/period; validate and query profile data; create a safe file; write \code{export_history}; return a download link. \\
-  \textbf{Subflows} & Escape formula-like cells, write UTF-8 BOM and row count, then assign TTL. \\
-  \textbf{Alternate flows} & Empty data returns a header-only file. The path once labelled PDF only creates HTML and is not claimed as a true PDF export. \\
+  \textbf{Feature name} & Data export, export history and expired-file cleanup. \frtablerow
+  \textbf{ID} & FR-12. \frtablerow
+  \textbf{User} & User; Background worker. \frtablerow
+  \textbf{Necessity} & Optional. \frtablerow
+  \textbf{Classification} & Medium. \frtablerow
+  \textbf{Participants and concerns} & The user needs correct data; the exporter needs safe escaping; cleanup cannot remove valid files. \frtablerow
+  \textbf{Summary} & Generate filtered CSV, store history and delete files after TTL. \frtablerow
+  \textbf{Relationships} & Reads FR-05, may use FR-03 from chat, and delegates cleanup to the worker. \frtablerow
+  \textbf{Normal flow} & Select format/period; validate and query profile data; create a safe file; write \code{export_history}; return a download link. \frtablerow
+  \textbf{Subflows} & Escape formula-like cells, write UTF-8 BOM and row count, then assign TTL. \frtablerow
+  \textbf{Alternate flows} & Empty data returns a header-only file. The path once labelled PDF only creates HTML and is not claimed as a true PDF export. \frtablerow
 \end{frtable}
 
 \subsection{Non-functional Requirements}
@@ -277,7 +277,7 @@ Microservices were considered but not selected because prototype scale does not 
 
 \code{User} is the ownership root; \code{Wallet}, \code{Transaction} and \code{Category} form the ledger; \code{Budget}, \code{FinancialGoal} and recurring classes form planning; \code{ChatMessage} and \code{AIFeedback} preserve traceable interaction. Engines are not entities because they only read data and create facts.
 
-\widereportfigure{05-physical-erd.pdf}{Physical ERD reconciled with runtime migrations; principal business foreign keys use direct relations.}{fig:physical-erd}
+\widereportfigure{05-physical-erd.pdf}{Physical ERD reconciled with runtime migrations; principal business foreign keys use separate orthogonal corridors.}{fig:physical-erd}
 
 \begin{longtable}{@{}L{4.5cm}L{3.0cm}L{6.0cm}@{}}
   \caption{Entities in alphabetical order}\label{tab:data-entities}\\

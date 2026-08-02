@@ -45,176 +45,176 @@ Các quy tắc dùng chung là: số tiền nghiệp vụ phải hữu hạn và
 
 \subsection{Yêu cầu chức năng}
 
-\widereportfigure{14-usecase-overview.pdf}{Sơ đồ use case tổng thể của PERFIN. Chi tiết từng chức năng được mô tả bằng bảng luồng thay cho mười hai sơ đồ riêng lẻ.}{fig:usecase-overview}
+\reportfigure{14-usecase-overview.pdf}{Sơ đồ use case tổng thể của PERFIN. Chi tiết từng chức năng được mô tả bằng bảng luồng thay cho mười hai sơ đồ riêng lẻ.}{fig:usecase-overview}
 
 Hình~\ref{fig:usecase-overview} chỉ mô tả mục tiêu quan sát được của tác nhân. Các bước parser, validation, transaction, TTL và retry là chi tiết thiết kế nên được đặt trong bảng luồng hoặc sơ đồ sequence/flow ở mục~\ref{subsec:detailed-design}.
 
 \begin{frtable}{Đặc tả FR-01 --- Nhập giao dịch bằng văn bản}{tab:fr01}
-  \textbf{Tên chức năng} & Nhập giao dịch bằng văn bản tự nhiên. \\
-  \textbf{ID} & FR-01. \\
-  \textbf{Người sử dụng} & Người dùng. \\
-  \textbf{Mức độ cần thiết} & Bắt buộc. \\
-  \textbf{Phân loại} & Phức tạp. \\
-  \textbf{Các thành phần tham gia và mối quan tâm} & Người dùng cần nhập nhanh; AI Orchestrator cần trả draft có kiểu; Transaction Service phải bảo vệ sổ cái. \\
-  \textbf{Mô tả tóm tắt} & Chuyển một câu thành một hoặc nhiều giao dịch có cấu trúc và tạo bản xem trước trước khi ghi. \\
-  \textbf{Các mối quan hệ} & Bao gồm FR-03 và FR-04; dùng FR-05 khi xác nhận. \\
-  \textbf{Luồng xử lý bình thường của sự kiện} & \textbf{Bước 1:} Người dùng gửi văn bản. \textbf{Bước 2:} Hệ thống trích xuất và chuẩn hóa. \textbf{Bước 3:} Hệ thống kiểm tra schema, danh mục và ví. \textbf{Sub 1:} Tạo preview. \textbf{Bước 4:} Người dùng xác nhận. \textbf{Bước 5:} Hệ thống ghi nguyên tử và trả kết quả. \\
-  \textbf{Các luồng sự kiện con (Subflows)} & \textbf{Sub 1 --- Preview:} (1) Lưu draft có TTL; (2) hiển thị amount, type, date, category, wallet và cảnh báo. \\
-  \textbf{Luồng luân phiên/đặc biệt} & \textbf{Bước 2:} Provider lỗi thì dùng parser cục bộ hoặc báo lỗi. \textbf{Bước 3:} Thiếu/mơ hồ thì chuyển FR-03. \textbf{Bước 4:} Sửa hoặc hủy không ghi dữ liệu. \\
+  \textbf{Tên chức năng} & Nhập giao dịch bằng văn bản tự nhiên. \frtablerow
+  \textbf{ID} & FR-01. \frtablerow
+  \textbf{Người sử dụng} & Người dùng. \frtablerow
+  \textbf{Mức độ cần thiết} & Bắt buộc. \frtablerow
+  \textbf{Phân loại} & Phức tạp. \frtablerow
+  \textbf{Các thành phần tham gia và mối quan tâm} & Người dùng cần nhập nhanh; AI Orchestrator cần trả draft có kiểu; Transaction Service phải bảo vệ sổ cái. \frtablerow
+  \textbf{Mô tả tóm tắt} & Chuyển một câu thành một hoặc nhiều giao dịch có cấu trúc và tạo bản xem trước trước khi ghi. \frtablerow
+  \textbf{Các mối quan hệ} & Bao gồm FR-03 và FR-04; dùng FR-05 khi xác nhận. \frtablerow
+  \textbf{Luồng xử lý bình thường của sự kiện} & \textbf{Bước 1:} Người dùng gửi văn bản. \textbf{Bước 2:} Hệ thống trích xuất và chuẩn hóa. \textbf{Bước 3:} Hệ thống kiểm tra schema, danh mục và ví. \textbf{Sub 1:} Tạo preview. \textbf{Bước 4:} Người dùng xác nhận. \textbf{Bước 5:} Hệ thống ghi nguyên tử và trả kết quả. \frtablerow
+  \textbf{Các luồng sự kiện con (Subflows)} & \textbf{Sub 1 --- Preview:} (1) Lưu draft có TTL; (2) hiển thị amount, type, date, category, wallet và cảnh báo. \frtablerow
+  \textbf{Luồng luân phiên/đặc biệt} & \textbf{Bước 2:} Provider lỗi thì dùng parser cục bộ hoặc báo lỗi. \textbf{Bước 3:} Thiếu/mơ hồ thì chuyển FR-03. \textbf{Bước 4:} Sửa hoặc hủy không ghi dữ liệu. \frtablerow
 \end{frtable}
 
 \begin{frtable}{Đặc tả FR-02 --- Nhập bằng ảnh và giọng nói}{tab:fr02}
-  \textbf{Tên chức năng} & Nhập giao dịch bằng ảnh hóa đơn hoặc giọng nói. \\
-  \textbf{ID} & FR-02. \\
-  \textbf{Người sử dụng} & Người dùng; Dịch vụ AI ngoài. \\
-  \textbf{Mức độ cần thiết} & Mong muốn. \\
-  \textbf{Phân loại} & Phức tạp. \\
-  \textbf{Các thành phần tham gia và mối quan tâm} & Người dùng cần thấy raw text; OCR/STT adapter cần báo đúng provider/lỗi; backend cần chặn tệp sai. \\
-  \textbf{Mô tả tóm tắt} & Chuyển ảnh/audio thành văn bản có thể kiểm tra rồi tái sử dụng pipeline FR-01. \\
-  \textbf{Các mối quan hệ} & Bao gồm FR-01 và FR-03. \\
-  \textbf{Luồng xử lý bình thường của sự kiện} & \textbf{Bước 1:} Người dùng chọn tệp hợp lệ. \textbf{Bước 2:} Backend gọi OCR hoặc STT. \textbf{Bước 3:} Hiển thị raw text và provider. \textbf{Sub 1:} Người dùng sửa/xác nhận văn bản. \textbf{Bước 4:} Chuyển sang FR-01. \\
-  \textbf{Các luồng sự kiện con (Subflows)} & \textbf{Sub 1 --- Kiểm tra media:} (1) Với voice, sửa transcript; (2) với receipt, chọn tổng hóa đơn hoặc từng dòng nếu có. \\
-  \textbf{Luồng luân phiên/đặc biệt} & \textbf{Bước 1:} Sai loại hoặc quá 10~MB thì từ chối. \textbf{Bước 2:} Provider không trả văn bản thì báo lỗi, không tạo mock/pending. \\
+  \textbf{Tên chức năng} & Nhập giao dịch bằng ảnh hóa đơn hoặc giọng nói. \frtablerow
+  \textbf{ID} & FR-02. \frtablerow
+  \textbf{Người sử dụng} & Người dùng; Dịch vụ AI ngoài. \frtablerow
+  \textbf{Mức độ cần thiết} & Mong muốn. \frtablerow
+  \textbf{Phân loại} & Phức tạp. \frtablerow
+  \textbf{Các thành phần tham gia và mối quan tâm} & Người dùng cần thấy raw text; OCR/STT adapter cần báo đúng provider/lỗi; backend cần chặn tệp sai. \frtablerow
+  \textbf{Mô tả tóm tắt} & Chuyển ảnh/audio thành văn bản có thể kiểm tra rồi tái sử dụng pipeline FR-01. \frtablerow
+  \textbf{Các mối quan hệ} & Bao gồm FR-01 và FR-03. \frtablerow
+  \textbf{Luồng xử lý bình thường của sự kiện} & \textbf{Bước 1:} Người dùng chọn tệp hợp lệ. \textbf{Bước 2:} Backend gọi OCR hoặc STT. \textbf{Bước 3:} Hiển thị raw text và provider. \textbf{Sub 1:} Người dùng sửa/xác nhận văn bản. \textbf{Bước 4:} Chuyển sang FR-01. \frtablerow
+  \textbf{Các luồng sự kiện con (Subflows)} & \textbf{Sub 1 --- Kiểm tra media:} (1) Với voice, sửa transcript; (2) với receipt, chọn tổng hóa đơn hoặc từng dòng nếu có. \frtablerow
+  \textbf{Luồng luân phiên/đặc biệt} & \textbf{Bước 1:} Sai loại hoặc quá 10~MB thì từ chối. \textbf{Bước 2:} Provider không trả văn bản thì báo lỗi, không tạo mock/pending. \frtablerow
 \end{frtable}
 
 \begin{frtable}{Đặc tả FR-03 --- Làm rõ và giao dịch chờ}{tab:fr03}
-  \textbf{Tên chức năng} & Clarification, preview và xác nhận giao dịch chờ. \\
-  \textbf{ID} & FR-03. \\
-  \textbf{Người sử dụng} & Người dùng. \\
-  \textbf{Mức độ cần thiết} & Bắt buộc. \\
-  \textbf{Phân loại} & Phức tạp. \\
-  \textbf{Các thành phần tham gia và mối quan tâm} & Người dùng cần sửa/hủy; KV store cần TTL; service cần bảo đảm một preview chỉ được dùng một lần. \\
-  \textbf{Mô tả tóm tắt} & Thu thập trường thiếu qua nhiều lượt và chặn việc ghi dữ liệu suy đoán. \\
-  \textbf{Các mối quan hệ} & Được FR-01, FR-02, FR-09, FR-10 và FR-12 sử dụng. \\
-  \textbf{Luồng xử lý bình thường của sự kiện} & \textbf{Bước 1:} Lưu intent và trường thiếu. \textbf{Bước 2:} Hỏi trường kế tiếp. \textbf{Bước 3:} Merge câu trả lời và validation lại. \textbf{Sub 1:} Tạo/sửa preview. \textbf{Bước 4:} Claim pending nguyên tử. \textbf{Bước 5:} Gọi service nghiệp vụ. \\
-  \textbf{Các luồng sự kiện con (Subflows)} & \textbf{Sub 1 --- Preview:} (1) Gắn \code{pending_id} và TTL 5 phút; (2) chỉ cập nhật khi payload mới hợp lệ. \\
-  \textbf{Luồng luân phiên/đặc biệt} & \textbf{Bước 3:} Vẫn thiếu thì hỏi tiếp. \textbf{Bước 4:} Hết hạn, sai ID hoặc đã claim thì không ghi. Hủy sẽ xóa state. \\
+  \textbf{Tên chức năng} & Clarification, preview và xác nhận giao dịch chờ. \frtablerow
+  \textbf{ID} & FR-03. \frtablerow
+  \textbf{Người sử dụng} & Người dùng. \frtablerow
+  \textbf{Mức độ cần thiết} & Bắt buộc. \frtablerow
+  \textbf{Phân loại} & Phức tạp. \frtablerow
+  \textbf{Các thành phần tham gia và mối quan tâm} & Người dùng cần sửa/hủy; KV store cần TTL; service cần bảo đảm một preview chỉ được dùng một lần. \frtablerow
+  \textbf{Mô tả tóm tắt} & Thu thập trường thiếu qua nhiều lượt và chặn việc ghi dữ liệu suy đoán. \frtablerow
+  \textbf{Các mối quan hệ} & Được FR-01, FR-02, FR-09, FR-10 và FR-12 sử dụng. \frtablerow
+  \textbf{Luồng xử lý bình thường của sự kiện} & \textbf{Bước 1:} Lưu intent và trường thiếu. \textbf{Bước 2:} Hỏi trường kế tiếp. \textbf{Bước 3:} Merge câu trả lời và validation lại. \textbf{Sub 1:} Tạo/sửa preview. \textbf{Bước 4:} Claim pending nguyên tử. \textbf{Bước 5:} Gọi service nghiệp vụ. \frtablerow
+  \textbf{Các luồng sự kiện con (Subflows)} & \textbf{Sub 1 --- Preview:} (1) Gắn \code{pending_id} và TTL 5 phút; (2) chỉ cập nhật khi payload mới hợp lệ. \frtablerow
+  \textbf{Luồng luân phiên/đặc biệt} & \textbf{Bước 3:} Vẫn thiếu thì hỏi tiếp. \textbf{Bước 4:} Hết hạn, sai ID hoặc đã claim thì không ghi. Hủy sẽ xóa state. \frtablerow
 \end{frtable}
 
 \begin{frtable}{Đặc tả FR-04 --- Phân loại và học từ phản hồi}{tab:fr04}
-  \textbf{Tên chức năng} & Phân loại danh mục và correction retrieval. \\
-  \textbf{ID} & FR-04. \\
-  \textbf{Người sử dụng} & Người dùng. \\
-  \textbf{Mức độ cần thiết} & Bắt buộc. \\
-  \textbf{Phân loại} & Phức tạp. \\
-  \textbf{Các thành phần tham gia và mối quan tâm} & Matcher cần kết quả giải thích được; người dùng cần sửa nhãn; feedback store không được làm hỏng giao dịch đã commit. \\
-  \textbf{Mô tả tóm tắt} & Chọn danh mục bằng exact/alias/fuzzy/LLM và dùng correction đã xác nhận cho lần sau. \\
-  \textbf{Các mối quan hệ} & Mở rộng FR-01; có thể được FR-05 kích hoạt khi sửa category. \\
-  \textbf{Luồng xử lý bình thường của sự kiện} & \textbf{Bước 1:} Chuẩn hóa mô tả. \textbf{Bước 2:} Nạp danh mục và corrections cùng hồ sơ. \textbf{Bước 3:} Xếp hạng ứng viên. \textbf{Sub 1:} Áp correction đủ mạnh. \textbf{Bước 4:} Trả category, confidence và match kind. \textbf{Bước 5:} Ghi feedback sau xác nhận. \\
-  \textbf{Các luồng sự kiện con (Subflows)} & \textbf{Sub 1 --- Correction:} (1) Chọn tối đa năm mẫu tương tự; (2) dùng làm context hoặc override có kiểm soát. \\
-  \textbf{Luồng luân phiên/đặc biệt} & \textbf{Bước 3:} Điểm thấp, margin nhỏ hoặc correction xung đột thì trả ``Khác''/yêu cầu chọn. Lỗi ghi feedback chỉ được ghi log. \\
+  \textbf{Tên chức năng} & Phân loại danh mục và correction retrieval. \frtablerow
+  \textbf{ID} & FR-04. \frtablerow
+  \textbf{Người sử dụng} & Người dùng. \frtablerow
+  \textbf{Mức độ cần thiết} & Bắt buộc. \frtablerow
+  \textbf{Phân loại} & Phức tạp. \frtablerow
+  \textbf{Các thành phần tham gia và mối quan tâm} & Matcher cần kết quả giải thích được; người dùng cần sửa nhãn; feedback store không được làm hỏng giao dịch đã commit. \frtablerow
+  \textbf{Mô tả tóm tắt} & Chọn danh mục bằng exact/alias/fuzzy/LLM và dùng correction đã xác nhận cho lần sau. \frtablerow
+  \textbf{Các mối quan hệ} & Mở rộng FR-01; có thể được FR-05 kích hoạt khi sửa category. \frtablerow
+  \textbf{Luồng xử lý bình thường của sự kiện} & \textbf{Bước 1:} Chuẩn hóa mô tả. \textbf{Bước 2:} Nạp danh mục và corrections cùng hồ sơ. \textbf{Bước 3:} Xếp hạng ứng viên. \textbf{Sub 1:} Áp correction đủ mạnh. \textbf{Bước 4:} Trả category, confidence và match kind. \textbf{Bước 5:} Ghi feedback sau xác nhận. \frtablerow
+  \textbf{Các luồng sự kiện con (Subflows)} & \textbf{Sub 1 --- Correction:} (1) Chọn tối đa năm mẫu tương tự; (2) dùng làm context hoặc override có kiểm soát. \frtablerow
+  \textbf{Luồng luân phiên/đặc biệt} & \textbf{Bước 3:} Điểm thấp, margin nhỏ hoặc correction xung đột thì trả ``Khác''/yêu cầu chọn. Lỗi ghi feedback chỉ được ghi log. \frtablerow
 \end{frtable}
 
 \begin{frtable}{Đặc tả FR-05 --- Quản lý dữ liệu tài chính}{tab:fr05}
-  \textbf{Tên chức năng} & Quản lý giao dịch, ví và danh mục. \\
-  \textbf{ID} & FR-05. \\
-  \textbf{Người sử dụng} & Người dùng. \\
-  \textbf{Mức độ cần thiết} & Bắt buộc. \\
-  \textbf{Phân loại} & Phức tạp. \\
-  \textbf{Các thành phần tham gia và mối quan tâm} & Người dùng cần CRUD và phục hồi; service cần duy trì số dư và lịch sử nhất quán. \\
-  \textbf{Mô tả tóm tắt} & Tạo, xem, sửa, soft delete và restore giao dịch; quản lý danh mục/ví trong phạm vi hồ sơ. \\
-  \textbf{Các mối quan hệ} & Được FR-01/FR-02 sử dụng; cung cấp dữ liệu cho FR-07--FR-12. \\
-  \textbf{Luồng xử lý bình thường của sự kiện} & \textbf{Bước 1:} Người dùng chọn thao tác. \textbf{Bước 2:} Backend validation payload và quyền sở hữu. \textbf{Bước 3:} Tính phần chênh lệch số dư. \textbf{Sub 1:} Cập nhật nguyên tử. \textbf{Bước 4:} Trả bản ghi và số dư mới. \\
-  \textbf{Các luồng sự kiện con (Subflows)} & \textbf{Sub 1 --- Cập nhật:} (1) Ghi transaction; (2) cập nhật ví; (3) commit rồi vô hiệu cache best-effort. \\
-  \textbf{Luồng luân phiên/đặc biệt} & \textbf{Bước 2:} ID ngoài hồ sơ hoặc dữ liệu sai bị từ chối. \textbf{Bước 3:} Số dư âm vẫn hợp lệ. Lỗi trước commit phải rollback. \\
+  \textbf{Tên chức năng} & Quản lý giao dịch, ví và danh mục. \frtablerow
+  \textbf{ID} & FR-05. \frtablerow
+  \textbf{Người sử dụng} & Người dùng. \frtablerow
+  \textbf{Mức độ cần thiết} & Bắt buộc. \frtablerow
+  \textbf{Phân loại} & Phức tạp. \frtablerow
+  \textbf{Các thành phần tham gia và mối quan tâm} & Người dùng cần CRUD và phục hồi; service cần duy trì số dư và lịch sử nhất quán. \frtablerow
+  \textbf{Mô tả tóm tắt} & Tạo, xem, sửa, soft delete và restore giao dịch; quản lý danh mục/ví trong phạm vi hồ sơ. \frtablerow
+  \textbf{Các mối quan hệ} & Được FR-01/FR-02 sử dụng; cung cấp dữ liệu cho FR-07--FR-12. \frtablerow
+  \textbf{Luồng xử lý bình thường của sự kiện} & \textbf{Bước 1:} Người dùng chọn thao tác. \textbf{Bước 2:} Backend validation payload và quyền sở hữu. \textbf{Bước 3:} Tính phần chênh lệch số dư. \textbf{Sub 1:} Cập nhật nguyên tử. \textbf{Bước 4:} Trả bản ghi và số dư mới. \frtablerow
+  \textbf{Các luồng sự kiện con (Subflows)} & \textbf{Sub 1 --- Cập nhật:} (1) Ghi transaction; (2) cập nhật ví; (3) commit rồi vô hiệu cache best-effort. \frtablerow
+  \textbf{Luồng luân phiên/đặc biệt} & \textbf{Bước 2:} ID ngoài hồ sơ hoặc dữ liệu sai bị từ chối. \textbf{Bước 3:} Số dư âm vẫn hợp lệ. Lỗi trước commit phải rollback. \frtablerow
 \end{frtable}
 
 \begin{frtable}{Đặc tả FR-06 --- Chuyển ví và dòng tiền đặc biệt}{tab:fr06}
-  \textbf{Tên chức năng} & Chuyển ví và ghi lãi/lỗ đầu tư. \\
-  \textbf{ID} & FR-06. \\
-  \textbf{Người sử dụng} & Người dùng. \\
-  \textbf{Mức độ cần thiết} & Mong muốn. \\
-  \textbf{Phân loại} & Phức tạp. \\
-  \textbf{Các thành phần tham gia và mối quan tâm} & Người dùng cần một thao tác; hai ví và lịch sử phải được cập nhật nhất quán. \\
-  \textbf{Mô tả tóm tắt} & Ghi chuyển nội bộ không làm đổi tổng tài sản và ghi dòng tiền đầu tư đúng loại. \\
-  \textbf{Các mối quan hệ} & Dùng thực thể ví/giao dịch của FR-05. \\
-  \textbf{Luồng xử lý bình thường của sự kiện} & \textbf{Bước 1:} Nhập ví nguồn, ví đích, amount và ngày. \textbf{Bước 2:} Validation hai ví khác nhau. \textbf{Bước 3:} Khóa theo thứ tự. \textbf{Sub 1:} Debit, credit và ghi lịch sử. \textbf{Bước 4:} Commit và trả kết quả. \\
-  \textbf{Các luồng sự kiện con (Subflows)} & \textbf{Sub 1 --- Transaction:} (1) Trừ nguồn; (2) cộng đích; (3) ghi \code{wallet_transfers}; tổng biến thiên bằng 0. \\
-  \textbf{Luồng luân phiên/đặc biệt} & Ví trùng/thiếu, amount/date sai hoặc ví ngoài hồ sơ làm rollback. Không từ chối chỉ vì ví nguồn sẽ âm. \\
+  \textbf{Tên chức năng} & Chuyển ví và ghi lãi/lỗ đầu tư. \frtablerow
+  \textbf{ID} & FR-06. \frtablerow
+  \textbf{Người sử dụng} & Người dùng. \frtablerow
+  \textbf{Mức độ cần thiết} & Mong muốn. \frtablerow
+  \textbf{Phân loại} & Phức tạp. \frtablerow
+  \textbf{Các thành phần tham gia và mối quan tâm} & Người dùng cần một thao tác; hai ví và lịch sử phải được cập nhật nhất quán. \frtablerow
+  \textbf{Mô tả tóm tắt} & Ghi chuyển nội bộ không làm đổi tổng tài sản và ghi dòng tiền đầu tư đúng loại. \frtablerow
+  \textbf{Các mối quan hệ} & Dùng thực thể ví/giao dịch của FR-05. \frtablerow
+  \textbf{Luồng xử lý bình thường của sự kiện} & \textbf{Bước 1:} Nhập ví nguồn, ví đích, amount và ngày. \textbf{Bước 2:} Validation hai ví khác nhau. \textbf{Bước 3:} Khóa theo thứ tự. \textbf{Sub 1:} Debit, credit và ghi lịch sử. \textbf{Bước 4:} Commit và trả kết quả. \frtablerow
+  \textbf{Các luồng sự kiện con (Subflows)} & \textbf{Sub 1 --- Transaction:} (1) Trừ nguồn; (2) cộng đích; (3) ghi \code{wallet_transfers}; tổng biến thiên bằng 0. \frtablerow
+  \textbf{Luồng luân phiên/đặc biệt} & Ví trùng/thiếu, amount/date sai hoặc ví ngoài hồ sơ làm rollback. Không từ chối chỉ vì ví nguồn sẽ âm. \frtablerow
 \end{frtable}
 
 \begin{frtable}{Đặc tả FR-07 --- Phân tích dữ liệu tài chính}{tab:fr07}
-  \textbf{Tên chức năng} & Phân tích xu hướng, bất thường, runway, recurring và tương quan. \\
-  \textbf{ID} & FR-07. \\
-  \textbf{Người sử dụng} & Người dùng; Worker nền. \\
-  \textbf{Mức độ cần thiết} & Bắt buộc. \\
-  \textbf{Phân loại} & Phức tạp. \\
-  \textbf{Các thành phần tham gia và mối quan tâm} & Analytics Engine cần dữ liệu sạch; người dùng cần kết quả có kỳ, số mẫu và phương pháp. \\
-  \textbf{Mô tả tóm tắt} & Tính facts bằng hàm xác định trên dữ liệu chưa xóa và trục thời gian có zero-fill. \\
-  \textbf{Các mối quan hệ} & Đọc FR-05; cung cấp facts cho FR-08 và FR-11. \\
-  \textbf{Luồng xử lý bình thường của sự kiện} & \textbf{Bước 1:} Chọn loại phân tích và kỳ. \textbf{Bước 2:} Truy vấn dữ liệu theo hồ sơ. \textbf{Bước 3:} Zero-fill và kiểm tra số mẫu. \textbf{Sub 1:} Chạy giải thuật. \textbf{Bước 4:} Trả facts, method và warning. \\
-  \textbf{Các luồng sự kiện con (Subflows)} & \textbf{Sub 1 --- Analytics:} chạy OLS, z-score/IQR, runway, recurring hoặc Pearson theo cùng contract kết quả. \\
-  \textbf{Luồng luân phiên/đặc biệt} & Dữ liệu thiếu/phương sai 0 thì trả kết quả suy giảm hoặc \code{null}; không suy ra nhân quả và không tự tạo giao dịch. \\
+  \textbf{Tên chức năng} & Phân tích xu hướng, bất thường, runway, recurring và tương quan. \frtablerow
+  \textbf{ID} & FR-07. \frtablerow
+  \textbf{Người sử dụng} & Người dùng; Worker nền. \frtablerow
+  \textbf{Mức độ cần thiết} & Bắt buộc. \frtablerow
+  \textbf{Phân loại} & Phức tạp. \frtablerow
+  \textbf{Các thành phần tham gia và mối quan tâm} & Analytics Engine cần dữ liệu sạch; người dùng cần kết quả có kỳ, số mẫu và phương pháp. \frtablerow
+  \textbf{Mô tả tóm tắt} & Tính facts bằng hàm xác định trên dữ liệu chưa xóa và trục thời gian có zero-fill. \frtablerow
+  \textbf{Các mối quan hệ} & Đọc FR-05; cung cấp facts cho FR-08 và FR-11. \frtablerow
+  \textbf{Luồng xử lý bình thường của sự kiện} & \textbf{Bước 1:} Chọn loại phân tích và kỳ. \textbf{Bước 2:} Truy vấn dữ liệu theo hồ sơ. \textbf{Bước 3:} Zero-fill và kiểm tra số mẫu. \textbf{Sub 1:} Chạy giải thuật. \textbf{Bước 4:} Trả facts, method và warning. \frtablerow
+  \textbf{Các luồng sự kiện con (Subflows)} & \textbf{Sub 1 --- Analytics:} chạy OLS, z-score/IQR, runway, recurring hoặc Pearson theo cùng contract kết quả. \frtablerow
+  \textbf{Luồng luân phiên/đặc biệt} & Dữ liệu thiếu/phương sai 0 thì trả kết quả suy giảm hoặc \code{null}; không suy ra nhân quả và không tự tạo giao dịch. \frtablerow
 \end{frtable}
 
 \begin{frtable}{Đặc tả FR-08 --- Insight có căn cứ}{tab:fr08}
-  \textbf{Tên chức năng} & Sinh insight có căn cứ và persona. \\
-  \textbf{ID} & FR-08. \\
-  \textbf{Người sử dụng} & Người dùng; Dịch vụ AI ngoài. \\
-  \textbf{Mức độ cần thiết} & Mong muốn. \\
-  \textbf{Phân loại} & Phức tạp. \\
-  \textbf{Các thành phần tham gia và mối quan tâm} & Người dùng cần lời giải thích dễ hiểu; Analytics Engine giữ facts; narrator không được thay số. \\
-  \textbf{Mô tả tóm tắt} & Diễn giải facts đã tính, đồng thời trả facts để truy vết. \\
-  \textbf{Các mối quan hệ} & Bao gồm FR-07; có thể dùng persona khi consent bật. \\
-  \textbf{Luồng xử lý bình thường của sự kiện} & \textbf{Bước 1:} Nhận câu hỏi hoặc mở báo cáo. \textbf{Bước 2:} FR-07 tạo facts. \textbf{Bước 3:} Nạp persona được phép. \textbf{Sub 1:} Narrator diễn giải facts. \textbf{Bước 4:} Trả narration, facts và provider. \\
-  \textbf{Các luồng sự kiện con (Subflows)} & \textbf{Sub 1 --- Narration:} (1) Khóa số/đơn vị trong prompt; (2) dùng template fallback nếu LLM lỗi. \\
-  \textbf{Luồng luân phiên/đặc biệt} & Facts thiếu thì trả cảnh báo. Numeric grounding checker toàn diện là thiết kế đích, chưa phải kết quả đã đo. \\
+  \textbf{Tên chức năng} & Sinh insight có căn cứ và persona. \frtablerow
+  \textbf{ID} & FR-08. \frtablerow
+  \textbf{Người sử dụng} & Người dùng; Dịch vụ AI ngoài. \frtablerow
+  \textbf{Mức độ cần thiết} & Mong muốn. \frtablerow
+  \textbf{Phân loại} & Phức tạp. \frtablerow
+  \textbf{Các thành phần tham gia và mối quan tâm} & Người dùng cần lời giải thích dễ hiểu; Analytics Engine giữ facts; narrator không được thay số. \frtablerow
+  \textbf{Mô tả tóm tắt} & Diễn giải facts đã tính, đồng thời trả facts để truy vết. \frtablerow
+  \textbf{Các mối quan hệ} & Bao gồm FR-07; có thể dùng persona khi consent bật. \frtablerow
+  \textbf{Luồng xử lý bình thường của sự kiện} & \textbf{Bước 1:} Nhận câu hỏi hoặc mở báo cáo. \textbf{Bước 2:} FR-07 tạo facts. \textbf{Bước 3:} Nạp persona được phép. \textbf{Sub 1:} Narrator diễn giải facts. \textbf{Bước 4:} Trả narration, facts và provider. \frtablerow
+  \textbf{Các luồng sự kiện con (Subflows)} & \textbf{Sub 1 --- Narration:} (1) Khóa số/đơn vị trong prompt; (2) dùng template fallback nếu LLM lỗi. \frtablerow
+  \textbf{Luồng luân phiên/đặc biệt} & Facts thiếu thì trả cảnh báo. Numeric grounding checker toàn diện là thiết kế đích, chưa phải kết quả đã đo. \frtablerow
 \end{frtable}
 
 \begin{frtable}{Đặc tả FR-09 --- Ngân sách và dự báo}{tab:fr09}
-  \textbf{Tên chức năng} & Quản lý, đề xuất và dự báo ngân sách. \\
-  \textbf{ID} & FR-09. \\
-  \textbf{Người sử dụng} & Người dùng. \\
-  \textbf{Mức độ cần thiết} & Bắt buộc. \\
-  \textbf{Phân loại} & Trung bình. \\
-  \textbf{Các thành phần tham gia và mối quan tâm} & Người dùng cần biết tiến độ; Budget Engine cần lịch sử đủ dài và không tự áp hạn mức. \\
-  \textbf{Mô tả tóm tắt} & Tính spent/remaining, dự báo cuối tháng và đề xuất hạn mức theo lịch sử hoặc khung tỷ lệ. \\
-  \textbf{Các mối quan hệ} & Đọc FR-05; dùng FR-03 khi áp đề xuất từ chat. \\
-  \textbf{Luồng xử lý bình thường của sự kiện} & \textbf{Bước 1:} Chọn kỳ/danh mục. \textbf{Bước 2:} Tính tiến độ. \textbf{Bước 3:} Tạo forecast hoặc recommendation. \textbf{Sub 1:} Hiển thị confidence/cảnh báo. \textbf{Bước 4:} Người dùng xác nhận áp dụng. \\
-  \textbf{Các luồng sự kiện con (Subflows)} & \textbf{Sub 1 --- Đề xuất:} (1) Zero-fill tháng; (2) tính hạn mức; (3) co tỷ trọng nếu vượt trần. \\
-  \textbf{Luồng luân phiên/đặc biệt} & Dưới ba tháng lịch sử phải cảnh báo. Amount không dương hoặc category không phải chi phí bị từ chối. \\
+  \textbf{Tên chức năng} & Quản lý, đề xuất và dự báo ngân sách. \frtablerow
+  \textbf{ID} & FR-09. \frtablerow
+  \textbf{Người sử dụng} & Người dùng. \frtablerow
+  \textbf{Mức độ cần thiết} & Bắt buộc. \frtablerow
+  \textbf{Phân loại} & Trung bình. \frtablerow
+  \textbf{Các thành phần tham gia và mối quan tâm} & Người dùng cần biết tiến độ; Budget Engine cần lịch sử đủ dài và không tự áp hạn mức. \frtablerow
+  \textbf{Mô tả tóm tắt} & Tính spent/remaining, dự báo cuối tháng và đề xuất hạn mức theo lịch sử hoặc khung tỷ lệ. \frtablerow
+  \textbf{Các mối quan hệ} & Đọc FR-05; dùng FR-03 khi áp đề xuất từ chat. \frtablerow
+  \textbf{Luồng xử lý bình thường của sự kiện} & \textbf{Bước 1:} Chọn kỳ/danh mục. \textbf{Bước 2:} Tính tiến độ. \textbf{Bước 3:} Tạo forecast hoặc recommendation. \textbf{Sub 1:} Hiển thị confidence/cảnh báo. \textbf{Bước 4:} Người dùng xác nhận áp dụng. \frtablerow
+  \textbf{Các luồng sự kiện con (Subflows)} & \textbf{Sub 1 --- Đề xuất:} (1) Zero-fill tháng; (2) tính hạn mức; (3) co tỷ trọng nếu vượt trần. \frtablerow
+  \textbf{Luồng luân phiên/đặc biệt} & Dưới ba tháng lịch sử phải cảnh báo. Amount không dương hoặc category không phải chi phí bị từ chối. \frtablerow
 \end{frtable}
 
 \begin{frtable}{Đặc tả FR-10 --- Mục tiêu và mô phỏng what-if}{tab:fr10}
-  \textbf{Tên chức năng} & Lập kế hoạch mục tiêu tài chính. \\
-  \textbf{ID} & FR-10. \\
-  \textbf{Người sử dụng} & Người dùng. \\
-  \textbf{Mức độ cần thiết} & Bắt buộc. \\
-  \textbf{Phân loại} & Phức tạp. \\
-  \textbf{Các thành phần tham gia và mối quan tâm} & Người dùng cần kế hoạch minh bạch; Goal Planner phải xử lý tiết kiệm, mua sắm và trả nợ bằng công thức xác định. \\
-  \textbf{Mô tả tóm tắt} & Tính mức góp, thời gian, thiếu hụt và kịch bản thay đổi mà không sửa kế hoạch gốc. \\
-  \textbf{Các mối quan hệ} & Đọc dữ liệu FR-05; dùng FR-03 khi lưu từ chat. \\
-  \textbf{Luồng xử lý bình thường của sự kiện} & \textbf{Bước 1:} Nhập loại, target, current, date và contribution/rate. \textbf{Bước 2:} Validation. \textbf{Sub 1:} Goal Planner tính kế hoạch. \textbf{Bước 3:} Hiển thị preview/what-if. \textbf{Bước 4:} Xác nhận lưu. \\
-  \textbf{Các luồng sự kiện con (Subflows)} & \textbf{Sub 1 --- Tính toán:} (1) Saving/purchase tính phần còn thiếu; (2) debt payoff mô phỏng dư nợ theo tháng. \\
-  \textbf{Luồng luân phiên/đặc biệt} & Contribution bằng 0 trả thời gian không xác định; payment không bù lãi hoặc horizon quá 600 tháng trả cảnh báo, không bịa ngày hoàn tất. \\
+  \textbf{Tên chức năng} & Lập kế hoạch mục tiêu tài chính. \frtablerow
+  \textbf{ID} & FR-10. \frtablerow
+  \textbf{Người sử dụng} & Người dùng. \frtablerow
+  \textbf{Mức độ cần thiết} & Bắt buộc. \frtablerow
+  \textbf{Phân loại} & Phức tạp. \frtablerow
+  \textbf{Các thành phần tham gia và mối quan tâm} & Người dùng cần kế hoạch minh bạch; Goal Planner phải xử lý tiết kiệm, mua sắm và trả nợ bằng công thức xác định. \frtablerow
+  \textbf{Mô tả tóm tắt} & Tính mức góp, thời gian, thiếu hụt và kịch bản thay đổi mà không sửa kế hoạch gốc. \frtablerow
+  \textbf{Các mối quan hệ} & Đọc dữ liệu FR-05; dùng FR-03 khi lưu từ chat. \frtablerow
+  \textbf{Luồng xử lý bình thường của sự kiện} & \textbf{Bước 1:} Nhập loại, target, current, date và contribution/rate. \textbf{Bước 2:} Validation. \textbf{Sub 1:} Goal Planner tính kế hoạch. \textbf{Bước 3:} Hiển thị preview/what-if. \textbf{Bước 4:} Xác nhận lưu. \frtablerow
+  \textbf{Các luồng sự kiện con (Subflows)} & \textbf{Sub 1 --- Tính toán:} (1) Saving/purchase tính phần còn thiếu; (2) debt payoff mô phỏng dư nợ theo tháng. \frtablerow
+  \textbf{Luồng luân phiên/đặc biệt} & Contribution bằng 0 trả thời gian không xác định; payment không bù lãi hoặc horizon quá 600 tháng trả cảnh báo, không bịa ngày hoàn tất. \frtablerow
 \end{frtable}
 
 \begin{frtable}{Đặc tả FR-11 --- Khoản định kỳ và tác vụ nền}{tab:fr11}
-  \textbf{Tên chức năng} & Quản lý recurring bill, thanh toán và tác vụ chủ động. \\
-  \textbf{ID} & FR-11. \\
-  \textbf{Người sử dụng} & Người dùng; Worker nền. \\
-  \textbf{Mức độ cần thiết} & Mong muốn. \\
-  \textbf{Phân loại} & Phức tạp. \\
-  \textbf{Các thành phần tham gia và mối quan tâm} & Người dùng cần lịch/nhắc; worker cần retry; database cần một hiệu ứng cho mỗi kỳ. \\
-  \textbf{Mô tả tóm tắt} & Quản lý lịch chi lặp, ghi thanh toán nguyên tử và sinh thông báo nội bộ không trùng. \\
-  \textbf{Các mối quan hệ} & Dùng FR-05 khi ghi payment; dùng facts FR-07. \\
-  \textbf{Luồng xử lý bình thường của sự kiện} & \textbf{Bước 1:} Tạo lịch hợp lệ. \textbf{Bước 2:} Scheduler đưa job vào queue. \textbf{Bước 3:} Worker resolve user/kỳ. \textbf{Sub 1:} Gọi handler idempotent. \textbf{Bước 4:} Lưu payment/message và cập nhật kỳ kế tiếp. \\
-  \textbf{Các luồng sự kiện con (Subflows)} & \textbf{Sub 1 --- Retry:} (1) Giữ cùng fingerprint/event key; (2) kết quả duplicate được xem là hoàn tất an toàn. \\
-  \textbf{Luồng luân phiên/đặc biệt} & Kỳ cũ/thiếu hoặc payload sai làm rollback. Redis lỗi khiến worker dừng an toàn; không được tuyên bố worker live nếu chưa đo. \\
+  \textbf{Tên chức năng} & Quản lý recurring bill, thanh toán và tác vụ chủ động. \frtablerow
+  \textbf{ID} & FR-11. \frtablerow
+  \textbf{Người sử dụng} & Người dùng; Worker nền. \frtablerow
+  \textbf{Mức độ cần thiết} & Mong muốn. \frtablerow
+  \textbf{Phân loại} & Phức tạp. \frtablerow
+  \textbf{Các thành phần tham gia và mối quan tâm} & Người dùng cần lịch/nhắc; worker cần retry; database cần một hiệu ứng cho mỗi kỳ. \frtablerow
+  \textbf{Mô tả tóm tắt} & Quản lý lịch chi lặp, ghi thanh toán nguyên tử và sinh thông báo nội bộ không trùng. \frtablerow
+  \textbf{Các mối quan hệ} & Dùng FR-05 khi ghi payment; dùng facts FR-07. \frtablerow
+  \textbf{Luồng xử lý bình thường của sự kiện} & \textbf{Bước 1:} Tạo lịch hợp lệ. \textbf{Bước 2:} Scheduler đưa job vào queue. \textbf{Bước 3:} Worker resolve user/kỳ. \textbf{Sub 1:} Gọi handler idempotent. \textbf{Bước 4:} Lưu payment/message và cập nhật kỳ kế tiếp. \frtablerow
+  \textbf{Các luồng sự kiện con (Subflows)} & \textbf{Sub 1 --- Retry:} (1) Giữ cùng fingerprint/event key; (2) kết quả duplicate được xem là hoàn tất an toàn. \frtablerow
+  \textbf{Luồng luân phiên/đặc biệt} & Kỳ cũ/thiếu hoặc payload sai làm rollback. Redis lỗi khiến worker dừng an toàn; không được tuyên bố worker live nếu chưa đo. \frtablerow
 \end{frtable}
 
 \begin{frtable}{Đặc tả FR-12 --- Xuất và dọn dữ liệu}{tab:fr12}
-  \textbf{Tên chức năng} & Xuất dữ liệu, lưu lịch sử và dọn tệp hết hạn. \\
-  \textbf{ID} & FR-12. \\
-  \textbf{Người sử dụng} & Người dùng; Worker nền. \\
-  \textbf{Mức độ cần thiết} & Tùy chọn. \\
-  \textbf{Phân loại} & Trung bình. \\
-  \textbf{Các thành phần tham gia và mối quan tâm} & Người dùng cần tải đúng dữ liệu; exporter cần escaping; worker không được xóa tệp còn hiệu lực. \\
-  \textbf{Mô tả tóm tắt} & Tạo CSV theo bộ lọc, ghi lịch sử và dọn tệp sau TTL. \\
-  \textbf{Các mối quan hệ} & Đọc FR-05; dùng FR-03 nếu được khởi tạo từ chat; worker xử lý cleanup. \\
-  \textbf{Luồng xử lý bình thường của sự kiện} & \textbf{Bước 1:} Chọn định dạng/kỳ. \textbf{Bước 2:} Validation và truy vấn theo hồ sơ. \textbf{Sub 1:} Tạo tệp an toàn. \textbf{Bước 3:} Ghi \code{export_history}. \textbf{Bước 4:} Trả liên kết tải. \\
-  \textbf{Các luồng sự kiện con (Subflows)} & \textbf{Sub 1 --- CSV:} (1) Escape ô có công thức; (2) ghi BOM UTF-8 và số dòng; (3) đặt TTL. \\
-  \textbf{Luồng luân phiên/đặc biệt} & Không có dữ liệu vẫn trả tệp có header. Luồng từng mang nhãn PDF hiện chỉ tạo HTML nên không được công bố là PDF thật. \\
+  \textbf{Tên chức năng} & Xuất dữ liệu, lưu lịch sử và dọn tệp hết hạn. \frtablerow
+  \textbf{ID} & FR-12. \frtablerow
+  \textbf{Người sử dụng} & Người dùng; Worker nền. \frtablerow
+  \textbf{Mức độ cần thiết} & Tùy chọn. \frtablerow
+  \textbf{Phân loại} & Trung bình. \frtablerow
+  \textbf{Các thành phần tham gia và mối quan tâm} & Người dùng cần tải đúng dữ liệu; exporter cần escaping; worker không được xóa tệp còn hiệu lực. \frtablerow
+  \textbf{Mô tả tóm tắt} & Tạo CSV theo bộ lọc, ghi lịch sử và dọn tệp sau TTL. \frtablerow
+  \textbf{Các mối quan hệ} & Đọc FR-05; dùng FR-03 nếu được khởi tạo từ chat; worker xử lý cleanup. \frtablerow
+  \textbf{Luồng xử lý bình thường của sự kiện} & \textbf{Bước 1:} Chọn định dạng/kỳ. \textbf{Bước 2:} Validation và truy vấn theo hồ sơ. \textbf{Sub 1:} Tạo tệp an toàn. \textbf{Bước 3:} Ghi \code{export_history}. \textbf{Bước 4:} Trả liên kết tải. \frtablerow
+  \textbf{Các luồng sự kiện con (Subflows)} & \textbf{Sub 1 --- CSV:} (1) Escape ô có công thức; (2) ghi BOM UTF-8 và số dòng; (3) đặt TTL. \frtablerow
+  \textbf{Luồng luân phiên/đặc biệt} & Không có dữ liệu vẫn trả tệp có header. Luồng từng mang nhãn PDF hiện chỉ tạo HTML nên không được công bố là PDF thật. \frtablerow
 \end{frtable}
 
 \subsection{Yêu cầu phi chức năng}
@@ -277,7 +277,7 @@ Phương án microservice đã được cân nhắc nhưng không chọn vì s�
 
 Hình~\ref{fig:domain-class} mô tả các lớp miền và bội số quan hệ. \code{User} là gốc sở hữu; \code{Wallet}, \code{Transaction} và \code{Category} tạo sổ cái; \code{Budget}, \code{FinancialGoal} và các lớp recurring tạo kế hoạch; \code{ChatMessage} và \code{AIFeedback} lưu tương tác cần truy vết. Các engine không xuất hiện như entity vì chúng chỉ đọc dữ liệu và tạo facts.
 
-\widereportfigure{05-physical-erd.pdf}{ERD vật lý được đối chiếu với chuỗi migration runtime; các khóa ngoại nghiệp vụ chính được thể hiện bằng quan hệ thẳng.}{fig:physical-erd}
+\widereportfigure{05-physical-erd.pdf}{ERD vật lý được đối chiếu với chuỗi migration runtime; các khóa ngoại nghiệp vụ chính đi theo những hành lang trực giao tách biệt.}{fig:physical-erd}
 
 \begin{longtable}{@{}L{4.5cm}L{3.0cm}L{6.0cm}@{}}
   \caption{Danh sách thực thể theo thứ tự bảng chữ cái}\label{tab:data-entities}\\

@@ -1,110 +1,110 @@
 <?xml version='1.0' encoding='utf-8'?>
 <mxfile>
   <diagram id="seqlayout" name="Proactive Jobs and Deduplication">
-    <mxGraphModel dx="800" dy="600" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1580" pageHeight="880" math="0" shadow="0" reportStyled="1">
+    <mxGraphModel dx="800" dy="600" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1580" pageHeight="940" math="0" shadow="0" reportStyled="1">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
-        <mxCell id="report-title" value="Proactive Job and Deduplication Sequence" style="text;html=1;align=left;verticalAlign=middle;fontSize=18;fontStyle=1;fontColor=#22303F;" vertex="1" parent="1"><mxGeometry x="40" y="14" width="1500" height="28" as="geometry" /></mxCell><mxCell id="report-subtitle" value="The queue coordinates retries; a unique event key makes message persistence idempotent." style="text;html=1;align=left;verticalAlign=middle;fontSize=12;fontColor=#5A6A78;whiteSpace=wrap;" vertex="1" parent="1"><mxGeometry x="40" y="44" width="1500" height="30" as="geometry" /></mxCell><mxCell id="scheduler" value="&lt;b&gt;BullMQ Scheduler&lt;/b&gt;" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;fillColor=#FBF3D9;strokeColor=#B08900;fontColor=#5A4700;fontSize=13;strokeWidth=1.2;size=44;" vertex="1" parent="1">
-          <mxGeometry x="40" y="95" width="100" height="747.4" as="geometry" />
+        <mxCell id="report-title" value="Proactive Job and Deduplication Sequence" style="text;html=1;align=left;verticalAlign=middle;fontSize=20;fontStyle=1;fontColor=#22303F;" vertex="1" parent="1"><mxGeometry x="40" y="14" width="1500" height="28" as="geometry" /></mxCell><mxCell id="report-subtitle" value="The queue coordinates retries; a unique event key makes message persistence idempotent." style="text;html=1;align=left;verticalAlign=middle;fontSize=13;fontColor=#5A6A78;whiteSpace=wrap;" vertex="1" parent="1"><mxGeometry x="40" y="44" width="1500" height="30" as="geometry" /></mxCell><mxCell id="scheduler" value="&lt;b&gt;BullMQ Scheduler&lt;/b&gt;" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;fillColor=#FBF3D9;strokeColor=#B08900;fontColor=#5A4700;fontSize=15;strokeWidth=1.2;size=48;" vertex="1" parent="1">
+          <mxGeometry x="40" y="95" width="100" height="808" as="geometry" />
         </mxCell>
-        <mxCell id="redis" value="&lt;b&gt;Redis Queue&lt;/b&gt;" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;fillColor=#FBF3D9;strokeColor=#B08900;fontColor=#5A4700;fontSize=13;strokeWidth=1.2;size=44;" vertex="1" parent="1">
-          <mxGeometry x="240" y="95" width="100" height="747.4" as="geometry" />
+        <mxCell id="redis" value="&lt;b&gt;Redis Queue&lt;/b&gt;" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;fillColor=#FBF3D9;strokeColor=#B08900;fontColor=#5A4700;fontSize=15;strokeWidth=1.2;size=48;" vertex="1" parent="1">
+          <mxGeometry x="240" y="95" width="100" height="808" as="geometry" />
         </mxCell>
-        <mxCell id="worker" value="&lt;b&gt;Worker Process&lt;/b&gt;" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;fillColor=#EEF2F7;strokeColor=#5B7290;fontColor=#22303F;fontSize=13;strokeWidth=1.2;size=44;" vertex="1" parent="1">
-          <mxGeometry x="440" y="95" width="100" height="747.4" as="geometry" />
+        <mxCell id="worker" value="&lt;b&gt;Worker Process&lt;/b&gt;" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;fillColor=#EEF2F7;strokeColor=#5B7290;fontColor=#22303F;fontSize=15;strokeWidth=1.2;size=48;" vertex="1" parent="1">
+          <mxGeometry x="440" y="95" width="100" height="808" as="geometry" />
         </mxCell>
-        <mxCell id="db" value="&lt;b&gt;PostgreSQL&lt;/b&gt;" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;fillColor=#E6F4EA;strokeColor=#2E7D46;fontColor=#1B4429;fontSize=13;strokeWidth=1.2;size=44;" vertex="1" parent="1">
-          <mxGeometry x="640" y="95" width="100" height="747.4" as="geometry" />
+        <mxCell id="db" value="&lt;b&gt;PostgreSQL&lt;/b&gt;" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;fillColor=#E6F4EA;strokeColor=#2E7D46;fontColor=#1B4429;fontSize=15;strokeWidth=1.2;size=48;" vertex="1" parent="1">
+          <mxGeometry x="640" y="95" width="100" height="808" as="geometry" />
         </mxCell>
-        <mxCell id="analytics" value="&lt;b&gt;Core Services&lt;/b&gt;" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;fillColor=#E6F4EA;strokeColor=#2E7D46;fontColor=#1B4429;fontSize=13;strokeWidth=1.2;size=44;" vertex="1" parent="1">
-          <mxGeometry x="840" y="95" width="100" height="747.4" as="geometry" />
+        <mxCell id="analytics" value="&lt;b&gt;Core Services&lt;/b&gt;" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;fillColor=#E6F4EA;strokeColor=#2E7D46;fontColor=#1B4429;fontSize=15;strokeWidth=1.2;size=48;" vertex="1" parent="1">
+          <mxGeometry x="840" y="95" width="100" height="808" as="geometry" />
         </mxCell>
-        <mxCell id="narrator" value="&lt;b&gt;Persona / LLM&lt;/b&gt;" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;fillColor=#F0EAF9;strokeColor=#7C5CBF;fontColor=#3A2A5F;fontSize=13;strokeWidth=1.2;size=44;dashed=1;" vertex="1" parent="1">
-          <mxGeometry x="1040" y="95" width="100" height="747.4" as="geometry" />
+        <mxCell id="narrator" value="&lt;b&gt;Persona / LLM&lt;/b&gt;" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;fillColor=#F0EAF9;strokeColor=#7C5CBF;fontColor=#3A2A5F;fontSize=15;strokeWidth=1.2;size=48;dashed=1;" vertex="1" parent="1">
+          <mxGeometry x="1040" y="95" width="100" height="808" as="geometry" />
         </mxCell>
-        <mxCell id="chat" value="&lt;b&gt;Internal Message&lt;/b&gt;" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;fillColor=#EEF2F7;strokeColor=#5B7290;fontColor=#22303F;fontSize=13;strokeWidth=1.2;size=44;" vertex="1" parent="1">
-          <mxGeometry x="1240" y="95" width="100" height="747.4" as="geometry" />
+        <mxCell id="chat" value="&lt;b&gt;Internal Message&lt;/b&gt;" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;fillColor=#EEF2F7;strokeColor=#5B7290;fontColor=#22303F;fontSize=15;strokeWidth=1.2;size=48;" vertex="1" parent="1">
+          <mxGeometry x="1240" y="95" width="100" height="808" as="geometry" />
         </mxCell>
-        <mxCell id="app" value="&lt;b&gt;Mobile App&lt;/b&gt;" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;fillColor=#EEF2F7;strokeColor=#5B7290;fontColor=#22303F;fontSize=13;strokeWidth=1.2;size=44;" vertex="1" parent="1">
-          <mxGeometry x="1440" y="95" width="100" height="747.4" as="geometry" />
+        <mxCell id="app" value="&lt;b&gt;Mobile App&lt;/b&gt;" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;fillColor=#EEF2F7;strokeColor=#5B7290;fontColor=#22303F;fontSize=15;strokeWidth=1.2;size=48;" vertex="1" parent="1">
+          <mxGeometry x="1440" y="95" width="100" height="808" as="geometry" />
         </mxCell>
         <mxCell id="act0" value="" style="html=1;points=[];perimeter=orthogonalPerimeter;outlineConnect=0;fillColor=#ffffff;" vertex="1" parent="db">
-          <mxGeometry x="45" y="140.6" width="10" height="37" as="geometry" />
+          <mxGeometry x="45" y="152" width="10" height="40" as="geometry" />
         </mxCell>
         <mxCell id="act1" value="" style="html=1;points=[];perimeter=orthogonalPerimeter;outlineConnect=0;fillColor=#ffffff;" vertex="1" parent="analytics">
-          <mxGeometry x="45" y="214.6" width="10" height="88.8" as="geometry" />
+          <mxGeometry x="45" y="232" width="10" height="96" as="geometry" />
         </mxCell>
         <mxCell id="act2" value="" style="html=1;points=[];perimeter=orthogonalPerimeter;outlineConnect=0;fillColor=#ffffff;" vertex="1" parent="narrator">
-          <mxGeometry x="45" y="340.4" width="10" height="37" as="geometry" />
+          <mxGeometry x="45" y="368" width="10" height="40" as="geometry" />
         </mxCell>
         <mxCell id="act3" value="" style="html=1;points=[];perimeter=orthogonalPerimeter;outlineConnect=0;fillColor=#ffffff;" vertex="1" parent="db">
-          <mxGeometry x="45" y="451.4" width="10" height="37" as="geometry" />
+          <mxGeometry x="45" y="488" width="10" height="40" as="geometry" />
         </mxCell>
         <mxCell id="act4" value="" style="html=1;points=[];perimeter=orthogonalPerimeter;outlineConnect=0;fillColor=#ffffff;" vertex="1" parent="chat">
-          <mxGeometry x="45" y="414.4" width="10" height="111" as="geometry" />
+          <mxGeometry x="45" y="448" width="10" height="120" as="geometry" />
         </mxCell>
         <mxCell id="act5" value="" style="html=1;points=[];perimeter=orthogonalPerimeter;outlineConnect=0;fillColor=#ffffff;" vertex="1" parent="worker">
-          <mxGeometry x="45" y="103.6" width="10" height="458.8" as="geometry" />
+          <mxGeometry x="45" y="112" width="10" height="496" as="geometry" />
         </mxCell>
         <mxCell id="act6" value="" style="html=1;points=[];perimeter=orthogonalPerimeter;outlineConnect=0;fillColor=#ffffff;" vertex="1" parent="db">
-          <mxGeometry x="45" y="599.4" width="10" height="37" as="geometry" />
+          <mxGeometry x="45" y="648" width="10" height="40" as="geometry" />
         </mxCell>
         <mxCell id="act7" value="" style="html=1;points=[];perimeter=orthogonalPerimeter;outlineConnect=0;fillColor=#ffffff;" vertex="1" parent="redis">
-          <mxGeometry x="45" y="66.6" width="10" height="651.2" as="geometry" />
+          <mxGeometry x="45" y="72" width="10" height="704" as="geometry" />
         </mxCell>
-        <mxCell id="m0" value="Upsert recurring schedules" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;exitX=0.5;exitY=0.0891;entryX=0;entryY=0.0;fontSize=12;labelBackgroundColor=#FFFFFF;fontColor=#3D4B5A;strokeWidth=1.15;strokeColor=#5B7290;" edge="1" parent="1" source="scheduler" target="act7">
+        <mxCell id="m0" value="Upsert recurring schedules" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;exitX=0.5;exitY=0.0891;entryX=0;entryY=0.0;fontSize=14;labelBackgroundColor=#FFFFFF;fontColor=#3D4B5A;strokeWidth=1.15;strokeColor=#5B7290;" edge="1" parent="1" source="scheduler" target="act7">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="m1" value="Job + attempts + exponential backoff" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;exitX=1;exitY=0.0568;entryX=0;entryY=0.0;fontSize=12;labelBackgroundColor=#FFFFFF;fontColor=#3D4B5A;strokeWidth=1.15;strokeColor=#5B7290;" edge="1" parent="1" source="act7" target="act5">
+        <mxCell id="m1" value="Job + attempts + exponential backoff" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;exitX=1;exitY=0.0568;entryX=0;entryY=0.0;fontSize=14;labelBackgroundColor=#FFFFFF;fontColor=#3D4B5A;strokeWidth=1.15;strokeColor=#5B7290;" edge="1" parent="1" source="act7" target="act5">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="m2" value="Resolve user scope and due data" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;exitX=1;exitY=0.0806;entryX=0;entryY=0.0;fontSize=12;labelBackgroundColor=#FFFFFF;fontColor=#3D4B5A;strokeWidth=1.15;strokeColor=#5B7290;" edge="1" parent="1" source="act5" target="act0">
+        <mxCell id="m2" value="Resolve user scope and due data" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;exitX=1;exitY=0.0806;entryX=0;entryY=0.0;fontSize=14;labelBackgroundColor=#FFFFFF;fontColor=#3D4B5A;strokeWidth=1.15;strokeColor=#5B7290;" edge="1" parent="1" source="act5" target="act0">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="m3" value="Bills · balances · transactions" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;curved=0;rounded=0;exitX=0;exitY=1.0;entryX=1;entryY=0.1613;fontSize=12;labelBackgroundColor=#FFFFFF;fontColor=#6B7A89;strokeWidth=1.15;strokeColor=#9AA7B4;" edge="1" parent="1" source="act0" target="act5">
+        <mxCell id="m3" value="Bills · balances · transactions" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;curved=0;rounded=0;exitX=0;exitY=1.0;entryX=1;entryY=0.1613;fontSize=14;labelBackgroundColor=#FFFFFF;fontColor=#6B7A89;strokeWidth=1.15;strokeColor=#9AA7B4;" edge="1" parent="1" source="act0" target="act5">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="m4" value="Run reminder, runway, subscription or month-end" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;exitX=1;exitY=0.2419;entryX=0;entryY=0.0;fontSize=12;labelBackgroundColor=#FFFFFF;fontColor=#3D4B5A;strokeWidth=1.15;strokeColor=#5B7290;" edge="1" parent="1" source="act5" target="act1">
+        <mxCell id="m4" value="Run reminder, runway, subscription or month-end" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;exitX=1;exitY=0.2419;entryX=0;entryY=0.0;fontSize=14;labelBackgroundColor=#FFFFFF;fontColor=#3D4B5A;strokeWidth=1.15;strokeColor=#5B7290;" edge="1" parent="1" source="act5" target="act1">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="m5" value="Compute facts and alert thresholds" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;exitX=1;exitY=0.4167;entryX=1;entryY=0.6667;fontSize=12;labelBackgroundColor=#FFFFFF;fontColor=#3D4B5A;strokeWidth=1.15;strokeColor=#5B7290;" edge="1" parent="1" source="act1" target="act1">
+        <mxCell id="m5" value="Compute facts and alert thresholds" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;exitX=1;exitY=0.4167;entryX=1;entryY=0.6667;fontSize=14;labelBackgroundColor=#FFFFFF;fontColor=#3D4B5A;strokeWidth=1.15;strokeColor=#5B7290;" edge="1" parent="1" source="act1" target="act1">
           <mxGeometry relative="1" as="geometry">
-            <Array as="points"><mxPoint x="950" y="346.6" /><mxPoint x="950" y="368.8" /></Array>
+            <Array as="points"><mxPoint x="950" y="367" /><mxPoint x="950" y="391" /></Array>
           </mxGeometry>
         </mxCell>
-        <mxCell id="m6" value="Structured facts" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;curved=0;rounded=0;exitX=0;exitY=1.0;entryX=1;entryY=0.4355;fontSize=12;labelBackgroundColor=#FFFFFF;fontColor=#6B7A89;strokeWidth=1.15;strokeColor=#9AA7B4;" edge="1" parent="1" source="act1" target="act5">
+        <mxCell id="m6" value="Structured facts" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;curved=0;rounded=0;exitX=0;exitY=1.0;entryX=1;entryY=0.4355;fontSize=14;labelBackgroundColor=#FFFFFF;fontColor=#6B7A89;strokeWidth=1.15;strokeColor=#9AA7B4;" edge="1" parent="1" source="act1" target="act5">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="m7" value="Apply persona to grounded narration" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;exitX=1;exitY=0.5161;entryX=0;entryY=0.0;fontSize=12;labelBackgroundColor=#FFFFFF;fontColor=#3D4B5A;strokeWidth=1.15;strokeColor=#5B7290;" edge="1" parent="1" source="act5" target="act2">
+        <mxCell id="m7" value="Apply persona to grounded narration" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;exitX=1;exitY=0.5161;entryX=0;entryY=0.0;fontSize=14;labelBackgroundColor=#FFFFFF;fontColor=#3D4B5A;strokeWidth=1.15;strokeColor=#5B7290;" edge="1" parent="1" source="act5" target="act2">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="m8" value="Message or deterministic fallback" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;curved=0;rounded=0;exitX=0;exitY=1.0;entryX=1;entryY=0.5968;fontSize=12;labelBackgroundColor=#FFFFFF;fontColor=#6B7A89;strokeWidth=1.15;strokeColor=#9AA7B4;" edge="1" parent="1" source="act2" target="act5">
+        <mxCell id="m8" value="Message or deterministic fallback" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;curved=0;rounded=0;exitX=0;exitY=1.0;entryX=1;entryY=0.5968;fontSize=14;labelBackgroundColor=#FFFFFF;fontColor=#6B7A89;strokeWidth=1.15;strokeColor=#9AA7B4;" edge="1" parent="1" source="act2" target="act5">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="m9" value="persist(event_key, dedupeHours)" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;exitX=1;exitY=0.6774;entryX=0;entryY=0.0;fontSize=12;labelBackgroundColor=#FFFFFF;fontColor=#3D4B5A;strokeWidth=1.15;strokeColor=#5B7290;" edge="1" parent="1" source="act5" target="act4">
+        <mxCell id="m9" value="persist(event_key, dedupeHours)" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;exitX=1;exitY=0.6774;entryX=0;entryY=0.0;fontSize=14;labelBackgroundColor=#FFFFFF;fontColor=#3D4B5A;strokeWidth=1.15;strokeColor=#5B7290;" edge="1" parent="1" source="act5" target="act4">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="m10" value="INSERT chat_messages with unique event_key" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;exitX=0;exitY=0.3333;entryX=1;entryY=0.0;fontSize=12;labelBackgroundColor=#FFFFFF;fontColor=#3D4B5A;strokeWidth=1.15;strokeColor=#5B7290;" edge="1" parent="1" source="act4" target="act3">
+        <mxCell id="m10" value="INSERT chat_messages with unique event_key" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;exitX=0;exitY=0.3333;entryX=1;entryY=0.0;fontSize=14;labelBackgroundColor=#FFFFFF;fontColor=#3D4B5A;strokeWidth=1.15;strokeColor=#5B7290;" edge="1" parent="1" source="act4" target="act3">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="m11" value="Created or duplicate" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;curved=0;rounded=0;exitX=1;exitY=1.0;entryX=0;entryY=0.6667;fontSize=12;labelBackgroundColor=#FFFFFF;fontColor=#6B7A89;strokeWidth=1.15;strokeColor=#9AA7B4;" edge="1" parent="1" source="act3" target="act4">
+        <mxCell id="m11" value="Created or duplicate" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;curved=0;rounded=0;exitX=1;exitY=1.0;entryX=0;entryY=0.6667;fontSize=14;labelBackgroundColor=#FFFFFF;fontColor=#6B7A89;strokeWidth=1.15;strokeColor=#9AA7B4;" edge="1" parent="1" source="act3" target="act4">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="m12" value="Idempotent result" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;curved=0;rounded=0;exitX=0;exitY=1.0;entryX=1;entryY=0.9194;fontSize=12;labelBackgroundColor=#FFFFFF;fontColor=#6B7A89;strokeWidth=1.15;strokeColor=#9AA7B4;" edge="1" parent="1" source="act4" target="act5">
+        <mxCell id="m12" value="Idempotent result" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;curved=0;rounded=0;exitX=0;exitY=1.0;entryX=1;entryY=0.9194;fontSize=14;labelBackgroundColor=#FFFFFF;fontColor=#6B7A89;strokeWidth=1.15;strokeColor=#9AA7B4;" edge="1" parent="1" source="act4" target="act5">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="m13" value="Complete or retry on failure" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;curved=0;rounded=0;exitX=0;exitY=1.0;entryX=1;entryY=0.7614;fontSize=12;labelBackgroundColor=#FFFFFF;fontColor=#6B7A89;strokeWidth=1.15;strokeColor=#9AA7B4;" edge="1" parent="1" source="act5" target="act7">
+        <mxCell id="m13" value="Complete or retry on failure" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;curved=0;rounded=0;exitX=0;exitY=1.0;entryX=1;entryY=0.7614;fontSize=14;labelBackgroundColor=#FFFFFF;fontColor=#6B7A89;strokeWidth=1.15;strokeColor=#9AA7B4;" edge="1" parent="1" source="act5" target="act7">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="m14" value="GET /api/chat/messages" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;exitX=0.5;exitY=0.802;entryX=1;entryY=0.0;fontSize=12;labelBackgroundColor=#FFFFFF;fontColor=#3D4B5A;strokeWidth=1.15;strokeColor=#5B7290;" edge="1" parent="1" source="app" target="act6">
+        <mxCell id="m14" value="GET /api/chat/messages" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;exitX=0.5;exitY=0.802;entryX=1;entryY=0.0;fontSize=14;labelBackgroundColor=#FFFFFF;fontColor=#3D4B5A;strokeWidth=1.15;strokeColor=#5B7290;" edge="1" parent="1" source="app" target="act6">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="m15" value="Stored proactive message" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;curved=0;rounded=0;exitX=1;exitY=1.0;entryX=0.5;entryY=0.8515;fontSize=12;labelBackgroundColor=#FFFFFF;fontColor=#6B7A89;strokeWidth=1.15;strokeColor=#9AA7B4;" edge="1" parent="1" source="act6" target="app">
+        <mxCell id="m15" value="Stored proactive message" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;curved=0;rounded=0;exitX=1;exitY=1.0;entryX=0.5;entryY=0.8515;fontSize=14;labelBackgroundColor=#FFFFFF;fontColor=#6B7A89;strokeWidth=1.15;strokeColor=#9AA7B4;" edge="1" parent="1" source="act6" target="app">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="note16" value="If Redis fails, the worker stops safely while the interactive API continues" style="shape=note;whiteSpace=wrap;html=1;size=14;fillColor=#FBF3D9;strokeColor=#B08900;fontColor=#5A4700;fontSize=12;strokeWidth=1.1;" vertex="1" parent="1">
-          <mxGeometry x="310" y="753.6" width="140" height="46" as="geometry" />
+        <mxCell id="note16" value="If Redis fails, the worker stops safely while the interactive API continues" style="shape=note;whiteSpace=wrap;html=1;size=14;fillColor=#FBF3D9;strokeColor=#B08900;fontColor=#5A4700;fontSize=14;strokeWidth=1.1;" vertex="1" parent="1">
+          <mxGeometry x="310" y="807" width="140" height="72" as="geometry" />
         </mxCell>
       </root>
     </mxGraphModel>

@@ -56,6 +56,7 @@ SPECS = {
     "13-worker-sequence": {
         "title": "Proactive Job and Deduplication Sequence",
         "subtitle": "The queue coordinates retries; a unique event key makes message persistence idempotent.",
+        "note_height": 72,
         "participants": {
             "scheduler": "yellow",
             "redis": "yellow",
@@ -83,7 +84,7 @@ def round10(value: float) -> int:
     return int(math.ceil(value / 10.0) * 10)
 
 
-def transform_y(value: float, scale: float = 0.74) -> float:
+def transform_y(value: float, scale: float = 0.80) -> float:
     return 95.0 + (value - 40.0) * scale
 
 
@@ -94,7 +95,7 @@ def add_heading(root: ET.Element, spec: dict, width: int) -> None:
             "id": "report-title",
             "value": spec["title"],
             "style": (
-                "text;html=1;align=left;verticalAlign=middle;fontSize=18;"
+                "text;html=1;align=left;verticalAlign=middle;fontSize=20;"
                 "fontStyle=1;fontColor=#22303F;"
             ),
             "vertex": "1",
@@ -112,7 +113,7 @@ def add_heading(root: ET.Element, spec: dict, width: int) -> None:
             "id": "report-subtitle",
             "value": spec["subtitle"],
             "style": (
-                "text;html=1;align=left;verticalAlign=middle;fontSize=12;"
+                "text;html=1;align=left;verticalAlign=middle;fontSize=13;"
                 "fontColor=#5A6A78;whiteSpace=wrap;"
             ),
             "vertex": "1",
@@ -159,9 +160,9 @@ def style_one(base: str, spec: dict) -> None:
                 "fillColor": fill,
                 "strokeColor": stroke,
                 "fontColor": font,
-                "fontSize": "13",
+                "fontSize": "15",
                 "strokeWidth": "1.2",
-                "size": "44",
+                "size": "48",
             }
             if cid in spec["external"]:
                 props["dashed"] = "1"
@@ -170,11 +171,11 @@ def style_one(base: str, spec: dict) -> None:
                 old_y = float(geom.get("y", "40"))
                 old_h = float(geom.get("height", "0"))
                 geom.set("y", f"{transform_y(old_y):g}")
-                geom.set("height", f"{old_h * 0.74:g}")
+                geom.set("height", f"{old_h * 0.80:g}")
 
         elif mx.get("edge") == "1":
             edge_props = {
-                "fontSize": "12",
+                "fontSize": "14",
                 "labelBackgroundColor": "#FFFFFF",
                 "fontColor": "#3D4B5A",
                 "strokeWidth": "1.15",
@@ -194,22 +195,22 @@ def style_one(base: str, spec: dict) -> None:
                     fillColor="#FBF3D9",
                     strokeColor="#B08900",
                     fontColor="#5A4700",
-                    fontSize="12",
+                    fontSize="14",
                     strokeWidth="1.1",
                 ),
             )
             if geom is not None:
                 old_y = float(geom.get("y", "40"))
                 geom.set("y", f"{transform_y(old_y):g}")
-                geom.set("height", "46")
+                geom.set("height", str(spec.get("note_height", 54)))
 
         elif mx.get("vertex") == "1" and mx.get("parent") in participants:
             # Activation bar coordinates are relative to the lifeline.
             if geom is not None:
                 old_y = float(geom.get("y", "0"))
                 old_h = float(geom.get("height", "0"))
-                geom.set("y", f"{old_y * 0.74:g}")
-                geom.set("height", f"{old_h * 0.74:g}")
+                geom.set("y", f"{old_y * 0.80:g}")
+                geom.set("height", f"{old_h * 0.80:g}")
 
         if geom is not None:
             for point in geom.findall(".//mxPoint"):
