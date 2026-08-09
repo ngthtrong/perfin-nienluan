@@ -419,6 +419,8 @@ khi $r>0$; nếu $r=0$ thì $P=L/n_d$. Payment nhỏ hơn hoặc bằng lãi th�
 
 Contract facts phiên bản 1.0 trả \code{schema_version}, \code{generated_at}, value của từng component và \code{metadata.components}. Metadata mỗi component có \code{unit}, \code{window}, \code{sample_count}, \code{method}, \code{parameters}, \code{warnings} và \code{status} thuộc \code{ok/no_signal/degraded}. Object window ghi \code{size}, \code{unit} và \code{zero_filled}; một số component thêm \code{category_count} hoặc \code{wallet_count}. Lỗi cục bộ được ghi trong \code{degraded_components} mà không làm mất contract. Persona chỉ thay giọng điệu khi consent bật; response trả narration cùng facts để UI/test đối chiếu. Numeric checker bao phủ mọi biểu thức số vẫn là thiết kế đích.
 
+Quy trình tính, ví dụ số và các trường hợp biên của matcher, correction, Analytics, Budget, Goal và facts contract được mở rộng tại Phụ lục~\ref{app:algorithms}--\ref{app:facts-contract}; Chương này giữ các công thức và quyết định thiết kế chính để bảo đảm mạch trình bày.
+
 \section{Kiểm thử}
 \label{sec:testing}
 
@@ -445,6 +447,8 @@ Contract facts phiên bản 1.0 trả \code{schema_version}, \code{generated_at}
 \end{longtable}
 
 Bộ dữ liệu văn bản cần bao phủ đơn vị tiền, số bằng chữ, phép nhân, ngày tương đối, nhiều giao dịch, typo, Việt--Anh, trường hợp thiếu/mơ hồ và correction xung đột. Khi đánh giá correction, mọi dòng cùng loại và mô tả chuẩn hóa phải nằm hoàn toàn ở seed hoặc evaluation. Dữ liệu analytics dùng chuỗi tổng hợp hoặc ẩn danh có slope, outlier, cadence và correlation biết trước. Tập media phải lưu ảnh/audio cùng transcript hoặc bảng hóa đơn chuẩn.
+
+Danh mục ca thường, ca biên, invariant và tệp kiểm thử tương ứng được lập thành ma trận ở Phụ lục~\ref{app:algorithm-tests}; mô tả nguồn, schema, cohort và giới hạn của dataset nằm ở Phụ lục~\ref{app:dataset-description}. Các bảng phụ lục chỉ dẫn đến bằng chứng và không thay thế các kết quả đã công bố trong mục~\ref{subsec:results}.
 
 \subsection{Kết quả và phân tích}
 \label{subsec:results}

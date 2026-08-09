@@ -419,6 +419,8 @@ for $r>0$, and $P=L/n_d$ for $r=0$. A payment less than or equal to first-month 
 
 Facts contract version 1.0 returns \code{schema_version}, \code{generated_at}, each component value and \code{metadata.components}. Per-component metadata contains \code{unit}, \code{window}, \code{sample_count}, \code{method}, \code{parameters}, \code{warnings}, and \code{status} in \code{ok/no_signal/degraded}. The window object records \code{size}, \code{unit} and \code{zero_filled}; selected components add \code{category_count} or \code{wallet_count}. A local failure appears in \code{degraded_components} without removing the contract. A persona changes tone only with consent; the response includes narration and facts for UI/test comparison. A numeric checker covering every expression remains a target design.
 
+The calculation path, numeric examples and boundary cases for matching, correction, Analytics, Budget, Goal and the facts contract are expanded in Appendix~\ref{app:algorithms}--\ref{app:facts-contract}; this chapter keeps the main formulas and design decisions for a coherent core narrative.
+
 \section{Testing}
 \label{sec:testing}
 
@@ -445,6 +447,8 @@ Facts contract version 1.0 returns \code{schema_version}, \code{generated_at}, e
 \end{longtable}
 
 The text dataset must cover currency units, written numbers, multiplication, relative dates, multiple transactions, typos, mixed Vietnamese/English, missing or ambiguous fields and conflicting corrections. In correction evaluation, every row sharing transaction type and normalized description must lie wholly in seed or evaluation. Analytics data needs known slopes, outliers, cadence and correlation. Media data must store image/audio with a reference transcript or receipt table.
+
+The normal-case, boundary-case, invariant and test-file catalog is provided in Appendix~\ref{app:algorithm-tests}; the source, schema, cohorts and dataset limitations are documented in Appendix~\ref{app:dataset-description}. These appendix tables point to evidence without replacing the measured results in Section~\ref{subsec:results}.
 
 \subsection{Results and Analysis}
 \label{subsec:results}

@@ -58,6 +58,428 @@ Nếu chạy trên điện thoại cùng LAN, thay \code{127.0.0.1} bằng IP LA
 
 Nguyên mẫu chưa có đăng nhập và dùng hồ sơ \code{default_user}. Không nhập dữ liệu nhạy cảm hoặc dùng kết quả như tư vấn đầu tư chắc chắn.
 
+\chapter{Đặc tả mở rộng các thuật toán}
+\label{app:algorithms}
+
+Phụ lục này mở rộng các công thức và quy tắc đã trình bày cô đọng ở Chương~\ref{chap:results}. Mục đích là giúp người đọc kiểm tra đường đi từ dữ liệu đầu vào đến facts hoặc kế hoạch đầu ra; phụ lục không bổ sung một nguồn dữ liệu sự thật thứ hai và không thay đổi hành vi của nguyên mẫu. Các ví dụ dùng số liệu tổng hợp, còn tên hàm, ngưỡng và trạng thái được đối chiếu với mã nguồn hiện tại.
+
+\section{Mô tả bộ dữ liệu kiểm thử}
+\label{app:dataset-description}
+
+Mục này mô tả các nguồn dữ liệu được dùng để kiểm thử và đo benchmark. Dữ liệu chính không phải một tập test độc lập được lấy từ bên ngoài: các thí nghiệm phân loại và correction đều đọc cùng \path{demo/data/dataFinance.csv}, sau đó áp dụng cohort hoặc split khác nhau. Báo cáo chỉ công bố thống kê tổng hợp và checksum; không sao chép các mô tả giao dịch thô vào phụ lục.
+
+\subsection{Danh mục nguồn dữ liệu}
+
+\begin{longtable}{@{}L{3.3cm}L{4.2cm}L{7.0cm}@{}}
+  \caption{Các nguồn dữ liệu kiểm thử và vai trò}
+  \label{tab:app-dataset-sources}\\
+  \toprule
+  \textbf{Nguồn} & \textbf{Quy mô/phạm vi} & \textbf{Vai trò và trạng thái} \\
+  \midrule
+  \endfirsthead
+  \toprule
+  \textbf{Nguồn} & \textbf{Quy mô/phạm vi} & \textbf{Vai trò và trạng thái} \\
+  \midrule
+  \endhead
+  CSV giao dịch & 5.265 dòng, 8 cột; ngày 01/01/2022--15/07/2026; 4.845 expense và 420 income. & Tập \code{dataFinance.csv} là nguồn chính cho import, benchmark parser và correction. Importer đọc 5.265/5.265 dòng, không reject. \\
+  Mapping category & Crosswalk taxonomy lịch sử sang 17 nhãn type/category của PERFIN. & File \code{dataFinance.category-map.json} được kiểm tra cùng checksum nguồn CSV; dùng để tạo nhãn gold sau import, không phải nhãn do parser dự đoán. Chỉ 13/17 nhãn có mẫu trong benchmark. \\
+  Ablation parser--Gemini & Tối đa 5 câu mỗi lớp, seed 42; kết quả thực tế 63 câu. & Cohort phân tầng rút từ cùng dataset CSV để đo coverage, accuracy và F1; không phải một nguồn văn bản độc lập. \\
+  Correction group split & 4.832 dòng sau khi loại \textit{Khác}; 4.756 dòng cùng type đủ điều kiện; evaluation 2.612 dòng. & Seed/evaluation được tách nguyên nhóm theo type và mô tả chuẩn hóa, seed 7, tỷ lệ mục tiêu 0,5; overlap khóa bằng 0. \\
+  Media fixtures & 2 ảnh và 1 audio. Hai ảnh có amount/type/date kỳ vọng; audio chưa có transcript chuẩn. & File \code{media-fixtures.json} chỉ dùng cho media smoke. Khi thiếu ground truth, chỉ báo pipeline pass/fail, không suy ra OCR/STT accuracy. \\
+  Fixture analytics/unit & Chuỗi tổng hợp hoặc ẩn danh có slope, outlier, cadence và correlation biết trước. & Dùng để kiểm tra công thức, ca biên và invariant của Analytics/Budget/Goal; không đại diện cho benchmark người dùng thật. \\
+  \bottomrule
+\end{longtable}
+
+\subsection{Schema dữ liệu gốc và phép ánh xạ}
+
+CSV phải có đúng thứ tự tám cột dưới đây. Hàm
+\code{planFinanceCsvImport} kiểm tra schema, ngày, số tiền, chiều thu/chi và checksum của mapping trước khi tạo bản ghi chuẩn.
+
+\begin{longtable}{@{}L{3.2cm}L{3.0cm}L{8.3cm}@{}}
+  \caption{Schema CSV và trường sau import}
+  \label{tab:app-dataset-schema}\\
+  \toprule
+  \textbf{Cột CSV} & \textbf{Giá trị hợp lệ} & \textbf{Phép biến đổi và ý nghĩa} \\
+  \midrule
+  \endfirsthead
+  \toprule
+  \textbf{Cột CSV} & \textbf{Giá trị hợp lệ} & \textbf{Phép biến đổi và ý nghĩa} \\
+  \midrule
+  \endhead
+  \code{Title} & Chuỗi, không rỗng, tối đa 200 ký tự. & Mô tả tự do đầu vào; chuẩn hóa khoảng trắng thành \code{description}, đồng thời giữ bản gốc ở \code{original_text}. \\
+  \code{Budget} & Số khác 0; income dương, expense âm. & Lấy trị tuyệt đối thành \code{amount}; phải khớp trị tuyệt đối của \code{Cost}. \\
+  \code{Cost} & Chuỗi tiền VND dương, có thể có ký hiệu \code{₫}. & Parse thành số nguyên dương; dùng để kiểm tra chéo với \code{Budget}, không phải một cột tiền thứ hai. \\
+  \code{Date} & \code{DD/MM/YYYY}, ngày tồn tại. & Chuyển sang \code{transaction_date} dạng ISO \code{YYYY-MM-DD}. \\
+  \code{Ex/In} & \code{Expenses} hoặc \code{In-come}. & Ánh xạ lần lượt thành \code{type=expense} hoặc \code{type=income}; giá trị khác bị reject. \\
+  \code{Special} & Chuỗi tùy chọn, có thể rỗng. & Lưu thành metadata \code{special}; ô rỗng trở thành \code{null}. \\
+  \code{Type Expenses} & Taxonomy lịch sử của expense; chỉ dùng khi cột \code{Ex/In} là \code{Expenses}. & Tra qua mapping để tạo \code{categoryName}; một dòng expense thiếu nhãn được ánh xạ có chủ đích sang \textit{Khác}. \\
+  \code{Type In come} & Taxonomy lịch sử của income; chỉ dùng khi cột \code{Ex/In} là \code{In-come}. & Tra qua mapping để tạo \code{categoryName}; cột ngược loại giao dịch phải để trống. \\
+  \bottomrule
+\end{longtable}
+
+Importer không tự xóa bản sao: dữ liệu có 23 nhóm trùng hoàn toàn, tổng cộng 24 dòng dư, nhưng nguồn không có ID hoặc thời điểm đủ để kết luận đó là lỗi nên mặc định giữ nguyên. Mapping khai báo checksum CSV \code{a9b7cf1b...} và artifact benchmark lưu checksum đầy đủ; thay đổi một byte của CSV làm import dừng để tránh dùng nhãn cũ cho dữ liệu mới.
+
+\subsection{Quy mô, phân bố và chất lượng}
+
+\begin{table}[H]
+  \centering
+  \caption{Tóm tắt chất lượng tập giao dịch sau kiểm tra importer}
+  \label{tab:app-dataset-quality}
+  \begin{tabularx}{\textwidth}{@{}L{5.0cm}R{2.8cm}Y@{}}
+    \toprule
+    \textbf{Đặc trưng} & \textbf{Giá trị} & \textbf{Diễn giải} \\
+    \midrule
+    Dòng nguồn / dòng import & 5.265 / 5.265 & Không có dòng bị reject trong lần import đã đối soát. \\
+    Chiều giao dịch & 4.845 expense; 420 income & Dữ liệu lệch mạnh về expense; metric joint giữ chiều thu/chi trong nhãn. \\
+    Khoảng ngày & 01/01/2022--15/07/2026 & Bao gồm năm 2022 (540), 2023 (1.567), 2024 (1.525), 2025 (1.050) và 2026 (583) dòng. \\
+    Mô tả được chuẩn hóa & 374/5.265 dòng & Chuẩn hóa Unicode/khoảng trắng trước khi tạo bản ghi và dùng lại cho group split. \\
+    Ô \code{Special} rỗng & 4.978/5.265 dòng & Thiếu metadata tùy chọn, không phải lỗi validation. \\
+    Nhãn nguồn bị thiếu & 1 dòng expense & Được ánh xạ rõ ràng sang \textit{Khác}; các ô category ở cột ngược loại giao dịch để trống theo schema. \\
+    Số tiền & min 1.000; median 25.000; max 48.000.000 VND & $Q1=14.000$, $Q3=44.000$, ngưỡng IQR 89.000; 621 dòng bị gắn cờ vượt ngưỡng nhưng không bị loại. \\
+    Bản sao exact & 23 nhóm / 24 dòng dư & Giữ nguyên ở chế độ mặc định để bảo toàn nguồn; không gọi đây là lỗi dữ liệu nếu chưa có định danh giao dịch. \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+Phân bố nhãn sau ánh xạ cho thấy lớp \textit{expense/Ăn uống} chiếm 2.251/5.265 dòng (42,75\%). Bốn nhãn hợp lệ không có mẫu là \textit{expense/Tạp hóa}, \textit{expense/Điện tử}, \textit{expense/Làm đẹp} và \textit{income/Thưởng}; vì vậy macro-F1 của benchmark được ghi trên 13 lớp có support, không diễn giải như độ bao phủ toàn bộ taxonomy 17 lớp.
+
+\begin{table}[H]
+  \centering
+  \caption{Phân bố 13 nhãn joint có mẫu trong benchmark parser}
+  \label{tab:app-dataset-labels}
+  \begin{tabularx}{0.9\textwidth}{@{}L{6.0cm}R{2.2cm}R{2.4cm}@{}}
+    \toprule
+    \textbf{Nhãn joint} & \textbf{Số dòng} & \textbf{Tỷ lệ} \\
+    \midrule
+    \textit{expense/Ăn uống} & 2.251 & 42,75\% \\
+    \textit{expense/Giải trí} & 660 & 12,54\% \\
+    \textit{expense/Di chuyển} & 491 & 9,33\% \\
+    \textit{expense/Thể thao} & 394 & 7,48\% \\
+    \textit{expense/Hóa đơn \& Dịch vụ} & 356 & 6,76\% \\
+    \textit{income/Khác} & 350 & 6,65\% \\
+    \textit{expense/Giáo dục} & 342 & 6,50\% \\
+    \textit{expense/Nhà cửa} & 150 & 2,85\% \\
+    \textit{expense/Khác} & 83 & 1,58\% \\
+    \textit{expense/Sức khỏe} & 80 & 1,52\% \\
+    \textit{income/Lương} & 67 & 1,27\% \\
+    \textit{expense/Mua sắm} & 38 & 0,72\% \\
+    \textit{income/Đầu tư} & 3 & 0,06\% \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+\subsection{Cohort, split và khả năng tái lập}
+
+\begin{longtable}{@{}L{3.3cm}L{4.2cm}L{7.0cm}@{}}
+  \caption{Cách hình thành các cohort dùng trong phép đo}
+  \label{tab:app-dataset-cohorts}\\
+  \toprule
+  \textbf{Phép đo} & \textbf{Mẫu số} & \textbf{Quy tắc và artifact đối chiếu} \\
+  \midrule
+  \endfirsthead
+  \toprule
+  \textbf{Phép đo} & \textbf{Mẫu số} & \textbf{Quy tắc và artifact đối chiếu} \\
+  \midrule
+  \endhead
+  Classification & 5.265/5.265 dòng & Chạy parser local trên toàn bộ CSV, không gọi provider; nhãn chính là joint type/category. Artifact \path{log/classification-benchmark_2026-08-02.json}. \\
+  Parser--Gemini ablation & 63 câu & Lấy phân tầng tối đa 5 câu/lớp bằng seed 42; mọi abstention của Gemini vẫn nằm trong mẫu số. Artifact lịch sử \path{log/ablation-parser-vs-llm_2026-07-24.json}. \\
+  Correction retrieval & 2.612 dòng evaluation & Từ 4.756 dòng cùng type và không phải \textit{Khác}; seed gồm 1.714 parser-wrong và 430 co-member, holdout 1.712 parser-wrong, control 900 parser-correct; seed 7, group split, overlap 0. Artifact \path{log/feedback-before-after_2026-08-02.json}. \\
+  \makecell[l]{Analytics/\\Budget/Goal unit} & Ca tổng hợp & Không có một tập giao dịch benchmark chung; fixture đặt slope, zero-fill, outlier, cadence, correlation, trần ngân sách và what-if biết trước. Test tương ứng được lập ở Bảng~\ref{tab:app-algorithm-tests}. \\
+  Media smoke & 2 ảnh + 1 audio & Hai ảnh có expected amount/type/date (một ảnh có category); audio không có ground truth. Chỉ dùng để kiểm tra khả năng đi qua pipeline. \\
+  \bottomrule
+\end{longtable}
+
+Các runner lưu cả checksum dữ liệu, mapping, phiên bản Node, thời điểm chạy và mã nguồn liên quan trong \path{log/}. Tập CSV phản ánh một hồ sơ demo, chủ yếu tiếng Việt và VND; nội dung raw không được coi là dữ liệu đã ẩn danh để phát hành công khai. Hai ảnh fixture được đánh dấu có PII và không an toàn để phân phối; audio chưa được rà soát transcript. Vì không có tập external holdout, không có khoảng tin cậy và media ground truth chưa đủ, các số đo hiện tại mô tả đúng dataset/artifact đã ghi chứ chưa chứng minh khả năng tổng quát hoặc accuracy OCR/STT production.
+
+\section{Phạm vi và quy ước dữ liệu}
+\label{app:algorithm-conventions}
+
+Các thuật toán thuần trong Analytics, Budget, Goal và Feedback không truy cập trực tiếp cơ sở dữ liệu hoặc LLM. Service lấy dữ liệu đã giới hạn theo hồ sơ, chuyển về mảng hoặc object phẳng, gọi hàm xác định, rồi gắn kết quả với metadata. Những quy ước sau được dùng xuyên suốt:
+
+\begin{table}[H]
+  \centering
+  \caption{Quy ước đầu vào chung của các thuật toán}
+  \label{tab:app-conventions}
+  \begin{tabularx}{\textwidth}{@{}L{3.7cm}Y@{}}
+    \toprule
+    \textbf{Quy ước} & \textbf{Cách áp dụng} \\
+    \midrule
+    Phạm vi dữ liệu & Mọi truy vấn nhận \code{userId/userKey}; các bản ghi ngoài hồ sơ không được đi vào phép tính. \\
+    Tiền tệ & Báo cáo runway dùng VND và chỉ cộng ví \code{cash}, \code{bank}, \code{e_wallet}; không tự quy đổi ngoại tệ. \\
+    Sổ cái & Giao dịch soft delete bị loại khỏi báo cáo; số dư âm vẫn là giá trị hợp lệ. \\
+    Trục lịch & Ngày/tháng/tuần được tạo đủ theo cửa sổ cố định; kỳ không phát sinh được điền 0, còn tháng hoặc tuần hiện tại chưa hoàn tất bị loại khỏi so sánh. \\
+    Thiếu dữ liệu & Hàm trả \code{null}, danh sách rỗng hoặc trạng thái \code{no_signal}; không thay bằng số đoán. \\
+    Làm tròn & Số tiền kế hoạch được làm tròn ở bước output; invariant về trần nhóm được kiểm tra lại sau làm tròn. \\
+    Ghi dữ liệu & Preview, correction, recommendation và what-if chỉ là kết quả tính; thao tác ghi cần service nghiệp vụ và xác nhận riêng. \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+Các cửa sổ mặc định là 14 ngày cho runway, 30 ngày cho anomaly, 60 ngày cho phân tích theo thứ, 200 ngày cho recurring, 6 tháng hoàn tất cho trend và 12 tuần ISO hoàn tất cho correlation. Contract facts dùng phiên bản \code{1.0}; lỗi một component không làm mất kết quả của các component khác.
+
+\section{Phân loại và correction retrieval}
+\label{app:classification-algorithms}
+
+\subsection{Chuẩn hóa và chấm điểm danh mục}
+
+Hàm \code{normalizeForMatch} chuẩn hóa Unicode NFD, bỏ dấu, đổi \code{đ/Đ} thành \code{d/D}, chuyển chữ thường, thay chuỗi không phải chữ hoặc số bằng khoảng trắng, rồi rút gọn các khoảng trắng liên tiếp. Vì vậy ``  Điện-thoại! '' trở thành \code{dien thoai}. Mọi so sánh exact, alias và fuzzy đều dùng chuỗi sau chuẩn hóa và chỉ xét danh mục cùng \code{type} khi caller cung cấp loại giao dịch.
+
+Với hai chuỗi đã chuẩn hóa, matcher tính ba điểm:
+
+\begin{enumerate}
+  \item \textbf{Edit score:} $s_{edit}=1-d_{lev}(u,v)/\max(|u|,|v|)$, trong đó $d_{lev}$ là khoảng cách Levenshtein.
+  \item \textbf{Dice score:} chia đôi số token trùng nhau cho tổng số token khác nhau của hai tập token, sau đó nhân $0{,}92$.
+  \item \textbf{Containment score:} nếu tập token nhỏ hơn nằm trong tập lớn và có ít nhất hai token, dùng $\min(0{,}94,0{,}82+0{,}12|U|/|V|)$; nếu không thì bằng 0.
+\end{enumerate}
+
+Điểm cuối là
+
+\begin{equation}
+  s=\max(s_{edit},\;0{,}92s_{dice},\;s_{contain}).
+\end{equation}
+
+Pipeline quyết định theo thứ tự sau:
+
+\begin{enumerate}
+  \item Lọc danh mục theo loại giao dịch và chọn fallback ``Khác'' (hoặc phần tử đầu tiên nếu fallback không tồn tại).
+  \item Nếu tên danh mục sau chuẩn hóa trùng input, trả \code{exact} với confidence 1.
+  \item Nếu đúng một alias trùng input, trả \code{alias_exact} với confidence 0,98; nhiều alias trùng các danh mục khác nhau trả fallback với lý do \code{ambiguous_alias}.
+  \item Xếp hạng fuzzy trên tên và alias của từng danh mục. Input dài hơn bốn ký tự cần $s\geq0{,}82$; input không quá bốn ký tự cần $s\geq0{,}90$. Nếu có ứng viên thứ hai, khoảng cách điểm phải đạt ít nhất $0{,}08$.
+  \item Nếu không đạt ngưỡng hoặc margin, trả fallback với lý do \code{below_threshold} hoặc \code{ambiguous_fuzzy}; không tự chọn ứng viên gần nhất.
+\end{enumerate}
+
+Ví dụ ``ăn uốg'' được chuẩn hóa thành \code{an uog}; so với \code{an uong}, khoảng cách Levenshtein là 1 trên độ dài 7 nên $s_{edit}=6/7\approx0{,}857$. Điểm vượt ngưỡng 0,82 và nếu không có ứng viên cạnh tranh thì kết quả là danh mục ``Ăn uống'' với \code{matchKind=fuzzy}. Ngược lại, alias ``điện thoại'' đồng thời trỏ đến ``Điện tử'' và ``Hóa đơn \& Dịch vụ'' phải trả ``Khác'' để yêu cầu người dùng làm rõ.
+
+Hàm dò alias trong câu dài hơn chỉ chấp nhận ranh giới từ. Khi nhiều alias khớp, alias có nhiều token hơn được ưu tiên; nếu số token và độ dài cùng hòa nhưng thuộc nhiều danh mục, kết quả là \code{ambiguous_alias}. Quy tắc này ngăn một alias ngắn như ``an'' bắt nhầm từ ``quần áo''.
+
+\subsection{Xếp hạng correction}
+
+Correction chỉ được xem là hữu ích khi log có \code{feedback_type=classification}, có văn bản gốc và category sửa khác category ban đầu. Khóa nhãn ưu tiên \code{type + normalized category name}; chỉ khi log không có tên mới dùng id. Service nạp tối đa 200 candidate gần đây từ hồ sơ hiện tại.
+
+Với mỗi candidate, service tính \code{textSimilarity}, giữ bản ghi exact với điểm 1 hoặc fuzzy với điểm tối thiểu 0,88, rồi loại bản ghi khác loại thu/chi. Các candidate được gom theo nhãn sửa:
+
+\begin{equation}
+  w_k=\sum_{j\in k}s_j,\qquad
+  agreement=\frac{\max_k w_k}{\sum_k w_k}.
+\end{equation}
+
+Ứng viên thắng có \code{support} là số log trong nhóm, \code{bestScore} là điểm cao nhất và confidence được làm tròn thành $s_{best}\times agreement$. Correction bị từ chối trong các trường hợp:
+
+\begin{itemize}
+  \item input rỗng hoặc không có candidate đủ điểm;
+  \item cùng exact text có từ hai nhãn sửa khác nhau;
+  \item nhãn thắng không exact nhưng điểm cao nhất dưới 0,88;
+  \item có nhãn cạnh tranh và agreement dưới 0,8;
+  \item log cũ thiếu \code{type} trong khi caller yêu cầu một loại cụ thể.
+\end{itemize}
+
+Few-shot examples dùng quy tắc riêng: mặc định tối đa 5 mẫu, giới hạn tuyệt đối 20, điểm tối thiểu 0,35; các input cùng loại và cùng chuỗi chuẩn hóa nhưng có nhãn xung đột bị loại, các cặp trùng nhãn chỉ giữ một mẫu gần nhất. Do đó correction không hoạt động như bỏ phiếu đa số và không được phép đổi transaction type.
+
+Các ca chuẩn hóa, typo, alias mơ hồ, correction exact/fuzzy, xung đột nhãn và log name-only/id+name được kiểm tra trong \path{feedback.test.js}. Các metric coverage, helped/harmed/net và group split được kiểm tra trong \path{experiment-metrics.test.js}.
+
+\section{Các thuật toán phân tích tài chính}
+\label{app:analytics-algorithms}
+
+\subsection{Trục lịch và runway}
+
+Các helper dựng axis trước, đặt tổng ban đầu bằng 0, rồi cộng các dòng nằm trong axis:
+\begin{itemize}
+  \item \code{completeDailyTotals} cho đủ các ngày trong cửa sổ;
+  \item \code{completeMonthlyByCategory} cho đủ các tháng theo danh mục;
+  \item \code{completeWeeklyByCategory} cho đủ các tuần ISO đã hoàn tất.
+\end{itemize}
+Correlation dùng tuần ISO đã hoàn tất; tuần chứa ngày hiện tại không được đưa vào mẫu. Cách làm này giữ đúng mẫu số khi một danh mục không phát sinh trong một kỳ.
+
+Runway trước hết lọc ví theo \code{currency=VND} và loại \code{cash}, \code{bank}, \code{e_wallet}:
+
+\begin{equation}
+  B=\sum_{w\in\text{eligible wallets}} balance_w.
+\end{equation}
+
+Với $W=14$ ngày và chi ngày $e_j$ (ngày không chi vẫn giữ số 0),
+
+\begin{equation}
+  \bar e_W=\frac{1}{W}\sum_{j=1}^{W}e_j,
+  \qquad d=\left\lfloor\frac{B}{\bar e_W}\right\rfloor.
+\end{equation}
+
+Nếu $B\leq0$, trả $d=0$ và đánh dấu \code{alreadyDepleted}; nếu $\bar e_W\leq0$, trả \code{daysLeft=null} và không bịa ngày cạn. Payday chỉ là cảnh báo so sánh với ngày cạn kế tiếp; ngày 31 được chặn ở ngày cuối tháng đích.
+
+Ví dụ hai ví VND thanh khoản có tổng 300.000 VND và 14 ngày đều chi 100.000 VND cho ra $\bar e_W=100.000$, $d=3$. Ví USD và ví đầu tư VND không làm tăng $B$.
+
+\subsection{Trend và anomaly}
+
+Với chuỗi $y_0,\ldots,y_{n-1}$ đã được zero-fill, OLS dùng $x_i=i$, $\bar x$, $\bar y$ để tính
+
+\begin{equation}
+  b=\frac{\sum_i(x_i-\bar x)(y_i-\bar y)}{\sum_i(x_i-\bar x)^2},
+  \qquad a=\bar y-b\bar x.
+\end{equation}
+
+Sau đó tính $R^2=1-SS_{res}/SS_{tot}$, forecast bước kế tiếp là $\max(0,\operatorname{round}(bn+a))$, slope/intercept được làm tròn tiền và $R^2$ làm tròn ba chữ số. Engine chỉ phát trend khi có ít nhất ba tháng có chi dương, $b>0$, $R^2\geq0{,}5$ và trung bình phần trăm thay đổi trên các bước có mẫu trước dương ít nhất 10\%. Chuỗi hằng có $R^2=0$ và không phát tín hiệu.
+
+Anomaly dùng trung bình, độ lệch chuẩn mẫu và quantile nội suy trên toàn bộ axis 30 ngày:
+
+\begin{equation}
+  z_i=\frac{e_i-\bar e}{s},
+  \qquad upperFence=Q_3+1{,}5(Q_3-Q_1).
+\end{equation}
+
+Chỉ phía tăng được gắn cờ khi $z_i\geq2{,}5$ hoặc $e_i>upperFence$, và engine yêu cầu ít nhất bốn ngày có chi dương trước khi gọi helper. Nếu $s=0$ thì $z_i=0$; nếu $IQR=0$ thì nhánh IQR tắt. Trên mẫu tổng hợp $[100,100,100,1000]$, $Q_1=100$, $Q_3=325$, upper fence bằng 662,5 nên 1000 được đánh dấu bởi IQR dù z-score chưa đạt 2,5.
+
+\subsection{Recurring và phân tích theo thứ}
+
+Recurring bỏ dấu, chuyển chữ thường, bỏ chữ số trong mô tả và gom các giao dịch chi dương cùng mô tả chuẩn hóa. Một nhóm phải có ít nhất 3 lần xuất hiện, số tiền từng lần lệch trung bình không quá 15\%, và các khoảng ngày dương có hệ số biến thiên population không quá 0,12. Mọi gap phải cùng thuộc một cadence:
+
+\begin{table}[H]
+  \centering
+  \caption{Cadence được dùng cho recurring}
+  \label{tab:app-cadences}
+  \begin{tabularx}{0.9\textwidth}{@{}L{3.2cm}C{2.4cm}C{2.4cm}C{3.2cm}@{}}
+    \toprule
+    \textbf{Cadence} & \textbf{Khoảng ngày} & \textbf{Hệ số tháng} & \textbf{Ví dụ quy đổi} \\
+    \midrule
+    Tuần & 5--9 & $52/12$ & 4 khoản/tuần được quy đổi theo 52 tuần/năm. \\
+    Tháng & 26--35 & $1$ & Trung bình mỗi khoản là ước tính tháng. \\
+    Quý & 80--100 & $1/3$ & Khoản 900.000 VND/quý thành 300.000 VND/tháng. \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+Candidate cũ hơn cadence tối đa tính từ \code{asOf} bị loại. Output giữ mô tả lần gần nhất, số lần, amount trung bình, cadence, \code{lastSeen}, \code{nextExpected} và \code{monthlyEstimate}; không có trần amount mặc định. Ví dụ ba khoản 900.000 VND cách nhau khoảng một quý được giữ làm recurring quarterly và ước tính 300.000 VND/tháng.
+
+Phân tích theo thứ dùng trung bình chi trên một ngày có phát sinh trong cửa sổ 60 ngày, không xem ngày vắng là một quan sát chi bằng 0. Cần ít nhất bốn thứ có dữ liệu và tỷ lệ giữa thứ cao nhất với trung bình các thứ phải đạt 1,8; nếu không thì trả \code{null}.
+
+\subsection{Correlation}
+
+Engine tạo cùng một axis gồm 12 tuần ISO hoàn tất, zero-fill từng danh mục và chỉ giữ danh mục có phát sinh ít nhất 4 tuần. Pearson nhận tối đa độ dài nhỏ hơn của hai chuỗi, nhưng trả \code{null} nếu có dưới 3 cặp hoặc một chuỗi phương sai bằng 0:
+
+\begin{equation}
+  r=\frac{\sum_i(x_i-\bar x)(y_i-\bar y)}
+  {\sqrt{\sum_i(x_i-\bar x)^2\sum_i(y_i-\bar y)^2}}.
+\end{equation}
+
+Engine duyệt từng cặp, chỉ giữ $r\geq0{,}6$ và trả cặp có $r$ lớn nhất. Với hai chuỗi tỷ lệ $[100,200,300,400]$ và $[200,400,600,800]$, $r=1$; kết quả chỉ nói hai chuỗi đồng biến trong cửa sổ đã chọn, không suy ra quan hệ nhân quả.
+
+\section{Ngân sách và mục tiêu tài chính}
+\label{app:planning-algorithms}
+
+\subsection{Tóm tắt lịch sử và đề xuất ngân sách}
+
+\code{summarizeHistory} chuẩn hóa kỳ về \code{YYYY-MM}, gộp thu nhập theo tháng và gộp chi theo category id (hoặc tên chuẩn hóa). Khi có \code{expectedPeriods}, mọi tháng trong danh sách vẫn nằm trong mẫu số kể cả không có giao dịch. Vì vậy một category chi 3.000.000 VND trong một tháng trên cửa sổ ba tháng có \code{average_spend=1.000.000}.
+
+Mỗi danh mục được gắn nhóm \code{needs} hoặc \code{wants}; danh sách nhu cầu mặc định gồm ăn uống, di chuyển, sức khỏe, giáo dục, nhà cửa, hóa đơn dịch vụ và tạp hóa, còn \code{groupOverrides} có thể thay thế. Với buffer $q$ và $m$ tháng,
+
+\begin{equation}
+  b_c=(1+q)\frac{1}{m}\sum_{j=1}^{m}s_{c,j}.
+\end{equation}
+
+Forecast tiến độ nhận \code{spent}, \code{amount_limit} và kỳ cần xem. Với tháng hiện tại, $d_e=\max(1,\text{ngày hiện tại})$; với tháng lịch sử, $d_e$ bằng toàn bộ số ngày của tháng. Nếu $D$ là số ngày trong tháng,
+
+\begin{equation}
+  \widehat S_D=\operatorname{round}\!\left(\frac{S}{d_e}D\right),
+  \qquad dailyRate=\operatorname{round}\!\left(\frac{S}{d_e}\right).
+\end{equation}
+
+Kết quả ghi:
+\begin{itemize}
+  \item \code{daily_rate}, \code{projected_spend} và tỷ lệ dự báo;
+  \item cờ \code{likely_to_exceed} và, nếu phù hợp, \code{projected_exceed_day}.
+\end{itemize}
+Khi hạn mức dương và chi hiện tại chưa vượt hạn mức, hệ thống chỉ trả ngày vượt nếu ngày đó vẫn nằm trong tháng; hạn mức bằng 0 không tạo ngày vượt giả. Ví dụ chi 2.000.000 VND vào ngày 10 của tháng 30 ngày cho hạn mức 5.000.000 VND cho ra tốc độ 200.000 VND/ngày, forecast 6.000.000 VND và ngày vượt dự kiến là ngày 25. Bộ ca tương ứng nằm trong \code{budget-forecast.test.js}.
+
+Ba chiến lược có hành vi khác nhau:
+
+\begin{itemize}
+  \item \textbf{category average:} dùng $b_c$ trực tiếp.
+  \item \textbf{50--30--20:} phân bổ trần nhóm theo tỷ trọng $b_c$ trong nhóm, với trần nhu cầu $0{,}5I$, mong muốn $0{,}3I$ và tiết kiệm $0{,}2I$ theo mặc định.
+  \item \textbf{hybrid:} giữ $b_c$ nếu tổng nhóm không vượt trần; nếu vượt, co cùng tỷ lệ $cap/groupAverage$.
+\end{itemize}
+
+Mỗi hạn mức thô được làm tròn theo \code{roundingIncrement} mặc định 10.000 VND. Sau đó \code{enforceRoundedCap} lặp giảm từng bước ở các category đang vượt, ưu tiên phần tử có overshoot lớn hơn, cho đến khi tổng nhóm không vượt trần. Tổng \code{needsRate+wantsRate+savingsRate} lớn hơn 1 bị từ chối; thiếu thu nhập làm chiến lược tự hạ về \code{category_average} và phát cảnh báo.
+
+Ví dụ lịch sử có thu nhập 10.000.000 VND/tháng, chi nhu cầu 4.000.000 và mong muốn 4.000.000 trong ba tháng, buffer bằng 0. Chiến lược 50--30--20 cho trần 5.000.000 và 3.000.000; hybrid giữ nhu cầu 4.000.000 nhưng co mong muốn còn 3.000.000. Nếu hai category mong muốn lần lượt 15.000 và 15.000 VND với bước làm tròn 10.000 và trần 30.000 VND, tổng sau đối soát vẫn không vượt trần.
+
+\subsection{Saving, debt payoff và what-if}
+
+Với mục tiêu saving/purchase, validator yêu cầu target dương, current không âm và contribution hữu hạn không âm. Nếu contribution là \code{null}, planner dùng surplus khả dụng; contribution bằng 0 do người dùng chỉ rõ được giữ là 0, không tự thay bằng surplus. Với phần còn thiếu $R=\max(0,target-current)$ và khoản góp tháng $M>0$,
+
+\begin{equation}
+  n_s=\left\lceil\frac{R}{M}\right\rceil,
+  \qquad projectedDate=addMonthsClamped(today,n_s).
+\end{equation}
+
+Ngày cuối tháng được clamp, nên 31/01 cộng một tháng thành 28/02. Nếu $R=0$, planner trả trạng thái completed và horizon 0; nếu $M=0$, horizon và ngày dự kiến là \code{null} với cảnh báo \code{NO_MONTHLY_CONTRIBUTION}. Deadline tương lai dùng ít nhất một kỳ đóng góp trong cùng tháng, tính \code{requiredMonthly}, gap và shortfall.
+
+Với dư nợ hiện tại $L$, lãi suất năm $i$ phần trăm và $r=i/(12\times100)$, payment đều cần cho $n_d$ tháng là
+
+\begin{equation}
+  P=\begin{cases}
+  \dfrac{Lr}{1-(1+r)^{-n_d}}, & r>0,\\[6pt]
+  \dfrac{L}{n_d}, & r=0.
+  \end{cases}
+\end{equation}
+
+Không có deadline, planner mô phỏng từng tháng: cộng lãi, trừ payment không vượt amount due, dừng khi balance về 0 hoặc đạt horizon (mặc định 600 tháng, validator cho phép tối đa 1200). Payment bằng 0 trả \code{NO_MONTHLY_PAYMENT}; payment không lớn hơn lãi tháng đầu trả \code{NEGATIVE_AMORTIZATION}; nếu hết horizon còn dư nợ trả \code{MAX_HORIZON_EXCEEDED}. Ví dụ $L=10.000$, lãi năm 12\%, payment 1.000 cho kết quả 11 tháng và tổng lãi 589,85; payment 100 bị từ chối vì không làm giảm dư nợ.
+
+What-if chỉ nhận plan loại saving hoặc purchase, kiểm tra extraMonthly không âm, rồi gọi lại planner với contribution gốc cộng khoản thêm. Kết quả gồm contribution mới, số tháng mới, số tháng tiết kiệm được, khả năng từ không khả thi thành khả thi và shortfall; không cập nhật goal trong database và không thay đổi kế hoạch debt.
+
+\section{Facts contract và ranh giới LLM}
+\label{app:facts-contract}
+
+Analytics Engine chạy sáu component độc lập: trend, anomaly, runway, subscriptions, day-of-week và correlation. Mỗi component đọc dữ liệu đã scope, trả value hoặc \code{null}, rồi được bọc trong contract chung:
+
+\begin{table}[H]
+  \centering
+  \caption{Các trường của facts contract phiên bản 1.0}
+  \label{tab:app-facts-contract}
+  \begin{tabularx}{\textwidth}{@{}L{4.5cm}Y@{}}
+    \toprule
+    \textbf{Trường} & \textbf{Ý nghĩa} \\
+    \midrule
+    \code{schema_version} & Phiên bản hình dạng contract, hiện là \code{1.0}. \\
+    \code{generated_at} & Thời điểm tạo facts ở dạng ISO timestamp. \\
+    Component values & Giá trị số hoặc danh sách kết quả của từng component; thiếu tín hiệu dùng \code{null}. \\
+    \code{metadata.components} & Mỗi component có \code{unit}, \code{window}, \code{sample_count}, \code{method}, \code{parameters}, \code{warnings} và \code{status}. \\
+    \code{status} & \code{ok} khi có kết quả; \code{no_signal} khi đủ contract nhưng thiếu dữ liệu/tín hiệu; \code{degraded} khi component lỗi. \\
+    \code{degraded_components} & Danh sách component lỗi; không chứa message hoặc credential nội bộ. \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+Object \code{window} ghi kích thước, đơn vị và có zero-fill hay không; một số component thêm \code{category_count}, \code{wallet_count} hoặc \code{observed_period_count}. Cache facts dùng TTL 600 giây và chỉ được tái sử dụng khi schema, currency và payday context còn khớp.
+
+Luồng bảo vệ số liệu là: SQL/Model truy vấn dữ liệu chuẩn, Analytics Engine tính facts, sau đó narrator mới nhận facts để viết lời. LLM không được quyền gọi model, tự thay số, ghi giao dịch hoặc biến \code{null} thành giá trị cụ thể. Persona chỉ ảnh hưởng giọng điệu khi consent bật. Numeric grounding checker bao phủ toàn bộ biểu thức số vẫn là thiết kế đích, không được trình bày như kết quả đã đo.
+
+\section{Ma trận thuật toán--kiểm thử và khả năng tái lập}
+\label{app:algorithm-tests}
+
+Bảng sau chỉ dẫn đến test và artifact, không sao chép dữ liệu thô. Trạng thái ``đã kiểm tra'' nói về hành vi của ca test đã chọn, không phải accuracy production.
+
+\begin{longtable}{@{}L{3.2cm}L{2.8cm}L{3.5cm}L{3.8cm}@{}}
+  \caption{Ma trận thuật toán, ca biên và bằng chứng}
+  \label{tab:app-algorithm-tests}\\
+  \toprule
+  \textbf{Nhóm} & \textbf{Ca thường} & \textbf{Ca biên/invariant} & \textbf{Bằng chứng} \\
+  \midrule
+  \endfirsthead
+  \toprule
+  \textbf{Nhóm} & \textbf{Ca thường} & \textbf{Ca biên/invariant} & \textbf{Bằng chứng} \\
+  \midrule
+  \endhead
+  Matcher & exact name, alias exact, typo rõ ràng. & Alias mơ hồ, input rỗng, dưới ngưỡng, margin nhỏ, alias phải theo ranh giới từ. & \code{feedback.test.js}; local parser gate 31/31 lịch sử. \\
+  Correction & exact và fuzzy cùng type, few-shot gần nhất. & Nhãn exact xung đột, thiếu type, agreement dưới 0,8, name-only/id+name. & \code{feedback.test.js}; JSON/Markdown correction trong \code{log/}. \\
+  Calendar/runway & axis đủ ngày, ví thanh khoản VND, ngày cạn. & Ngày 0, burn 0, ví USD/đầu tư bị loại, payday ngày 31. & \path{analytics-engine.test.js}, \path{analytics-time-series.test.js}, \path{wallet-policy.test.js}. \\
+  Trend/anomaly & chuỗi tăng, outlier phía tăng. & Dưới 3 kỳ dương, dưới 4 ngày dương, chuỗi hằng, IQR hoặc phương sai bằng 0. & \path{analytics-engine.test.js}, \path{analytics-time-series.test.js}. \\
+  \makecell[l]{Recurring/\\correlation} & cadence tuần/tháng/quý, cặp tương quan mạnh. & Amount lệch quá 15\%, CV gap quá 0,12, candidate cũ, dưới 4 kỳ hoặc Pearson không xác định. & \path{subscription-miner.test.js}, \path{analytics-engine.test.js}. \\
+  Budget & category average, hybrid và 50--30--20. & Tháng không phát sinh vẫn nằm mẫu số, thiếu income, tổng tỷ lệ >100\%, trần bị vượt sau làm tròn. & \path{budget-recommender.test.js}, \path{budget-forecast.test.js}. \\
+  Goal & saving có contribution, debt amortization, what-if. & Goal hoàn tất, contribution 0, ngày cuối tháng, negative amortization, payment 0, quá horizon. & \path{goal-planner.test.js}, \path{goal-service.test.js}, \path{goal-validation.test.js}. \\
+  Facts contract & đủ metadata và trạng thái \code{ok}. & Component lỗi giữ contract, \code{no_signal}, không rò message lỗi, cache context khác. & \path{analytics-engine.test.js}; contract version 1.0. \\
+  \bottomrule
+\end{longtable}
+
+Các runner phân loại và correction ghi record có cấu trúc tại \code{log/}; phép đo ngày 02/08/2026 được mô tả ở Chương~\ref{subsec:results}. OCR/STT accuracy, numeric grounding đầy đủ, p95, UAT và Redis worker live vẫn là mục tiêu hoặc chưa đo; không được suy ra từ các unit test thuần.
+
 \chapter{Lệnh tái lập kiểm thử}
 
 Các lệnh sau chạy từ đúng thư mục thành phần. Người thực hiện cần ghi commit, Node version, cấu hình provider và trạng thái PostgreSQL/Redis; không ghi secret vào artifact.

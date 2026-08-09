@@ -58,6 +58,428 @@ For a phone on the same LAN, replace \code{127.0.0.1} with the backend host's LA
 
 The prototype has no login and uses \code{default_user}. Do not enter sensitive data or treat results as guaranteed investment advice.
 
+\chapter{Extended Algorithm Specifications}
+\label{app:algorithms}
+
+This appendix expands the formulas and rules summarized in Chapter~\ref{chap:results}. It lets a reader follow the path from scoped input data to facts or a plan; it does not introduce a second source of truth or change prototype behavior. Examples use synthetic values, while names, thresholds and statuses are checked against the current implementation.
+
+\section{Test Dataset Description}
+\label{app:dataset-description}
+
+This section documents the data sources used for tests and benchmark measurements. The main data is not an external, independently collected test set: classification and correction experiments both read \path{demo/data/dataFinance.csv}, then apply different cohorts or splits. The report publishes aggregate statistics and checksums only; raw transaction descriptions are not copied into the appendix.
+
+\subsection{Dataset inventory}
+
+\begin{longtable}{@{}L{3.3cm}L{4.2cm}L{7.0cm}@{}}
+  \caption{Test data sources and roles}
+  \label{tab:app-dataset-sources}\\
+  \toprule
+  \textbf{Source} & \textbf{Size/scope} & \textbf{Role and status} \\
+  \midrule
+  \endfirsthead
+  \toprule
+  \textbf{Source} & \textbf{Size/scope} & \textbf{Role and status} \\
+  \midrule
+  \endhead
+  Transaction CSV & 5,265 rows, 8 columns; 1 Jan 2022--15 Jul 2026; 4,845 expenses and 420 incomes. & \code{dataFinance.csv} is the main source for import, parser benchmarking and correction input. The importer accepted 5,265/5,265 rows. \\
+  Category mapping & Crosswalk from the historical taxonomy to PERFIN's 17 type/category labels. & \code{dataFinance.category-map.json} is checked against the CSV checksum and used to create post-import gold labels, not parser predictions. Only 13/17 labels have support in the benchmark. \\
+  Parser--Gemini ablation & At most five sentences per class, seed 42; 63 sentences in the measured run. & A stratified cohort sampled from the same CSV to measure coverage, accuracy and F1; it is not an independent text source. \\
+  Correction group split & 4,832 rows after removing \textit{Other}; 4,756 same-type eligible rows; 2,612 evaluation rows. & Seed/evaluation are split by whole transaction-type and normalized-description groups, seed 7, target ratio 0.5; key overlap is zero. \\
+  Media fixtures & Two images and one audio file. The images have expected amount/type/date values; the audio has no reference transcript. & \code{media-fixtures.json} is used only for media smoke. Without ground truth, the result is pipeline pass/fail, not OCR/STT accuracy. \\
+  Analytics/unit fixtures & Synthetic or anonymized series with known slope, outlier, cadence and correlation. & Used to check Analytics/Budget/Goal formulas, edge cases and invariants; not a real-user benchmark. \\
+  \bottomrule
+\end{longtable}
+
+\subsection{Raw schema and category crosswalk}
+
+The CSV must contain the following eight columns in this exact order. The
+\code{planFinanceCsvImport} function validates the schema, dates, amounts, direction and mapping checksum before creating normalized records.
+
+\begin{longtable}{@{}L{3.2cm}L{3.0cm}L{8.3cm}@{}}
+  \caption{CSV schema and post-import fields}
+  \label{tab:app-dataset-schema}\\
+  \toprule
+  \textbf{CSV column} & \textbf{Valid values} & \textbf{Transformation and meaning} \\
+  \midrule
+  \endfirsthead
+  \toprule
+  \textbf{CSV column} & \textbf{Valid values} & \textbf{Transformation and meaning} \\
+  \midrule
+  \endhead
+  \code{Title} & Non-empty string, at most 200 characters. & Free-text transaction description; whitespace is normalized into \code{description} while the original is retained in \code{original_text}. \\
+  \code{Budget} & Non-zero number; positive for income and negative for expense. & Absolute value becomes \code{amount}; it must equal the absolute value of \code{Cost}. \\
+  \code{Cost} & Positive VND string, optionally containing \code{₫}. & Parsed as a positive integer and cross-checked against \code{Budget}; it is not a second money measure. \\
+  \code{Date} & Existing date in \code{DD/MM/YYYY} format. & Converted to ISO \code{transaction_date} in \code{YYYY-MM-DD} form. \\
+  \code{Ex/In} & \code{Expenses} or \code{In-come}. & Maps to \code{type=expense} or \code{type=income}; other values are rejected. \\
+  \code{Special} & Optional string; may be blank. & Stored as \code{special} metadata; a blank cell becomes \code{null}. \\
+  \code{Type Expenses} & Historical expense taxonomy; populated only when \code{Ex/In} is \code{Expenses}. & Looked up in the crosswalk to create \code{categoryName}; one expense row without a source label is intentionally mapped to \textit{Other}. \\
+  \code{Type In come} & Historical income taxonomy; populated only when \code{Ex/In} is \code{In-come}. & Looked up in the crosswalk to create \code{categoryName}; the opposite-direction category column must be blank. \\
+  \bottomrule
+\end{longtable}
+
+The importer does not silently remove duplicates: the source contains 23 exact-duplicate groups, 24 extra rows in total, but has no ID or timestamp sufficient to call them errors, so the default mode retains them. The mapping declares the CSV checksum \code{a9b7cf1b...}; the benchmark artifact stores the full checksum, and changing one CSV byte stops the import instead of applying an old mapping to new data.
+
+\subsection{Size, distribution and data quality}
+
+\begin{table}[H]
+  \centering
+  \caption{Importer quality summary for the transaction set}
+  \label{tab:app-dataset-quality}
+  \begin{tabularx}{\textwidth}{@{}L{5.0cm}R{2.8cm}Y@{}}
+    \toprule
+    \textbf{Attribute} & \textbf{Value} & \textbf{Interpretation} \\
+    \midrule
+    Source rows / imported rows & 5,265 / 5,265 & No row was rejected in the reconciled import. \\
+    Transaction direction & 4,845 expense; 420 income & The data is strongly expense-heavy; joint metrics retain direction in the label. \\
+    Date range & 1 Jan 2022--15 Jul 2026 & Year counts are 540 (2022), 1,567 (2023), 1,525 (2024), 1,050 (2025) and 583 (2026). \\
+    Normalized descriptions & 374/5,265 rows & Unicode/whitespace normalization was applied before record creation and reused for group splitting. \\
+    Blank \code{Special} cells & 4,978/5,265 rows & Missing optional metadata, not a validation error. \\
+    Missing source label & One expense row & Explicitly mapped to \textit{Other}; opposite-direction category cells are blank by schema. \\
+    Amounts & min 1,000; median 25,000; max 48,000,000 VND & $Q1=14,000$, $Q3=44,000$, IQR threshold 89,000; 621 rows are flagged above the threshold but retained. \\
+    Exact duplicates & 23 groups / 24 extra rows & Retained by default to preserve the source; no duplicate error is asserted without a transaction identifier. \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+After mapping, \textit{expense/Ăn uống} is the largest class with 2,251/5,265 rows (42.75\%). Four valid labels have no support: \textit{expense/Tạp hóa}, \textit{expense/Điện tử}, \textit{expense/Làm đẹp} and \textit{income/Thưởng}. The parser macro-F1 is therefore reported over 13 supported classes, not interpreted as coverage of all 17 taxonomy labels.
+
+\begin{table}[H]
+  \centering
+  \caption{Distribution of the 13 supported joint labels in the parser benchmark}
+  \label{tab:app-dataset-labels}
+  \begin{tabularx}{0.9\textwidth}{@{}L{6.0cm}R{2.2cm}R{2.4cm}@{}}
+    \toprule
+    \textbf{Joint label} & \textbf{Rows} & \textbf{Share} \\
+    \midrule
+    \textit{expense/Ăn uống} & 2,251 & 42.75\% \\
+    \textit{expense/Giải trí} & 660 & 12.54\% \\
+    \textit{expense/Di chuyển} & 491 & 9.33\% \\
+    \textit{expense/Thể thao} & 394 & 7.48\% \\
+    \textit{expense/Hóa đơn \& Dịch vụ} & 356 & 6.76\% \\
+    \textit{income/Khác} & 350 & 6.65\% \\
+    \textit{expense/Giáo dục} & 342 & 6.50\% \\
+    \textit{expense/Nhà cửa} & 150 & 2.85\% \\
+    \textit{expense/Khác} & 83 & 1.58\% \\
+    \textit{expense/Sức khỏe} & 80 & 1.52\% \\
+    \textit{income/Lương} & 67 & 1.27\% \\
+    \textit{expense/Mua sắm} & 38 & 0.72\% \\
+    \textit{income/Đầu tư} & 3 & 0.06\% \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+\subsection{Cohorts, splits and reproducibility}
+
+\begin{longtable}{@{}L{3.3cm}L{4.2cm}L{7.0cm}@{}}
+  \caption{Cohorts used by the reported measurements}
+  \label{tab:app-dataset-cohorts}\\
+  \toprule
+  \textbf{Measurement} & \textbf{Denominator} & \textbf{Rule and cross-check artifact} \\
+  \midrule
+  \endfirsthead
+  \toprule
+  \textbf{Measurement} & \textbf{Denominator} & \textbf{Rule and cross-check artifact} \\
+  \midrule
+  \endhead
+  Classification & 5,265/5,265 rows & Run the local parser over the full CSV with no provider calls; the primary label is joint type/category. Artifact \path{log/classification-benchmark_2026-08-02.json}. \\
+  Parser--Gemini ablation & 63 sentences & Stratified sample of at most five per class with seed 42; Gemini abstentions remain in the denominator. Historical artifact \path{log/ablation-parser-vs-llm_2026-07-24.json}. \\
+  Correction retrieval & 2,612 evaluation rows & From 4,756 same-type, non-\textit{Other} rows: seed has 1,714 parser-wrong rows plus 430 co-members; holdout has 1,712 parser-wrong rows and control has 900 parser-correct rows. Seed 7, group split, overlap 0. Artifact \path{log/feedback-before-after_2026-08-02.json}. \\
+  \makecell[l]{Analytics/\\Budget/Goal unit} & Synthetic cases & There is no single transaction benchmark for these components; fixtures set known slope, zero-fill, outlier, cadence, correlation, budget caps and what-if outcomes. Tests are indexed in Table~\ref{tab:app-algorithm-tests}. \\
+  Media smoke & Two images + one audio & The images have expected amount/type/date values (one also has category); the audio has no ground truth. Used only to verify pipeline execution. \\
+  \bottomrule
+\end{longtable}
+
+The runners store data and mapping checksums, Node version, run time and involved source files under \path{log/}. The CSV represents one demo profile, is primarily Vietnamese and uses VND; raw content is not treated as anonymized material for public release. Both image fixtures are marked as containing PII and unsafe for distribution, while the audio transcript has not been reviewed. Because there is no external holdout, no confidence interval and insufficient media ground truth, the measurements describe the recorded dataset/artifacts only; they do not establish generalization or production OCR/STT accuracy.
+
+\section{Scope and data conventions}
+\label{app:algorithm-conventions}
+
+The pure functions in Analytics, Budget, Goal and Feedback do not access the database or the LLM directly. Services scope the data to a profile, convert it to flat arrays or objects, call deterministic helpers, and attach metadata. The following conventions are shared:
+
+\begin{table}[H]
+  \centering
+  \caption{Shared input conventions for the algorithms}
+  \label{tab:app-conventions}
+  \begin{tabularx}{\textwidth}{@{}L{3.7cm}Y@{}}
+    \toprule
+    \textbf{Convention} & \textbf{Application} \\
+    \midrule
+    Data scope & Every query receives \code{userId/userKey}; records outside the profile do not enter a calculation. \\
+    Currency & Runway uses VND and sums only \code{cash}, \code{bank} and \code{e_wallet}; it never converts foreign currency. \\
+    Ledger & Soft-deleted transactions are excluded from reports; a negative balance remains valid. \\
+    Calendar axis & Days/months/weeks are generated for the complete fixed window; inactive periods are zero-filled, while an incomplete current month or week is excluded from comparisons. \\
+    Missing data & A function returns \code{null}, an empty list or \code{no_signal}; it does not replace missing evidence with an invented number. \\
+    Rounding & Plan amounts are rounded at output; group-cap invariants are checked again after rounding. \\
+    Writes & Preview, correction, recommendation and what-if are calculated results; persistence still requires the domain service and confirmation. \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+Default windows are 14 days for runway, 30 days for anomaly, 60 days for day-of-week analysis, 200 days for recurring discovery, six completed months for trend and 12 completed ISO weeks for correlation. The facts contract uses version \code{1.0}; a failure in one component does not discard the others.
+
+\section{Classification and correction retrieval}
+\label{app:classification-algorithms}
+
+\subsection{Normalization and category scoring}
+
+\code{normalizeForMatch} applies Unicode NFD, removes diacritics, maps \code{đ/Đ} to \code{d/D}, lowercases, replaces non-alphanumeric runs with spaces, and collapses repeated spaces. Thus ``  Điện-thoại! '' becomes \code{dien thoai}. Exact, alias and fuzzy comparisons all use the normalized string and consider only the same \code{type} when the caller provides a transaction type.
+
+For two normalized strings, the matcher computes three scores:
+
+\begin{enumerate}
+  \item \textbf{Edit score:} $s_{edit}=1-d_{lev}(u,v)/\max(|u|,|v|)$, where $d_{lev}$ is Levenshtein distance.
+  \item \textbf{Dice score:} twice the number of overlapping tokens divided by the number of distinct tokens in the two token sets, then multiplied by $0.92$.
+  \item \textbf{Containment score:} when the smaller token set is contained in the larger and has at least two tokens, use $\min(0.94,0.82+0.12|U|/|V|)$; otherwise use 0.
+\end{enumerate}
+
+The final score is
+
+\begin{equation}
+  s=\max(s_{edit},\;0.92s_{dice},\;s_{contain}).
+\end{equation}
+
+The decision pipeline is:
+
+\begin{enumerate}
+  \item Scope categories by transaction type and select the ``Khác'' fallback (or the first category if that fallback is absent).
+  \item If a normalized category name equals the input, return \code{exact} with confidence 1.
+  \item If exactly one alias equals the input, return \code{alias_exact} with confidence 0.98; aliases resolving to multiple categories return the fallback with reason \code{ambiguous_alias}.
+  \item Rank fuzzy scores over each category name and its aliases. Inputs longer than four characters require $s\geq0.82$; inputs of at most four characters require $s\geq0.90$. If a runner-up exists, the score gap must be at least $0.08$.
+  \item If the threshold or margin is not met, return the fallback with reason \code{below_threshold} or \code{ambiguous_fuzzy}; do not silently choose the nearest candidate.
+\end{enumerate}
+
+For ``ăn uốg'', normalization gives \code{an uog}; relative to \code{an uong}, Levenshtein distance is 1 over length 7, so $s_{edit}=6/7\approx0.857$. The score exceeds the 0.82 threshold and, without a competing candidate, returns ``Ăn uống'' with \code{matchKind=fuzzy}. In contrast, the alias ``điện thoại'' points to both ``Điện tử'' and ``Hóa đơn \& Dịch vụ'' and must return ``Khác'' for clarification.
+
+Phrase alias lookup also requires word boundaries. When several aliases match, the alias with more tokens wins; a tie in token count and length across different categories returns \code{ambiguous_alias}. This prevents a short alias such as ``an'' from matching inside ``quần áo''.
+
+\subsection{Correction ranking}
+
+A correction is useful only when a log has \code{feedback_type=classification}, original text and a corrected category different from the original category. The label key prioritizes \code{type + normalized category name}; an id is used only when the name is absent. The service loads at most 200 recent candidates from the current profile.
+
+For every candidate, the service computes \code{textSimilarity}, keeps an exact match with score 1 or a fuzzy match with a minimum score of 0.88, and removes a different income/expense type. Candidates are grouped by corrected label:
+
+\begin{equation}
+  w_k=\sum_{j\in k}s_j,\qquad
+  agreement=\frac{\max_k w_k}{\sum_k w_k}.
+\end{equation}
+
+The winning candidate exposes \code{support} (group count), \code{bestScore} (maximum score) and confidence rounded from $s_{best}\times agreement$. Retrieval is rejected when:
+
+\begin{itemize}
+  \item the input is empty or no candidate reaches the threshold;
+  \item identical normalized text has multiple corrected labels;
+  \item the non-exact winner is below 0.88;
+  \item a competing label leaves agreement below 0.8;
+  \item a legacy log lacks \code{type} while the caller requests a specific type.
+\end{itemize}
+
+Few-shot examples use a separate policy: at most five by default, an absolute limit of 20, and a minimum score of 0.35. Conflicting labels for the same typed normalized input are discarded, and duplicate labels keep only the nearest example. Correction therefore is not majority voting and cannot change transaction type.
+
+Normalization, typo, ambiguous alias, exact/fuzzy correction, label conflict and name-only/id+name cases are covered by \path{feedback.test.js}. Coverage, helped/harmed/net and group-split metrics are covered by \path{experiment-metrics.test.js}.
+
+\section{Financial analysis algorithms}
+\label{app:analytics-algorithms}
+
+\subsection{Calendar axes and runway}
+
+The helpers create an axis first, initialize totals to zero, and then add rows that fall within that axis:
+\begin{itemize}
+  \item \code{completeDailyTotals} completes the day axis;
+  \item \code{completeMonthlyByCategory} completes each category's month axis;
+  \item \code{completeWeeklyByCategory} completes the completed ISO-week axis.
+\end{itemize}
+Correlation uses completed ISO weeks; the week containing today is excluded. This preserves the denominator when a category is inactive during a period.
+
+Runway first filters wallets to \code{currency=VND} and types \code{cash}, \code{bank} and \code{e_wallet}:
+
+\begin{equation}
+  B=\sum_{w\in\text{eligible wallets}} balance_w.
+\end{equation}
+
+For a 14-day window and daily expense $e_j$ (zero-spend days remain zero),
+
+\begin{equation}
+  \bar e_W=\frac{1}{W}\sum_{j=1}^{W}e_j,
+  \qquad d=\left\lfloor\frac{B}{\bar e_W}\right\rfloor.
+\end{equation}
+
+If $B\leq0$, the result is $d=0$ with \code{alreadyDepleted}; if $\bar e_W\leq0$, the result has \code{daysLeft=null} and no depletion date is invented. Payday is only a comparison warning for the next occurrence; day 31 is clamped to the last day of the target month.
+
+For two liquid VND wallets totaling 300,000 VND and 14 days each spending 100,000 VND, $\bar e_W=100,000$ and $d=3$. USD and investment wallets do not increase $B$.
+
+\subsection{Trend and anomaly}
+
+For a zero-filled series $y_0,\ldots,y_{n-1}$, OLS uses $x_i=i$, $\bar x$ and $\bar y$ to calculate
+
+\begin{equation}
+  b=\frac{\sum_i(x_i-\bar x)(y_i-\bar y)}{\sum_i(x_i-\bar x)^2},
+  \qquad a=\bar y-b\bar x.
+\end{equation}
+
+It computes the fit statistic $R^2=1-SS_{res}/SS_{tot}$. The next-step forecast is $\max(0,\operatorname{round}(bn+a))$. Money slope/intercept are rounded and $R^2$ is rounded to three decimals. The engine emits a trend only with at least three positive-spend months, $b>0$, $R^2\geq0.5$ and an average stepwise percentage change of at least 10\% over steps with a positive preceding value. A constant series has $R^2=0$ and produces no signal.
+
+Anomaly detection uses the mean, sample standard deviation and interpolated quantiles over the complete 30-day axis:
+
+\begin{equation}
+  z_i=\frac{e_i-\bar e}{s},
+  \qquad upperFence=Q_3+1.5(Q_3-Q_1).
+\end{equation}
+
+Only the upper tail is flagged when $z_i\geq2.5$ or $e_i>upperFence$, and the engine requires at least four positive-spend days before calling the helper. When $s=0$, $z_i=0$; when $IQR=0$, the IQR branch is disabled. In the synthetic sample $[100,100,100,1000]$, $Q_1=100$, $Q_3=325$ and the upper fence is 662.5, so 1000 is flagged by IQR even though its z-score is below 2.5.
+
+\subsection{Recurring and day-of-week analysis}
+
+Recurring discovery removes diacritics, lowercases, removes digits from descriptions and groups positive expense transactions by normalized description. A group needs at least three occurrences, every amount must be within 15\% of the mean, and positive date gaps must have population coefficient of variation at most 0.12. All gaps must fit one cadence:
+
+\begin{table}[H]
+  \centering
+  \caption{Cadences used by recurring discovery}
+  \label{tab:app-cadences}
+  \begin{tabularx}{0.9\textwidth}{@{}L{3.2cm}C{2.4cm}C{2.4cm}C{3.2cm}@{}}
+    \toprule
+    \textbf{Cadence} & \textbf{Day gap} & \textbf{Monthly factor} & \textbf{Conversion example} \\
+    \midrule
+    Weekly & 5--9 & $52/12$ & Four weekly payments are annualized over 52 weeks. \\
+    Monthly & 26--35 & $1$ & The average payment is the monthly estimate. \\
+    Quarterly & 80--100 & $1/3$ & A 900,000 VND quarterly payment becomes 300,000 VND/month. \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+A candidate older than its cadence maximum from \code{asOf} is inactive. The output keeps the latest description, occurrence count, average amount, cadence, \code{lastSeen}, \code{nextExpected} and \code{monthlyEstimate}; there is no default amount ceiling. Three 900,000 VND payments approximately one quarter apart therefore remain a quarterly recurring item estimated at 300,000 VND/month.
+
+Day-of-week analysis uses spending per active day in the 60-day window; an inactive day is not treated as a zero-spend observation. It needs at least four observed weekdays and a peak-to-mean ratio of 1.8; otherwise it returns \code{null}.
+
+\subsection{Correlation}
+
+The engine creates a shared axis of 12 completed ISO weeks, zero-fills each category and keeps categories observed in at least four weeks. Pearson uses the shorter series length but returns \code{null} for fewer than three paired observations or zero variance:
+
+\begin{equation}
+  r=\frac{\sum_i(x_i-\bar x)(y_i-\bar y)}
+  {\sqrt{\sum_i(x_i-\bar x)^2\sum_i(y_i-\bar y)^2}}.
+\end{equation}
+
+The engine scans every pair, keeps $r\geq0.6$ and returns the pair with the greatest $r$. For proportional series $[100,200,300,400]$ and $[200,400,600,800]$, $r=1$; the result describes co-movement in the selected window and does not imply causation.
+
+\section{Budget and financial-goal planning}
+\label{app:planning-algorithms}
+
+\subsection{History summary and budget recommendation}
+
+\code{summarizeHistory} normalizes periods to \code{YYYY-MM}, aggregates income by month and aggregates expense by category id (or normalized name). With \code{expectedPeriods}, every listed month remains in the denominator even if it has no transaction. Thus a category spending 3,000,000 VND in one month of a three-month window has \code{average_spend=1,000,000}.
+
+Each category is assigned to \code{needs} or \code{wants}; the default needs set contains food, transport, health, education, housing, bills/services and groceries, while \code{groupOverrides} can replace the assignment. With buffer $q$ over $m$ months,
+
+\begin{equation}
+  b_c=(1+q)\frac{1}{m}\sum_{j=1}^{m}s_{c,j}.
+\end{equation}
+
+The progress forecast receives \code{spent}, \code{amount_limit} and the target period. For the current month, $d_e=\max(1,\text{today's day})$; for a historical month, $d_e$ is the full month length. If $D$ is the number of days in the month,
+
+\begin{equation}
+  \widehat S_D=\operatorname{round}\!\left(\frac{S}{d_e}D\right),
+  \qquad dailyRate=\operatorname{round}\!\left(\frac{S}{d_e}\right).
+\end{equation}
+
+The result records:
+\begin{itemize}
+  \item \code{daily_rate}, \code{projected_spend} and projected percentage;
+  \item the \code{likely_to_exceed} flag and, when applicable, \code{projected_exceed_day}.
+\end{itemize}
+When the limit is positive and current spending is below it, the service returns an exceedance day only if it remains in the month; a zero limit does not create a fictitious day. For 2,000,000 VND spent on day 10 of a 30-day month with a 5,000,000-VND limit, the rate is 200,000 VND/day, the forecast is 6,000,000 VND and the projected exceedance day is 25. The corresponding cases are in \code{budget-forecast.test.js}.
+
+The strategies behave differently:
+
+\begin{itemize}
+  \item \textbf{category average:} uses $b_c$ directly.
+  \item \textbf{50--30--20:} allocates group caps by each category's share of $b_c$, with default needs, wants and savings caps of $0.5I$, $0.3I$ and $0.2I$.
+  \item \textbf{hybrid:} keeps $b_c$ when the group total is within its cap; otherwise it scales all group items by $cap/groupAverage$.
+\end{itemize}
+
+Each raw limit is rounded by \code{roundingIncrement}, 10,000 VND by default. \code{enforceRoundedCap} then repeatedly reduces one increment from a positive category with the largest overshoot until the group total is within its cap. A sum \code{needsRate+wantsRate+savingsRate} above 1 is rejected; missing income falls back to \code{category_average} with a warning.
+
+For history with 10,000,000 VND monthly income, 4,000,000 VND needs and 4,000,000 VND wants over three months, with zero buffer, 50--30--20 gives caps of 5,000,000 and 3,000,000 VND. Hybrid keeps needs at 4,000,000 but shrinks wants to 3,000,000. If two wants categories are 15,000 VND each, a 10,000-VND rounding increment and a 30,000-VND cap still produce a post-reconciliation total within the cap.
+
+\subsection{Saving, debt payoff and what-if}
+
+For a saving/purchase goal, validation requires a positive target, non-negative current amount and a finite non-negative contribution. If contribution is \code{null}, the planner uses available surplus; an explicit user contribution of zero remains zero rather than being replaced by surplus. With remaining amount $R=\max(0,target-current)$ and monthly contribution $M>0$,
+
+\begin{equation}
+  n_s=\left\lceil\frac{R}{M}\right\rceil,
+  \qquad projectedDate=addMonthsClamped(today,n_s).
+\end{equation}
+
+End-of-month dates are clamped, so 31/01 plus one month becomes 28/02. If $R=0$, the planner returns completed with horizon 0; if $M=0$, horizon and projected date are \code{null} with \code{NO_MONTHLY_CONTRIBUTION}. A future deadline uses at least one contribution period in the same calendar month and reports \code{requiredMonthly}, gap and shortfall.
+
+For current principal $L$, nominal annual percentage rate $i$ and $r=i/(12\times100)$, the level end-of-month payment over $n_d$ months is
+
+\begin{equation}
+  P=\begin{cases}
+  \dfrac{Lr}{1-(1+r)^{-n_d}}, & r>0,\\[6pt]
+  \dfrac{L}{n_d}, & r=0.
+  \end{cases}
+\end{equation}
+
+Without a deadline, the planner simulates each month: add interest, subtract a payment no larger than the amount due, and stop at zero balance or the horizon (600 months by default; validation permits at most 1200). A zero payment returns \code{NO_MONTHLY_PAYMENT}; a payment no larger than first-month interest returns \code{NEGATIVE_AMORTIZATION}; an unpaid balance after the horizon returns \code{MAX_HORIZON_EXCEEDED}. For $L=10,000$, 12\% annual interest and payment 1,000, the result is 11 months and 589.85 total interest; payment 100 is rejected because the balance does not decrease.
+
+What-if accepts only saving or purchase plans, validates non-negative extraMonthly, and reruns the planner with original contribution plus the extra amount. It returns the new contribution, new horizon, months saved, feasibility transition and shortfall; it does not persist a goal or change a debt plan.
+
+\section{Facts contract and LLM boundary}
+\label{app:facts-contract}
+
+The Analytics Engine runs six independent components: trend, anomaly, runway, subscriptions, day-of-week and correlation. Each reads scoped data and returns a value or \code{null}, then the engine wraps it in one contract:
+
+\begin{table}[H]
+  \centering
+  \caption{Fields in facts contract version 1.0}
+  \label{tab:app-facts-contract}
+  \begin{tabularx}{\textwidth}{@{}L{4.5cm}Y@{}}
+    \toprule
+    \textbf{Field} & \textbf{Meaning} \\
+    \midrule
+    \code{schema_version} & Contract shape version, currently \code{1.0}. \\
+    \code{generated_at} & ISO timestamp at which facts were generated. \\
+    Component values & Numeric values or result lists; no signal is represented by \code{null}. \\
+    \code{metadata.components} & Each component includes \code{unit}, \code{window}, \code{sample_count}, \code{method}, \code{parameters}, \code{warnings} and \code{status}. \\
+    \code{status} & \code{ok} when a result exists; \code{no_signal} when the contract is valid but evidence is insufficient; \code{degraded} when the component failed. \\
+    \code{degraded_components} & Failed component names; no internal error message or credential is exposed. \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+The \code{window} object records size, unit and whether zero-fill was used; selected components add \code{category_count}, \code{wallet_count} or \code{observed_period_count}. Facts are cached for 600 seconds and reused only when schema, currency and payday context still match.
+
+The numeric boundary is: SQL/Model reads source data, Analytics Engine computes facts, and only then does the narrator receive them. The LLM cannot call models, replace numbers, write transactions or turn \code{null} into a concrete value. A persona changes tone only when consent is enabled. A numeric grounding checker covering every numeric expression remains target design, not a measured result.
+
+\section{Algorithm--test matrix and reproducibility}
+\label{app:algorithm-tests}
+
+The following table points to tests and artifacts rather than copying raw data. ``Checked'' means that the selected test behavior passed; it is not production accuracy.
+
+\begin{longtable}{@{}L{3.2cm}L{2.8cm}L{3.5cm}L{3.8cm}@{}}
+  \caption{Algorithm, boundary-case and evidence matrix}
+  \label{tab:app-algorithm-tests}\\
+  \toprule
+  \textbf{Group} & \textbf{Normal cases} & \textbf{Boundary cases/invariants} & \textbf{Evidence} \\
+  \midrule
+  \endfirsthead
+  \toprule
+  \textbf{Group} & \textbf{Normal cases} & \textbf{Boundary cases/invariants} & \textbf{Evidence} \\
+  \midrule
+  \endhead
+  Matcher & exact name, exact alias and clear typo. & Ambiguous alias, empty input, below threshold, small margin, aliases must use word boundaries. & \code{feedback.test.js}; historical local-parser gate 31/31. \\
+  Correction & exact/fuzzy same-type corrections and nearest few-shot examples. & Conflicting exact labels, missing type, agreement below 0.8, name-only/id+name. & \code{feedback.test.js}; correction JSON/Markdown in \code{log/}. \\
+  Calendar/runway & complete axis, liquid VND wallet and depletion date. & Zero balance, zero burn, USD/investment exclusion, day-31 payday. & \path{analytics-engine.test.js}, \path{analytics-time-series.test.js}, \path{wallet-policy.test.js}. \\
+  Trend/anomaly & increasing series and upper-tail outlier. & Fewer than 3 positive periods, fewer than 4 positive days, constant series, zero IQR or variance. & \path{analytics-engine.test.js}, \path{analytics-time-series.test.js}. \\
+  Recurring & cadence; strong pair. & Amount variation above 15\%, gap CV above 0.12, stale candidate, fewer than 4 periods or undefined Pearson. & \path{subscription-miner.test.js}, \path{analytics-engine.test.js}. \\
+  Budget & category average, hybrid and 50--30--20. & Inactive month remains in denominator, missing income, rate sum above 100\%, rounded cap overflow. & \path{budget-recommender.test.js}, \path{budget-forecast.test.js}. \\
+  Goal & saving contribution, debt amortization and what-if. & Completed goal, zero contribution, end-of-month clamp, negative amortization, zero payment, horizon exceeded. & \path{goal-planner.test.js}, \path{goal-service.test.js}, \path{goal-validation.test.js}. \\
+  Facts contract & complete metadata and \code{ok} status. & Component failure preserves contract, \code{no_signal}, no error-message leak, mismatched cache context. & \path{analytics-engine.test.js}; contract version 1.0. \\
+  \bottomrule
+\end{longtable}
+
+The classification and correction runners write structured records under \code{log/}; the 02/08/2026 measurements are described in Chapter~\ref{subsec:results}. OCR/STT accuracy, complete numeric grounding, p95, UAT and live Redis-worker execution remain targets or unmeasured; they cannot be inferred from pure unit tests.
+
 \chapter{Reproduction Commands}
 
 Run each command from the named component directory. Record commit, Node version, provider configuration and PostgreSQL/Redis state without storing secrets in artifacts.
