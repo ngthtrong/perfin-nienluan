@@ -14,12 +14,14 @@ from __future__ import annotations
 
 import html
 import os
+from urllib.parse import quote
 from dataclasses import dataclass
 from typing import Iterable, Sequence
 
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.join(HERE, "drawio")
+LOGO_DIR = os.path.join(HERE, "assets", "logos")
 
 
 @dataclass(frozen=True)
@@ -47,6 +49,42 @@ def esc(value: object) -> str:
 
 def style_join(*parts: str) -> str:
     return "".join(p if p.endswith(";") else p + ";" for p in parts if p)
+
+
+def logo_data(name: str) -> str:
+    with open(os.path.join(LOGO_DIR, f"{name}.svg"), encoding="utf-8") as fh:
+        return "data:image/svg+xml," + quote(fh.read(), safe="")
+
+
+def icon(
+    cid: str,
+    name: str,
+    x: int,
+    y: int,
+    w: int,
+    h: int,
+    *,
+    parent: str = "1",
+    builtin: bool = False,
+) -> str:
+    image = name if builtin else logo_data(name)
+    return cell(
+        cid,
+        "",
+        style_join(
+            "image",
+            "aspect=fixed",
+            "html=1",
+            "strokeColor=none",
+            "fillColor=none",
+            f"image={image}",
+        ),
+        x,
+        y,
+        w,
+        h,
+        parent=parent,
+    )
 
 
 def cell(
@@ -1016,23 +1054,23 @@ def diagram_03() -> str:
         ),
         uml_node(
             "mobile", "device", "Thiết bị người dùng",
-            ["«artifact» PERFIN Mobile (React Native)"],
+            ["«artifact» PERFIN Mobile", "React Native · Expo"],
             40, 330, 210, 110, "blue",
         ),
         uml_node(
-            "api", "execution environment", "Node.js 20 · Express",
+            "api", "execution environment", "Node.js · Express",
             ["«artifact» perfin-api"],
             40, 70, 230, 92, "blue", parent="demo",
         ),
         uml_node(
-            "worker", "execution environment", "Node.js 20 · BullMQ",
+            "worker", "execution environment", "Node.js · BullMQ",
             ["«artifact» perfin-worker"],
             40, 260, 230, 92, "blue", parent="demo",
         ),
-        database("redis", "«device» Redis 7\nstate · cache · queue", 400, 70, 190, 96, "yellow", parent="demo"),
-        database("postgres", "«device» PostgreSQL 15\nnguồn dữ liệu chuẩn", 400, 260, 190, 96, "green", parent="demo"),
+        database("redis", "«device» Redis 7.4\nstate · cache · queue", 400, 70, 190, 96, "yellow", parent="demo"),
+        database("postgres", "«device» PostgreSQL\nnguồn dữ liệu chuẩn", 400, 260, 190, 96, "green", parent="demo"),
         uml_node(
-            "localai", "execution environment", "Python 3.11 cục bộ",
+            "localai", "execution environment", "Python cục bộ",
             ["«artifact» PaddleOCR", "«artifact» PhoWhisper"],
             650, 165, 190, 104, "purple", parent="demo",
         ),
@@ -1054,11 +1092,19 @@ def diagram_03() -> str:
             ["OCR · STT đám mây"],
             35, 300, 230, 104, "purple", dashed=True, parent="cloud",
         ),
+        icon("mobile-react", "react", 52, 346, 30, 30),
+        icon("mobile-expo", "expo", 88, 346, 30, 30),
+        icon("api-node", "nodejs", 50, 82, 28, 28, parent="demo"),
+        icon("api-express", "express", 84, 82, 28, 28, parent="demo"),
+        icon("worker-bull", "img/lib/azure2/integration/Event_Grid_Topics.svg", 50, 274, 30, 30, parent="demo", builtin=True),
+        icon("redis-mark", "img/lib/azure2/databases/Cache_Redis.svg", 412, 90, 42, 34, parent="demo", builtin=True),
+        icon("postgres-mark", "img/lib/azure2/databases/Azure_Database_PostgreSQL_Server.svg", 414, 278, 34, 46, parent="demo", builtin=True),
+        icon("gemini-mark", "gemini", 48, 84, 30, 30, parent="cloud"),
         # Mỗi communication path ghi rõ giao thức và cổng theo yêu cầu của GVHD.
         # Toạ độ waypoint là toạ độ tuyệt đối trên trang: api/worker nằm ở
         # x 340..570, redis/postgres ở x 700..890, localai ở x 950..1140.
         edge(
-            "e1", "mobile", "api", "HTTPS/JSON · TLS 1.3",
+            "e1", "mobile", "api", "HTTPS / JSON",
             exit_xy=(1, 0.5), entry_xy=(0, 0.5), font_size=10,
             points=[(320, 385), (320, 266)], label_pos=-0.35,
             label_offset=(0, -10),
@@ -1068,13 +1114,13 @@ def diagram_03() -> str:
             exit_xy=(1, 0.35), entry_xy=(0, 0.5), font_size=10,
             label_offset=(0, -10),
         ),
-        # api→postgres và worker→redis là cặp cạnh chéo nhau; hai hành lang
-        # dọc x=670 và x=635 giữ chúng vuông góc, nhãn dịch ra khỏi chỗ giao.
+        # api→postgres đi vòng bên phải cụm database; worker→redis dùng
+        # hành lang giữa application và database để hai cạnh không cắt nhau.
         edge(
             "e3", "api", "postgres", "SQL · TCP 5432", color="green",
-            exit_xy=(1, 0.75), entry_xy=(0, 0.25),
-            points=[(670, 289), (670, 434)], font_size=10,
-            label_offset=(-22, 12),
+            exit_xy=(0.8, 0), entry_xy=(1, 0.25),
+            points=[(524, 190), (920, 190), (920, 434)], font_size=10,
+            label_offset=(20, 12),
         ),
         edge(
             "e4", "api", "worker", "BullMQ job · RESP TCP 6379", color="yellow",
@@ -1098,7 +1144,7 @@ def diagram_03() -> str:
             points=[(524, 547)], font_size=10, label_pos=-0.2,
             label_offset=(0, -10),
         ),
-        # e8/e9/e10 đều ra khỏi mặt trên của api nhưng theo bốn hành lang ngang
+        # e8/e9/e10 đều ra khỏi mặt trên của api nhưng theo ba hành lang ngang
         # khác nhau (y=202 trong khung, y=126 và y=100 ngoài khung) và thứ tự
         # cột x tăng dần nên không cắt nhau.
         edge(
@@ -1110,12 +1156,12 @@ def diagram_03() -> str:
         edge(
             "e9", "api", "gemini", "HTTPS/REST", color="purple", dashed=True,
             exit_xy=(0.55, 0), entry_xy=(0, 0.5),
-            points=[(466, 126), (1172, 126)], font_size=10,
+            points=[(466, 100), (1210, 100), (1210, 272)], font_size=10,
         ),
         edge(
             "e10", "api", "google", "HTTPS/REST", color="purple", dashed=True,
             exit_xy=(0.7, 0), entry_xy=(0, 0.5),
-            points=[(501, 100), (1188, 100)], font_size=10,
+            points=[(501, 126), (1190, 126), (1190, 502)], font_size=10,
         ),
         edge(
             "dep1", "fs", "exports", "«deploy»", color="yellow", dashed=True,
@@ -1703,6 +1749,7 @@ def diagram_09() -> str:
         box("stt", "STT provider\nGoogle Speech / PhoWhisper", 760, 180, 230, 76, "purple", dashed=True),
         decision("text", "Có văn bản thật?", 1030, 105, 160, 110),
         box("fail", "HTTP 503\nkhông tạo dữ liệu giả", 1220, 80, 180, 70, "red"),
+        terminal("failed", "Kết thúc lỗi\nkhông ghi dữ liệu", 1220, 190, 180, 62, "red"),
         box("raw", "Raw text + thông tin provider", 1010, 270, 210, 68, "orange"),
         box("voice", "Người dùng xác nhận /\nsửa transcript", 760, 370, 230, 70, "blue"),
         decision("receipt", "Hóa đơn\nnhiều dòng?", 1040, 360, 150, 100),
@@ -1713,6 +1760,7 @@ def diagram_09() -> str:
         decision("confirm", "Xác nhận?", 140, 500, 150, 100),
         box("sql", "SQL transaction\nlưu giao dịch · cập nhật ví", 40, 665, 230, 76, "green"),
         terminal("end", "Kết quả có thể kiểm tra lại", 350, 675, 220, 62, "green"),
+        terminal("cancelled", "Đã hủy\nkhông ghi dữ liệu", 650, 675, 190, 62, "red"),
         edge("e1", "start", "upload", "", color="orange", exit_xy=(1, 0.5), entry_xy=(0, 0.5)),
         edge("e2", "upload", "type", "", color="yellow", exit_xy=(1, 0.5), entry_xy=(0, 0.5)),
         edge("e3", "type", "ocr", "Ảnh", color="purple", dashed=True, exit_xy=(1, 0.3), entry_xy=(0, 0.5)),
@@ -1732,9 +1780,9 @@ def diagram_09() -> str:
         edge("e17", "pending", "confirm", "", color="yellow", exit_xy=(0, 0.5), entry_xy=(1, 0.5)),
         edge("e18", "confirm", "pending", "Sửa", color="blue", exit_xy=(0.7, 0), entry_xy=(0.3, 1), points=[(250, 470), (440, 470)]),
         edge("e19", "confirm", "sql", "Đồng ý", color="green", exit_xy=(0.35, 1), entry_xy=(0.5, 0)),
-        edge("e20", "confirm", "end", "Hủy", color="red", exit_xy=(0.65, 1), entry_xy=(0.2, 0), points=[(220, 640), (395, 640)]),
+        edge("e20", "confirm", "cancelled", "Hủy", color="red", exit_xy=(0.65, 1), entry_xy=(0.5, 0), points=[(240, 640), (745, 640)]),
         edge("e21", "sql", "end", "", color="green", exit_xy=(1, 0.5), entry_xy=(0, 0.5)),
-        edge("e22", "fail", "end", "thử lại", color="red", exit_xy=(1, 0.5), entry_xy=(0.8, 1), points=[(1430, 115), (1430, 790), (525, 790)]),
+        edge("e22", "fail", "failed", "", color="red", exit_xy=(0.5, 1), entry_xy=(0.5, 0)),
         *legend(
             "lg",
             40,
@@ -1849,6 +1897,7 @@ def diagram_12() -> str:
         box("validate", "Kiểm tra amount · date · rate · contribution", 290, 115, 250, 72, "green"),
         decision("valid", "Dữ liệu\nhợp lệ?", 580, 100, 150, 105),
         box("error", "Trả lỗi theo field\nhoặc hỏi làm rõ", 580, 255, 170, 70, "red"),
+        terminal("invalid_end", "Không tạo kế hoạch\nkhông ghi dữ liệu", 570, 350, 190, 62, "red"),
         box("surplus", "Tính dòng tiền có thể phân bổ\ntừ lịch sử thu – chi", 780, 115, 230, 72, "green"),
         decision("type", "Loại mục tiêu?", 1050, 100, 160, 105),
         box("saving", "Saving / Purchase\nremaining = target − current\nmonths = ceil(remaining / contribution)", 1240, 70, 220, 96, "green"),
@@ -1862,10 +1911,11 @@ def diagram_12() -> str:
         decision("saveq", "Người dùng\nlưu mục tiêu?", 250, 590, 160, 105),
         database("goals", "financial_goals", 510, 600, 180, 82, "green"),
         terminal("end", "Kết quả", 800, 610, 160, 58, "green"),
+        terminal("unsaved", "Kết quả chưa lưu\nhoặc quay lại sửa", 1040, 690, 200, 62, "red"),
         edge("e1", "start", "validate", "", color="green", exit_xy=(1, 0.5), entry_xy=(0, 0.5)),
         edge("e2", "validate", "valid", "", color="yellow", exit_xy=(1, 0.5), entry_xy=(0, 0.5)),
         edge("e3", "valid", "error", "Không", color="red", exit_xy=(0.5, 1), entry_xy=(0.5, 0)),
-        edge("e4", "error", "end", "", color="red", exit_xy=(0, 0.5), entry_xy=(0.5, 1), points=[(20, 290), (20, 740), (880, 740)]),
+        edge("e4", "error", "invalid_end", "", color="red", exit_xy=(0.5, 1), entry_xy=(0.5, 0)),
         edge("e5", "valid", "surplus", "Có", color="green", exit_xy=(1, 0.5), entry_xy=(0, 0.5)),
         edge("e6", "surplus", "type", "", color="yellow", exit_xy=(1, 0.5), entry_xy=(0, 0.5)),
         edge("e7", "type", "saving", "Saving / Purchase", color="green", exit_xy=(1, 0.35), entry_xy=(0, 0.5)),
@@ -1881,11 +1931,11 @@ def diagram_12() -> str:
         edge("e17", "plan", "saveq", "", color="yellow", exit_xy=(0.5, 1), entry_xy=(0, 0.5), points=[(120, 640)]),
         edge("e18", "saveq", "goals", "Có", color="green", exit_xy=(1, 0.5), entry_xy=(0, 0.5)),
         edge("e19", "goals", "end", "", color="green", exit_xy=(1, 0.5), entry_xy=(0, 0.5)),
-        edge("e20", "saveq", "end", "Không / sửa", color="red", exit_xy=(0.5, 1), entry_xy=(0.5, 1), points=[(330, 730), (880, 730)]),
+        edge("e20", "saveq", "unsaved", "Không / sửa", color="red", exit_xy=(0.5, 1), entry_xy=(0, 0.5), points=[(330, 760), (1020, 760), (1020, 721)]),
         *legend(
             "lg",
-            1040,
-            420,
+            20,
+            245,
             [
                 ("orange", "Đầu vào của người dùng"),
                 ("green", "Công thức xác định: phân bổ, amortization, dự báo"),

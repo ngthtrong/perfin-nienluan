@@ -20,6 +20,8 @@ const files = [
 
 // Longer, diagram-specific phrases come first; short shared labels come last.
 const replacements = [
+  ["Đã cancel&#xa;no data write", "Cancelled&#xa;no data write"],
+  ["Result chưa lưu&#xa;or return to edit", "Unsaved result&#xa;or return to edit"],
   ["Lưu trữ bền vững, authoritative data", "Persistent authoritative storage"],
   ["User và hội thoại", "User and conversation"],
   ["Ledger xác định", "Deterministic ledger"],
@@ -35,6 +37,9 @@ const replacements = [
   ["Zone 2 · confirm và ghi feedback", "Zone 2 · confirm and store feedback"],
   ["Planning có công thức và cảnh báo", "Plan with formulas and warnings"],
   ["Kết quả", "Result"],
+  ["Không tạo kế hoạch", "No plan created"],
+  ["Kết quả chưa lưu", "Unsaved result"],
+  ["hoặc quay lại sửa", "or return to edit"],
   ["No / sửa", "No / edit"],
   ["Cảnh báo và nhánh no data write", "Warning branch with no data write"],
   ["Sơ đồ ngữ cảnh và phạm vi hệ thống PERFIN", "PERFIN System Context and Scope"],
@@ -82,6 +87,7 @@ const replacements = [
   ["Ngoài biên triển khai · dịch vụ AI đám mây", "Outside Deployment Boundary · Cloud AI Services"],
   ["Thiết bị người dùng", "User Device"],
   ["Ổ đĩa máy chủ demo", "Demo Server Disk"],
+  ["Python cục bộ", "Local Python"],
   ["Python 3.11 cục bộ", "Local Python 3.11"],
   ["OCR · STT đám mây", "Cloud OCR · STT"],
   ["Chú giải màu", "Color Legend"],
@@ -222,6 +228,8 @@ const replacements = [
   ["Xác nhận?", "Confirm?"],
   ["lưu giao dịch · cập nhật ví", "save transaction · update wallet"],
   ["Kết quả có thể kiểm tra lại", "Auditable result"],
+  ["Kết thúc lỗi", "Error outcome"],
+  ["Đã hủy", "Cancelled"],
   ["Ảnh", "Image"],
   ["Âm thanh", "Audio"],
   ["Không", "No"],

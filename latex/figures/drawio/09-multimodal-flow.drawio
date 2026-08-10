@@ -34,6 +34,9 @@
         <mxCell id="fail" value="HTTP 503&#xa;do not fabricate data" style="rounded=1;arcSize=10;whiteSpace=wrap;html=1;spacing=6;align=center;verticalAlign=middle;fillColor=#FCEDED;strokeColor=#C97A7A;fontColor=#5A2A2A;fontSize=13;strokeWidth=1.2;" vertex="1" parent="1">
           <mxGeometry x="1220" y="80" width="180" height="70" as="geometry" />
         </mxCell>
+        <mxCell id="failed" value="Error outcome&#xa;no data write" style="ellipse;whiteSpace=wrap;html=1;spacing=5;fillColor=#FCEDED;strokeColor=#C97A7A;fontColor=#5A2A2A;fontSize=13;strokeWidth=1.2;" vertex="1" parent="1">
+          <mxGeometry x="1220" y="190" width="180" height="62" as="geometry" />
+        </mxCell>
         <mxCell id="raw" value="Raw text + provider metadata" style="rounded=1;arcSize=10;whiteSpace=wrap;html=1;spacing=6;align=center;verticalAlign=middle;fillColor=#FDEBD7;strokeColor=#C87A18;fontColor=#5A3512;fontSize=13;strokeWidth=1.2;" vertex="1" parent="1">
           <mxGeometry x="1010" y="270" width="210" height="68" as="geometry" />
         </mxCell>
@@ -63,6 +66,9 @@
         </mxCell>
         <mxCell id="end" value="Auditable result" style="ellipse;whiteSpace=wrap;html=1;spacing=5;fillColor=#E6F4EA;strokeColor=#2E7D46;fontColor=#1B4429;fontSize=13;strokeWidth=1.2;" vertex="1" parent="1">
           <mxGeometry x="350" y="675" width="220" height="62" as="geometry" />
+        </mxCell>
+        <mxCell id="cancelled" value="Cancelled&#xa;no data write" style="ellipse;whiteSpace=wrap;html=1;spacing=5;fillColor=#FCEDED;strokeColor=#C97A7A;fontColor=#5A2A2A;fontSize=13;strokeWidth=1.2;" vertex="1" parent="1">
+          <mxGeometry x="650" y="675" width="190" height="62" as="geometry" />
         </mxCell>
         <mxCell id="e1" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;curved=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#C87A18;fontColor=#5A3512;fontSize=11;labelBackgroundColor=#FFFFFF;strokeWidth=1.2;endArrow=blockThin;endFill=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="start" target="upload">
           <mxGeometry relative="1" as="geometry" />
@@ -127,18 +133,16 @@
         <mxCell id="e19" value="Confirm" style="edgeStyle=orthogonalEdgeStyle;rounded=0;curved=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#2E7D46;fontColor=#1B4429;fontSize=11;labelBackgroundColor=#FFFFFF;strokeWidth=1.2;endArrow=blockThin;endFill=1;exitX=0.35;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="confirm" target="sql">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="e20" value="Cancel" style="edgeStyle=orthogonalEdgeStyle;rounded=0;curved=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#C97A7A;fontColor=#5A2A2A;fontSize=11;labelBackgroundColor=#FFFFFF;strokeWidth=1.2;endArrow=blockThin;endFill=1;exitX=0.65;exitY=1;exitDx=0;exitDy=0;entryX=0.2;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="confirm" target="end">
+        <mxCell id="e20" value="Cancel" style="edgeStyle=orthogonalEdgeStyle;rounded=0;curved=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#C97A7A;fontColor=#5A2A2A;fontSize=11;labelBackgroundColor=#FFFFFF;strokeWidth=1.2;endArrow=blockThin;endFill=1;exitX=0.65;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="confirm" target="cancelled">
           <mxGeometry relative="1" as="geometry">
-            <Array as="points"><mxPoint x="220" y="640" /><mxPoint x="395" y="640" /></Array>
+            <Array as="points"><mxPoint x="240" y="640" /><mxPoint x="745" y="640" /></Array>
           </mxGeometry>
         </mxCell>
         <mxCell id="e21" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;curved=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#2E7D46;fontColor=#1B4429;fontSize=11;labelBackgroundColor=#FFFFFF;strokeWidth=1.2;endArrow=blockThin;endFill=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="sql" target="end">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="e22" value="retry" style="edgeStyle=orthogonalEdgeStyle;rounded=0;curved=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#C97A7A;fontColor=#5A2A2A;fontSize=11;labelBackgroundColor=#FFFFFF;strokeWidth=1.2;endArrow=blockThin;endFill=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0.8;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" source="fail" target="end">
-          <mxGeometry relative="1" as="geometry">
-            <Array as="points"><mxPoint x="1430" y="115" /><mxPoint x="1430" y="790" /><mxPoint x="525" y="790" /></Array>
-          </mxGeometry>
+        <mxCell id="e22" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;curved=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#C97A7A;fontColor=#5A2A2A;fontSize=11;labelBackgroundColor=#FFFFFF;strokeWidth=1.2;endArrow=blockThin;endFill=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="fail" target="failed">
+          <mxGeometry relative="1" as="geometry" />
         </mxCell>
         <mxCell id="lg" value="Color Legend" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingTop=6;spacingLeft=9;fillColor=#FFFFFF;strokeColor=#9AA7B4;fontColor=#3D4B5A;fontSize=12;fontStyle=1;strokeWidth=1;dashed=0;" vertex="1" parent="1">
           <mxGeometry x="40" y="250" width="460" height="186" as="geometry" />

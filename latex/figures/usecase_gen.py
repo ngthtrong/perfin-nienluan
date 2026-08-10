@@ -274,125 +274,75 @@ def note_box(cid, label, x, y, w, h):
 
 
 def diagram_overview():
-    """Overall use case: each actor is drawn exactly once.
-
-    Bố cục dọc theo bốn nhóm chức năng. Association của cùng một tác nhân
-    được gom vào một trục dọc rồi rẽ ngang vào từng use case (đường gấp khúc
-    vuông góc), thay cho chùm tia toả từ một điểm. Các use case liên quan tới
-    cùng một tác nhân phụ được đặt liền kề nên hai trục dọc bên phải không
-    chồng khoảng y và không có cạnh nào cắt nhau.
-    """
-    W, H = 1260, 1360
-    UC_X, UC_W, UC_H = 416, 608, 64
-    STEP = 82
-    HDR = 34                     # chiều cao dải tiêu đề của khung nhóm
-    cells = []
-    cells.append(title("t", "PERFIN Overall Use Case Diagram",
-                       40, 18, 1000, 30))
-    cells.append(subtitle(
-        "st",
-        "Each actor appears once. The twelve observable goals are grouped by "
-        "domain; detailed behavior is specified with flow tables in Chapter 3.",
-        40, 52, 1080, 34))
+    """Landscape 2x2 overview with actors outside the system boundary."""
+    W, H = 1600, 950
+    cells = [
+        title("t", "PERFIN Overall Use Case Diagram", 40, 18, 1000, 30),
+        subtitle(
+            "st",
+            "Twelve observable goals are grouped by domain; parsing, validation, TTL and transaction details remain in flow tables and sequence diagrams.",
+            40, 52, 1420, 34),
+        boundary("bnd", "PERFIN System (API and Business Services)", 190, 100, 1210, 680),
+    ]
 
     groups = [
-        ("gA", "Group 1 · Input Capture and Understanding", "blue", [
-            ("uc1", "FR-01 · Enter Transactions from Natural-Language Text", "purple"),
-            ("uc2", "FR-02 · Enter Transactions from Images and Speech", "purple"),
-            ("uc3", "FR-03 · Clarify and Confirm Pending Transactions",
-             "yellow"),
+        ("gA", "Group 1 · Input Capture and Understanding", "blue", 230, 145, [
+            ("uc1", "FR-01 · Natural-Language Transactions", "purple"),
+            ("uc2", "FR-02 · Image and Speech Transactions", "purple"),
+            ("uc3", "FR-03 · Clarify and Confirm Pending Items", "yellow"),
             ("uc4", "FR-04 · Classify and Learn from Corrections", "green"),
         ]),
-        ("gB", "Group 2 · Ledger Management", "green", [
-            ("uc5", "FR-05 · Manage Transactions, Wallets and Categories", "green"),
-            ("uc6", "FR-06 · Transfer Funds and Record Special Cash Flows", "green"),
+        ("gB", "Group 2 · Ledger Management", "green", 840, 145, [
+            ("uc5", "FR-05 · Transactions, Wallets and Categories", "green"),
+            ("uc6", "FR-06 · Transfers and Special Cash Flows", "green"),
         ]),
-        ("gC", "Group 3 · Analytics, Insights and Planning", "green", [
-            ("uc8", "FR-08 · Generate Grounded Insights", "purple"),
+        ("gC", "Group 3 · Analytics, Insights and Planning", "green", 230, 470, [
             ("uc7", "FR-07 · Analyze Financial Data", "green"),
+            ("uc8", "FR-08 · Generate Grounded Insights", "purple"),
             ("uc9", "FR-09 · Manage and Forecast Budgets", "green"),
-            ("uc10", "FR-10 · Plan Goals and Run What-if Scenarios",
-             "green"),
+            ("uc10", "FR-10 · Plan Goals and What-if Scenarios", "green"),
         ]),
-        ("gD", "Group 4 · Proactive Operations and Data Output", "yellow", [
-            ("uc11", "FR-11 · Manage Recurring Bills and Proactive Jobs", "green"),
-            ("uc12", "FR-12 · Export Data and Remove Expired Files", "green"),
+        ("gD", "Group 4 · Proactive Operations and Output", "yellow", 840, 470, [
+            ("uc11", "FR-11 · Recurring Bills and Proactive Jobs", "green"),
+            ("uc12", "FR-12 · Export and Remove Expired Files", "green"),
         ]),
     ]
 
-    # Tính toạ độ từng hàng và tâm dọc của mỗi use case.
-    center = {}
-    order = []
-    y = 132
-    for gid, glabel, gcolor, rows in groups:
-        gh = len(rows) * STEP + HDR
-        cells.append(group_box(gid, glabel, UC_X - 20, y, UC_W + 40, gh,
-                               gcolor))
-        for j, (cid, label, color) in enumerate(rows):
-            ry = y + HDR - 4 + j * STEP
-            cells.append(usecase(cid, label, UC_X, ry, UC_W, UC_H, color))
-            center[cid] = ry + UC_H // 2
-            order.append(cid)
-        y += gh + 18
-    bnd_bottom = y - 18 + 20
+    positions = {}
+    for gid, glabel, gcolor, gx, gy, rows in groups:
+        gh = 270 if len(rows) == 4 else 190
+        cells.append(group_box(gid, glabel, gx, gy, 520, gh, gcolor))
+        for idx, (cid, label, color) in enumerate(rows):
+            col, row = idx % 2, idx // 2
+            ux, uy = gx + 25 + col * 245, gy + 55 + row * 95
+            cells.append(usecase(cid, label, ux, uy, 225, 68, color))
+            positions[cid] = (ux, uy, ux + 112, uy + 34, col, gx, gy)
 
-    cells.append(boundary("bnd", "PERFIN System (API and Business Services)",
-                          380, 100, 680, bnd_bottom - 100))
+    cells.append(actor("aAI", "External AI Services", 65, 155, "purple", True))
+    cells.append(actor("aUser", "User", 65, 390, "blue"))
+    cells.append(actor("aWorker", "Background Worker", 1470, 555, "yellow"))
 
-    # Tác nhân chính: một ký hiệu duy nhất, gom association vào trục x=356.
-    all_ids = order
-    user_cy = (center[all_ids[0]] + center[all_ids[-1]]) // 2
-    cells.append(actor("aUser", "User", 70, user_cy - 52, "blue"))
-    for i, cid in enumerate(all_ids):
-        cells.append(assoc(f"eu{i}", "aUser", cid, exit_xy=(1, 0.5),
-                           entry_xy=(0, 0.5), ortho=True,
-                           points=[(356, center[cid])]))
+    # At overview level, one association to a package means the actor
+    # participates in every use case contained by that package. This removes
+    # twelve stacked lines without changing the detailed FR ownership tables.
+    cells.append(assoc("euA", "aUser", "gA", exit_xy=(1, 0.45), entry_xy=(0, 0.65), ortho=True, points=[(205, 320)]))
+    cells.append(assoc("euC", "aUser", "gC", exit_xy=(1, 0.6), entry_xy=(0, 0.35), ortho=True, points=[(205, 565)]))
+    cells.append(assoc("euB", "aUser", "gB", exit_xy=(1, 0.35), entry_xy=(0.5, 0), ortho=True, points=[(175, 110), (1100, 110)]))
+    cells.append(assoc("euD", "aUser", "gD", exit_xy=(1, 0.7), entry_xy=(0.5, 1), ortho=True, points=[(175, 770), (1100, 770)]))
+    cells.append(assoc("eaiA", "aAI", "gA", exit_xy=(1, 0.45), entry_xy=(0, 0.25), color=STROKE["purple"], ortho=True, points=[(180, 215)]))
+    cells.append(assoc("eaiC", "aAI", "gC", exit_xy=(1, 0.6), entry_xy=(0, 0.2), color=STROKE["purple"], ortho=True, points=[(165, 525)]))
+    cells.append(assoc("ewD", "aWorker", "gD", exit_xy=(0, 0.5), entry_xy=(1, 0.55), color=STROKE["yellow"], ortho=True, points=[(1430, 620)]))
 
-    # Hai tác nhân phụ ở bên phải, mỗi tác nhân một trục dọc riêng. Các use
-    # case đích được đặt liền kề nên hai trục không chồng khoảng y.
-    secondary = [
-        ("aAI", "External AI Services", "purple", True, 1084,
-         ["uc1", "uc2", "uc8"]),
-        ("aWorker", "Background Worker", "yellow", False, 1108,
-         ["uc7", "uc11", "uc12"]),
-    ]
-    for aid, label, color, dashed, corridor, targets in secondary:
-        cys = [center[t] for t in targets]
-        cells.append(actor(aid, label, 1140,
-                           (min(cys) + max(cys)) // 2 - 52, color, dashed))
-        for t in targets:
-            cells.append(assoc(f"e{aid}_{t}", aid, t, exit_xy=(0, 0.5),
-                               entry_xy=(1, 0.5), color=STROKE[color],
-                               ortho=True, points=[(corridor, center[t])]))
-
-    cells.extend(legend("lg", 40, 132, [
-        ("blue", "User actor and interaction"),
-        ("green", "Deterministic-core use case"),
-        ("purple", "Use case assisted by an external AI service"),
-        ("yellow", "Use case involving state or a background worker"),
-    ], width=300))
-    cells.extend(legend_line("lgl", 40, 306, [
-        ("edgeStyle=none;endArrow=none;rounded=0;strokeColor=#5B7290;",
-         "Actor-to-use-case association"),
-        ("edgeStyle=orthogonalEdgeStyle;endArrow=none;rounded=0;"
-         "strokeColor=#B08900;",
-         "Orthogonal association using one corridor per actor"),
-        ("edgeStyle=none;endArrow=none;rounded=0;dashed=1;"
-         "strokeColor=#7C5CBF;",
-         "Dashed actor: service outside the system boundary"),
-    ], width=300, row_h=42))
+    cells.extend(legend("lg", 190, 800, [
+        ("blue", "User interaction"),
+        ("green", "Deterministic-core goal"),
+        ("purple", "AI-assisted goal / external AI actor"),
+        ("yellow", "TTL state or background operation"),
+    ], width=520, row_h=22))
     cells.append(note_box(
         "n1",
-        "How to read: each actor appears once. Its associations use a dedicated "
-        "vertical corridor and branch horizontally to the related use cases, "
-        "which avoids crossing connectors.",
-        40, 520, 300, 132))
-    cells.append(note_box(
-        "n2",
-        "FR identifiers are preserved for traceability to Chapter 3. Parser, "
-        "validation, TTL and transaction steps are intentionally documented "
-        "in sequence diagrams and flow tables instead of as use cases.",
-        40, 900, 300, 132))
+        "Actors appear once. A group-level association means participation in every contained use case; FR identifiers preserve traceability to Chapter 3.",
+        760, 800, 640, 76))
     return build("14-usecase-overview", "Use case overview", W, H, cells)
 
 

@@ -49,6 +49,7 @@ thứ tự xử lý và ngoại lệ thuộc các bảng đặc tả, không đ�
 Các nguồn sinh tự động được giữ cạnh tệp `.drawio` để thay đổi có thể tái lập:
 
 ```bash
+python3 architecture_gen.py
 python3 core_gen.py
 python3 usecase_gen.py
 python3 <drawio-skill>/scripts/seqlayout.py specs/08-text-sequence.json -o drawio/08-text-sequence.drawio

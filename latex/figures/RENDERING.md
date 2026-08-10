@@ -73,7 +73,7 @@ rendered/03-deployment.svg
 ./rerender-stale.sh 03-deployment 04-domain-class 14-usecase-overview
 ```
 
-### Buộc render lại toàn bộ 26 sơ đồ
+### Buộc render lại toàn bộ 14 sơ đồ
 
 ```bash
 ./rerender-stale.sh --all
@@ -109,7 +109,7 @@ Kiểm tra ba file của một sơ đồ:
 ls -lh rendered/03-deployment.{pdf,png,svg}
 ```
 
-Kiểm tra số lượng kết quả. Khi render đầy đủ, mỗi định dạng phải có 26 file:
+Kiểm tra số lượng kết quả. Khi render đầy đủ, mỗi định dạng phải có 14 file:
 
 ```bash
 find rendered -maxdepth 1 -type f -name '*.pdf' | wc -l
