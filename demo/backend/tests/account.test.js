@@ -198,12 +198,55 @@ test('POST /api/accounts exposes validation and duplicate errors with stable sta
     const duplicateRes = responseRecorder();
     assert.equal(runWalletValidation(duplicateReq, duplicateRes), undefined);
     let duplicateError;
-    await accountRoutes.createWallet(duplicateReq, duplicateRes, (error) => {
-      duplicateError = error;
-    });
+    await assert.rejects(
+      accountRoutes.createWallet(duplicateReq, duplicateRes),
+      (error) => {
+        duplicateError = error;
+        return error.status === 409 && error.code === 'WALLET_NAME_EXISTS';
+      }
+    );
     errorMiddleware(duplicateError, duplicateReq, duplicateRes, () => {});
     assert.equal(duplicateRes.statusCode, 409);
     assert.deepEqual(duplicateRes.body, {
+      success: false,
+      error: 'Tên ví đã tồn tại',
+      code: 'WALLET_NAME_EXISTS',
+    });
+  } finally {
+    AccountModel.create = originalCreate;
+  }
+});
+
+test('Express forwards rejected async account handlers to the error middleware', async (t) => {
+  t.mock.method(console, 'error', () => {});
+  const originalCreate = AccountModel.create;
+  AccountModel.create = async () => {
+    const error = new Error('Tên ví đã tồn tại');
+    error.status = 409;
+    error.code = 'WALLET_NAME_EXISTS';
+    throw error;
+  };
+
+  try {
+    const req = {
+      method: 'POST',
+      url: '/',
+      originalUrl: '/api/accounts',
+      body: { name: 'Tiền mặt' },
+    };
+    const res = responseRecorder();
+    await new Promise((resolve, reject) => {
+      accountRoutes.handle(req, res, (error) => {
+        try {
+          errorMiddleware(error, req, res, () => {});
+          resolve();
+        } catch (handlerError) {
+          reject(handlerError);
+        }
+      });
+    });
+    assert.equal(res.statusCode, 409);
+    assert.deepEqual(res.body, {
       success: false,
       error: 'Tên ví đã tồn tại',
       code: 'WALLET_NAME_EXISTS',

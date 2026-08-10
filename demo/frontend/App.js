@@ -2,7 +2,6 @@ import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { NavigationContainer, DefaultTheme, DarkTheme } from '@react-navigation/native';
 import { ThemeProvider, useTheme } from './src/theme/ThemeContext';
-import { AppProvider } from './src/context/AppContext';
 import RootNavigator from './src/navigation/RootNavigator';
 
 function ThemedApp() {
@@ -25,9 +24,7 @@ function ThemedApp() {
   return (
     <NavigationContainer theme={navTheme}>
       <StatusBar style={theme.dark ? 'light' : 'dark'} />
-      <AppProvider>
-        <RootNavigator />
-      </AppProvider>
+      <RootNavigator />
     </NavigationContainer>
   );
 }

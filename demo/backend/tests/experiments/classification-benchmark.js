@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * classification-benchmark.js — Đo độ chính xác phân loại danh mục của local
- * parser trên tập gán nhãn độc lập (5.265 dòng dataFinance.csv), thay cho 31 ca
+ * parser trên toàn bộ tập gán nhãn độc lập dataFinance.csv, thay cho 31 ca
  * hard-coded ở quality gate. Trả về macro-F1, accuracy, per-class F1 và ma trận
  * nhầm lẫn. Chạy hoàn toàn offline, không cần PostgreSQL hay LLM.
  *

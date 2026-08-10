@@ -282,7 +282,6 @@ export const api = {
     body: JSON.stringify(pendingId ? { pending_id: pendingId } : {}),
   }),
   editChat: (data) => request('/api/chat/edit', { method: 'POST', body: JSON.stringify(data) }),
-  getBudgets: (month, year) => request(`/api/budgets?month=${month}&year=${year}`),
   getBudgetProgress: (month, year) => request(`/api/budgets/progress?month=${month}&year=${year}`),
   createBudget: (data) => request('/api/budgets', { method: 'POST', body: JSON.stringify(data) }),
   updateBudget: (id, data) => request(`/api/budgets/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
@@ -327,7 +326,6 @@ export const api = {
 
   // ── Financial goals ────────────────────────────────────────────────
   getGoals: () => request('/api/goals'),
-  getGoal: (id) => request(`/api/goals/${id}`),
   getGoalSurplus: () => request('/api/goals/surplus'),
   planGoal: (data) => request('/api/goals/plan', { method: 'POST', body: JSON.stringify(data) }),
   createGoal: (data) => request('/api/goals', { method: 'POST', body: JSON.stringify(data) }),
@@ -351,9 +349,6 @@ export const api = {
   deleteInvestmentPnL: (id) => request(`/api/cashflow/investment-pnl/${id}`, { method: 'DELETE' }),
 
   // ── REQ-07: Export & Backup ───────────────────────────────────────────────────
-  exportCSV: (filters = {}) => request('/api/export/csv', { method: 'POST', body: JSON.stringify(filters) }),
-  exportPDF: (filters = {}) => request('/api/export/pdf', { method: 'POST', body: JSON.stringify(filters) }),
-  createBackup: () => request('/api/export/backup', { method: 'POST', body: '{}' }),
   getExportHistory: () => request('/api/export/history'),
   deleteExportHistory: (id) => request(`/api/export/history/${id}`, { method: 'DELETE' }),
   getBackupConfig: () => request('/api/export/backup-config'),
@@ -379,7 +374,6 @@ export const api = {
 
   // ── REQ-08: Recurring Bills & Reminders ──────────────────────────────────────
   getRecurringBills: () => request('/api/recurring'),
-  getRecurringDue: () => request('/api/recurring/due'),
   getRecurringSuggestions: () => request('/api/recurring/suggestions'),
   dismissRecurringSuggestion: (signature) => request('/api/recurring/suggestions/dismiss', { method: 'POST', body: JSON.stringify({ signature }) }),
   createRecurringBill: (data) => request('/api/recurring', { method: 'POST', body: JSON.stringify(data) }),

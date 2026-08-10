@@ -1,4 +1,4 @@
-const { pool, query } = require('../config/database');
+const { pool, query, rollbackAfterFailure } = require('../config/database');
 const KVStore = require('../services/store/kv.store');
 const {
   validateCategoryCreatePayload,
@@ -23,14 +23,6 @@ async function invalidateAfterCommit(userId = DEFAULT_USER) {
     // The database mutation is already durable. Do not turn a successful write
     // into an apparent failure that invites the caller to retry it.
     console.warn(`[category] post-commit cache invalidation failed: ${error.message}`);
-  }
-}
-
-async function rollbackAfterFailure(client, error) {
-  try {
-    await client.query('ROLLBACK');
-  } catch (rollbackError) {
-    error.rollbackError = rollbackError;
   }
 }
 

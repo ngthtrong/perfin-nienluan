@@ -36,141 +36,93 @@ async function resolveCategoryId(body) {
   return matched ? matched.id : null;
 }
 
-router.get('/', async (req, res, next) => {
-  try {
-    res.json({ success: true, data: await RecurringBillModel.getAll(userId) });
-  } catch (error) {
-    next(error);
-  }
+router.get('/', async (req, res) => {
+  res.json({ success: true, data: await RecurringBillModel.getAll(userId) });
 });
 
-router.get('/due', async (req, res, next) => {
-  try {
-    res.json({ success: true, data: await RecurringBillModel.getDueBills(userId) });
-  } catch (error) {
-    next(error);
-  }
+router.get('/due', async (req, res) => {
+  res.json({ success: true, data: await RecurringBillModel.getDueBills(userId) });
 });
 
-router.get('/suggestions', async (req, res, next) => {
-  try {
-    res.json({ success: true, data: await RecurringBillModel.detectRecurringCandidates(userId) });
-  } catch (error) {
-    next(error);
-  }
+router.get('/suggestions', async (req, res) => {
+  res.json({ success: true, data: await RecurringBillModel.detectRecurringCandidates(userId) });
 });
 
-router.post('/suggestions/dismiss', async (req, res, next) => {
-  try {
-    if (!req.body.signature) return res.status(400).json({ success: false, error: 'Thiếu signature' });
-    res.json({ success: true, data: await RecurringBillModel.dismissSuggestion(userId, req.body.signature) });
-  } catch (error) {
-    next(error);
-  }
+router.post('/suggestions/dismiss', async (req, res) => {
+  if (!req.body.signature) return res.status(400).json({ success: false, error: 'Thiếu signature' });
+  res.json({ success: true, data: await RecurringBillModel.dismissSuggestion(userId, req.body.signature) });
 });
 
-router.post('/', async (req, res, next) => {
-  try {
-    const errors = validateBillInput(req.body);
-    if (errors.length) return res.status(400).json({ success: false, error: errors.join('; ') });
-    const category_id = await resolveCategoryId(req.body);
-    const wallet = req.body.wallet_id ? { id: req.body.wallet_id } : await AccountModel.ensureDefault(userId);
-    const bill = await RecurringBillModel.create({ ...req.body, userId, category_id, wallet_id: wallet.id });
-    res.status(201).json({ success: true, data: bill });
-  } catch (error) {
-    next(error);
-  }
+router.post('/', async (req, res) => {
+  const errors = validateBillInput(req.body);
+  if (errors.length) return res.status(400).json({ success: false, error: errors.join('; ') });
+  const category_id = await resolveCategoryId(req.body);
+  const wallet = req.body.wallet_id ? { id: req.body.wallet_id } : await AccountModel.ensureDefault(userId);
+  const bill = await RecurringBillModel.create({ ...req.body, userId, category_id, wallet_id: wallet.id });
+  res.status(201).json({ success: true, data: bill });
 });
 
-router.get('/:id', async (req, res, next) => {
-  try {
-    const data = await RecurringBillModel.getById(req.params.id, userId);
-    if (!data) return res.status(404).json({ success: false, error: 'Không tìm thấy chi phí cố định' });
-    res.json({ success: true, data });
-  } catch (error) {
-    next(error);
-  }
+router.get('/:id', async (req, res) => {
+  const data = await RecurringBillModel.getById(req.params.id, userId);
+  if (!data) return res.status(404).json({ success: false, error: 'Không tìm thấy chi phí cố định' });
+  res.json({ success: true, data });
 });
 
-router.put('/:id', async (req, res, next) => {
-  try {
-    const existing = await RecurringBillModel.getById(req.params.id, userId);
-    if (!existing) return res.status(404).json({ success: false, error: 'Không tìm thấy chi phí cố định' });
-    const errors = validateBillInput(req.body, { mode: 'update', existing });
-    if (errors.length) return res.status(400).json({ success: false, error: errors.join('; ') });
-    const data = await RecurringBillModel.update(req.params.id, req.body, userId);
-    if (!data) return res.status(404).json({ success: false, error: 'Không tìm thấy chi phí cố định' });
-    res.json({ success: true, data });
-  } catch (error) {
-    next(error);
-  }
+router.put('/:id', async (req, res) => {
+  const existing = await RecurringBillModel.getById(req.params.id, userId);
+  if (!existing) return res.status(404).json({ success: false, error: 'Không tìm thấy chi phí cố định' });
+  const errors = validateBillInput(req.body, { mode: 'update', existing });
+  if (errors.length) return res.status(400).json({ success: false, error: errors.join('; ') });
+  const data = await RecurringBillModel.update(req.params.id, req.body, userId);
+  if (!data) return res.status(404).json({ success: false, error: 'Không tìm thấy chi phí cố định' });
+  res.json({ success: true, data });
 });
 
-router.delete('/:id', async (req, res, next) => {
-  try {
-    const data = await RecurringBillModel.delete(req.params.id, userId);
-    if (!data) return res.status(404).json({ success: false, error: 'Không tìm thấy chi phí cố định' });
-    res.json({ success: true, message: 'Đã xóa chi phí cố định, lịch sử thanh toán được giữ nguyên' });
-  } catch (error) {
-    next(error);
-  }
+router.delete('/:id', async (req, res) => {
+  const data = await RecurringBillModel.delete(req.params.id, userId);
+  if (!data) return res.status(404).json({ success: false, error: 'Không tìm thấy chi phí cố định' });
+  res.json({ success: true, message: 'Đã xóa chi phí cố định, lịch sử thanh toán được giữ nguyên' });
 });
 
-router.post('/:id/pause', async (req, res, next) => {
-  try {
-    const data = await RecurringBillModel.pause(req.params.id, userId);
-    if (!data) return res.status(404).json({ success: false, error: 'Không tìm thấy chi phí cố định' });
-    res.json({ success: true, data });
-  } catch (error) {
-    next(error);
-  }
+router.post('/:id/pause', async (req, res) => {
+  const data = await RecurringBillModel.pause(req.params.id, userId);
+  if (!data) return res.status(404).json({ success: false, error: 'Không tìm thấy chi phí cố định' });
+  res.json({ success: true, data });
 });
 
-router.post('/:id/resume', async (req, res, next) => {
-  try {
-    const data = await RecurringBillModel.resume(req.params.id, userId);
-    if (!data) return res.status(404).json({ success: false, error: 'Không tìm thấy chi phí cố định' });
-    res.json({ success: true, data });
-  } catch (error) {
-    next(error);
-  }
+router.post('/:id/resume', async (req, res) => {
+  const data = await RecurringBillModel.resume(req.params.id, userId);
+  if (!data) return res.status(404).json({ success: false, error: 'Không tìm thấy chi phí cố định' });
+  res.json({ success: true, data });
 });
 
-router.get('/:id/payments', async (req, res, next) => {
-  try {
-    // Kiểm tra quyền sở hữu trước: nếu không, hóa đơn của người khác sẽ trả về
-    // "lịch sử rỗng" thay vì 404, tức là vẫn tiết lộ id đó có tồn tại hay không.
-    const bill = await RecurringBillModel.getById(req.params.id, userId);
-    if (!bill) return res.status(404).json({ success: false, error: 'Không tìm thấy chi phí cố định' });
-    res.json({ success: true, data: await RecurringBillModel.getPaymentHistory(req.params.id, userId) });
-  } catch (error) {
-    next(error);
-  }
+router.get('/:id/payments', async (req, res) => {
+  // Kiểm tra quyền sở hữu trước: nếu không, hóa đơn của người khác sẽ trả về
+  // "lịch sử rỗng" thay vì 404, tức là vẫn tiết lộ id đó có tồn tại hay không.
+  const bill = await RecurringBillModel.getById(req.params.id, userId);
+  if (!bill) return res.status(404).json({ success: false, error: 'Không tìm thấy chi phí cố định' });
+  res.json({ success: true, data: await RecurringBillModel.getPaymentHistory(req.params.id, userId) });
 });
 
-router.post('/:id/pay', async (req, res, next) => {
-  try {
-    const body = req.body || {};
-    const expectedPeriod = body.periodDueDate ?? body.period_due_date;
-    if (!expectedPeriod) {
-      return res.status(400).json({
-        success: false,
-        error: 'Thiếu kỳ thanh toán dự kiến; vui lòng tải lại danh sách trước khi thanh toán',
-      });
-    }
-    const result = await RecurringBillModel.recordPayment(req.params.id, {
-      amount: body.amount,
-      walletId: body.wallet_id,
-      paidDate: body.paid_date,
-      categoryId: body.category_id,
-      periodDueDate: expectedPeriod,
-      userId,
+router.post('/:id/pay', async (req, res) => {
+  const body = req.body || {};
+  const expectedPeriod = body.periodDueDate ?? body.period_due_date;
+  if (!expectedPeriod) {
+    return res.status(400).json({
+      success: false,
+      error: 'Thiếu kỳ thanh toán dự kiến; vui lòng tải lại danh sách trước khi thanh toán',
     });
-    if (!result) return res.status(404).json({ success: false, error: 'Không tìm thấy chi phí cố định' });
-    res.json({ success: true, data: result });
-  } catch (error) {
-    next(error);
   }
+  const result = await RecurringBillModel.recordPayment(req.params.id, {
+    amount: body.amount,
+    walletId: body.wallet_id,
+    paidDate: body.paid_date,
+    categoryId: body.category_id,
+    periodDueDate: expectedPeriod,
+    userId,
+  });
+  if (!result) return res.status(404).json({ success: false, error: 'Không tìm thấy chi phí cố định' });
+  res.json({ success: true, data: result });
 });
 
 module.exports = router;

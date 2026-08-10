@@ -1,4 +1,4 @@
-const { pool, query } = require('../config/database');
+const { pool, query, rollbackAfterFailure } = require('../config/database');
 const KVStore = require('../services/store/kv.store');
 const { normalizePastOrPresentDate } = require('../services/transactions/validation');
 
@@ -9,14 +9,6 @@ async function invalidateFinancialCaches(userId = DEFAULT_USER) {
     KVStore.del(`cache:wallets:${userId}`),
     KVStore.del(`cache:insights:${userId}`),
   ]);
-}
-
-async function rollbackAfterFailure(client, error) {
-  try {
-    await client.query('ROLLBACK');
-  } catch (rollbackError) {
-    error.rollbackError = rollbackError;
-  }
 }
 
 async function invalidateAfterCommit(userId) {

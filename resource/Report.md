@@ -25,7 +25,7 @@
 
 # TÓM TẮT
 
-PERFIN là nguyên mẫu quản lý tài chính cá nhân nhằm giảm thao tác nhập liệu, bảo toàn tính đúng đắn và khả năng kiểm chứng. Hệ thống tiếp nhận giao dịch từ văn bản, giọng nói và ảnh hóa đơn; chuẩn hóa, trích xuất bản ghi và yêu cầu xác nhận trước khi ghi PostgreSQL. SQL và các giải thuật xác định tính số dư, ngân sách, xu hướng, bất thường, dòng tiền, khoản định kỳ và mục tiêu; LLM chỉ hiểu ý định, điền tham số, hỏi lại khi mơ hồ và diễn giải facts đã tính. Đóng góp là kiến trúc tách lớp sinh ngôn ngữ khỏi lõi tài chính, dùng Redis quản lý trạng thái và BullMQ điều phối tác vụ, kèm giao thức đánh giá tính đúng và độ trung thực số liệu. Kết quả đạt 182/182 backend test, 31/31 local-parser quality gate (kiểm tra strict trên 31 câu cấu trúc rõ, đo tính đúng của luồng phân tích cú pháp, khác với đo chất lượng phân loại danh mục bên dưới) và 23/23 full smoke test; ứng dụng đóng gói trên web, Android; dữ liệu demo gồm 5.265 giao dịch có provenance. Trên chính tập gán nhãn này, ba thí nghiệm tái lập cho thấy: local parser đạt accuracy 29,36% / macro-F1 0,177 (khoảng cách phản ánh nhãn lịch sử theo nguồn tiền), LLM Gemini vượt parser khoảng 3,0× macro-F1 (0,607 so 0,204) trong ablation, và correction retrieval nâng accuracy holdout từ 0% lên 68,19%. Tuy nhiên, kết quả chưa chứng minh độ chính xác OCR/STT, numeric faithfulness hoặc mức sẵn sàng production; các chỉ số này vẫn phải được đo trên bộ dữ liệu tái lập.
+PERFIN là nguyên mẫu quản lý tài chính cá nhân nhằm giảm thao tác nhập liệu, bảo toàn tính đúng đắn và khả năng kiểm chứng. Hệ thống tiếp nhận giao dịch từ văn bản, giọng nói và ảnh hóa đơn; chuẩn hóa, trích xuất bản ghi và yêu cầu xác nhận trước khi ghi PostgreSQL. SQL và các giải thuật xác định tính số dư, ngân sách, xu hướng, bất thường, dòng tiền, khoản định kỳ và mục tiêu; LLM chỉ hiểu ý định, điền tham số, hỏi lại khi mơ hồ và diễn giải facts đã tính. Đóng góp là kiến trúc tách lớp sinh ngôn ngữ khỏi lõi tài chính, dùng Redis quản lý trạng thái và BullMQ điều phối tác vụ, kèm giao thức đánh giá tính đúng và độ trung thực số liệu. Kết quả đạt 182/182 backend test, 31/31 local-parser quality gate (kiểm tra strict trên 31 câu cấu trúc rõ, đo tính đúng của luồng phân tích cú pháp, khác với đo chất lượng phân loại danh mục bên dưới) và 23/23 full smoke test; ứng dụng đóng gói trên web, Android; snapshot demo hiện tại có 5.328 giao dịch có provenance. Các chỉ số parser/LLM được nêu tiếp theo là kết quả lịch sử trên snapshot 5.265 dòng và không tự động đại diện cho nguồn mới. Tuy nhiên, kết quả chưa chứng minh độ chính xác OCR/STT, numeric faithfulness hoặc mức sẵn sàng production; các chỉ số này vẫn phải được đo trên bộ dữ liệu tái lập.
 
 **Từ khóa:** quản lý tài chính cá nhân, LLM, phân tích dữ liệu, trích xuất thực thể, PostgreSQL, Redis, hệ thống có kiểm chứng.
 
@@ -1110,8 +1110,8 @@ Các test mới khóa các lỗi transaction/post-commit, pending race, recurrin
 | Full API/DB/media smoke | 23/23 pass | **Đã đo** | PostgreSQL live, preview/edit/cancel, OCR 2 ảnh, STT 1 M4A; Redis worker không nằm trong kết quả này |
 | Mobile-web UI smoke | 4/4 cổng pass ở 390×844 | **Đã đo** | Ba màn hình không overflow; ảnh tải lên hiển thị thật; Chromium, chưa phải thiết bị vật lý |
 | Expo web/Android export | 653 / 960 module; hoàn tất | **Đã đo** | Chứng minh frontend đóng gói được, không phải chỉ số hiệu năng runtime |
-| Import `dataFinance.csv` | 5.265 dòng, 0 reject, provenance đầy đủ | **Đã đo** | Đã chạy hai lần trên clone và đối soát live sau backup |
-| Phân loại danh mục — local parser trên `dataFinance.csv` | Accuracy 29,36%; macro-F1 0,177 (12 lớp) | **Đã đo** | 5.265 dòng gán nhãn; nhãn lịch sử theo nguồn tiền nên chỉ độc lập một phần về lược đồ (xem §3.3.2.3) |
+| Import `dataFinance.csv` | 5.328 dòng, 0 reject, provenance đầy đủ | **Đã import** | CLI apply đã commit; backup và smoke test live sau import chưa có bằng chứng trong hồ sơ hiện tại |
+| Phân loại danh mục — local parser trên snapshot lịch sử | Accuracy 29,36%; macro-F1 0,177 (12 lớp) | **Đã đo lịch sử** | Kết quả trên snapshot 5.265 dòng; nhãn lịch sử theo nguồn tiền nên chỉ độc lập một phần về lược đồ (xem §3.3.2.3) |
 | Ablation local parser vs LLM (Gemini) | Parser 22,2% / macro-F1 0,204; LLM 59,5% / macro-F1 0,607 | **Đã đo** | Mẫu phân tầng 63 câu (5/lớp, seed 42); 63/63 gọi Gemini thành công; p50 964 ms |
 | Feedback before/after (correction retrieval) | Accuracy 0% → 68,19%; macro-F1 0 → 0,544 trên holdout | **Đã đo** | 3.502 câu parser-sai chia seed/holdout; kiểm tra không suy giảm ở nhóm chứng |
 | OCR field accuracy | Chưa công bố | **Chưa đo trong báo cáo** | Cần tập ảnh và ground truth |
@@ -1128,7 +1128,7 @@ Kết quả tự động hiện có là bằng chứng cho việc tách giải t
 
 | Chức năng | Hiện trạng | Khoảng trống chính | Điều kiện hoàn tất |
 |---|---|---|---|
-| Giao dịch và analytics | **Đã đo** | Transaction, post-commit, zero-fill và full DB smoke đã đạt; 5.265 dòng live đã đối soát | Dataset gán nhãn và fault-injection DB rộng hơn |
+| Giao dịch và analytics | **Đã đo** | Transaction, post-commit, zero-fill và full DB smoke đã đạt; importer đã commit snapshot mới 5.328 dòng | Dataset gán nhãn và fault-injection DB rộng hơn |
 | Chat preview/confirm | **Đã đo** | Claim một lần, stale ID, edit/cancel race, history và HTTP–DB smoke đã đạt | Đo TTL/claim với Redis thật và tải đồng thời cao hơn |
 | Local parser | **Đã đo trên tập độc lập** | 31/31 strict trên gate cố định; trên 5.265 dòng độc lập chỉ đạt 29,36% acc / macro-F1 0,177 | Cải thiện danh mục ít mẫu và câu nguồn-tiền mơ hồ |
 | LLM tool routing | **Đã đo (ablation)** | Gemini 59,5% acc / macro-F1 0,607 so parser 22,2% / 0,204 trên cùng mẫu 63 câu | Mở rộng mẫu và khóa chi phí/độ trễ theo provider |
@@ -1146,11 +1146,11 @@ Kết quả tự động hiện có là bằng chứng cho việc tách giải t
 
 #### 3.3.2.3. Thí nghiệm định lượng trên tập gán nhãn
 
-Ba thí nghiệm được thực hiện ngày 24/07/2026 trên chính `dataFinance.csv` (5.265 dòng, SHA-256 `a9b7cf1b…027ca94f`), commit `5f03476`, Node v24.16.0, provider `gemini`, model `gemini-3.1-flash-lite`. Mã và artifact (JSON + Markdown tái lập) nằm ở `demo/backend/tests/experiments/` và `log/`.
+Ba thí nghiệm được thực hiện ngày 24/07/2026 trên snapshot lịch sử của `dataFinance.csv` (5.265 dòng, SHA-256 `a9b7cf1b…027ca94f`), commit `5f03476`, Node v24.16.0, provider `gemini`, model `gemini-3.1-flash-lite`. Các con số bên dưới không phải kết quả benchmark của snapshot mới 5.328 dòng. Mã và artifact (JSON + Markdown tái lập) nằm ở `demo/backend/tests/experiments/` và `log/`.
 
 **a) Benchmark phân loại danh mục — local parser trên toàn tập**
 
-Chạy `parseLocalTransaction` trên toàn bộ 5.265 dòng gán nhãn, so nhãn dự đoán với nhãn gold ánh xạ từ taxonomy lịch sử.
+Chạy `parseLocalTransaction` trên toàn bộ 5.265 dòng gán nhãn của snapshot lịch sử, so nhãn dự đoán với nhãn gold ánh xạ từ taxonomy lịch sử.
 
 **Bảng 19. Kết quả phân loại local parser trên `dataFinance.csv`**
 
@@ -1212,11 +1212,11 @@ Ba kết quả (a)–(c) có log tái lập nên được phản ánh trong abst
 |---|---|---|
 | O1 — Mô hình dữ liệu | Migration, model, validation và luồng transaction | Đã hiện thực ở mức prototype; cần test DB fault-injection đầy đủ |
 | O2 — Pipeline đa phương thức | Tool schema, parser, media adapter, preview/state; ablation parser vs LLM có số đo | Đã hiện thực luồng; text accuracy đã đo (LLM 59,5% vs parser 22,2% trên mẫu 63 câu), OCR/STT chưa có ground truth |
-| O3 — Giải thuật phân tích | Hàm thuần và test analytics/goal/budget/feedback; classification và feedback đã benchmark trên 5.265 dòng | Có bằng chứng test tự động và số đo trên tập độc lập; cần mở rộng danh mục ít mẫu |
+| O3 — Giải thuật phân tích | Hàm thuần và test analytics/goal/budget/feedback; classification và feedback đã benchmark trên snapshot lịch sử 5.265 dòng | Có bằng chứng test tự động và số đo trên tập độc lập; cần benchmark lại trên nguồn mới nếu cần so sánh trực tiếp |
 | O4 — Ranh giới LLM | Tool declarations, facts–narrator flow, fallback | Thiết kế rõ; numeric faithfulness chưa được đo hệ thống |
 | O5 — Đánh giá vận hành | Regression, parser, full API/DB/media smoke, mobile UI smoke và Expo web/Android export đã chạy | Lõi demo có bằng chứng runtime; chưa đủ kết luận Redis worker, hiệu năng, LLM/media accuracy hoặc UAT |
 
-Sau đợt ổn định hóa, các luồng tiền quan trọng đã có hàng rào rõ hơn: pending được claim một lần; recurring khóa hàng, dùng kỳ dự kiến và preview trước commit; lỗi cache/hydration sau commit không tạo phản hồi thất bại giả; runway/OLS dùng đủ trục lịch. Dữ liệu tổng hợp cũ đã được thay bằng 5.265 giao dịch gần bốn năm qua pipeline nguyên tử. Ba thí nghiệm định lượng trên tập này (§3.3.2.3) đã cho câu trả lời số cho câu hỏi "giải thuật chính xác đến đâu": parser cục bộ đạt macro-F1 0,177 trên toàn bộ 5.265 dòng; trong ablation trên mẫu phân tầng 63 câu, LLM đạt 0,607 so với 0,204 của parser trên *cùng mẫu* (khoảng 3,0×); và correction retrieval nâng accuracy holdout lên 68,19% — vừa lượng hóa được đóng góp lõi, vừa biện minh cho lựa chọn LLM-primary có người xác nhận. Do chưa có Redis worker live, benchmark OCR/STT/grounding, đo tải và UAT, báo cáo vẫn không khẳng định nguyên mẫu đã đạt các ngưỡng NFR production.
+Sau đợt ổn định hóa, các luồng tiền quan trọng đã có hàng rào rõ hơn: pending được claim một lần; recurring khóa hàng, dùng kỳ dự kiến và preview trước commit; lỗi cache/hydration sau commit không tạo phản hồi thất bại giả; runway/OLS dùng đủ trục lịch. Snapshot demo hiện tại được cập nhật lên 5.328 giao dịch qua pipeline nguyên tử. Ba thí nghiệm định lượng lịch sử trên snapshot 5.265 dòng (§3.3.2.3) cho thấy parser cục bộ đạt macro-F1 0,177; trong ablation trên mẫu phân tầng 63 câu, LLM đạt 0,607 so với 0,204 của parser trên *cùng mẫu* (khoảng 3,0×); và correction retrieval nâng accuracy holdout lên 68,19%. Các con số này cần được chạy lại nếu muốn đánh giá trực tiếp nguồn mới. Do chưa có Redis worker live, benchmark OCR/STT/grounding, đo tải và UAT, báo cáo vẫn không khẳng định nguyên mẫu đã đạt các ngưỡng NFR production.
 
 ## 4.2. HẠN CHẾ
 

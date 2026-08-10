@@ -73,25 +73,25 @@ test('planner rejects sign, redundant amount, date, and mapping inconsistencies'
   assert.throws(() => assertValidPlan(plan), (error) => error.code === 'IMPORT_VALIDATION_FAILED');
 });
 
-test('repository dataFinance.csv has the reviewed, reproducible dry-run profile', () => {
+test('repository dataFinance.csv has the reviewed, reproducible updated dry-run profile', () => {
   const dataDir = path.resolve(__dirname, '../../data');
   const csv = fs.readFileSync(path.join(dataDir, 'dataFinance.csv'), 'utf8');
   const mapping = JSON.parse(fs.readFileSync(path.join(dataDir, 'dataFinance.category-map.json'), 'utf8'));
   const plan = planFinanceCsvImport(csv, mapping);
 
   assert.deepEqual(plan.errors, []);
-  assert.equal(plan.source.raw_rows, 5265);
-  assert.equal(plan.summary.import_rows, 5265);
+  assert.equal(plan.source.raw_rows, 5328);
+  assert.equal(plan.summary.import_rows, 5328);
   assert.equal(plan.summary.duplicate_groups, 23);
   assert.equal(plan.summary.duplicate_rows_dropped, 0);
-  assert.deepEqual(plan.summary.type_counts, { expense: 4845, income: 420 });
+  assert.deepEqual(plan.summary.type_counts, { expense: 4904, income: 424 });
   assert.deepEqual(plan.summary.totals, {
-    income: 393770659,
-    expense: 393176659,
-    net: 594000,
+    income: 373432659,
+    expense: 373062659,
+    net: 370000,
   });
   assert.equal(plan.summary.date_min, '2022-01-01');
-  assert.equal(plan.summary.date_max, '2026-07-15');
+  assert.equal(plan.summary.date_max, '2026-08-10');
   assert.equal(plan.summary.amount.max, 48000000);
 });
 

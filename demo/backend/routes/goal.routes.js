@@ -67,97 +67,69 @@ function validationError(res, errors) {
 }
 
 // List goals, each enriched with a fresh plan.
-router.get('/', async (req, res, next) => {
-  try {
-    const goals = await GoalModel.getAll(userId);
-    const withPlans = await Promise.all(goals.map(async (g) => ({ ...g, ...(await GoalService.buildPlan(g, userId)) })));
-    res.json({ success: true, data: withPlans });
-  } catch (error) {
-    next(error);
-  }
+router.get('/', async (req, res) => {
+  const goals = await GoalModel.getAll(userId);
+  const withPlans = await Promise.all(goals.map(async (g) => ({ ...g, ...(await GoalService.buildPlan(g, userId)) })));
+  res.json({ success: true, data: withPlans });
 });
 
 // Current average monthly surplus (income − expense).
-router.get('/surplus', async (req, res, next) => {
-  try {
-    res.json({ success: true, data: await GoalService.computeSurplus(userId) });
-  } catch (error) {
-    next(error);
-  }
+router.get('/surplus', async (req, res) => {
+  res.json({ success: true, data: await GoalService.computeSurplus(userId) });
 });
 
 // Preview a plan WITHOUT saving — for "what if I set this goal?" exploration.
-router.post('/plan', async (req, res, next) => {
-  try {
-    const validation = validateGoalPayload(req.body, { mode: 'plan' });
-    if (validation.errors.length) return validationError(res, validation.errors);
-    const plan = await GoalService.buildPlan(validation.value, userId);
-    res.json({ success: true, data: { ...plan, preview_token: issuePreviewToken(validation.value) } });
-  } catch (error) {
-    next(error);
-  }
+router.post('/plan', async (req, res) => {
+  const validation = validateGoalPayload(req.body, { mode: 'plan' });
+  if (validation.errors.length) return validationError(res, validation.errors);
+  const plan = await GoalService.buildPlan(validation.value, userId);
+  res.json({ success: true, data: { ...plan, preview_token: issuePreviewToken(validation.value) } });
 });
 
-router.post('/', async (req, res, next) => {
-  try {
-    const { preview_token: previewToken, ...payload } = req.body || {};
-    const validation = validateGoalPayload(payload, { mode: 'create' });
-    if (validation.errors.length) return validationError(res, validation.errors);
-    if (!verifyPreviewToken(previewToken, validation.value)) return previewRequired(res);
-    const goal = await GoalModel.create(validation.value, userId);
-    const plan = await GoalService.buildPlan(goal, userId);
-    res.status(201).json({ success: true, data: { ...goal, ...plan } });
-  } catch (error) {
-    next(error);
-  }
+router.post('/', async (req, res) => {
+  const { preview_token: previewToken, ...payload } = req.body || {};
+  const validation = validateGoalPayload(payload, { mode: 'create' });
+  if (validation.errors.length) return validationError(res, validation.errors);
+  if (!verifyPreviewToken(previewToken, validation.value)) return previewRequired(res);
+  const goal = await GoalModel.create(validation.value, userId);
+  const plan = await GoalService.buildPlan(goal, userId);
+  res.status(201).json({ success: true, data: { ...goal, ...plan } });
 });
 
-router.get('/:id', async (req, res, next) => {
-  try {
-    const id = parseGoalId(req.params.id);
-    if (!id) return validationError(res, ['id mục tiêu không hợp lệ']);
-    const goal = await GoalModel.getById(id, userId);
-    if (!goal) return res.status(404).json({ success: false, error: 'Không tìm thấy mục tiêu' });
-    res.json({ success: true, data: { ...goal, ...(await GoalService.buildPlan(goal, userId)) } });
-  } catch (error) {
-    next(error);
-  }
+router.get('/:id', async (req, res) => {
+  const id = parseGoalId(req.params.id);
+  if (!id) return validationError(res, ['id mục tiêu không hợp lệ']);
+  const goal = await GoalModel.getById(id, userId);
+  if (!goal) return res.status(404).json({ success: false, error: 'Không tìm thấy mục tiêu' });
+  res.json({ success: true, data: { ...goal, ...(await GoalService.buildPlan(goal, userId)) } });
 });
 
-router.put('/:id', async (req, res, next) => {
-  try {
-    const id = parseGoalId(req.params.id);
-    if (!id) return validationError(res, ['id mục tiêu không hợp lệ']);
-    const existing = await GoalModel.getById(id, userId);
-    if (!existing) return res.status(404).json({ success: false, error: 'Không tìm thấy mục tiêu' });
+router.put('/:id', async (req, res) => {
+  const id = parseGoalId(req.params.id);
+  if (!id) return validationError(res, ['id mục tiêu không hợp lệ']);
+  const existing = await GoalModel.getById(id, userId);
+  if (!existing) return res.status(404).json({ success: false, error: 'Không tìm thấy mục tiêu' });
 
-    const { preview_token: previewToken, ...payload } = req.body || {};
-    const validation = validateGoalPayload(payload, { mode: 'update', existing });
-    if (validation.errors.length) return validationError(res, validation.errors);
-    const planFields = previewedGoalFields(validation.value);
-    // Status-only transitions (pause/resume/achieve/cancel) do not alter the
-    // financial plan. If plan fields also change, their exact preview remains
-    // mandatory; status itself is deliberately excluded from the fingerprint.
-    if (goalUpdateHasPlanChanges(validation.value) && !verifyPreviewToken(previewToken, planFields)) {
-      return previewRequired(res);
-    }
-    const goal = await GoalModel.update(id, validation.value, userId);
-    res.json({ success: true, data: { ...goal, ...(await GoalService.buildPlan(goal, userId)) } });
-  } catch (error) {
-    next(error);
+  const { preview_token: previewToken, ...payload } = req.body || {};
+  const validation = validateGoalPayload(payload, { mode: 'update', existing });
+  if (validation.errors.length) return validationError(res, validation.errors);
+  const planFields = previewedGoalFields(validation.value);
+  // Status-only transitions (pause/resume/achieve/cancel) do not alter the
+  // financial plan. If plan fields also change, their exact preview remains
+  // mandatory; status itself is deliberately excluded from the fingerprint.
+  if (goalUpdateHasPlanChanges(validation.value) && !verifyPreviewToken(previewToken, planFields)) {
+    return previewRequired(res);
   }
+  const goal = await GoalModel.update(id, validation.value, userId);
+  res.json({ success: true, data: { ...goal, ...(await GoalService.buildPlan(goal, userId)) } });
 });
 
-router.delete('/:id', async (req, res, next) => {
-  try {
-    const id = parseGoalId(req.params.id);
-    if (!id) return validationError(res, ['id mục tiêu không hợp lệ']);
-    const result = await GoalModel.remove(id, userId);
-    if (!result.success) return res.status(404).json({ success: false, error: 'Không tìm thấy mục tiêu' });
-    res.json({ success: true, data: result });
-  } catch (error) {
-    next(error);
-  }
+router.delete('/:id', async (req, res) => {
+  const id = parseGoalId(req.params.id);
+  if (!id) return validationError(res, ['id mục tiêu không hợp lệ']);
+  const result = await GoalModel.remove(id, userId);
+  if (!result.success) return res.status(404).json({ success: false, error: 'Không tìm thấy mục tiêu' });
+  res.json({ success: true, data: result });
 });
 
 module.exports = router;

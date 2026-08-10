@@ -577,7 +577,7 @@ do_import_demo_data() {
   log "Import dữ liệu demo từ dataFinance.csv..."
   (
     cd "$BACKEND_DIR"
-    npm run data:import
+    npm run data:import -- --confirm-user default_user
   ) && log_ok "Dữ liệu demo đã import." || log_warn "Import dữ liệu demo thất bại."
 }
 

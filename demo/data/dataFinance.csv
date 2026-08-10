@@ -1,4 +1,4 @@
-﻿Title,Budget,Cost,Date,Ex/In,Special,Type Expenses,Type In come
+Title,Budget,Cost,Date,Ex/In,Special,Type Expenses,Type In come
 luong shopee,64361,"₫64,361",04/12/2024,In-come,,,Salary
 xin mẹ tiền ăn,190000,"₫190,000",03/12/2024,In-come,,,Family
 xin mẹ tiền tuần,147000,"₫147,000",17/11/2024,In-come,,,Family
@@ -85,7 +85,7 @@ mẹ cho tiền ăn,380000,"₫380,000",25/03/2024,In-come,,,Family
 mẹ cho tiền đánh cầu,95000,"₫95,000",25/03/2024,In-come,,,Family
 mẹ đưa dư tiền mua đồ,100000,"₫100,000",22/03/2024,In-come,,,Family
 mẹ cho tiền tuần,450000,"₫450,000",18/03/2024,In-come,,,Family
-tiền sư phạm 2023,13327000,"₫13,327,000",16/03/2024,In-come,"BigY, Vay",,Cho vay
+tiền sư phạm 2023,13327000,"₫13,327,000",16/02/2023,In-come,"BigY, Vay",,Cho vay
 mẹ cho tiền quánh cầu,60000,"₫60,000",15/03/2024,In-come,,,Family
 tiền tuần,300000,"₫300,000",11/03/2024,In-come,,,Family
 học phí 1-II,12250000,"₫12,250,000",11/03/2024,In-come,BigY,,Family
@@ -167,10 +167,10 @@ shopee 11/02,137175,"₫137,175",11/02/2023,In-come,,,Salary
 shop,135440,"₫135,440",21/03/2023,In-come,,,Salary
 shop 13/01,131685,"₫131,685",13/02/2023,In-come,,,Salary
 mẹ cho ,130000,"₫130,000",03/12/2023,In-come,,,Family
-07-Jan,125356,"₫125,356",07/01/2023,In-come,,,Salary
+07/01,125356,"₫125,356",07/01/2023,In-come,,,Salary
 shopee,123215,"₫123,215",04/03/2023,In-come,,,Salary
 shopee,118878,"₫118,878",17/03/2023,In-come,,,Salary
-06-Jan,113050,"₫113,050",06/01/2023,In-come,,,Salary
+06/01,113050,"₫113,050",06/01/2023,In-come,,,Salary
 shopeee,112385,"₫112,385",19/03/2023,In-come,,,Salary
 shopee,105825,"₫105,825",09/03/2023,In-come,,,Salary
 mượn việt em: việt đền tiền gãy vợt,100000,"₫100,000",19/07/2023,In-come,,,Anh em
@@ -248,26 +248,26 @@ văn trả tiền trọ,297000,"₫297,000",17/11/2022,In-come,,,Anh em
 mẹ cho tiền ăn sáng với đổ xăng,200000,"₫200,000",02/12/2022,In-come,,,Family
 rút tiền từ zalo,200000,"₫200,000",22/09/2022,In-come,,,Anh em
 mẹ cho tiền tháng 11,200000,"₫200,000",19/10/2022,In-come,,,Family
-27-Dec,136949,"₫136,949",27/12/2022,In-come,,,Salary
+27/12,136949,"₫136,949",27/12/2022,In-come,,,Salary
 mẹ cho ,136000,"₫136,000",17/10/2022,In-come,,,Family
-13-Dec,111710,"₫111,710",13/12/2022,In-come,,,Salary
+13/12,111710,"₫111,710",13/12/2022,In-come,,,Salary
 tiền chạy shopee,105000,"₫105,000",06/12/2022,In-come,,,Salary
 mẹ cho tiền đi đường,100000,"₫100,000",03/12/2022,In-come,,,Family
 nhặt tiền dưới nhà gửi xe,100000,"₫100,000",21/11/2022,In-come,,,Luck
-18-Dec,95768,"₫95,768",18/12/2022,In-come,,,Salary
+18/12,95768,"₫95,768",18/12/2022,In-come,,,Salary
 3 quyển sách,80000,"₫80,000",26/09/2022,In-come,,,Sell old things
 tiền chạy,74660,"₫74,660",08/12/2022,In-come,,,Salary
-11-Dec,74364,"₫74,364",11/12/2022,In-come,,,Salary
+11/12,74364,"₫74,364",11/12/2022,In-come,,,Salary
 26/12/2022,68696,"₫68,696",26/12/2022,In-come,,,Salary
 18h30-20h40,66565,"₫66,565",09/12/2022,In-come,,,Salary
-10-Dec,61160,"₫61,160",10/12/2022,In-come,,,Salary
+10/12,61160,"₫61,160",10/12/2022,In-come,,,Salary
 5h30-8h30,58360,"₫58,360",19/12/2022,In-come,,,Salary
 mẹ cho,50000,"₫50,000",09/10/2022,In-come,,,Family
 xăng xe tay ga ở nhà,50000,"₫50,000",22/09/2022,In-come,,,Family
 tiền đi khám NVQS,47000,"₫47,000",02/12/2022,In-come,,,Salary
-23-Dec,40000,"₫40,000",23/12/2022,In-come,,,Salary
+23/12,40000,"₫40,000",23/12/2022,In-come,,,Salary
 bo 26/12,40000,"₫40,000",26/12/2022,In-come,,,Salary
-21-Dec,38405,"₫38,405",23/12/2022,In-come,,,Salary
+21/12,38405,"₫38,405",23/12/2022,In-come,,,Salary
 tường bao cơm trả xăng,32000,"₫32,000",28/12/2022,In-come,,,Anh em
 xin tiền mẹ mua viết,30000,"₫30,000",30/12/2022,In-come,,,Family
 tường bao tiền cơm,25000,"₫25,000",02/10/2022,In-come,,,Anh em
@@ -4261,7 +4261,7 @@ sữa tươi,-10000,"₫10,000",27/07/2025,Expenses,,AC,
 xăng,-30000,"₫30,000",27/07/2025,Expenses,,DC,
 xin tiền tuần,200000,"₫200,000",27/07/2025,In-come,,,Family
 "
-Điều chỉnh chênh lệch thực tế hoặc Tổng chi phí nhỏ không ghi nhận",-7403005,"₫7,403,005",01/01/2022,Expenses,,,
+Điều chỉnh chênh lệch thực tế hoặc Tổng chi phí nhỏ không ghi nhận",-7703005,"₫7,703,005",01/01/2022,Expenses,,,
 trứng + cà + tỏi + dầu ăn,-44000,"₫44,000",28/07/2025,Expenses,,AC,
 bida với béo,-41000,"₫41,000",28/07/2025,Expenses,,Bida,
 ăn sáng + trưa,-21000,"₫21,000",29/07/2025,Expenses,,AC,
@@ -4483,7 +4483,7 @@ xịn mẹ tiền tuần,883000,"₫883,000",19/10/2025,In-come,,,Family
 bida với ân,-35000,"₫35,000",20/10/2025,Expenses,,Bida,
 "cơm gà, cơm tắm , ăn sáng, nc đá",-64000,"₫64,000",20/10/2025,Expenses,,AC,
 ép táo,-15000,"₫15,000",20/10/2025,Expenses,,AV,
-đầu tư:  chưa chốt,-9739000,"₫9,739,000",20/10/2025,Expenses,"BigY, Vay",Cho vay,
+đầu tư:  chưa chốt,-6720000,"₫6,720,000",20/10/2025,Expenses,"BigY, Vay",Cho vay,
 "sữa chua, bánh KFC, tàu hủ",-33000,"₫33,000",21/10/2025,Expenses,,AV,
 "ăn sáng, cơm trưa",-33000,"₫33,000",21/10/2025,Expenses,,AC,
 bida với béo,-43000,"₫43,000",21/10/2025,Expenses,,Bida,
@@ -4644,7 +4644,7 @@ cafe,-15000,"₫15,000",14/12/2025,Expenses,,Coffee,
 kem đánh răng,-23000,"₫23,000",14/12/2025,Expenses,,Body,
 tiền tuần,412000,"₫412,000",14/12/2025,In-come,,,Family
 "ăn sáng , nước đá, bún",-50000,"₫50,000",16/12/2025,Expenses,,AC,
-học phí 3-II,-21438000,"₫21,438,000",27/06/2026,Expenses,BigY,Study,
+học phí 3-II,-18012000,"₫18,012,000",30/04/2026,Expenses,BigY,Study,
 thảm tập thể dục,-170000,"₫170,000",01/06/2026,Expenses,BigM,Sport,
 miếng dán chuột,-47000,"₫47,000",01/06/2026,Expenses,,Utility,
 trọ tháng 6,-1546000,"₫1,546,000",01/06/2026,Expenses,Monthly,Home,
@@ -4706,7 +4706,7 @@ cf,-20000,"₫20,000",12/05/2026,Expenses,,Coffee,
 bánh mực + cơm cho ẻm,-75000,"₫75,000",12/05/2026,Expenses,,G,
 cơm trưa,-25000,"₫25,000",12/05/2026,Expenses,,AC,
 bida với ân,-15000,"₫15,000",12/05/2026,Expenses,,Bida,
-ân - Màn hình,-1250000,"₫1,250,000",12/05/2026,Expenses,Vay,Cho vay,
+ân - Màn hình + 70,-1320000,"₫1,320,000",12/05/2026,Expenses,Vay,Cho vay,
 vé số,-20000,"₫20,000",10/05/2026,Expenses,,Ngu,
 tiền tuần,400000,"₫400,000",10/05/2026,In-come,,,Family
 "nước đá, sữa tươi",-10000,"₫10,000",10/05/2026,Expenses,,AC,
@@ -4726,7 +4726,6 @@ thùng bia,-250000,"₫250,000",06/05/2026,Expenses,,RL,
 tiền p c nhậu,68000,"₫68,000",06/05/2026,In-come,,,Anh em
 thuốc,-30000,"₫30,000",06/05/2026,Expenses,,Smoking,
 xăng,-50000,"₫50,000",06/05/2026,Expenses,,DC,
-ân - tiền bàn,-150000,"₫150,000",06/05/2026,Expenses,Vay,Cho vay,
 "cf vs thiện, hào",-30000,"₫30,000",04/05/2026,Expenses,,Coffee,
 phí momo,-33000,"₫33,000",04/05/2026,Expenses,Monthly,Utility,
 5G,-70000,"₫70,000",04/05/2026,Expenses,Monthly,Utility,
@@ -4736,7 +4735,7 @@ cafe,-16000,"₫16,000",04/05/2026,Expenses,,Coffee,
 "bún riêu, bánh mì",-45000,"₫45,000",04/05/2026,Expenses,,AC,
 iCloud,-19000,"₫19,000",03/05/2026,Expenses,Monthly,Utility,
 xăng,-50000,"₫50,000",03/05/2026,Expenses,,DC,
-Cọc trọ + 2 khóa,-1900000,"₫1,900,000",03/05/2026,Expenses,Vay,Cho vay,
+Cọc trọ + 2 khóa,-1800000,"₫1,800,000",03/05/2026,Expenses,Vay,Cho vay,
 sách thành phố và những bức tường,-100000,"₫100,000",02/05/2026,Expenses,,Mental,
 nước mía,-20000,"₫20,000",02/05/2026,Expenses,,AV,
 "cf vs linh, bida vs tường",-40000,"₫40,000",02/05/2026,Expenses,,RL,
@@ -4752,7 +4751,7 @@ Tiền điện,-80000,"₫80,000",30/04/2026,Expenses,,Home,
 ăn vặt nc mía,-27000,"₫27,000",30/04/2026,Expenses,,RL,
 Cầu lông,-30000,"₫30,000",30/04/2026,Expenses,,Badmintion,
 xăng,-30000,"₫30,000",30/04/2026,Expenses,,DC,
-shopee,3540000,"₫3,540,000",29/04/2026,In-come,Vay,,Cho vay
+shopee,2630000,"₫2,630,000",29/07/2026,In-come,Vay,,Cho vay
 xăng,-30000,"₫30,000",28/04/2026,Expenses,,DC,
 tiền nhà,191000,"₫191,000",28/04/2026,In-come,,,Family
 sinh tôs,-20000,"₫20,000",28/04/2026,Expenses,,AV,
@@ -4816,10 +4815,8 @@ iCloud,-19000,"₫19,000",03/02/2026,Expenses,Monthly,Utility,
 "đò chiên, nước mía",-25000,"₫25,000",14/02/2026,Expenses,,AV,
 bida ,-100000,"₫100,000",14/02/2026,Expenses,,Bida,
 "nuôi chiên, hủ tiếu",-50000,"₫50,000",14/02/2026,Expenses,,AC,
-học phí 3-I,-18012000,"₫18,012,000",20/12/2025,Expenses,BigY,Study,
-học phí 3-II,21340000,"₫21,340,000",16/03/2024,In-come,"BigY, Vay",,Cho vay
-quỳnh,2400000,"₫2,400,000",16/03/2024,In-come,"BigY, Vay",,Cho vay
-học phí 3-III,-12302000,"₫12,302,000",27/06/2026,Expenses,BigY,Study,
+quỳnh,2400000,"₫2,400,000",16/05/2026,In-come,"BigY, Vay",,Cho vay
+học phí 3-III,-12400000,"₫12,400,000",27/06/2026,Expenses,BigY,Study,
 phí momo tháng 6,-33000,"₫33,000",01/06/2026,Expenses,Monthly,Utility,
 áo khoác what it is,-669000,"₫669,000",14/02/2026,Expenses,BigM,CL,
 túi ssg,-330000,"₫330,000",23/12/2025,Expenses,,CL,
@@ -5091,7 +5088,7 @@ pho Learn bài,-40000,"₫40,000",17/04/2026,Expenses,,Study,
 iCloud,-29000,"₫29,000",17/04/2026,Expenses,Monthly,Utility,
 "lẩu, kara, nước",-175000,"₫175,000",17/04/2026,Expenses,,RL,
 bida với ân,-53000,"₫53,000",18/04/2026,Expenses,,Bida,
-Learn bổng hội việc làm,3000000,"₫3,000,000",18/04/2026,In-come,BigY,,Salary
+học bổng hội việc làm,3000000,"₫3,000,000",18/04/2026,In-come,BigY,,Salary
 vé xem phim,-265000,"₫265,000",18/04/2026,Expenses,,G,
 5G,-50000,"₫50,000",18/04/2026,Expenses,,Utility,
 nước với thiên,-35000,"₫35,000",18/04/2026,Expenses,,RL,
@@ -5180,9 +5177,9 @@ bida với ẻm,-40000,"₫40,000",18/06/2026,Expenses,,Bida,
 cơm gà,-30000,"₫30,000",18/06/2026,Expenses,,AC,
 nước mia,-20000,"₫20,000",18/06/2026,Expenses,,AC,
 gửi xe,-10000,"₫10,000",18/06/2026,Expenses,,Study,
-điện thoại cho mẹ,-1150000,"₫1,150,000",12/05/2026,Expenses,Vay,Cho vay,
+điện thoại cho mẹ,-850000,"₫850,000",12/05/2026,Expenses,Vay,Cho vay,
 ngoại cho,200000,"₫200,000",19/06/2026,In-come,,,Clan
-Học phí 3-III,10000000,"₫10,000,000",20/06/2026,In-come,,,Family
+Học phí 3-III,10000000,"₫10,000,000",20/06/2026,In-come,BigY,,Family
 tiền tuần,550000,"₫550,000",20/06/2026,In-come,,,Family
 "thịt, trứng, trái cây",-150000,"₫150,000",20/06/2026,Expenses,,AC,
 vé số,-20000,"₫20,000",20/06/2026,Expenses,,Ngu,
@@ -5211,7 +5208,7 @@ hớt tóc,-50000,"₫50,000",29/06/2026,Expenses,,Body,
 cf đá bánh,-18000,"₫18,000",29/06/2026,Expenses,,RL,
 ăn sáng + rau má,-20000,"₫20,000",29/06/2026,Expenses,,AC,
 keo + xịt phòng tóc,-160000,"₫160,000",29/06/2026,Expenses,BigM,Body,
-2 quần 2 áo đi VT,-600000,"₫600,000",29/06/2026,Expenses,BigY,CL,
+2 quần 2 áo đi VT,-600000,"₫600,000",29/06/2026,Expenses,BigM,CL,
 nước mía,-10000,"₫10,000",29/06/2026,Expenses,,AC,
 bida với ân,-48000,"₫48,000",30/06/2026,Expenses,,Bida,
 xịt muỗi,-58000,"₫58,000",30/06/2026,Expenses,,Home,
@@ -5239,7 +5236,6 @@ thịt kho,-100000,"₫100,000",06/07/2026,Expenses,,AC,
 bida với ân,-32000,"₫32,000",07/07/2026,Expenses,,Bida,
 xăng,-50000,"₫50,000",07/07/2026,Expenses,,DC,
 nước suối,-10000,"₫10,000",07/07/2026,Expenses,,AC,
-ân - trọ tháng 6,-100000,"₫100,000",06/05/2026,Expenses,Vay,Cho vay,
 cầu lông,-30000,"₫30,000",07/07/2026,Expenses,,Badmintion,
 nước miá + bánh tráng,-20000,"₫20,000",08/07/2026,Expenses,,AC,
 bida với ân,-65000,"₫65,000",10/07/2026,Expenses,,Bida,
@@ -5247,7 +5243,6 @@ vá xe,-20000,"₫20,000",10/07/2026,Expenses,,Accident,
 hớt tóc,-40000,"₫40,000",10/07/2026,Expenses,,Body,
 dép mới,-180000,"₫180,000",10/07/2026,Expenses,BigM,CL,
 ga niệm,-45000,"₫45,000",10/07/2026,Expenses,BigM,Home,
-ân,26000,"₫26,000",16/03/2024,In-come,"BigY, Vay",,Cho vay
 "cà chua, nước, ăn sáng",-60000,"₫60,000",10/07/2026,Expenses,,AC,
 quỹ lớp,-12000,"₫12,000",09/07/2026,Expenses,,Study,
 cf trong trường,-31000,"₫31,000",09/07/2026,Expenses,,Coffee,
@@ -5266,6 +5261,74 @@ bánh mì ăn sáng + nc mía,-35000,"₫35,000",14/07/2026,Expenses,,AC,
 cf căn tin,-18000,"₫18,000",14/07/2026,Expenses,,Coffee,
 cf + sữa đặc,-38000,"₫38,000",15/07/2026,Expenses,,Coffee,
 sinh tố đu đủ,-23000,"₫23,000",15/07/2026,Expenses,,AV,
-sinh tố + bida với q,-60000,"₫60,000",15/07/2026,Expenses,,G,
-bida với q,-30000,"₫30,000",15/07/2026,Expenses,,Bida,
 ăn sáng + nc dừa,-30000,"₫30,000",15/07/2026,Expenses,,AC,
+bida với ân,-80000,"₫80,000",17/07/2026,Expenses,,Bida,
+cf,-17000,"₫17,000",17/07/2026,Expenses,,Coffee,
+"ăn sáng + nước mía, cơm sườn",-50000,"₫50,000",17/07/2026,Expenses,,AC,
+bida với béo,-29000,"₫29,000",17/07/2026,Expenses,,Bida,
+xăng,-70000,"₫70,000",19/07/2026,Expenses,,DC,
+cầu lông,-20000,"₫20,000",19/07/2026,Expenses,,Badmintion,
+tường,-80000,"₫80,000",06/05/2026,Expenses,Vay,Cho vay,
+bida với tường,-20000,"₫20,000",19/07/2026,Expenses,,Bida,
+"nước mía, đồ chiên",-20000,"₫20,000",19/07/2026,Expenses,,RL,
+xem phim,-150000,"₫150,000",19/07/2026,Expenses,,G,
+nước mía + nc đá,-11000,"₫11,000",19/07/2026,Expenses,,AC,
+"thịt kho, gạo",-100000,"₫100,000",19/07/2026,Expenses,,AC,
+tiền tuần,500000,"₫500,000",19/07/2026,In-come,,,Family
+"cơm, ăn sáng, trứng",-80000,"₫80,000",21/07/2026,Expenses,,AC,
+cf + sữa đặc,-40000,"₫40,000",21/07/2026,Expenses,,Coffee,
+bida với ân,-52000,"₫52,000",21/07/2026,Expenses,,Bida,
+bánh canh,-30000,"₫30,000",21/07/2026,Expenses,,AC,
+bánh canh q,-30000,"₫30,000",21/07/2026,Expenses,,G,
+mẹ cho ,100000,"₫100,000",24/07/2026,In-come,,,Family
+cf vs hiếu như,-20000,"₫20,000",24/07/2026,Expenses,,RL,
+"nước mía, nước đá, bánh",-20000,"₫20,000",24/07/2026,Expenses,,AV,
+nước mía nước dừa,-20000,"₫20,000",24/07/2026,Expenses,,AC,
+best ci i,-213000,"₫213,000",25/07/2026,Expenses,,G,
+beso bida,-34000,"₫34,000",06/05/2026,Expenses,Vay,Cho vay,
+thịt kho + trứng,-100000,"₫100,000",29/07/2026,Expenses,,AC,
+tiền tuần,400000,"₫400,000",29/07/2026,In-come,,,Family
+acc chatgpt,-70000,"₫70,000",29/07/2026,Expenses,,Ngu,
+hào,-70000,"₫70,000",29/07/2026,Expenses,,AC,
+"trà, sữa, ",-50000,"₫50,000",29/07/2026,Expenses,,AV,
+cơm,-55000,"₫55,000",29/07/2026,Expenses,,AC,
+cơm q + nước,-50000,"₫50,000",29/07/2026,Expenses,,G,
+bida vơi béo,-33000,"₫33,000",29/07/2026,Expenses,,Bida,
+xăng,-50000,"₫50,000",29/07/2026,Expenses,,DC,
+cf,-40000,"₫40,000",29/07/2026,Expenses,,Coffee,
+sữa ông thọ,-20000,"₫20,000",29/07/2026,Expenses,,AV,
+kem đánh răng,-30000,"₫30,000",29/07/2026,Expenses,,Home,
+bida với ân,-35000,"₫35,000",30/07/2026,Expenses,,Bida,
+ăn sáng + nc đá,-18000,"₫18,000",30/07/2026,Expenses,,AC,
+trà lưu ,-25000,"₫25,000",30/07/2026,Expenses,,AV,
+in bảng điểm,-10000,"₫10,000",30/07/2026,Expenses,,Study,
+bida với ân,-40000,"₫40,000",01/08/2026,Expenses,,Bida,
+bún,-25000,"₫25,000",01/08/2026,Expenses,,AC,
+bún + nc,-35000,"₫35,000",01/08/2026,Expenses,,G,
+xăng,-40000,"₫40,000",01/08/2026,Expenses,,DC,
+bida với tường,-30000,"₫30,000",01/08/2026,Expenses,,Bida,
+tiền tuần,488000,"₫488,000",01/08/2026,In-come,,,Family
+xăng,-50000,"₫50,000",03/08/2026,Expenses,,DC,
+cầu lông nc mía,-40000,"₫40,000",03/08/2026,Expenses,,Badmintion,
+4G monthly,-70000,"₫70,000",04/08/2026,Expenses,Monthly,Utility,
+tiền nhà tháng 7 + khóa mất,-1706000,"₫1,706,000",04/08/2026,Expenses,Monthly,Home,
+"chuối, nước",-45000,"₫45,000",04/08/2026,Expenses,,AC,
+iCloud monthly,-19000,"₫19,000",04/08/2026,Expenses,Monthly,Utility,
+"cacao, mía, …",-30000,"₫30,000",06/08/2026,Expenses,,AV,
+cơm + trứng dưa leo,-35000,"₫35,000",06/08/2026,Expenses,,AC,
+bida với ân,-50000,"₫50,000",06/08/2026,Expenses,,Bida,
+nước đám thiên,-20000,"₫20,000",06/08/2026,Expenses,,RL,
+bún đậu vs q,-50000,"₫50,000",06/08/2026,Expenses,,AC,
+bida với triết,-20000,"₫20,000",06/08/2026,Expenses,,Bida,
+"triết, bida",20000,"₫20,000",06/08/2026,In-come,Vay,,Cho vay
+thiên,-12000,"₫12,000",06/08/2026,Expenses,Vay,Cho vay,
+in bảng điểm,-60000,"₫60,000",09/08/2026,Expenses,,Study,
+bida với ân,-33000,"₫33,000",09/08/2026,Expenses,,Bida,
+dép lào,-96000,"₫96,000",09/08/2026,Expenses,,CL,
+cf + cầu lông,-40000,"₫40,000",09/08/2026,Expenses,,Badmintion,
+xăng,-30000,"₫30,000",09/08/2026,Expenses,,DC,
+thịt kho + trứng,-100000,"₫100,000",10/08/2026,Expenses,,AC,
+trà ,-35000,"₫35,000",10/08/2026,Expenses,,AC,
+tiền tuần,430000,"₫430,000",10/08/2026,In-come,,,Family
+xăng,-50000,"₫50,000",10/08/2026,Expenses,,DC,
+bánh snack,-12000,"₫12,000",10/08/2026,Expenses,,AV,

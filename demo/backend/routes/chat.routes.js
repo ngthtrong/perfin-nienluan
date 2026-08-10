@@ -353,19 +353,15 @@ async function buildReminders(messages = [], now = new Date()) {
   return [{ type: 'reminder', message: text, bills: due, ...fallbackMetadata }];
 }
 
-router.get('/messages', async (req, res, next) => {
-  try {
-    const now = new Date();
-    const dateKey = localDateKey(now, process.env.JOBS_TIMEZONE || 'Asia/Bangkok');
-    const [messages, workerMessages] = await Promise.all([
-      ChatMessage.getRecent(userId, req.query.limit || 30),
-      ChatMessage.getRecurringWorkerMessagesForDate(userId, dateKey),
-    ]);
-    const reminders = await buildReminders(workerMessages, now);
-    res.json({ success: true, data: messages, reminders });
-  } catch (error) {
-    next(error);
-  }
+router.get('/messages', async (req, res) => {
+  const now = new Date();
+  const dateKey = localDateKey(now, process.env.JOBS_TIMEZONE || 'Asia/Bangkok');
+  const [messages, workerMessages] = await Promise.all([
+    ChatMessage.getRecent(userId, req.query.limit || 30),
+    ChatMessage.getRecurringWorkerMessagesForDate(userId, dateKey),
+  ]);
+  const reminders = await buildReminders(workerMessages, now);
+  res.json({ success: true, data: messages, reminders });
 });
 
 // ── Recurring-bill intent handlers ────────────────────────────────────────────
@@ -1268,188 +1264,172 @@ async function cancelPendingWork(expectedId = null) {
   return { item };
 }
 
-router.post('/message', async (req, res, next) => {
-  try {
-    const text = String(req.body.text || '').trim();
-    if (!text || text.length > 500) return res.status(400).json({ success: false, error: 'Nội dung không hợp lệ' });
+router.post('/message', async (req, res) => {
+  const text = String(req.body.text || '').trim();
+  if (!text || text.length > 500) return res.status(400).json({ success: false, error: 'Nội dung không hợp lệ' });
 
-    await ChatMessage.create({ userId, role: 'user', content: text });
-    const categories = await CategoryModel.getAll(userId);
-    const normalized = normalizeText(text);
+  await ChatMessage.create({ userId, role: 'user', content: text });
+  const categories = await CategoryModel.getAll(userId);
+  const normalized = normalizeText(text);
 
-    if (/^(huy|bo qua|khong luu|cancel)(?:\s|$)/.test(normalized)) {
-      await cancelPendingWork(pendingIdFromBody(req.body));
-      const data = { type: 'system_message', message: await applyPersona('Đã hủy thao tác đang chờ.') };
-      await ChatMessage.create({ userId, role: 'system', content: data.message, metadata: data });
-      return res.json({ success: true, data });
-    }
-
-    if (/^(xac nhan|dong y|luu|ok|okay)(?:\s|$)/.test(normalized)) {
-      const claimed = await claimPendingRequest(pendingIdFromBody(req.body));
-      if (!claimed.item) return res.status(claimed.status).json({ success: false, error: claimed.error });
-      const data = await commitPendingItem(claimed.item);
-      await ChatMessage.create({ userId, role: 'system', content: data.message, metadata: data });
-      return res.json({ success: true, data });
-    }
-
-    const recurringAcknowledgement = isRecurringPaymentAcknowledgement(text);
-    if (recurringAcknowledgement) await ConversationState.clear(userId);
-    let conversation = recurringAcknowledgement ? null : await ConversationState.get(userId);
-    if (conversation && abandonsConversation(text, conversation, categories)) {
-      await ConversationState.clear(userId);
-      conversation = null;
-    }
-    const parsed = conversation
-      ? await resolveConversation(text, conversation, categories)
-      : await parseWithLearnedFeedback(text, categories);
-
-    let data;
-    if (parsed?.intent === '__clarification__') {
-      data = parsed.response;
-    } else if (RECURRING_HANDLERS[parsed.intent]) {
-      data = await RECURRING_HANDLERS[parsed.intent](parsed);
-    } else if (parsed.intent === 'goal_create') {
-      data = await handleGoalCreate(parsed);
-    } else if (String(parsed.intent || '').startsWith('query_')) {
-      data = await handleFinancialQuery(parsed);
-    } else if (parsed.intent === 'export') {
-      data = await handleExport(parsed);
-    } else if (parsed.intent === 'transfer') {
-      data = await handleTransferPreview(parsed);
-    } else if (parsed.intent === 'investment_pnl') {
-      data = await handleInvestmentPreview(parsed);
-    } else if (parsed.intent === 'budget_suggest') {
-      data = await handleBudgetSuggestion(parsed);
-    } else if (parsed.intent === 'transactions' && parsed.transactions?.length) {
-      const wallet = await AccountModel.ensureDefault(userId);
-      const transactions = parsed.transactions.map((transaction) => ({
-        ...transaction,
-        wallet_id: transaction.wallet_id || wallet.id,
-        source: 'ai_chat',
-        original_text: parsed.original_text || text,
-      }));
-      const pendingId = await pending.set(userId, transactions, 'transactions', { follow_up: parsed.follow_up || [] });
-      data = {
-        type: 'transactions_preview',
-        message: await applyPersona(`Mình tìm thấy ${transactions.length} giao dịch. Bạn kiểm tra rồi xác nhận tất cả nhé.`),
-        transactions,
-        pending_id: pendingId,
-      };
-    } else if (parsed.intent === 'transaction' && parsed.transaction?.amount) {
-      const wallet = await AccountModel.ensureDefault(userId);
-      const tx = { ...parsed.transaction, wallet_id: wallet.id, source: 'ai_chat', original_text: parsed.original_text || text };
-      const pendingId = await pending.set(userId, tx, 'transaction', { follow_up: parsed.follow_up || [] });
-      data = previewResponse(tx, pendingId);
-    } else if (parsed.needs_clarification) {
-      const partial = parsed.transaction || {};
-      const awaiting = [];
-      if (!partial.description) awaiting.push('description');
-      if (!(Number(partial.amount) > 0)) awaiting.push('amount');
-      if (awaiting.length) await ConversationState.start(userId, { intent: 'transaction', awaiting, collected: { transaction: partial }, original_text: text });
-      data = { type: 'clarification', message: await applyPersona(parsed.clarification_message || 'Bạn nói rõ hơn giúp mình nhé.') };
-    } else {
-      const [recentMessages, summary, persona, profile] = await Promise.all([
-        ChatMessage.getRecent(userId, 10),
-        ReportService.getMonthlySummary(userId),
-        Persona.getActivePersona(userId),
-        UserTraitModel.getProfile(userId),
-      ]);
-      const chat = parsed.chat_response
-        ? { text: await applyPersona(parsed.chat_response) }
-        : await AIService.chat(text, {
-          summary,
-          traits: profile.consent ? profile.traits.map(({ trait_type, trait_value }) => ({ trait_type, trait_value })) : [],
-          recent_messages: recentMessages.map(({ role, content }) => ({ role, content })),
-          persona_style: persona.style_prompt,
-        });
-      data = { type: 'chat_response', message: chat.text };
-    }
-
-    await ChatMessage.create({ userId, role: 'assistant', content: data.message, metadata: data });
-    res.json({ success: true, data });
-  } catch (error) {
-    next(error);
+  if (/^(huy|bo qua|khong luu|cancel)(?:\s|$)/.test(normalized)) {
+    await cancelPendingWork(pendingIdFromBody(req.body));
+    const data = { type: 'system_message', message: await applyPersona('Đã hủy thao tác đang chờ.') };
+    await ChatMessage.create({ userId, role: 'system', content: data.message, metadata: data });
+    return res.json({ success: true, data });
   }
-});
 
-router.post('/confirm', async (req, res, next) => {
-  try {
+  if (/^(xac nhan|dong y|luu|ok|okay)(?:\s|$)/.test(normalized)) {
     const claimed = await claimPendingRequest(pendingIdFromBody(req.body));
     if (!claimed.item) return res.status(claimed.status).json({ success: false, error: claimed.error });
-
     const data = await commitPendingItem(claimed.item);
     await ChatMessage.create({ userId, role: 'system', content: data.message, metadata: data });
-    res.json({ success: true, data });
-  } catch (error) {
-    next(error);
+    return res.json({ success: true, data });
   }
+
+  const recurringAcknowledgement = isRecurringPaymentAcknowledgement(text);
+  if (recurringAcknowledgement) await ConversationState.clear(userId);
+  let conversation = recurringAcknowledgement ? null : await ConversationState.get(userId);
+  if (conversation && abandonsConversation(text, conversation, categories)) {
+    await ConversationState.clear(userId);
+    conversation = null;
+  }
+  const parsed = conversation
+    ? await resolveConversation(text, conversation, categories)
+    : await parseWithLearnedFeedback(text, categories);
+
+  let data;
+  if (parsed?.intent === '__clarification__') {
+    data = parsed.response;
+  } else if (RECURRING_HANDLERS[parsed.intent]) {
+    data = await RECURRING_HANDLERS[parsed.intent](parsed);
+  } else if (parsed.intent === 'goal_create') {
+    data = await handleGoalCreate(parsed);
+  } else if (String(parsed.intent || '').startsWith('query_')) {
+    data = await handleFinancialQuery(parsed);
+  } else if (parsed.intent === 'export') {
+    data = await handleExport(parsed);
+  } else if (parsed.intent === 'transfer') {
+    data = await handleTransferPreview(parsed);
+  } else if (parsed.intent === 'investment_pnl') {
+    data = await handleInvestmentPreview(parsed);
+  } else if (parsed.intent === 'budget_suggest') {
+    data = await handleBudgetSuggestion(parsed);
+  } else if (parsed.intent === 'transactions' && parsed.transactions?.length) {
+    const wallet = await AccountModel.ensureDefault(userId);
+    const transactions = parsed.transactions.map((transaction) => ({
+      ...transaction,
+      wallet_id: transaction.wallet_id || wallet.id,
+      source: 'ai_chat',
+      original_text: parsed.original_text || text,
+    }));
+    const pendingId = await pending.set(userId, transactions, 'transactions', { follow_up: parsed.follow_up || [] });
+    data = {
+      type: 'transactions_preview',
+      message: await applyPersona(`Mình tìm thấy ${transactions.length} giao dịch. Bạn kiểm tra rồi xác nhận tất cả nhé.`),
+      transactions,
+      pending_id: pendingId,
+    };
+  } else if (parsed.intent === 'transaction' && parsed.transaction?.amount) {
+    const wallet = await AccountModel.ensureDefault(userId);
+    const tx = { ...parsed.transaction, wallet_id: wallet.id, source: 'ai_chat', original_text: parsed.original_text || text };
+    const pendingId = await pending.set(userId, tx, 'transaction', { follow_up: parsed.follow_up || [] });
+    data = previewResponse(tx, pendingId);
+  } else if (parsed.needs_clarification) {
+    const partial = parsed.transaction || {};
+    const awaiting = [];
+    if (!partial.description) awaiting.push('description');
+    if (!(Number(partial.amount) > 0)) awaiting.push('amount');
+    if (awaiting.length) await ConversationState.start(userId, { intent: 'transaction', awaiting, collected: { transaction: partial }, original_text: text });
+    data = { type: 'clarification', message: await applyPersona(parsed.clarification_message || 'Bạn nói rõ hơn giúp mình nhé.') };
+  } else {
+    const [recentMessages, summary, persona, profile] = await Promise.all([
+      ChatMessage.getRecent(userId, 10),
+      ReportService.getMonthlySummary(userId),
+      Persona.getActivePersona(userId),
+      UserTraitModel.getProfile(userId),
+    ]);
+    const chat = parsed.chat_response
+      ? { text: await applyPersona(parsed.chat_response) }
+      : await AIService.chat(text, {
+        summary,
+        traits: profile.consent ? profile.traits.map(({ trait_type, trait_value }) => ({ trait_type, trait_value })) : [],
+        recent_messages: recentMessages.map(({ role, content }) => ({ role, content })),
+        persona_style: persona.style_prompt,
+      });
+    data = { type: 'chat_response', message: chat.text };
+  }
+
+  await ChatMessage.create({ userId, role: 'assistant', content: data.message, metadata: data });
+  res.json({ success: true, data });
 });
 
-router.post('/edit', async (req, res, next) => {
-  try {
-    const current = await pending.get(userId);
-    const expectedId = pendingIdFromBody(req.body) || current?.id || null;
-    let item;
-    if (current?.kind === 'transactions' && Number.isInteger(Number(req.body.index))) {
-      const index = Number(req.body.index);
-      const rawUpdates = req.body.transaction || req.body.updates || {};
-      const updates = await preparePendingTransactionUpdates(current.data?.[index], rawUpdates);
-      item = await pending.updateAt(userId, index, updates, expectedId, {
-        updateMetadata: (metadata) => updateClassificationCorrectionMetadata(
-          metadata,
-          current.data[index],
-          updates,
-          index
-        ),
-      });
-    } else {
-      const {
-        pending_id: _pendingId,
-        pendingId: _pendingIdAlias,
-        index: _index,
-        transaction,
+router.post('/confirm', async (req, res) => {
+  const claimed = await claimPendingRequest(pendingIdFromBody(req.body));
+  if (!claimed.item) return res.status(claimed.status).json({ success: false, error: claimed.error });
+
+  const data = await commitPendingItem(claimed.item);
+  await ChatMessage.create({ userId, role: 'system', content: data.message, metadata: data });
+  res.json({ success: true, data });
+});
+
+router.post('/edit', async (req, res) => {
+  const current = await pending.get(userId);
+  const expectedId = pendingIdFromBody(req.body) || current?.id || null;
+  let item;
+  if (current?.kind === 'transactions' && Number.isInteger(Number(req.body.index))) {
+    const index = Number(req.body.index);
+    const rawUpdates = req.body.transaction || req.body.updates || {};
+    const updates = await preparePendingTransactionUpdates(current.data?.[index], rawUpdates);
+    item = await pending.updateAt(userId, index, updates, expectedId, {
+      updateMetadata: (metadata) => updateClassificationCorrectionMetadata(
+        metadata,
+        current.data[index],
         updates,
-        ...directUpdates
-      } = req.body;
-      const rawUpdates = transaction || updates || directUpdates;
-      const preparedUpdates = ['transaction', 'recurring_payment'].includes(current?.kind)
-        ? await preparePendingTransactionUpdates(current.data, rawUpdates)
-        : rawUpdates;
-      item = await pending.update(userId, preparedUpdates, expectedId, {
-        updateMetadata: (metadata) => (
-          ['transaction', 'recurring_payment'].includes(current?.kind)
-            ? updateClassificationCorrectionMetadata(metadata, current.data, preparedUpdates, 0)
-            : metadata
-        ),
-      });
-    }
-    if (!item) {
-      const latest = await pending.get(userId);
-      const status = latest ? 409 : 404;
-      const error = latest
-        ? 'Mục chờ đã thay đổi; vui lòng tải lại bản xem trước trước khi sửa'
-        : 'Không có giao dịch chờ sửa, mục đã hết hạn hoặc đang được xử lý';
-      return res.status(status).json({ success: false, error });
-    }
-    const data = item.kind === 'transactions'
-      ? { type: 'transactions_preview', message: 'Mình đã cập nhật. Bạn xác nhận tất cả nhé:', transactions: item.data, pending_id: item.id }
-      : previewResponse(item.data, item.id, 'Mình đã cập nhật. Bạn xác nhận nhé:');
-    res.json({ success: true, data });
-  } catch (error) {
-    next(error);
+        index
+      ),
+    });
+  } else {
+    const {
+      pending_id: _pendingId,
+      pendingId: _pendingIdAlias,
+      index: _index,
+      transaction,
+      updates,
+      ...directUpdates
+    } = req.body;
+    const rawUpdates = transaction || updates || directUpdates;
+    const preparedUpdates = ['transaction', 'recurring_payment'].includes(current?.kind)
+      ? await preparePendingTransactionUpdates(current.data, rawUpdates)
+      : rawUpdates;
+    item = await pending.update(userId, preparedUpdates, expectedId, {
+      updateMetadata: (metadata) => (
+        ['transaction', 'recurring_payment'].includes(current?.kind)
+          ? updateClassificationCorrectionMetadata(metadata, current.data, preparedUpdates, 0)
+          : metadata
+      ),
+    });
   }
+  if (!item) {
+    const latest = await pending.get(userId);
+    const status = latest ? 409 : 404;
+    const error = latest
+      ? 'Mục chờ đã thay đổi; vui lòng tải lại bản xem trước trước khi sửa'
+      : 'Không có giao dịch chờ sửa, mục đã hết hạn hoặc đang được xử lý';
+    return res.status(status).json({ success: false, error });
+  }
+  const data = item.kind === 'transactions'
+    ? { type: 'transactions_preview', message: 'Mình đã cập nhật. Bạn xác nhận tất cả nhé:', transactions: item.data, pending_id: item.id }
+    : previewResponse(item.data, item.id, 'Mình đã cập nhật. Bạn xác nhận nhé:');
+  res.json({ success: true, data });
 });
 
-router.post('/cancel', async (req, res, next) => {
-  try {
-    const cancelled = await cancelPendingWork(pendingIdFromBody(req.body));
-    if (cancelled.error) return res.status(cancelled.status).json({ success: false, error: cancelled.error });
-    const data = { type: 'system_message', message: await applyPersona('Đã hủy') };
-    await ChatMessage.create({ userId, role: 'system', content: data.message, metadata: data });
-    res.json({ success: true, data });
-  } catch (error) {
-    next(error);
-  }
+router.post('/cancel', async (req, res) => {
+  const cancelled = await cancelPendingWork(pendingIdFromBody(req.body));
+  if (cancelled.error) return res.status(cancelled.status).json({ success: false, error: cancelled.error });
+  const data = { type: 'system_message', message: await applyPersona('Đã hủy') };
+  await ChatMessage.create({ userId, role: 'system', content: data.message, metadata: data });
+  res.json({ success: true, data });
 });
 
 module.exports = router;

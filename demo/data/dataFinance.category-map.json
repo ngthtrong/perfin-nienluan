@@ -1,7 +1,7 @@
 {
-  "version": 1,
+  "version": 2,
   "description": "Ánh xạ taxonomy lịch sử trong dataFinance.csv sang danh mục PERFIN migration 002.",
-  "source_sha256": "a9b7cf1b390227e532bf286623cd25d546b656bb7161e422079dd003027ca94f",
+  "source_sha256": "418a943958f12ae13902680e530e0be92a71acdec4f10707e0a1c75684fbaed7",
   "wallet": "Tiền mặt",
   "expense": {
     "": "Khác",

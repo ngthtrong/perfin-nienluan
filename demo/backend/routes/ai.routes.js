@@ -166,45 +166,29 @@ router.get('/media/status', (req, res) => {
   });
 });
 
-router.get('/models', async (req, res, next) => {
-  try {
-    res.json({ success: true, data: await AIService.getModels(), status: AIService.getStatus() });
-  } catch (error) {
-    next(error);
-  }
+router.get('/models', async (req, res) => {
+  res.json({ success: true, data: await AIService.getModels(), status: AIService.getStatus() });
 });
 
-router.post('/selection', async (req, res, next) => {
-  try {
-    res.json({ success: true, data: await AIService.setSelection(req.body || {}) });
-  } catch (error) {
-    next(error);
-  }
+router.post('/selection', async (req, res) => {
+  res.json({ success: true, data: await AIService.setSelection(req.body || {}) });
 });
 
-router.post('/parse-transaction', async (req, res, next) => {
-  try {
-    if (!req.body.text || req.body.text.length > 500) return res.status(400).json({ success: false, error: 'Nội dung không hợp lệ' });
-    const categories = await CategoryModel.getAll(userId);
-    const examples = await FeedbackService.getFewShotExamples(userId, req.body.text, { limit: 5 }).catch(() => []);
-    const prompt = examples.length
-      ? `Phân tích yêu cầu: "${req.body.text}". Các sửa danh mục trước đây của người dùng:\n${examples.map((example) => `- "${example.input}" -> ${example.corrected_category?.category_name || example.corrected_category?.category_id}`).join('\n')}`
-      : undefined;
-    const data = await AIService.parseTransaction(req.body.text, categories, prompt);
-    res.json({ success: true, data });
-  } catch (error) {
-    next(error);
-  }
+router.post('/parse-transaction', async (req, res) => {
+  if (!req.body.text || req.body.text.length > 500) return res.status(400).json({ success: false, error: 'Nội dung không hợp lệ' });
+  const categories = await CategoryModel.getAll(userId);
+  const examples = await FeedbackService.getFewShotExamples(userId, req.body.text, { limit: 5 }).catch(() => []);
+  const prompt = examples.length
+    ? `Phân tích yêu cầu: "${req.body.text}". Các sửa danh mục trước đây của người dùng:\n${examples.map((example) => `- "${example.input}" -> ${example.corrected_category?.category_name || example.corrected_category?.category_id}`).join('\n')}`
+    : undefined;
+  const data = await AIService.parseTransaction(req.body.text, categories, prompt);
+  res.json({ success: true, data });
 });
 
-router.post('/chat', async (req, res, next) => {
-  try {
-    const text = req.body.prompt || req.body.text;
-    const data = await AIService.chat(text || '');
-    res.json({ success: true, text: data.text, data });
-  } catch (error) {
-    next(error);
-  }
+router.post('/chat', async (req, res) => {
+  const text = req.body.prompt || req.body.text;
+  const data = await AIService.chat(text || '');
+  res.json({ success: true, text: data.text, data });
 });
 
 async function handleOcr(req, res, next) {
@@ -362,49 +346,41 @@ function buildReceiptOptions(parsed) {
   };
 }
 
-router.post('/speech/confirm', async (req, res, next) => {
-  try {
-    const transcript = String(req.body.transcript || req.body.text || '').trim();
-    if (!transcript || transcript.length > 2000) {
-      return res.status(400).json({ success: false, error: 'Transcript không hợp lệ' });
-    }
-    const parsed = await extractFromMedia(transcript, 'voice');
-    const data = await createMediaPendingPreview(parsed, transcript, 'voice');
-    res.json({ success: true, transcript, confirmed: true, parsed, data });
-  } catch (error) {
-    next(error);
+router.post('/speech/confirm', async (req, res) => {
+  const transcript = String(req.body.transcript || req.body.text || '').trim();
+  if (!transcript || transcript.length > 2000) {
+    return res.status(400).json({ success: false, error: 'Transcript không hợp lệ' });
   }
+  const parsed = await extractFromMedia(transcript, 'voice');
+  const data = await createMediaPendingPreview(parsed, transcript, 'voice');
+  res.json({ success: true, transcript, confirmed: true, parsed, data });
 });
 
-router.post('/ocr/confirm', async (req, res, next) => {
-  try {
-    const text = String(req.body.text || '').trim();
-    const context = readImageContext(req.body || {});
-    const mode = req.body.mode === 'items' ? 'items' : 'total';
-    if (!text || text.length > 10000) return res.status(400).json({ success: false, error: 'Văn bản OCR không hợp lệ' });
-    const parsed = await extractFromMedia(text, 'receipt', context);
-    const options = buildReceiptOptions(parsed);
-    let selected = parsed?.transactions || (parsed?.transaction ? [parsed.transaction] : []);
-    if (options) selected = mode === 'items' ? options.items : (options.total ? [options.total] : options.items);
-    const selectedParsed = {
-      ...parsed,
-      intent: selected.length > 1 ? 'transactions' : 'transaction',
-      transaction: selected[0] || null,
-      transactions: selected,
-    };
-    const originalText = AIService.combineMediaContext(text, context);
-    const data = await createMediaPendingPreview(selectedParsed, originalText, 'ocr');
-    res.json({
-      success: true,
-      confirmed: true,
-      mode,
-      context: context || null,
-      parsed: selectedParsed,
-      data,
-    });
-  } catch (error) {
-    next(error);
-  }
+router.post('/ocr/confirm', async (req, res) => {
+  const text = String(req.body.text || '').trim();
+  const context = readImageContext(req.body || {});
+  const mode = req.body.mode === 'items' ? 'items' : 'total';
+  if (!text || text.length > 10000) return res.status(400).json({ success: false, error: 'Văn bản OCR không hợp lệ' });
+  const parsed = await extractFromMedia(text, 'receipt', context);
+  const options = buildReceiptOptions(parsed);
+  let selected = parsed?.transactions || (parsed?.transaction ? [parsed.transaction] : []);
+  if (options) selected = mode === 'items' ? options.items : (options.total ? [options.total] : options.items);
+  const selectedParsed = {
+    ...parsed,
+    intent: selected.length > 1 ? 'transactions' : 'transaction',
+    transaction: selected[0] || null,
+    transactions: selected,
+  };
+  const originalText = AIService.combineMediaContext(text, context);
+  const data = await createMediaPendingPreview(selectedParsed, originalText, 'ocr');
+  res.json({
+    success: true,
+    confirmed: true,
+    mode,
+    context: context || null,
+    parsed: selectedParsed,
+    data,
+  });
 });
 
 async function createMediaPendingPreview(parsed, originalText, source) {

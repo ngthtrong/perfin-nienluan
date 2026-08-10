@@ -1,4 +1,4 @@
-const { pool, query } = require('../config/database');
+const { pool, query, rollbackAfterFailure } = require('../config/database');
 const KVStore = require('../services/store/kv.store');
 const { EDITABLE_FIELDS, validateTransactionPayload } = require('../services/transactions/validation');
 const { SORT_EXPRESSIONS, normalizeTransactionQuery } = require('../services/transactions/query');
@@ -90,16 +90,6 @@ function editablePatch(old, data) {
     if (Object.prototype.hasOwnProperty.call(data, field)) next[field] = data[field];
   }
   return next;
-}
-
-async function rollbackAfterFailure(client, error) {
-  try {
-    await client.query('ROLLBACK');
-  } catch (rollbackError) {
-    // Preserve the error that caused the transaction to fail while retaining the
-    // rollback failure for diagnostics.
-    error.rollbackError = rollbackError;
-  }
 }
 
 async function invalidateAfterCommit(userId) {
