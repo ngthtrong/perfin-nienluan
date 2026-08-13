@@ -3,8 +3,8 @@
 
 Ba bảng dưới đây giữ nguyên mã, nhãn và đầy đủ các trường của mẫu đặc tả.
 Chúng được đưa vào phụ lục để Chương~\ref{chap:results} tập trung vào chín FR
-cốt lõi (FR-01--05 và FR-07--10); bảng tổng hợp và ma trận truy vết vẫn liệt kê
-đủ cả mười hai FR.
+cốt lõi (FR-01--05 và FR-07--10); bảng tổng hợp trong Chương~\ref{chap:results}
+vẫn liệt kê đủ cả mười hai FR.
 
 \begin{frtable}{Đặc tả FR-06 --- Chuyển ví và dòng tiền đặc biệt}{tab:app-fr06}
   \textbf{Tên chức năng} & Chuyển ví và ghi lãi/lỗ đầu tư. \frtablerow
@@ -15,9 +15,9 @@ cốt lõi (FR-01--05 và FR-07--10); bảng tổng hợp và ma trận truy v�
   \textbf{Các thành phần tham gia và mối quan tâm} & Người dùng cần một thao tác; hai ví và lịch sử phải được cập nhật nhất quán. \frtablerow
   \textbf{Mô tả tóm tắt} & Ghi chuyển nội bộ không làm đổi tổng tài sản và ghi dòng tiền đầu tư đúng loại. \frtablerow
   \textbf{Các mối quan hệ} & Dùng thực thể ví/giao dịch của FR-05. \frtablerow
-  \textbf{Luồng xử lý bình thường của sự kiện} & \textbf{Bước 1:} Nhập ví nguồn, ví đích, amount và ngày. \textbf{Bước 2:} Validation hai ví khác nhau. \textbf{Bước 3:} Khóa theo thứ tự. \textbf{Sub 1:} Debit, credit và ghi lịch sử. \textbf{Bước 4:} Commit và trả kết quả. \frtablerow
-  \textbf{Các luồng sự kiện con (Subflows)} & \textbf{Sub 1 --- Transaction:} (1) Trừ nguồn; (2) cộng đích; (3) ghi \code{wallet_transfers}; tổng biến thiên bằng 0. \frtablerow
-  \textbf{Luồng luân phiên/đặc biệt} & Ví trùng/thiếu, amount/date sai, ví ngoài hồ sơ hoặc hai ví khác tiền tệ làm rollback. Không từ chối chỉ vì ví nguồn sẽ âm. \frtablerow
+  \textbf{Luồng xử lý bình thường của sự kiện} & \frstep{Bước 1:}{Nhập ví nguồn, ví đích, amount và ngày.} \frstep{Bước 2:}{Validation hai ví khác nhau.} \frstep{Bước 3:}{Khóa theo thứ tự.} \frsubstep{Sub 1:}{Debit, credit và ghi lịch sử.} \frstep{Bước 4:}{Commit và trả kết quả.} \frtablerow
+  \textbf{Các luồng sự kiện con (Subflows)} & \frsubstep{Sub 1 --- Transaction:}{Trừ nguồn.} \frsubstep{Sub 1.1:}{Cộng đích.} \frsubstep{Sub 1.2:}{Ghi \code{wallet_transfers}; tổng biến thiên bằng 0.} \frtablerow
+  \textbf{Luồng luân phiên/đặc biệt} & \frstep{Dữ liệu ví không hợp lệ:}{Ví trùng/thiếu, ví ngoài hồ sơ hoặc hai ví khác tiền tệ làm rollback.} \frstep{Amount/date sai:}{Rollback giao dịch.} \frstep{Số dư nguồn âm:}{Không bị từ chối chỉ vì số dư sau chuyển sẽ âm.} \frtablerow
 \end{frtable}
 
 \begin{frtable}{Đặc tả FR-11 --- Khoản định kỳ và tác vụ nền}{tab:app-fr11}
@@ -29,9 +29,9 @@ cốt lõi (FR-01--05 và FR-07--10); bảng tổng hợp và ma trận truy v�
   \textbf{Các thành phần tham gia và mối quan tâm} & Người dùng cần lịch/nhắc; worker cần retry; database cần một hiệu ứng cho mỗi kỳ. \frtablerow
   \textbf{Mô tả tóm tắt} & Quản lý lịch chi lặp, ghi thanh toán nguyên tử và sinh thông báo nội bộ không trùng. \frtablerow
   \textbf{Các mối quan hệ} & Dùng FR-05 khi ghi payment; dùng facts FR-07. \frtablerow
-  \textbf{Luồng xử lý bình thường của sự kiện} & \textbf{Bước 1:} Tạo lịch hợp lệ. \textbf{Bước 2:} Scheduler đưa job vào queue. \textbf{Bước 3:} Worker resolve user/kỳ. \textbf{Sub 1:} Gọi handler idempotent. \textbf{Bước 4:} Lưu payment/message và cập nhật kỳ kế tiếp. \frtablerow
-  \textbf{Các luồng sự kiện con (Subflows)} & \textbf{Sub 1 --- Retry:} (1) Giữ cùng fingerprint/event key; (2) kết quả duplicate được xem là hoàn tất an toàn. \frtablerow
-  \textbf{Luồng luân phiên/đặc biệt} & Kỳ cũ/thiếu hoặc payload sai làm rollback. Redis lỗi khiến worker dừng an toàn; không được tuyên bố worker live nếu chưa đo. \frtablerow
+  \textbf{Luồng xử lý bình thường của sự kiện} & \frstep{Bước 1:}{Tạo lịch hợp lệ.} \frstep{Bước 2:}{Scheduler đưa job vào queue.} \frstep{Bước 3:}{Worker resolve user/kỳ.} \frsubstep{Sub 1:}{Gọi handler idempotent.} \frstep{Bước 4:}{Lưu payment/message và cập nhật kỳ kế tiếp.} \frtablerow
+  \textbf{Các luồng sự kiện con (Subflows)} & \frsubstep{Sub 1 --- Retry:}{Giữ cùng fingerprint/event key.} \frsubstep{Sub 1.1:}{Xem kết quả duplicate là hoàn tất an toàn.} \frtablerow
+  \textbf{Luồng luân phiên/đặc biệt} & \frstep{Kỳ/payload không hợp lệ:}{Kỳ cũ, kỳ thiếu hoặc payload sai làm rollback.} \frstep{Redis lỗi:}{Worker dừng an toàn.} \frstep{Giới hạn:}{Không tuyên bố worker live nếu chưa đo.} \frtablerow
 \end{frtable}
 
 \begin{frtable}{Đặc tả FR-12 --- Xuất và dọn dữ liệu}{tab:app-fr12}
@@ -43,7 +43,7 @@ cốt lõi (FR-01--05 và FR-07--10); bảng tổng hợp và ma trận truy v�
   \textbf{Các thành phần tham gia và mối quan tâm} & Người dùng cần tải đúng dữ liệu; exporter cần escaping; worker không được xóa tệp còn hiệu lực. \frtablerow
   \textbf{Mô tả tóm tắt} & Tạo CSV theo bộ lọc, ghi lịch sử và dọn tệp sau TTL. \frtablerow
   \textbf{Các mối quan hệ} & Đọc FR-05; dùng FR-03 nếu được khởi tạo từ chat; worker xử lý cleanup. \frtablerow
-  \textbf{Luồng xử lý bình thường của sự kiện} & \textbf{Bước 1:} Chọn định dạng/kỳ. \textbf{Bước 2:} Validation và truy vấn theo hồ sơ. \textbf{Sub 1:} Tạo tệp an toàn. \textbf{Bước 3:} Ghi \code{export_history}. \textbf{Bước 4:} Trả liên kết tải. \frtablerow
-  \textbf{Các luồng sự kiện con (Subflows)} & \textbf{Sub 1 --- CSV:} (1) Escape ô có công thức; (2) ghi BOM UTF-8 và số dòng; (3) đặt TTL. \frtablerow
-  \textbf{Luồng luân phiên/đặc biệt} & Không có dữ liệu vẫn trả tệp có header. Luồng từng mang nhãn PDF hiện chỉ tạo HTML nên không được công bố là PDF thật. \frtablerow
+  \textbf{Luồng xử lý bình thường của sự kiện} & \frstep{Bước 1:}{Chọn định dạng/kỳ.} \frstep{Bước 2:}{Validation và truy vấn theo hồ sơ.} \frsubstep{Sub 1:}{Tạo tệp an toàn.} \frstep{Bước 3:}{Ghi \code{export_history}.} \frstep{Bước 4:}{Trả liên kết tải.} \frtablerow
+  \textbf{Các luồng sự kiện con (Subflows)} & \frsubstep{Sub 1 --- CSV:}{Escape ô có công thức.} \frsubstep{Sub 1.1:}{Ghi BOM UTF-8 và số dòng.} \frsubstep{Sub 1.2:}{Đặt TTL.} \frtablerow
+  \textbf{Luồng luân phiên/đặc biệt} & \frstep{Không có dữ liệu:}{Vẫn trả tệp có header.} \frstep{Định dạng PDF:}{Luồng từng mang nhãn PDF hiện chỉ tạo HTML nên không được công bố là PDF thật.} \frtablerow
 \end{frtable}

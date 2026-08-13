@@ -1,3 +1,6 @@
+// Vai trò: Hiển thị bức tranh tài chính hiện tại và lối vào nhanh tới Chat AI.
+// Luồng chính: tải song song số dư, tổng hợp kỳ và giao dịch gần đây rồi xử lý loading/error/refresh.
+
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -5,7 +8,7 @@ import { api } from '../services/api.service';
 import { currentPeriod, formatVND } from '../utils/formatters';
 import { useTheme } from '../theme/ThemeContext';
 import {
-  StatCard, SectionHeader, EmptyState, ErrorState, Skeleton, SkeletonGroup, AppHeader,
+  SectionHeader, EmptyState, ErrorState, Skeleton, SkeletonGroup, AppHeader,
 } from '../components/ui';
 import TransactionCard from '../components/TransactionCard';
 import AppIcon from '../components/AppIcon';
@@ -28,6 +31,7 @@ function DashboardSkeleton({ styles }) {
   );
 }
 
+// Điều phối ba nguồn dữ liệu của trang tổng quan và các trạng thái tải/lỗi tương ứng.
 export default function DashboardScreen({ navigation }) {
   const { theme } = useTheme();
   const styles = useMemo(() => createStyles(theme), [theme]);
@@ -37,6 +41,7 @@ export default function DashboardScreen({ navigation }) {
   const [refreshing, setRefreshing] = useState(false);
   const period = currentPeriod();
 
+  // Tải song song để các con số trên Dashboard cùng đại diện một kỳ hiện tại.
   const load = useCallback(async () => {
     try {
       const [balance, summary, transactions] = await Promise.all([
@@ -69,7 +74,7 @@ export default function DashboardScreen({ navigation }) {
   if (state.loading) {
     return (
       <SafeAreaView style={styles.safe} edges={['top']}>
-        <AppHeader />
+        <AppHeader title="Tổng quan" />
         <DashboardSkeleton styles={styles} />
       </SafeAreaView>
     );
@@ -78,7 +83,7 @@ export default function DashboardScreen({ navigation }) {
   if (state.error) {
     return (
       <SafeAreaView style={styles.safe} edges={['top']}>
-        <AppHeader />
+        <AppHeader title="Tổng quan" />
         <ErrorState message={state.error} onRetry={() => { setState((p) => ({ ...p, loading: true, error: null })); load(); }} />
       </SafeAreaView>
     );
@@ -91,7 +96,7 @@ export default function DashboardScreen({ navigation }) {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
-      <AppHeader />
+      <AppHeader title="Tổng quan" />
       <ScrollView
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
@@ -100,34 +105,44 @@ export default function DashboardScreen({ navigation }) {
         {/* Balance hero */}
         <View style={styles.balanceCard}>
           <View style={styles.balanceHeader}>
-            <View style={styles.walletChip}>
-              <AppIcon name="account-balance-wallet" size={13} color={c.brandText} />
-              <Text numberOfLines={1} style={styles.walletLabel}>Số dư khả dụng</Text>
-            </View>
+            <Text numberOfLines={1} style={styles.walletLabel}>Số dư khả dụng</Text>
             <Text numberOfLines={1} style={styles.periodLabel}>Tháng {period.month}/{period.year}</Text>
           </View>
 
           <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.66} style={styles.balanceAmount}>{formatVND(state.balance)}</Text>
 
-          <View style={[styles.netBadge, { backgroundColor: netPositive ? c.incomeSoft : c.expenseSoft }]}>
-            <AppIcon name={netPositive ? 'arrow-upward' : 'arrow-downward'} size={13} color={netPositive ? c.income : c.expense} />
+          <View style={styles.netBadge}>
             <Text style={[styles.netText, { color: netPositive ? c.income : c.expense }]}>
               {netPositive ? 'Tiết kiệm được ' : 'Bội chi '}
-              <Text style={{ fontWeight: '900' }}>{formatVND(Math.abs(net))}</Text>
+              <Text style={{ fontWeight: '700' }}>{formatVND(Math.abs(net))}</Text>
             </Text>
           </View>
 
           <View style={styles.statsRow}>
-            <StatCard label="Thu nhập" value={formatVND(incomeTotal)} icon="trending-up" tone="income" />
-            <StatCard label="Chi tiêu" value={formatVND(expenseTotal)} icon="trending-down" tone="expense" />
+            <View style={styles.metric}>
+              <Text style={styles.metricLabel}>Thu nhập</Text>
+              <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.72} style={[styles.metricValue, { color: c.income }]}>
+                {formatVND(incomeTotal)}
+              </Text>
+            </View>
+            <View style={styles.metricDivider} />
+            <View style={styles.metric}>
+              <Text style={styles.metricLabel}>Chi tiêu</Text>
+              <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.72} style={[styles.metricValue, { color: c.expense }]}>
+                {formatVND(expenseTotal)}
+              </Text>
+            </View>
           </View>
         </View>
 
         {/* Primary CTA — Chat AI */}
-        <TouchableOpacity style={styles.primaryAction} onPress={() => navigation.navigate('Chat')} activeOpacity={0.85}>
-          <View style={styles.actionIcon}>
-            <AppIcon name="auto-awesome" size={20} color={c.onBrand} />
-          </View>
+        <TouchableOpacity
+          accessibilityRole="button"
+          accessibilityLabel="Nhập giao dịch bằng Chat AI"
+          style={styles.primaryAction}
+          onPress={() => navigation.navigate('Chat')}
+          activeOpacity={0.85}
+        >
           <View style={{ flex: 1 }}>
             <Text style={styles.primaryActionText}>Nhập bằng Chat AI</Text>
             <Text style={styles.primaryActionSub}>Nhắn, nói hoặc chụp hóa đơn</Text>
@@ -135,27 +150,10 @@ export default function DashboardScreen({ navigation }) {
           <AppIcon name="chevron-right" size={20} color="rgba(255,255,255,0.8)" />
         </TouchableOpacity>
 
-        {/* Quick nav */}
-        <View style={styles.quickNav}>
-          {[
-            { icon: 'account-balance-wallet', label: 'Ngân sách', onPress: () => navigation.navigate('Budget'), tone: c.brand, bg: c.brandSoft },
-            { icon: 'bar-chart', label: 'Báo cáo', onPress: () => navigation.navigate('Report'), tone: c.info, bg: c.infoSoft },
-            { icon: 'format-list-bulleted', label: 'Giao dịch', onPress: () => goTools('Transactions'), tone: c.income, bg: c.incomeSoft },
-          ].map((item) => (
-            <TouchableOpacity key={item.label} style={styles.navItem} onPress={item.onPress} activeOpacity={0.75}>
-              <View style={[styles.navIcon, { backgroundColor: item.bg }]}>
-                <AppIcon name={item.icon} size={20} color={item.tone} />
-              </View>
-              <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={styles.navLabel}>{item.label}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-
         <SectionHeader title="Giao dịch gần đây" actionLabel="Xem tất cả" onAction={() => goTools('Transactions')} />
 
         {state.transactions.length === 0 ? (
           <EmptyState
-            emoji="💬"
             title="Chưa có giao dịch nào"
             message="Hãy nhắn cho PERFIN khoản thu chi đầu tiên!"
             actionLabel="Bắt đầu ngay"
@@ -163,7 +161,7 @@ export default function DashboardScreen({ navigation }) {
             onAction={() => navigation.navigate('Chat')}
           />
         ) : (
-          state.transactions.map((tx) => <TransactionCard key={tx.id} transaction={tx} />)
+          state.transactions.slice(0, 3).map((tx) => <TransactionCard key={tx.id} transaction={tx} />)
         )}
       </ScrollView>
     </SafeAreaView>
@@ -182,42 +180,26 @@ const createStyles = (t) => StyleSheet.create({
     borderWidth: 1,
     borderColor: t.colors.border,
     marginBottom: 14,
-    ...t.shadows.sm,
   },
   balanceHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 12 },
-  walletChip: {
-    flexDirection: 'row', alignItems: 'center', gap: 5,
-    backgroundColor: t.colors.brandSoft, paddingHorizontal: 10, paddingVertical: 5, borderRadius: t.radius.pill,
-    flexShrink: 1, minWidth: 0,
-  },
-  walletLabel: { color: t.colors.brandText, fontWeight: '700', fontSize: 12 },
-  periodLabel: { flexShrink: 0, fontSize: 12, color: t.colors.textMuted, fontWeight: '600' },
-  balanceAmount: { fontSize: 34, fontWeight: '900', color: t.colors.text, marginBottom: 12 },
+  walletLabel: { color: t.colors.textSecondary, fontWeight: '600', fontSize: 14 },
+  periodLabel: { flexShrink: 0, fontSize: 12, color: t.colors.textMuted, fontWeight: '500' },
+  balanceAmount: { fontSize: 34, lineHeight: 42, fontWeight: '700', color: t.colors.text, marginBottom: 6 },
 
   netBadge: {
-    flexDirection: 'row', alignItems: 'center', gap: 5,
-    paddingVertical: 7, paddingHorizontal: 12, borderRadius: t.radius.pill, alignSelf: 'flex-start',
+    flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start',
   },
-  netText: { fontSize: 13, fontWeight: '700' },
-  statsRow: { flexDirection: 'row', gap: 12, marginTop: 16 },
+  netText: { fontSize: 14, lineHeight: 20, fontWeight: '600' },
+  statsRow: { flexDirection: 'row', alignItems: 'stretch', marginTop: 18, paddingTop: 16, borderTopWidth: 1, borderTopColor: t.colors.border },
+  metric: { flex: 1, minWidth: 0 },
+  metricDivider: { width: 1, backgroundColor: t.colors.border, marginHorizontal: 14 },
+  metricLabel: { color: t.colors.textMuted, fontSize: 12, lineHeight: 16, fontWeight: '600', marginBottom: 4 },
+  metricValue: { fontSize: 18, lineHeight: 26, fontWeight: '700' },
 
   primaryAction: {
     flexDirection: 'row', alignItems: 'center', gap: 12,
-    backgroundColor: t.colors.brand, padding: 16, borderRadius: t.radius.lg, marginBottom: 14, ...t.shadows.md,
+    backgroundColor: t.colors.brand, padding: 16, borderRadius: t.radius.md, marginBottom: 24,
   },
-  actionIcon: {
-    width: 42, height: 42, borderRadius: 14,
-    backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center',
-  },
-  primaryActionText: { color: t.colors.onBrand, fontWeight: '800', fontSize: 16 },
-  primaryActionSub: { color: 'rgba(255,255,255,0.85)', fontSize: 12, fontWeight: '500', marginTop: 2 },
-
-  quickNav: { flexDirection: 'row', gap: 10, marginBottom: 22 },
-  navItem: {
-    flex: 1, alignItems: 'center', gap: 8,
-    backgroundColor: t.colors.surface, paddingVertical: 16, borderRadius: t.radius.lg,
-    borderWidth: 1, borderColor: t.colors.border,
-  },
-  navIcon: { width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
-  navLabel: { fontWeight: '700', color: t.colors.text, fontSize: 12 },
+  primaryActionText: { color: t.colors.onBrand, fontWeight: '700', fontSize: 16 },
+  primaryActionSub: { color: 'rgba(255,255,255,0.86)', fontSize: 13, lineHeight: 18, fontWeight: '400', marginTop: 2 },
 });

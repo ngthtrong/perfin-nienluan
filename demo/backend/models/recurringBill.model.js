@@ -1,3 +1,6 @@
+// Vai trò: Quản lý khoản chi định kỳ, lịch đến hạn và lịch sử thanh toán.
+// Luồng chính: xác thực chu kỳ, tính ngày kế tiếp, ghi nhận thanh toán nguyên tử và dò cadence.
+
 const { pool, query, rollbackAfterFailure } = require('../config/database');
 const { normalizeText } = require('../services/parser.service');
 const KVStore = require('../services/store/kv.store');
@@ -85,9 +88,8 @@ function assertRecurringSchedule(frequency, dueDay) {
   return result;
 }
 
-// Core algorithm: compute the next due date for a bill given its frequency + due_day,
-// starting strictly after `fromDate` (default today). due_day is day-of-month for
-// monthly/quarterly/yearly, ISO day-of-week (1=Mon..7=Sun) for weekly.
+// Tính ngày đến hạn kế tiếp từ cadence và due_day; tháng ngắn được chặn ở ngày cuối tháng.
+// Weekly dùng thứ ISO 1–7, các chu kỳ còn lại dùng ngày trong tháng.
 function computeNextDueDate(frequency, dueDay, fromDate = new Date(), inclusive = false) {
   const schedule = assertRecurringSchedule(frequency, dueDay);
   const base = parseLocalDate(fromDate);
@@ -364,6 +366,7 @@ const RecurringBillModel = {
   // A payment changes four related records, so all writes must use one locked DB
   // transaction. The required period date is an optimistic-concurrency token that
   // prevents a repeated client request from paying the newly advanced period.
+  // Ghi payment và transaction sổ cái trong cùng transaction để không lệch trạng thái.
   async recordPayment(billId, {
     amount,
     walletId,
@@ -551,6 +554,7 @@ const RecurringBillModel = {
   // AI detection: group expense transactions by normalized description, find groups with >=3
   // occurrences that recur monthly, propose a candidate (FR-08-02). Skips existing bills and
   // suggestions dismissed within the last 30 days.
+  // Dò cadence từ lịch sử nhưng chỉ trả suggestion, không tự tạo recurring bill.
   async detectRecurringCandidates(userId = DEFAULT_USER) {
     const txResult = await query(
       `SELECT t.description, t.amount, t.transaction_date, t.category_id, t.wallet_id

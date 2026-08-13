@@ -1,3 +1,6 @@
+// Vai trò: Quản lý kết nối BullMQ Queue và interface enqueue dùng từ HTTP API.
+// Luồng chính: tạo connection riêng, degrade khi Redis thiếu và đóng tài nguyên có kiểm soát.
+
 const { Queue } = require('bullmq');
 const { getClient } = require('../store/redis.client');
 const { QUEUE_NAME, JOB_NAMES } = require('./constants');

@@ -1,3 +1,6 @@
+// Vai trò: Tạo handler backup tự động theo cấu hình của từng người dùng.
+// Luồng chính: kiểm tra lịch đến hạn, tạo backup, giới hạn số bản giữ lại và cập nhật lần chạy.
+
 const { resolveTargetUserIds } = require('../userScope');
 const { isBackupDue } = require('../schedules');
 

@@ -1,3 +1,6 @@
+// Vai trò: Thực hiện chuyển ví, lãi/lỗ đầu tư và tổng hợp tài sản ròng, dòng tiền.
+// Luồng chính: khóa và cập nhật các bản ghi liên quan trong transaction rồi làm mới cache.
+
 const { pool, query, rollbackAfterFailure } = require('../config/database');
 const KVStore = require('../services/store/kv.store');
 const { normalizePastOrPresentDate } = require('../services/transactions/validation');

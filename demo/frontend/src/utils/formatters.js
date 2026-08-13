@@ -1,3 +1,6 @@
+// Vai trò: Cung cấp các hàm định dạng và parse tiền/ngày nhất quán cho giao diện.
+// Luồng chính: chuyển dữ liệu API/form thành chuỗi Việt hóa và ngược lại mà không gọi side effect.
+
 export function formatVND(amount, showSign = false) {
   const value = Number(amount || 0);
   const sign = showSign && value > 0 ? '+' : '';

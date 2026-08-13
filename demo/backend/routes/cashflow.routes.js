@@ -1,3 +1,6 @@
+// Vai trò: Công bố API chuyển tiền, đầu tư, tài sản ròng và chuỗi dòng tiền.
+// Luồng chính: chuẩn hóa kỳ/payload, gọi model transaction-safe và trả kết quả tổng hợp.
+
 const express = require('express');
 const router = express.Router();
 const { TransferModel, InvestmentPnLModel, NetWorthModel, CashflowModel } = require('../models/cashflow.model');

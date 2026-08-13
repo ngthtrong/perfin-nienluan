@@ -1,3 +1,6 @@
+// Vai trò: Cho người dùng kiểm tra OCR/STT và chọn cách tạo bản nháp từ media.
+// Luồng chính: hiển thị raw text/lựa chọn, thu context sửa đổi rồi gửi continue hoặc cancel.
+
 import { useMemo, useState } from 'react';
 import { ActivityIndicator, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useTheme } from '../theme/ThemeContext';
@@ -19,6 +22,7 @@ function ReceiptOption({ active, icon, label, detail, onPress, styles, colors })
   );
 }
 
+// Hiển thị raw text và bắt buộc người dùng chọn cách diễn giải media trước khi tiếp tục.
 export default function MediaConfirmationCard({
   kind,
   text,
@@ -43,9 +47,6 @@ export default function MediaConfirmationCard({
     <View style={styles.wrapper}>
       <View style={styles.card}>
         <View style={styles.header}>
-          <View style={styles.headerIcon}>
-            <AppIcon name={voice ? 'record-voice-over' : 'receipt-long'} size={18} color={c.brand} />
-          </View>
           <View style={{ flex: 1 }}>
             <Text style={styles.heading}>{voice ? 'Xác nhận nội dung giọng nói' : 'Chọn cách ghi hóa đơn'}</Text>
             <Text style={styles.subheading}>
@@ -142,18 +143,14 @@ const createStyles = (t) => StyleSheet.create({
   wrapper: { alignSelf: 'flex-start', width: '94%', marginBottom: 12 },
   card: {
     backgroundColor: t.colors.surface, borderRadius: t.radius.xl,
-    borderWidth: 1.5, borderColor: t.colors.border, overflow: 'hidden', ...t.shadows.md,
+    borderWidth: 1, borderColor: t.colors.border, overflow: 'hidden',
   },
   header: {
     flexDirection: 'row', alignItems: 'center', gap: 9, padding: 14,
-    backgroundColor: t.colors.surfaceAlt, borderBottomWidth: 1, borderBottomColor: t.colors.border,
+    borderBottomWidth: 1, borderBottomColor: t.colors.border,
   },
-  headerIcon: {
-    width: 34, height: 34, borderRadius: 11, backgroundColor: t.colors.brandSoft,
-    alignItems: 'center', justifyContent: 'center',
-  },
-  heading: { color: t.colors.text, fontSize: 14, fontWeight: '800' },
-  subheading: { color: t.colors.textMuted, fontSize: 11, lineHeight: 15, fontWeight: '600', marginTop: 2 },
+  heading: { color: t.colors.text, fontSize: 14, fontWeight: '700' },
+  subheading: { color: t.colors.textMuted, fontSize: 12, lineHeight: 15, fontWeight: '600', marginTop: 2 },
   body: { padding: 14 },
   transcriptInput: {
     minHeight: 88, maxHeight: 160, borderWidth: 1.5, borderColor: t.colors.border,
@@ -165,7 +162,7 @@ const createStyles = (t) => StyleSheet.create({
     borderRadius: t.radius.sm, backgroundColor: t.colors.surfaceAlt,
     borderWidth: 1, borderColor: t.colors.border,
   },
-  contextLabel: { color: t.colors.textMuted, fontSize: 10, fontWeight: '700', marginBottom: 2 },
+  contextLabel: { color: t.colors.textMuted, fontSize: 12, fontWeight: '700', marginBottom: 2 },
   contextText: { color: t.colors.textSecondary, fontSize: 12, lineHeight: 17, fontWeight: '600' },
   option: {
     flexDirection: 'row', alignItems: 'center', gap: 9, padding: 11,
@@ -178,23 +175,23 @@ const createStyles = (t) => StyleSheet.create({
     backgroundColor: t.colors.surface,
   },
   optionIconActive: { backgroundColor: t.colors.brand },
-  optionLabel: { color: t.colors.text, fontSize: 13, fontWeight: '800' },
+  optionLabel: { color: t.colors.text, fontSize: 13, fontWeight: '700' },
   optionLabelActive: { color: t.colors.brandText },
-  optionDetail: { color: t.colors.textMuted, fontSize: 11, fontWeight: '600', marginTop: 2 },
+  optionDetail: { color: t.colors.textMuted, fontSize: 12, fontWeight: '600', marginTop: 2 },
   itemPreview: {
     padding: 10, borderRadius: t.radius.sm, backgroundColor: t.colors.surfaceAlt,
     borderWidth: 1, borderColor: t.colors.border,
   },
   itemRow: { flexDirection: 'row', justifyContent: 'space-between', gap: 10, paddingVertical: 3 },
-  itemName: { flex: 1, color: t.colors.textSecondary, fontSize: 11, fontWeight: '600' },
-  itemAmount: { color: t.colors.expense, fontSize: 11, fontWeight: '800' },
-  moreItems: { color: t.colors.brandText, fontSize: 11, fontWeight: '700', marginTop: 4 },
+  itemName: { flex: 1, color: t.colors.textSecondary, fontSize: 12, fontWeight: '600' },
+  itemAmount: { color: t.colors.expense, fontSize: 12, fontWeight: '700' },
+  moreItems: { color: t.colors.brandText, fontSize: 12, fontWeight: '700', marginTop: 4 },
   actions: { flexDirection: 'row', gap: 8, padding: 12, borderTopWidth: 1, borderTopColor: t.colors.border },
   confirmButton: {
-    flex: 1, minHeight: 42, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
+    flex: 1, minHeight: 44, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
     backgroundColor: t.colors.brand, borderRadius: t.radius.md,
   },
-  confirmText: { color: t.colors.onBrand, fontWeight: '800', fontSize: 13 },
+  confirmText: { color: t.colors.onBrand, fontWeight: '700', fontSize: 13 },
   cancelButton: {
     justifyContent: 'center', paddingHorizontal: 14, borderRadius: t.radius.md,
     borderWidth: 1.5, borderColor: t.colors.border, backgroundColor: t.colors.surfaceAlt,
@@ -204,5 +201,5 @@ const createStyles = (t) => StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
     padding: 12, borderTopWidth: 1, borderTopColor: t.colors.border, backgroundColor: t.colors.incomeSoft,
   },
-  resolvedText: { color: t.colors.income, fontSize: 12, fontWeight: '800' },
+  resolvedText: { color: t.colors.income, fontSize: 12, fontWeight: '700' },
 });

@@ -1,6 +1,6 @@
-// Calendar-axis helpers used between SQL aggregation and the analytics algorithms.
-// Missing calendar periods are real zero observations, not permission to shorten
-// the x-axis or the denominator.
+// Vai trò: Dựng trục lịch nhất quán giữa dữ liệu SQL và thuật toán phân tích.
+// Luồng chính: tạo khóa ngày/tháng/tuần rồi zero-fill các kỳ thiếu trên đúng cửa sổ.
+// Kỳ không phát sinh là quan sát bằng 0, không được âm thầm rút ngắn mẫu số.
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 

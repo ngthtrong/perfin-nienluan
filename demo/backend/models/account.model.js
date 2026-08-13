@@ -1,3 +1,6 @@
+// Vai trò: Truy cập dữ liệu ví/tài khoản và duy trì ví mặc định của người dùng.
+// Luồng chính: đọc hoặc ghi PostgreSQL, sau đó vô hiệu cache tài chính liên quan.
+
 const { query } = require('../config/database');
 const KVStore = require('../services/store/kv.store');
 

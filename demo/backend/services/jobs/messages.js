@@ -1,3 +1,6 @@
+// Vai trò: Tạo nội dung tiếng Việt xác định cho các proactive job.
+// Luồng chính: nhận facts/bill, định dạng số/ngày và trả message cùng fingerprint ổn định.
+
 const crypto = require('crypto');
 
 function formatVND(value) {
@@ -13,6 +16,7 @@ function formatDateVi(value) {
   return day && month && year ? `${day}/${month}/${year}` : String(value);
 }
 
+// Dựng reminder ngắn, giới hạn số bill hiển thị và giữ dữ liệu bill trong metadata riêng.
 function recurringReminderMessage(bills, { maxItems = 5 } = {}) {
   const safeBills = Array.isArray(bills) ? bills : [];
   if (!safeBills.length) return null;

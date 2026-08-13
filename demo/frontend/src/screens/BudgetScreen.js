@@ -1,3 +1,6 @@
+// Vai trò: Trình bày hạn mức, tiến độ, dự báo và đề xuất ngân sách theo tháng.
+// Luồng chính: tải facts từ API, cho phép CRUD/áp dụng đề xuất rồi refresh danh sách.
+
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, FlatList,
@@ -37,6 +40,7 @@ function getStatusMeta(status, c) {
   return                            { label: 'Ổn định',  color: c.income,  bg: c.incomeSoft,  icon: 'check-circle-outline' };
 }
 
+// Quản lý đồng thời danh sách hạn mức, forecast và khối recommendation của kỳ.
 export default function BudgetScreen() {
   const { theme } = useTheme();
   const styles = useMemo(() => createStyles(theme), [theme]);
@@ -56,6 +60,8 @@ export default function BudgetScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
   const [showForm, setShowForm] = useState(false);
+  const [showAllForecasts, setShowAllForecasts] = useState(false);
+  const [showRecommendation, setShowRecommendation] = useState(false);
   const [categorySearch, setCategorySearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [sortFilter, setSortFilter] = useState('usage');
@@ -63,6 +69,7 @@ export default function BudgetScreen() {
   const [editAmount, setEditAmount] = useState('');
   const [rowBusyId, setRowBusyId] = useState(null);
 
+  // Tải dữ liệu ngân sách song song rồi ghép về một state hiển thị nhất quán.
   const load = useCallback(async () => {
     try {
       const [items, forecastResult, cats, suggested] = await Promise.all([
@@ -98,6 +105,7 @@ export default function BudgetScreen() {
     setRefreshing(false);
   }, [load]);
 
+  // Validation form phía client trước khi gửi hạn mức mới tới backend.
   async function add() {
     const parsedAmount = parseMoneyInput(amount);
     if (!categoryId || !(parsedAmount > 0)) {
@@ -205,7 +213,6 @@ export default function BudgetScreen() {
   const totalSpent = progress.reduce((s, i) => s + Number(i.spent), 0);
   const overallPct = totalBudget > 0 ? Math.round((totalSpent / totalBudget) * 100) : 0;
   const pctColor = overallPct > 100 ? c.expense : overallPct > 70 ? c.warning : c.income;
-  const pctBg = overallPct > 100 ? c.expenseSoft : overallPct > 70 ? c.warningSoft : c.incomeSoft;
   const overspendForecasts = forecast
     .filter((item) => item.likely_to_exceed)
     .sort((left, right) => Number(right.projected_percentage) - Number(left.projected_percentage));
@@ -240,7 +247,7 @@ export default function BudgetScreen() {
   if (loading) {
     return (
       <SafeAreaView style={styles.safe} edges={['top']}>
-        <AppHeader subtitle="Ngân sách" showAIStatus={false} />
+        <AppHeader title="Ngân sách" />
         <SkeletonGroup label="Đang tải ngân sách" style={styles.loadingContent}>
           {[1, 2, 3].map((i) => <Skeleton key={i} height={96} radius={18} />)}
         </SkeletonGroup>
@@ -251,7 +258,7 @@ export default function BudgetScreen() {
   if (error) {
     return (
       <SafeAreaView style={styles.safe} edges={['top']}>
-        <AppHeader subtitle="Ngân sách" showAIStatus={false} />
+        <AppHeader title="Ngân sách" />
         <ErrorState message={error} onRetry={() => { setLoading(true); setError(null); load(); }} />
       </SafeAreaView>
     );
@@ -259,7 +266,7 @@ export default function BudgetScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
-      <AppHeader subtitle="Ngân sách" showAIStatus={false} />
+      <AppHeader title="Ngân sách" />
       <FlatList
         contentContainerStyle={styles.content}
         data={visibleProgress}
@@ -272,7 +279,6 @@ export default function BudgetScreen() {
                 <AppIcon name="chevron-left" size={21} color={c.brandText} />
               </TouchableOpacity>
               <View style={styles.monthNavTitle}>
-                <AppIcon name="calendar-today" size={15} color={c.brandText} />
                 <Text style={styles.monthNavText}>Tháng {period.month} · {period.year}</Text>
               </View>
               <TouchableOpacity accessibilityLabel="Tháng sau" accessibilityRole="button" onPress={() => changeMonth(1)} hitSlop={HIT_SLOP} style={styles.monthNavButton}>
@@ -282,14 +288,11 @@ export default function BudgetScreen() {
 
             <View style={styles.overviewCard}>
               <View style={{ flex: 1, minWidth: 0 }}>
-                <View style={styles.periodChip}>
-                  <AppIcon name="calendar-today" size={13} color={c.brandText} />
-                  <Text style={styles.periodText}>Tháng {period.month}/{period.year}</Text>
-                </View>
+                <Text style={styles.periodText}>ĐÃ CHI · THÁNG {period.month}/{period.year}</Text>
                 <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} style={styles.overviewSpent}>{formatVND(totalSpent)}</Text>
                 <Text numberOfLines={2} style={styles.overviewTotal}>/ {formatVND(totalBudget)} ngân sách</Text>
               </View>
-              <View style={[styles.pctCircle, { borderColor: pctColor, backgroundColor: pctBg }]}>
+              <View style={[styles.pctCircle, { borderColor: pctColor }]}>
                 <Text style={[styles.pctText, { color: pctColor }]}>{overallPct}%</Text>
                 <Text style={styles.pctLabel}>đã dùng</Text>
               </View>
@@ -298,9 +301,7 @@ export default function BudgetScreen() {
             {overspendForecasts.length > 0 && (
               <View style={styles.forecastCard}>
                 <View style={styles.forecastHeader}>
-                  <View style={styles.forecastIcon}>
-                    <AppIcon name="trending-up" size={17} color={c.warning} />
-                  </View>
+                  <AppIcon name="warning-amber" size={20} color={c.warning} />
                   <View style={{ flex: 1, minWidth: 0 }}>
                     <Text style={styles.forecastTitle}>Dự báo có thể vượt ngân sách</Text>
                     <Text style={styles.forecastSub}>
@@ -310,7 +311,7 @@ export default function BudgetScreen() {
                 </View>
 
                 <View style={styles.forecastList}>
-                  {overspendForecasts.slice(0, 4).map((item, index) => {
+                  {overspendForecasts.slice(0, showAllForecasts ? overspendForecasts.length : 2).map((item, index) => {
                     const limit = Number(item.amount_limit) || 0;
                     const spent = Number(item.spent) || 0;
                     const projectedSpend = Number(item.projected_spend) || 0;
@@ -334,9 +335,19 @@ export default function BudgetScreen() {
                       </View>
                     );
                   })}
-                  {overspendForecasts.length > 4 && (
-                    <Text style={styles.forecastMore}>+{overspendForecasts.length - 4} danh mục có nguy cơ khác</Text>
-                  )}
+                  {overspendForecasts.length > 2 ? (
+                    <TouchableOpacity
+                      accessibilityRole="button"
+                      accessibilityState={{ expanded: showAllForecasts }}
+                      onPress={() => setShowAllForecasts((value) => !value)}
+                      style={styles.disclosureButton}
+                    >
+                      <Text style={styles.forecastMore}>
+                        {showAllForecasts ? 'Thu gọn' : `Xem tất cả ${overspendForecasts.length} danh mục`}
+                      </Text>
+                      <AppIcon name={showAllForecasts ? 'expand-less' : 'expand-more'} size={18} color={c.warning} />
+                    </TouchableOpacity>
+                  ) : null}
                 </View>
               </View>
             )}
@@ -350,10 +361,14 @@ export default function BudgetScreen() {
 
             {recommendation && (
               <View style={styles.recommendationCard}>
-                <View style={styles.recommendationHeader}>
-                  <View style={styles.recommendationIcon}>
-                    <AppIcon name="auto-awesome" size={18} color={c.onBrand} />
-                  </View>
+                <TouchableOpacity
+                  accessibilityRole="button"
+                  accessibilityLabel="Chi tiết ngân sách PERFIN đề xuất"
+                  accessibilityState={{ expanded: showRecommendation }}
+                  activeOpacity={0.7}
+                  onPress={() => setShowRecommendation((value) => !value)}
+                  style={styles.recommendationHeader}
+                >
                   <View style={{ flex: 1, minWidth: 0 }}>
                     <Text style={styles.recommendationTitle}>Ngân sách PERFIN đề xuất</Text>
                     <Text style={styles.recommendationSub}>
@@ -361,9 +376,10 @@ export default function BudgetScreen() {
                     </Text>
                   </View>
                   <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.72} style={styles.recommendationTotal}>{formatVND(recommendation.total_recommended)}</Text>
-                </View>
+                  <AppIcon name={showRecommendation ? 'expand-less' : 'expand-more'} size={20} color={c.textMuted} />
+                </TouchableOpacity>
 
-                {recommendation.categories?.length > 0 ? (
+                {showRecommendation && recommendation.categories?.length > 0 ? (
                   <>
                     <View style={styles.recommendationList}>
                       {recommendation.categories.slice(0, 4).map((item, index) => (
@@ -396,16 +412,17 @@ export default function BudgetScreen() {
                       label="Áp dụng đề xuất"
                       icon="playlist-add-check"
                       size="sm"
+                      variant="secondary"
                       onPress={applyRecommendation}
                       loading={applyingRecommendation}
                       style={{ marginTop: 11 }}
                     />
                   </>
-                ) : (
+                ) : showRecommendation ? (
                   <Text style={styles.recommendationEmpty}>
                     Hãy ghi thêm giao dịch để PERFIN có đủ dữ liệu đề xuất hạn mức theo danh mục.
                   </Text>
-                )}
+                ) : null}
               </View>
             )}
 
@@ -426,10 +443,12 @@ export default function BudgetScreen() {
                     return (
                       <TouchableOpacity
                         key={cat.id}
+                        accessibilityRole="button"
+                        accessibilityState={{ selected: active }}
                         style={[styles.catChip, active && styles.catChipActive]}
                         onPress={() => setCategoryId(cat.id)}
                       >
-                        <CategoryIcon icon={cat.icon} name={cat.name} type={cat.type} size={15} color={active ? c.onBrand : c.textSecondary} />
+                        <CategoryIcon icon={cat.icon} name={cat.name} type={cat.type} size={15} color={active ? c.brandText : c.textSecondary} />
                         <Text style={[styles.catChipText, active && styles.catChipTextActive]}>{cat.name}</Text>
                       </TouchableOpacity>
                     );
@@ -469,7 +488,7 @@ export default function BudgetScreen() {
                     value={categorySearch}
                   />
                   {categorySearch ? (
-                    <TouchableOpacity accessibilityLabel="Xóa từ khóa" onPress={() => setCategorySearch('')}>
+                    <TouchableOpacity accessibilityRole="button" accessibilityLabel="Xóa từ khóa" onPress={() => setCategorySearch('')} style={styles.clearSearchButton}>
                       <AppIcon name="close" size={17} color={c.textMuted} />
                     </TouchableOpacity>
                   ) : null}
@@ -512,13 +531,9 @@ export default function BudgetScreen() {
             <View style={styles.card}>
               <View style={styles.cardHeader}>
                 <View style={styles.cardTitleRow}>
-                  <View style={styles.catIcon}>
-                    <CategoryIcon icon={item.category_icon} name={item.category_name} type="expense" size={16} color={c.brand} />
-                  </View>
-                      <Text numberOfLines={1} style={styles.cardTitle}>{item.category_name}</Text>
+                  <Text numberOfLines={1} style={styles.cardTitle}>{item.category_name}</Text>
                 </View>
                 <View style={[styles.statusBadge, { backgroundColor: meta.bg }]}>
-                  <AppIcon name={meta.icon} size={12} color={meta.color} />
                   <Text style={[styles.statusText, { color: meta.color }]}>{meta.label}</Text>
                 </View>
               </View>
@@ -563,7 +578,6 @@ export default function BudgetScreen() {
                     onPress={() => startEdit(item)}
                     disabled={rowBusy}
                   >
-                    <AppIcon name="edit" size={15} color={c.brandText} />
                     <Text style={styles.actionText}>Sửa</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
@@ -573,7 +587,6 @@ export default function BudgetScreen() {
                     onPress={() => removeBudget(item)}
                     disabled={rowBusy}
                   >
-                    <AppIcon name="delete-outline" size={15} color={c.expense} />
                     <Text style={[styles.actionText, { color: c.expense }]}>Xóa</Text>
                   </TouchableOpacity>
                 </View>
@@ -584,13 +597,11 @@ export default function BudgetScreen() {
         ListEmptyComponent={
           progress.length > 0 ? (
             <EmptyState
-              emoji="🔎"
               title="Không có kết quả phù hợp"
               message="Thử đổi từ khóa, trạng thái hoặc cách sắp xếp."
             />
           ) : (
             <EmptyState
-              emoji="💰"
               title="Chưa có ngân sách"
               message="Thêm ngân sách để kiểm soát chi tiêu tốt hơn!"
               actionLabel="Thêm ngân sách"
@@ -612,108 +623,96 @@ const createStyles = (t) => StyleSheet.create({
   monthNav: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     padding: 10, marginBottom: 12, borderRadius: t.radius.lg,
-    backgroundColor: t.colors.surface, borderWidth: 1, borderColor: t.colors.border, ...t.shadows.sm,
+    backgroundColor: t.colors.surface,
   },
   monthNavButton: {
-    width: 38, height: 38, alignItems: 'center', justifyContent: 'center',
-    borderRadius: 19, backgroundColor: t.colors.brandSoft,
+    width: 44, height: 44, alignItems: 'center', justifyContent: 'center',
+    borderRadius: 22,
   },
   monthNavTitle: { flexDirection: 'row', alignItems: 'center', gap: 7 },
-  monthNavText: { color: t.colors.text, fontSize: 15, fontWeight: '800' },
+  monthNavText: { color: t.colors.text, fontSize: 16, fontWeight: '600' },
 
   overviewCard: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     backgroundColor: t.colors.surface, padding: 18, borderRadius: t.radius.xl,
-    borderWidth: 1, borderColor: t.colors.border, marginBottom: 12, ...t.shadows.sm,
+    borderWidth: 1, borderColor: t.colors.border, marginBottom: 12,
   },
-  periodChip: {
-    flexDirection: 'row', alignItems: 'center', gap: 5,
-    backgroundColor: t.colors.brandSoft, paddingHorizontal: 10, paddingVertical: 5,
-    borderRadius: t.radius.pill, alignSelf: 'flex-start', marginBottom: 10,
-  },
-  periodText: { fontSize: 12, color: t.colors.brandText, fontWeight: '700' },
-  overviewSpent: { fontSize: 26, fontWeight: '900', color: t.colors.expense, marginBottom: 2 },
-  overviewTotal: { fontSize: 13, color: t.colors.textMuted, fontWeight: '600' },
-  pctCircle: { width: 70, height: 70, borderRadius: 35, alignItems: 'center', justifyContent: 'center', borderWidth: 3 },
-  pctText: { fontSize: 18, fontWeight: '900' },
-  pctLabel: { fontSize: 9, color: t.colors.textMuted, fontWeight: '600' },
+  periodText: { fontSize: 12, lineHeight: 16, color: t.colors.textMuted, fontWeight: '600', marginBottom: 8 },
+  overviewSpent: { fontSize: 28, lineHeight: 36, fontWeight: '700', color: t.colors.text, marginBottom: 2 },
+  overviewTotal: { fontSize: 14, lineHeight: 20, color: t.colors.textMuted, fontWeight: '400' },
+  pctCircle: { width: 70, height: 70, borderRadius: 35, alignItems: 'center', justifyContent: 'center', borderWidth: 3, backgroundColor: t.colors.surfaceAlt },
+  pctText: { fontSize: 18, fontWeight: '700' },
+  pctLabel: { fontSize: 12, color: t.colors.textMuted, fontWeight: '500' },
 
   forecastCard: {
-    backgroundColor: t.colors.warningSoft, padding: 15, borderRadius: t.radius.lg,
-    borderWidth: 1, borderColor: t.colors.warning, marginBottom: 12,
+    backgroundColor: t.colors.surface, padding: 15, borderRadius: t.radius.lg,
+    borderLeftWidth: 3, borderLeftColor: t.colors.warning, marginBottom: 12,
   },
   forecastHeader: { flexDirection: 'row', alignItems: 'flex-start', gap: 9 },
-  forecastIcon: {
-    width: 34, height: 34, borderRadius: 11, alignItems: 'center', justifyContent: 'center',
-    backgroundColor: t.colors.surface,
-  },
-  forecastTitle: { color: t.colors.text, fontSize: 13, fontWeight: '900' },
-  forecastSub: { color: t.colors.textSecondary, fontSize: 10, lineHeight: 15, fontWeight: '600', marginTop: 2 },
+  forecastTitle: { color: t.colors.text, fontSize: 15, lineHeight: 22, fontWeight: '700' },
+  forecastSub: { color: t.colors.textSecondary, fontSize: 13, lineHeight: 19, fontWeight: '400', marginTop: 2 },
   forecastList: { marginTop: 10, borderTopWidth: 1, borderTopColor: t.colors.borderStrong },
   forecastRow: { flexDirection: 'row', alignItems: 'center', gap: 9, paddingVertical: 9 },
   forecastBorder: { borderTopWidth: 1, borderTopColor: t.colors.border },
-  forecastName: { color: t.colors.text, fontSize: 12, fontWeight: '800' },
-  forecastDetail: { color: t.colors.textMuted, fontSize: 9, lineHeight: 14, fontWeight: '600', marginTop: 2 },
-  forecastAmount: { color: t.colors.expense, fontSize: 11, fontWeight: '900' },
-  forecastPercent: { color: t.colors.warning, fontSize: 9, fontWeight: '800', marginTop: 2 },
-  forecastMore: { color: t.colors.warning, fontSize: 10, fontWeight: '800', paddingBottom: 2 },
+  forecastName: { color: t.colors.text, fontSize: 14, lineHeight: 20, fontWeight: '600' },
+  forecastDetail: { color: t.colors.textMuted, fontSize: 12, lineHeight: 18, fontWeight: '400', marginTop: 2 },
+  forecastAmount: { color: t.colors.expense, fontSize: 13, fontWeight: '700' },
+  forecastPercent: { color: t.colors.warning, fontSize: 12, fontWeight: '600', marginTop: 2 },
+  forecastMore: { color: t.colors.warning, fontSize: 13, fontWeight: '600' },
+  disclosureButton: { minHeight: 44, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, borderTopWidth: 1, borderTopColor: t.colors.border },
   forecastUnavailable: {
     flexDirection: 'row', alignItems: 'flex-start', gap: 6, padding: 10,
     backgroundColor: t.colors.warningSoft, borderRadius: t.radius.md, marginBottom: 12,
   },
-  forecastUnavailableText: { flex: 1, color: t.colors.warning, fontSize: 10, lineHeight: 15, fontWeight: '700' },
+  forecastUnavailableText: { flex: 1, color: t.colors.warning, fontSize: 12, lineHeight: 18, fontWeight: '600' },
 
   recommendationCard: {
     backgroundColor: t.colors.surface, padding: 15, borderRadius: t.radius.lg,
-    borderWidth: 1.5, borderColor: t.colors.brand, marginBottom: 12, ...t.shadows.sm,
+    borderWidth: 1, borderColor: t.colors.border, marginBottom: 12,
   },
-  recommendationHeader: { flexDirection: 'row', alignItems: 'center', gap: 9 },
-  recommendationIcon: {
-    width: 36, height: 36, borderRadius: 12, backgroundColor: t.colors.brand,
-    alignItems: 'center', justifyContent: 'center',
-  },
-  recommendationTitle: { color: t.colors.text, fontSize: 13, fontWeight: '900' },
-  recommendationSub: { color: t.colors.textMuted, fontSize: 10, fontWeight: '600', marginTop: 2 },
-  recommendationTotal: { flexShrink: 1, color: t.colors.brandText, fontSize: 13, fontWeight: '900', maxWidth: '32%', textAlign: 'right' },
+  recommendationHeader: { minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: 9 },
+  recommendationTitle: { color: t.colors.text, fontSize: 15, fontWeight: '700' },
+  recommendationSub: { color: t.colors.textMuted, fontSize: 12, lineHeight: 18, fontWeight: '400', marginTop: 2 },
+  recommendationTotal: { flexShrink: 1, color: t.colors.brandText, fontSize: 14, fontWeight: '700', maxWidth: '32%', textAlign: 'right' },
   recommendationList: {
     marginTop: 12, borderTopWidth: 1, borderBottomWidth: 1, borderColor: t.colors.border,
   },
   recommendationRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 9 },
   recommendationBorder: { borderTopWidth: 1, borderTopColor: t.colors.border },
-  recommendationName: { color: t.colors.text, fontSize: 12, fontWeight: '800' },
-  recommendationReason: { color: t.colors.textMuted, fontSize: 9, fontWeight: '600', marginTop: 2 },
-  recommendationAmount: { color: t.colors.textSecondary, fontSize: 11, fontWeight: '900' },
-  recommendationConfidence: { color: t.colors.income, fontSize: 9, fontWeight: '700', marginTop: 2 },
-  recommendationMore: { color: t.colors.brandText, fontSize: 10, fontWeight: '700', paddingBottom: 8 },
+  recommendationName: { color: t.colors.text, fontSize: 12, fontWeight: '700' },
+  recommendationReason: { color: t.colors.textMuted, fontSize: 12, fontWeight: '600', marginTop: 2 },
+  recommendationAmount: { color: t.colors.textSecondary, fontSize: 12, fontWeight: '700' },
+  recommendationConfidence: { color: t.colors.income, fontSize: 12, fontWeight: '700', marginTop: 2 },
+  recommendationMore: { color: t.colors.brandText, fontSize: 12, fontWeight: '700', paddingBottom: 8 },
   recommendationWarning: {
     flexDirection: 'row', alignItems: 'flex-start', gap: 5, paddingTop: 8,
   },
-  recommendationWarningText: { flex: 1, color: t.colors.warning, fontSize: 10, lineHeight: 14, fontWeight: '700' },
+  recommendationWarningText: { flex: 1, color: t.colors.warning, fontSize: 12, lineHeight: 14, fontWeight: '700' },
   recommendationEmpty: { color: t.colors.textMuted, fontSize: 12, lineHeight: 18, fontWeight: '600', marginTop: 12 },
 
   form: {
     backgroundColor: t.colors.surface, padding: 16, borderRadius: t.radius.lg,
-    borderWidth: 1, borderColor: t.colors.border, marginBottom: 14, ...t.shadows.sm,
+    borderWidth: 1, borderColor: t.colors.border, marginBottom: 14,
   },
   formLabel: { color: t.colors.textMuted, fontWeight: '700', fontSize: 13, marginBottom: 8 },
   catChip: {
-    flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 12, paddingVertical: 8,
+    minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 12, paddingVertical: 8,
     borderRadius: t.radius.pill, backgroundColor: t.colors.surfaceAlt, borderWidth: 1.5, borderColor: t.colors.border,
   },
-  catChipActive: { backgroundColor: t.colors.brand, borderColor: t.colors.brand },
+  catChipActive: { backgroundColor: t.colors.brandSoft, borderColor: t.colors.brand },
   catChipText: { fontSize: 13, color: t.colors.textSecondary, fontWeight: '600' },
-  catChipTextActive: { color: t.colors.onBrand, fontWeight: '700' },
+  catChipTextActive: { color: t.colors.brandText, fontWeight: '700' },
   amountRow: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 10, marginBottom: 14 },
   input: {
     borderWidth: 1.5, borderColor: t.colors.border, borderRadius: t.radius.md,
     padding: 13, fontSize: 15, color: t.colors.text, backgroundColor: t.colors.surfaceAlt,
   },
   amountPreview: { maxWidth: '100%', backgroundColor: t.colors.brandSoft, paddingHorizontal: 10, paddingVertical: 6, borderRadius: t.radius.pill },
-  amountPreviewText: { color: t.colors.brandText, fontWeight: '800', fontSize: 13, flexShrink: 1 },
+  amountPreviewText: { color: t.colors.brandText, fontWeight: '700', fontSize: 13, flexShrink: 1 },
 
   filterCard: {
     padding: 14, marginBottom: 14, borderRadius: t.radius.lg,
-    backgroundColor: t.colors.surface, borderWidth: 1, borderColor: t.colors.border, ...t.shadows.sm,
+    backgroundColor: t.colors.surface, borderWidth: 1, borderColor: t.colors.border,
   },
   searchBox: {
     minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: 9,
@@ -721,21 +720,21 @@ const createStyles = (t) => StyleSheet.create({
     backgroundColor: t.colors.surfaceAlt, borderWidth: 1, borderColor: t.colors.border,
   },
   searchInput: { flex: 1, minWidth: 0, color: t.colors.text, fontSize: 14 },
-  filterLabel: { color: t.colors.textMuted, fontSize: 11, fontWeight: '700', marginBottom: 7 },
+  clearSearchButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', marginRight: -12 },
+  filterLabel: { color: t.colors.textMuted, fontSize: 12, fontWeight: '700', marginBottom: 7 },
   filterRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 7, marginBottom: 11 },
 
-  sectionTitle: { fontSize: 16, fontWeight: '800', color: t.colors.text, marginBottom: 12 },
+  sectionTitle: { fontSize: 16, fontWeight: '700', color: t.colors.text, marginBottom: 12 },
 
   card: {
     backgroundColor: t.colors.surface, padding: 16, borderRadius: t.radius.lg,
-    borderWidth: 1, borderColor: t.colors.border, marginBottom: 10, ...t.shadows.sm,
+    borderWidth: 1, borderColor: t.colors.border, marginBottom: 10,
   },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
   cardTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1, minWidth: 0 },
-  catIcon: { width: 36, height: 36, borderRadius: 12, backgroundColor: t.colors.brandSoft, alignItems: 'center', justifyContent: 'center' },
-  cardTitle: { flex: 1, minWidth: 0, fontSize: 15, fontWeight: '800', color: t.colors.text },
+  cardTitle: { flex: 1, minWidth: 0, fontSize: 15, fontWeight: '700', color: t.colors.text },
   statusBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 8, paddingVertical: 4, borderRadius: t.radius.pill },
-  statusText: { fontSize: 11, fontWeight: '700' },
+  statusText: { fontSize: 12, fontWeight: '700' },
   cardMeta: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', gap: 6, marginTop: 10 },
   metaText: { flexGrow: 1, flexBasis: 132, color: t.colors.textMuted, fontSize: 12 },
 
@@ -744,7 +743,7 @@ const createStyles = (t) => StyleSheet.create({
     borderTopWidth: 1, borderTopColor: t.colors.border,
   },
   actionButton: {
-    flex: 1, minHeight: 40, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
+    flex: 1, minHeight: 44, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
     borderRadius: t.radius.md, borderWidth: 1.5, borderColor: t.colors.border, backgroundColor: t.colors.surfaceAlt,
   },
   actionText: { color: t.colors.brandText, fontWeight: '700', fontSize: 13 },

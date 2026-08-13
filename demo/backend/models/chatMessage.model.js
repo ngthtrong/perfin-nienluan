@@ -1,8 +1,12 @@
+// Vai trò: Lưu lịch sử hội thoại có metadata để khôi phục ngữ cảnh chat.
+// Luồng chính: ghi từng message và đọc các lượt gần nhất theo đúng người dùng.
+
 const { query } = require('../config/database');
 
 const DEFAULT_USER = 'default_user';
 
 module.exports = {
+  // Ghi message cùng metadata machine-readable cho lịch sử và reminder context.
   async create({ userId = DEFAULT_USER, role, content, metadata = {} }) {
     const result = await query(
       'INSERT INTO chat_messages (user_id, role, content, metadata) VALUES ($1, $2, $3, $4) RETURNING *',
@@ -10,6 +14,7 @@ module.exports = {
     );
     return result.rows[0];
   },
+  // Đọc đủ lượt gần nhất theo thứ tự thời gian để dựng context cho chat.
   async getRecent(userId = DEFAULT_USER, limit = 10) {
     const result = await query('SELECT * FROM chat_messages WHERE user_id = $1 ORDER BY created_at DESC LIMIT $2', [userId, limit]);
     return result.rows.reverse();

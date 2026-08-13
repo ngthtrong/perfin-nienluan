@@ -1,3 +1,6 @@
+// Vai trò: Dọn các export hết hạn mà không xóa tệp nằm ngoài thư mục được quản lý.
+// Luồng chính: xác minh đường dẫn thực, unlink best effort rồi đồng bộ lịch sử trong database.
+
 const fs = require('fs');
 const path = require('path');
 const { query } = require('../config/database');

@@ -1,3 +1,6 @@
+// Vai trò: Truy cập danh sách persona và cấu hình persona đang dùng cho hồ sơ.
+// Luồng chính: đọc dữ liệu persona, kết hợp consent rồi dựng đối tượng trang trí lời đáp.
+
 const { query } = require('../config/database');
 const Persona = require('../services/persona.service');
 
@@ -11,6 +14,7 @@ const PersonaModel = {
     return result.rows;
   },
 
+  // Kết hợp bản ghi active với registry Persona để caller nhận hành vi hoàn chỉnh.
   async getActive(userId = DEFAULT_USER) {
     const result = await query(
       `SELECT p.id, p.key, p.name, p.description
@@ -21,6 +25,7 @@ const PersonaModel = {
     return result.rows[0] || null;
   },
 
+  // Chuyển persona active của hồ sơ mà không tác động facts tài chính.
   async setActive(personaId, userId = DEFAULT_USER) {
     const persona = await query('SELECT id, key, name FROM ai_personalities WHERE id = $1', [personaId]);
     if (!persona.rows[0]) {

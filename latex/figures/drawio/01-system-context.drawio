@@ -1,60 +1,65 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<mxfile host="drawio" version="30.4.1">
-  <diagram id="01-system-context" name="System context">
-    <mxGraphModel dx="1200" dy="800" grid="1" gridSize="10" guides="1"
-      tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1"
-      pageWidth="1180" pageHeight="720" math="0" shadow="0">
-      <root>
-        <mxCell id="0" />
-        <mxCell id="1" parent="0" />
-        <mxCell id="title" value="&lt;b&gt;PERFIN System Context and Scope&lt;/b&gt;" style="text;html=1;align=left;verticalAlign=middle;fontSize=18;fontColor=#22303F;" vertex="1" parent="1">
-          <mxGeometry x="40" y="20" width="720" height="28" as="geometry" />
-        </mxCell>
-        <mxCell id="subtitle" value="The deterministic core owns validation, calculations and data writes; AI adapters only return intermediate results." style="text;html=1;align=left;verticalAlign=middle;fontSize=12;fontColor=#5A6A78;whiteSpace=wrap;" vertex="1" parent="1">
-          <mxGeometry x="40" y="52" width="1100" height="36" as="geometry" />
-        </mxCell>
-        <mxCell id="user" value="&lt;b&gt;User&lt;/b&gt;&#xa;enter data · review · confirm · view insights" style="rounded=1;arcSize=10;whiteSpace=wrap;html=1;spacing=6;align=center;verticalAlign=middle;fillColor=#EAEEF2;strokeColor=#6B7A89;fontColor=#2C3440;fontSize=14;strokeWidth=1.2;" vertex="1" parent="1">
-          <mxGeometry x="40" y="300" width="230" height="80" as="geometry" />
-        </mxCell>
-        <mxCell id="mobile" value="&lt;b&gt;PERFIN Client&lt;/b&gt;&#xa;forms · chat · media · previews" style="rounded=1;arcSize=10;whiteSpace=wrap;html=1;spacing=6;align=center;verticalAlign=middle;fillColor=#EEF2F7;strokeColor=#5B7290;fontColor=#22303F;fontSize=14;strokeWidth=1.2;" vertex="1" parent="1">
-          <mxGeometry x="370" y="140" width="300" height="82" as="geometry" />
-        </mxCell>
-        <mxCell id="perfin" value="PERFIN trusted system boundary" style="swimlane;startSize=36;horizontal=1;container=1;pointerEvents=0;collapsible=0;html=1;rounded=0;fillColor=#EEF2F7;swimlaneFillColor=#FFFFFF;strokeColor=#5B7290;fontColor=#22303F;fontSize=14;fontStyle=1;strokeWidth=1.2;" vertex="1" parent="1">
-          <mxGeometry x="350" y="280" width="340" height="220" as="geometry" />
-        </mxCell>
-        <mxCell id="api" value="&lt;b&gt;API and business services&lt;/b&gt;&#xa;validation · transactions · analytics" style="rounded=1;arcSize=10;whiteSpace=wrap;html=1;spacing=6;align=center;verticalAlign=middle;fillColor=#EEF2F7;strokeColor=#5B7290;fontColor=#22303F;fontSize=14;strokeWidth=1.2;" vertex="1" parent="perfin">
-          <mxGeometry x="30" y="55" width="280" height="72" as="geometry" />
-        </mxCell>
-        <mxCell id="pg" value="&lt;b&gt;PostgreSQL&lt;/b&gt;&#xa;authoritative business data" style="shape=cylinder3;boundedLbl=1;whiteSpace=wrap;html=1;fillColor=#E6F4EA;strokeColor=#2E7D46;fontColor=#1B4429;fontSize=13;strokeWidth=1.2;" vertex="1" parent="perfin">
-          <mxGeometry x="30" y="130" width="130" height="78" as="geometry" />
-        </mxCell>
-        <mxCell id="redis" value="&lt;b&gt;Redis / memory KV&lt;/b&gt;&#xa;TTL state · cache · queue" style="shape=cylinder3;boundedLbl=1;whiteSpace=wrap;html=1;fillColor=#FBF3D9;strokeColor=#B08900;fontColor=#5A4700;fontSize=13;strokeWidth=1.2;" vertex="1" parent="perfin">
-          <mxGeometry x="180" y="130" width="130" height="78" as="geometry" />
-        </mxCell>
-        <mxCell id="providers" value="&lt;b&gt;AI adapters&lt;/b&gt;&#xa;Gemini (external) · PaddleOCR + PhoWhisper (local)&#xa;typed candidates / raw text only" style="rounded=1;arcSize=10;whiteSpace=wrap;html=1;spacing=6;align=center;verticalAlign=middle;fillColor=#F0EAF9;strokeColor=#7C5CBF;fontColor=#3A2A5F;fontSize=14;strokeWidth=1.2;dashed=1;" vertex="1" parent="1">
-          <mxGeometry x="800" y="310" width="300" height="110" as="geometry" />
-        </mxCell>
-        <mxCell id="out" value="&lt;b&gt;Outside project scope&lt;/b&gt;&#xa;Open Banking · shared wallets · production authentication" style="rounded=1;arcSize=10;whiteSpace=wrap;html=1;spacing=6;align=center;verticalAlign=middle;fillColor=#FCEDED;strokeColor=#C97A7A;fontColor=#5A2A2A;fontSize=13;strokeWidth=1.2;dashed=1;" vertex="1" parent="1">
-          <mxGeometry x="420" y="590" width="440" height="74" as="geometry" />
-        </mxCell>
-        <mxCell id="e1" value="actions / results" style="edgeStyle=orthogonalEdgeStyle;rounded=0;curved=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#5B7290;fontColor=#22303F;fontSize=11;labelBackgroundColor=#FFFFFF;strokeWidth=1.2;endArrow=blockThin;endFill=1;startArrow=blockThin;startFill=1;startSize=14;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="user" target="mobile">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="e2" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;curved=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#5B7290;fontColor=#22303F;fontSize=11;labelBackgroundColor=#FFFFFF;strokeWidth=1.2;endArrow=blockThin;endFill=1;startArrow=blockThin;startFill=1;startSize=14;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="mobile" target="api">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="e2-ml" value="HTTPS · JSON request / response" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];labelBackgroundColor=#FFFFFF;fontSize=11;fontColor=#22303F;" vertex="1" connectable="0" parent="e2">
-          <mxGeometry x="0.0" relative="1" as="geometry">
-            <mxPoint x="160" y="-18" as="offset" />
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="e3" value="provider request / intermediate result" style="edgeStyle=orthogonalEdgeStyle;rounded=0;curved=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#7C5CBF;fontColor=#3A2A5F;fontSize=11;labelBackgroundColor=#FFFFFF;strokeWidth=1.2;dashed=1;endArrow=blockThin;endFill=1;startArrow=blockThin;startFill=1;startSize=14;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="api" target="providers">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="e4" value="explicitly excluded" style="edgeStyle=orthogonalEdgeStyle;rounded=0;curved=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#C97A7A;fontColor=#5A2A2A;fontSize=11;labelBackgroundColor=#FFFFFF;strokeWidth=1.2;dashed=1;endArrow=none;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="perfin" target="out">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-      </root>
-    </mxGraphModel>
-  </diagram>
+<mxfile host="65bd71144e">
+    <diagram id="01-system-context" name="System context">
+        <mxGraphModel dx="898" dy="1392" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1180" pageHeight="720" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="title" value="&lt;b&gt;PERFIN System Context and Scope&lt;/b&gt;" style="text;html=1;align=left;verticalAlign=middle;fontSize=18;fontColor=#22303F;" parent="1" vertex="1">
+                    <mxGeometry x="150" y="20" width="720" height="28" as="geometry"/>
+                </mxCell>
+                <mxCell id="subtitle" value="The deterministic core owns validation, calculations and data writes; AI adapters only return intermediate results." style="text;html=1;align=left;verticalAlign=middle;fontSize=12;fontColor=#5A6A78;whiteSpace=wrap;" parent="1" vertex="1">
+                    <mxGeometry x="150" y="52" width="1100" height="36" as="geometry"/>
+                </mxCell>
+                <mxCell id="user" value="&lt;b&gt;User&lt;/b&gt;&#xa;enter data · review · confirm · view insights" style="rounded=1;arcSize=10;whiteSpace=wrap;html=1;spacing=6;align=center;verticalAlign=middle;fillColor=#EAEEF2;strokeColor=#6B7A89;fontColor=#2C3440;fontSize=14;strokeWidth=1.2;" parent="1" vertex="1">
+                    <mxGeometry x="200" y="132" width="230" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="mobile" value="&lt;b&gt;PERFIN Client&lt;/b&gt;&#xa;forms · chat · media · previews" style="rounded=1;arcSize=10;whiteSpace=wrap;html=1;spacing=6;align=center;verticalAlign=middle;fillColor=#EEF2F7;strokeColor=#5B7290;fontColor=#22303F;fontSize=14;strokeWidth=1.2;" parent="1" vertex="1">
+                    <mxGeometry x="510" y="130" width="300" height="82" as="geometry"/>
+                </mxCell>
+                <mxCell id="perfin" value="PERFIN trusted system boundary" style="swimlane;startSize=36;horizontal=1;container=1;pointerEvents=0;collapsible=0;html=1;rounded=0;fillColor=#EEF2F7;swimlaneFillColor=#FFFFFF;strokeColor=#5B7290;fontColor=#22303F;fontSize=14;fontStyle=1;strokeWidth=1.2;" parent="1" vertex="1">
+                    <mxGeometry x="460" y="280" width="380" height="250" as="geometry"/>
+                </mxCell>
+                <mxCell id="api" value="&lt;b&gt;API and business services&lt;/b&gt;&#xa;validation · transactions · analytics" style="rounded=1;arcSize=10;whiteSpace=wrap;html=1;spacing=6;align=center;verticalAlign=middle;fillColor=#EEF2F7;strokeColor=#5B7290;fontColor=#22303F;fontSize=14;strokeWidth=1.2;" parent="perfin" vertex="1">
+                    <mxGeometry x="60" y="55" width="280" height="72" as="geometry"/>
+                </mxCell>
+                <mxCell id="pg" value="&lt;b&gt;PostgreSQL&lt;/b&gt;&#xa;authoritative business data" style="shape=cylinder3;boundedLbl=1;whiteSpace=wrap;html=1;spacingLeft=24;fillColor=#E6F4EA;strokeColor=#2E7D46;fontColor=#1B4429;fontSize=13;strokeWidth=1.2;" parent="perfin" vertex="1">
+                    <mxGeometry x="20" y="150" width="150" height="78" as="geometry"/>
+                </mxCell>
+                <mxCell id="pg-logo" value="" style="image;aspect=fixed;html=1;strokeColor=none;fillColor=none;image=img/lib/azure2/databases/Azure_Database_PostgreSQL_Server.svg;" parent="perfin" vertex="1">
+                    <mxGeometry x="25.9" y="166.5" width="34.1" height="46.5" as="geometry"/>
+                </mxCell>
+                <mxCell id="redis" value="&lt;b&gt;Redis / memory KV&lt;/b&gt;&#xa;TTL state · cache · queue" style="shape=cylinder3;boundedLbl=1;whiteSpace=wrap;html=1;spacingLeft=24;fillColor=#FBF3D9;strokeColor=#B08900;fontColor=#5A4700;fontSize=13;strokeWidth=1.2;" parent="perfin" vertex="1">
+                    <mxGeometry x="200" y="150" width="160" height="78" as="geometry"/>
+                </mxCell>
+                <mxCell id="redis-logo" value="" style="image;aspect=fixed;html=1;strokeColor=none;fillColor=none;image=img/lib/azure2/databases/Cache_Redis.svg;" parent="perfin" vertex="1">
+                    <mxGeometry x="190" y="180" width="40.17" height="33" as="geometry"/>
+                </mxCell>
+                <mxCell id="providers" value="&lt;b&gt;AI adapters&lt;/b&gt;&#xa;Gemini (external) · PaddleOCR + PhoWhisper (local)&#xa;typed candidates / raw text only" style="rounded=1;arcSize=10;whiteSpace=wrap;html=1;spacing=6;align=center;verticalAlign=middle;fillColor=#F0EAF9;strokeColor=#7C5CBF;fontColor=#3A2A5F;fontSize=14;strokeWidth=1.2;dashed=1;" parent="1" vertex="1">
+                    <mxGeometry x="130" y="316" width="270" height="110" as="geometry"/>
+                </mxCell>
+                <mxCell id="out" value="&lt;b&gt;Outside project scope&lt;/b&gt;&#xa;Open Banking · shared wallets · production authentication" style="rounded=1;arcSize=10;whiteSpace=wrap;html=1;spacing=6;align=center;verticalAlign=middle;fillColor=#FCEDED;strokeColor=#C97A7A;fontColor=#5A2A2A;fontSize=13;strokeWidth=1.2;dashed=1;" parent="1" vertex="1">
+                    <mxGeometry x="480" y="590" width="340" height="74" as="geometry"/>
+                </mxCell>
+                <mxCell id="e1" value="actions&lt;div&gt;results&lt;/div&gt;" style="edgeStyle=orthogonalEdgeStyle;rounded=0;curved=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#5B7290;fontColor=#22303F;fontSize=11;labelBackgroundColor=#FFFFFF;strokeWidth=1.2;endArrow=blockThin;endFill=1;startArrow=blockThin;startFill=1;startSize=14;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" parent="1" source="user" target="mobile" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e2" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;curved=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#5B7290;fontColor=#22303F;fontSize=11;labelBackgroundColor=#FFFFFF;strokeWidth=1.2;endArrow=blockThin;endFill=1;startArrow=blockThin;startFill=1;startSize=14;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="1" source="mobile" target="api" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e2-ml" value="HTTPS · JSON request / response" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];labelBackgroundColor=#FFFFFF;fontSize=11;fontColor=#22303F;" parent="e2" vertex="1" connectable="0">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint y="-24" as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e3" value="provider request /&amp;nbsp;&lt;div&gt;intermediate result&lt;/div&gt;" style="edgeStyle=orthogonalEdgeStyle;rounded=0;curved=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#7C5CBF;fontColor=#3A2A5F;fontSize=11;labelBackgroundColor=#FFFFFF;strokeWidth=1.2;dashed=1;endArrow=blockThin;endFill=1;startArrow=blockThin;startFill=1;startSize=14;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" parent="1" source="api" target="providers" edge="1">
+                    <mxGeometry x="0.2222" y="-21" relative="1" as="geometry">
+                        <mxPoint as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e4" value="explicitly excluded" style="edgeStyle=orthogonalEdgeStyle;rounded=0;curved=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#C97A7A;fontColor=#5A2A2A;fontSize=11;labelBackgroundColor=#FFFFFF;strokeWidth=1.2;dashed=1;endArrow=none;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="1" source="perfin" target="out" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
 </mxfile>

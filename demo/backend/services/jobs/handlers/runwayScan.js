@@ -1,9 +1,13 @@
+// Vai trò: Quét runway và phát cảnh báo khi số ngày chi tiêu còn lại xuống thấp.
+// Luồng chính: tính facts theo hồ sơ, so ngưỡng rồi lưu proactive message có idempotency.
+
 const { localDateKey } = require('../schedules');
 const { runwayAlertMessage } = require('../messages');
 const { resolveTargetUserIds, resolveUserPayday } = require('../userScope');
 const { persistInternalMessage } = require('../internalMessage');
 const { decorateProactiveMessage } = require('../persona');
 
+// Trả handler chỉ phát cảnh báo khi runway hữu hạn và nhỏ hơn ngưỡng cấu hình.
 function createRunwayScanHandler(deps = {}) {
   const analytics = deps.analytics || require('../../analytics');
   const persist = deps.persistInternalMessage || persistInternalMessage;

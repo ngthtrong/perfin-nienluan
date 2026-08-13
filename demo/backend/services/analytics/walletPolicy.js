@@ -1,5 +1,5 @@
-// Runway represents immediately spendable money in the app's reporting
-// currency. Assets, savings and credit limits are intentionally excluded.
+// Vai trò: Xác định loại ví nào được tính vào số tiền có thể chi ngay của runway.
+// Luồng chính: chỉ nhận ví VND dạng cash, bank hoặc e-wallet; loại tài sản, tiết kiệm và tín dụng.
 
 const RUNWAY_CURRENCY = 'VND';
 const RUNWAY_WALLET_TYPES = Object.freeze(['cash', 'bank', 'e_wallet']);
@@ -10,6 +10,7 @@ function isRunwayEligibleWallet(wallet, { currency = RUNWAY_CURRENCY } = {}) {
   return RUNWAY_WALLET_TYPE_SET.has(wallet.type) && wallet.currency === currency;
 }
 
+// Chỉ cộng số dư của các ví thanh khoản đúng reporting currency khi tính runway.
 function sumRunwayBalance(wallets, options = {}) {
   return (Array.isArray(wallets) ? wallets : [])
     .filter((wallet) => isRunwayEligibleWallet(wallet, options))

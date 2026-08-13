@@ -1,3 +1,6 @@
+// Vai trò: Trình bày mục tiêu tài chính, preview kế hoạch và các kịch bản what-if.
+// Luồng chính: chuẩn hóa form, yêu cầu backend tính plan và chỉ lưu sau bước xác nhận.
+
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   RefreshControl, StyleSheet, Text, TextInput, TouchableOpacity, View,
@@ -107,6 +110,7 @@ function whatIfMessage(scenario) {
   return null;
 }
 
+// Giữ form, preview token và danh sách mục tiêu để lưu đúng kế hoạch đã xem.
 export default function GoalsScreen() {
   const { theme } = useTheme();
   const styles = useMemo(() => createStyles(theme), [theme]);
@@ -184,6 +188,7 @@ export default function GoalsScreen() {
     return null;
   }
 
+  // Yêu cầu backend tính plan và lưu fingerprint của payload đang được preview.
   async function previewPlan() {
     const validation = validateForm();
     if (validation) return showAlert('Thiếu thông tin', validation);
@@ -203,6 +208,7 @@ export default function GoalsScreen() {
     }
   }
 
+  // Chỉ gửi create/update khi form chưa đổi so với preview hợp lệ.
   async function saveGoal() {
     const validation = validateForm();
     if (validation) return showAlert('Thiếu thông tin', validation);
@@ -323,10 +329,7 @@ export default function GoalsScreen() {
       edges={[]}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={c.brand} />}
     >
-      <Card style={styles.surplusCard} elevated>
-        <View style={styles.surplusIcon}>
-          <AppIcon name="account-balance" size={22} color={c.brand} />
-        </View>
+      <Card style={styles.surplusCard}>
         <View style={{ flex: 1 }}>
           <Text style={styles.surplusLabel}>Dòng tiền có thể phân bổ</Text>
           <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} style={[styles.surplusValue, { color: Number(surplus?.surplus || 0) >= 0 ? c.income : c.expense }]}>
@@ -347,7 +350,7 @@ export default function GoalsScreen() {
       />
 
       {showForm && (
-        <Card style={styles.formCard} elevated>
+        <Card style={styles.formCard}>
           <View style={styles.formHeadingRow}>
             <View>
               <Text style={styles.formHeading}>{editingId ? 'Chỉnh sửa mục tiêu' : 'Mục tiêu mới'}</Text>
@@ -475,9 +478,6 @@ export default function GoalsScreen() {
       {goals.length > 0 && (
         <View style={styles.filterPanel}>
           <View style={styles.filterHeadingRow}>
-            <View style={styles.filterIcon}>
-              <AppIcon name="tune" size={18} color={c.brand} />
-            </View>
             <View style={{ flex: 1, minWidth: 0 }}>
               <Text style={styles.filterTitle}>Lọc mục tiêu</Text>
               <Text style={styles.filterSummary}>Hiển thị {filteredGoals.length} / {goals.length} mục tiêu</Text>
@@ -511,6 +511,7 @@ export default function GoalsScreen() {
                 accessibilityRole="button"
                 accessibilityLabel="Xóa từ khóa tìm mục tiêu"
                 onPress={() => setGoalSearch('')}
+                style={styles.clearSearchButton}
               >
                 <AppIcon name="close" size={17} color={c.textMuted} />
               </TouchableOpacity>
@@ -545,7 +546,6 @@ export default function GoalsScreen() {
 
       {goals.length === 0 ? (
         <EmptyState
-          emoji="🎯"
           title="Chưa có mục tiêu"
           message="Tạo một mục tiêu để PERFIN tính khoản góp và theo dõi tiến độ."
           actionLabel="Tạo mục tiêu"
@@ -554,7 +554,6 @@ export default function GoalsScreen() {
         />
       ) : filteredGoals.length === 0 ? (
         <EmptyState
-          emoji="🔎"
           title="Không tìm thấy mục tiêu"
           message="Thử đổi từ khóa hoặc đặt lại các bộ lọc đang chọn."
           actionLabel="Đặt lại bộ lọc"
@@ -567,17 +566,13 @@ export default function GoalsScreen() {
         const percent = Number(goal.progress?.actualPercent ?? goal.plan?.progressPercent ?? 0);
         const remaining = Number(goal.progress?.remaining ?? goal.plan?.remaining ?? 0);
         return (
-          <Card key={goal.id} style={styles.goalCard} elevated>
+          <Card key={goal.id} style={styles.goalCard}>
             <View style={styles.goalHeader}>
-              <View style={[styles.goalIcon, { backgroundColor: meta.bg }]}>
-                <AppIcon name={goal.goal_type === 'debt_payoff' ? 'credit-card-off' : goal.goal_type === 'purchase' ? 'shopping-bag' : 'savings'} size={20} color={meta.color} />
-              </View>
               <View style={{ flex: 1, minWidth: 0 }}>
                 <Text numberOfLines={1} style={styles.goalName}>{goal.name}</Text>
                 <Text style={styles.goalType}>{goalTypeLabel(goal.goal_type)}</Text>
               </View>
               <View style={[styles.statusBadge, { backgroundColor: meta.bg }]}>
-                <AppIcon name={meta.icon} size={12} color={meta.color} />
                 <Text style={[styles.statusText, { color: meta.color }]}>{meta.label}</Text>
               </View>
             </View>
@@ -618,12 +613,22 @@ export default function GoalsScreen() {
             )}
 
             <View style={styles.cardActions}>
-              <TouchableOpacity style={styles.editButton} onPress={() => beginEdit(goal)}>
-                <AppIcon name="edit" size={15} color={c.brandText} />
+              <TouchableOpacity
+                accessibilityRole="button"
+                accessibilityLabel={`Chỉnh sửa mục tiêu ${goal.name}`}
+                style={styles.editButton}
+                onPress={() => beginEdit(goal)}
+              >
                 <Text style={styles.editButtonText}>Chỉnh sửa</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.deleteButton} onPress={() => requestDelete(goal)} disabled={deletingId === goal.id}>
-                <AppIcon name="delete-outline" size={16} color={c.expense} />
+              <TouchableOpacity
+                accessibilityRole="button"
+                accessibilityLabel={`Xóa mục tiêu ${goal.name}`}
+                accessibilityState={{ disabled: deletingId === goal.id }}
+                style={styles.deleteButton}
+                onPress={() => requestDelete(goal)}
+                disabled={deletingId === goal.id}
+              >
                 <Text style={styles.deleteButtonText}>{deletingId === goal.id ? 'Đang xóa' : 'Xóa'}</Text>
               </TouchableOpacity>
             </View>
@@ -641,7 +646,6 @@ function PlanPreview({ data, styles, colors }) {
   return (
     <View style={styles.planBox}>
       <View style={styles.planTitleRow}>
-        <AppIcon name="auto-graph" size={17} color={colors.brandText} />
         <Text style={styles.planTitle}>Kế hoạch dự kiến</Text>
       </View>
       <View style={styles.planGrid}>
@@ -676,20 +680,16 @@ function PlanPreview({ data, styles, colors }) {
 }
 
 const createStyles = (t) => StyleSheet.create({
-  surplusCard: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 12 },
-  surplusIcon: {
-    width: 46, height: 46, borderRadius: 15, alignItems: 'center', justifyContent: 'center',
-    backgroundColor: t.colors.brandSoft,
-  },
+  surplusCard: { marginBottom: 12, borderLeftWidth: 3, borderLeftColor: t.colors.brand },
   surplusLabel: { color: t.colors.textMuted, fontSize: 12, fontWeight: '700' },
-  surplusValue: { maxWidth: '100%', fontSize: 20, fontWeight: '900', marginTop: 2 },
-  surplusDetail: { color: t.colors.textMuted, fontSize: 10, fontWeight: '600', marginTop: 3 },
+  surplusValue: { maxWidth: '100%', fontSize: 20, fontWeight: '700', marginTop: 2 },
+  surplusDetail: { color: t.colors.textMuted, fontSize: 12, fontWeight: '600', marginTop: 3 },
   formCard: { marginBottom: 22 },
   formHeadingRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 },
-  formHeading: { color: t.colors.text, fontSize: 18, fontWeight: '900' },
+  formHeading: { color: t.colors.text, fontSize: 18, fontWeight: '700' },
   formSubheading: { color: t.colors.textMuted, fontSize: 12, fontWeight: '600', marginTop: 2 },
   editBadge: { backgroundColor: t.colors.brandSoft, paddingHorizontal: 9, paddingVertical: 5, borderRadius: t.radius.pill },
-  editBadgeText: { color: t.colors.brandText, fontSize: 11, fontWeight: '800' },
+  editBadgeText: { color: t.colors.brandText, fontSize: 12, fontWeight: '700' },
   label: { color: t.colors.textMuted, fontSize: 12, fontWeight: '700', marginTop: 13, marginBottom: 6 },
   input: {
     borderWidth: 1.5, borderColor: t.colors.border, borderRadius: t.radius.md,
@@ -700,87 +700,83 @@ const createStyles = (t) => StyleSheet.create({
   twoColumns: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   fieldColumn: { flexGrow: 1, flexBasis: 140, minWidth: 0 },
   planBox: {
-    marginBottom: 10, padding: 13, backgroundColor: t.colors.brandSoft,
-    borderRadius: t.radius.md, borderWidth: 1, borderColor: t.colors.brand,
+    marginBottom: 10, padding: 13, backgroundColor: t.colors.surfaceAlt,
+    borderRadius: t.radius.md,
   },
   planTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 10 },
-  planTitle: { color: t.colors.brandText, fontSize: 13, fontWeight: '900' },
+  planTitle: { color: t.colors.brandText, fontSize: 13, fontWeight: '700' },
   planGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   planStat: { flexGrow: 1, flexBasis: 118, minWidth: 0 },
-  planStatLabel: { color: t.colors.textMuted, fontSize: 10, fontWeight: '700' },
-  planStatValue: { color: t.colors.text, fontSize: 12, fontWeight: '800', marginTop: 2 },
-  whatIfText: { color: t.colors.brandText, fontSize: 11, lineHeight: 16, fontWeight: '700', marginTop: 9 },
+  planStatLabel: { color: t.colors.textMuted, fontSize: 12, fontWeight: '700' },
+  planStatValue: { color: t.colors.text, fontSize: 12, fontWeight: '700', marginTop: 2 },
+  whatIfText: { color: t.colors.brandText, fontSize: 12, lineHeight: 16, fontWeight: '700', marginTop: 9 },
   previewRequired: {
     flexDirection: 'row', alignItems: 'flex-start', gap: 6, paddingHorizontal: 10,
     paddingVertical: 9, marginBottom: 9, backgroundColor: t.colors.brandSoft,
     borderRadius: t.radius.sm,
   },
-  previewRequiredText: { flex: 1, color: t.colors.brandText, fontSize: 10, lineHeight: 15, fontWeight: '700' },
+  previewRequiredText: { flex: 1, color: t.colors.brandText, fontSize: 12, lineHeight: 15, fontWeight: '700' },
   sectionHeadingRow: { flexDirection: 'row', alignItems: 'center', gap: 7, marginBottom: 12 },
-  sectionHeading: { color: t.colors.text, fontSize: 17, fontWeight: '900' },
+  sectionHeading: { color: t.colors.text, fontSize: 17, fontWeight: '700' },
   totalBadge: {
     minWidth: 25, height: 25, paddingHorizontal: 7, borderRadius: 13,
     alignItems: 'center', justifyContent: 'center', backgroundColor: t.colors.brandSoft,
   },
-  totalBadgeText: { color: t.colors.brandText, fontSize: 11, fontWeight: '900' },
+  totalBadgeText: { color: t.colors.brandText, fontSize: 12, fontWeight: '700' },
   filterPanel: {
     padding: 14, marginBottom: 14, backgroundColor: t.colors.surface,
-    borderWidth: 1, borderColor: t.colors.border, borderRadius: t.radius.lg, ...t.shadows.sm,
+    borderWidth: 1, borderColor: t.colors.border, borderRadius: t.radius.lg,
   },
   filterHeadingRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 12 },
-  filterIcon: {
-    width: 36, height: 36, borderRadius: 12, alignItems: 'center', justifyContent: 'center',
-    backgroundColor: t.colors.brandSoft,
-  },
-  filterTitle: { color: t.colors.text, fontSize: 14, fontWeight: '900' },
-  filterSummary: { color: t.colors.textMuted, fontSize: 11, fontWeight: '600', marginTop: 2 },
+  filterTitle: { color: t.colors.text, fontSize: 14, fontWeight: '700' },
+  filterSummary: { color: t.colors.textMuted, fontSize: 12, fontWeight: '600', marginTop: 2 },
   resetFilterButton: {
     flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 9, paddingVertical: 7,
     borderRadius: t.radius.pill, backgroundColor: t.colors.brandSoft,
   },
-  resetFilterText: { color: t.colors.brandText, fontSize: 11, fontWeight: '800' },
+  resetFilterText: { color: t.colors.brandText, fontSize: 12, fontWeight: '700' },
   searchWrapper: {
     flexDirection: 'row', alignItems: 'center', gap: 9, paddingHorizontal: 12, paddingVertical: 10,
     marginBottom: 13, backgroundColor: t.colors.surfaceAlt, borderWidth: 1.5,
     borderColor: t.colors.border, borderRadius: t.radius.md,
   },
   searchInput: { flex: 1, minWidth: 0, color: t.colors.text, fontSize: 14 },
-  filterLabel: { color: t.colors.textSecondary, fontSize: 11, fontWeight: '800', marginBottom: 7 },
+  clearSearchButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', marginVertical: -10, marginRight: -12 },
+  filterLabel: { color: t.colors.textSecondary, fontSize: 12, fontWeight: '700', marginBottom: 7 },
   filterRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 7, marginBottom: 13 },
   filterRowLast: { marginBottom: 0 },
   goalCard: { marginBottom: 11 },
   goalHeader: { flexDirection: 'row', alignItems: 'center', gap: 9, marginBottom: 14, minWidth: 0 },
-  goalIcon: { width: 40, height: 40, borderRadius: 13, alignItems: 'center', justifyContent: 'center' },
-  goalName: { color: t.colors.text, fontSize: 15, fontWeight: '900' },
-  goalType: { color: t.colors.textMuted, fontSize: 11, fontWeight: '600', marginTop: 2 },
+  goalName: { color: t.colors.text, fontSize: 15, fontWeight: '700' },
+  goalType: { color: t.colors.textMuted, fontSize: 12, fontWeight: '600', marginTop: 2 },
   statusBadge: { flexShrink: 1, flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 8, paddingVertical: 5, borderRadius: t.radius.pill },
-  statusText: { fontSize: 10, fontWeight: '800' },
+  statusText: { fontSize: 12, fontWeight: '700' },
   progressHeader: { flexDirection: 'row', alignItems: 'baseline', marginBottom: 8 },
-  progressAmount: { flexShrink: 1, maxWidth: '42%', color: t.colors.text, fontSize: 16, fontWeight: '900' },
-  progressTarget: { flex: 1, minWidth: 0, color: t.colors.textMuted, fontSize: 11, fontWeight: '600', marginLeft: 4 },
-  progressPercent: { color: t.colors.brandText, fontSize: 13, fontWeight: '900' },
+  progressAmount: { flexShrink: 1, maxWidth: '42%', color: t.colors.text, fontSize: 16, fontWeight: '700' },
+  progressTarget: { flex: 1, minWidth: 0, color: t.colors.textMuted, fontSize: 12, fontWeight: '600', marginLeft: 4 },
+  progressPercent: { color: t.colors.brandText, fontSize: 13, fontWeight: '700' },
   goalStats: {
     flexDirection: 'row', marginTop: 12, paddingVertical: 10,
     borderTopWidth: 1, borderBottomWidth: 1, borderColor: t.colors.border,
   },
   goalStat: { flex: 1, minWidth: 0, paddingHorizontal: 4 },
-  goalStatLabel: { color: t.colors.textMuted, fontSize: 9, fontWeight: '700', marginBottom: 3 },
-  goalStatValue: { color: t.colors.textSecondary, fontSize: 10, fontWeight: '800' },
+  goalStatLabel: { color: t.colors.textMuted, fontSize: 12, fontWeight: '700', marginBottom: 3 },
+  goalStatValue: { color: t.colors.textSecondary, fontSize: 12, fontWeight: '700' },
   warningBox: {
     flexDirection: 'row', alignItems: 'flex-start', gap: 6, marginTop: 10,
     padding: 9, borderRadius: t.radius.sm, backgroundColor: t.colors.warningSoft,
   },
-  warningText: { flex: 1, color: t.colors.warning, fontSize: 10, lineHeight: 15, fontWeight: '700' },
-  deadline: { color: t.colors.textMuted, fontSize: 10, fontWeight: '600', marginTop: 9 },
+  warningText: { flex: 1, color: t.colors.warning, fontSize: 12, lineHeight: 15, fontWeight: '700' },
+  deadline: { color: t.colors.textMuted, fontSize: 12, fontWeight: '600', marginTop: 9 },
   cardActions: { flexDirection: 'row', gap: 8, marginTop: 12 },
   editButton: {
     flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5,
     paddingVertical: 9, borderRadius: t.radius.sm, backgroundColor: t.colors.brandSoft,
   },
-  editButtonText: { color: t.colors.brandText, fontSize: 12, fontWeight: '800' },
+  editButtonText: { color: t.colors.brandText, fontSize: 12, fontWeight: '700' },
   deleteButton: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4,
     paddingHorizontal: 13, borderRadius: t.radius.sm, backgroundColor: t.colors.expenseSoft,
   },
-  deleteButtonText: { color: t.colors.expense, fontSize: 12, fontWeight: '800' },
+  deleteButtonText: { color: t.colors.expense, fontSize: 12, fontWeight: '700' },
 });

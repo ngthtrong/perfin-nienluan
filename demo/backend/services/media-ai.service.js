@@ -1,3 +1,6 @@
+// Vai trò: Là adapter Node.js gọi PaddleOCR và PhoWhisper chạy cục bộ.
+// Luồng chính: spawn Python có timeout, parse JSON stdout và trả lỗi rõ khi runtime thiếu.
+
 const fs = require('fs');
 const path = require('path');
 const { execFile } = require('child_process');
@@ -50,6 +53,7 @@ function parseJson(stdout) {
   throw new Error(`Python script did not return JSON. Output: ${String(stdout || '').slice(-500)}`);
 }
 
+// Chạy một script media trong subprocess có timeout và contract JSON trên stdout.
 function runPython(scriptName, args = [], extraEnv = {}) {
   return new Promise((resolve, reject) => {
     const scriptPath = path.join(backendRoot, 'scripts', scriptName);
@@ -93,6 +97,7 @@ function runPython(scriptName, args = [], extraEnv = {}) {
   });
 }
 
+// Chuyển ảnh sang text bằng PaddleOCR; lỗi runtime được đẩy lên route dưới dạng 503.
 async function runPaddleOcr(filePath) {
   const result = await runPython('paddleocr_ocr.py', [filePath], {
     OCR_LANG: process.env.OCR_LANG || 'vi',
@@ -100,6 +105,7 @@ async function runPaddleOcr(filePath) {
   return { text: result.text || '', provider: 'paddleocr', raw: result.raw };
 }
 
+// Chuyển audio sang transcript bằng PhoWhisper với cùng contract adapter.
 async function runPhoWhisper(filePath) {
   const result = await runPython('phowhisper_speech.py', [filePath], {
     PHOWHISPER_MODEL: process.env.PHOWHISPER_MODEL || 'vinai/PhoWhisper-small',

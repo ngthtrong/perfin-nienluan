@@ -1,3 +1,6 @@
+// Vai trò: Tạo insight cuối tháng chủ động cho các hồ sơ đủ điều kiện.
+// Luồng chính: xác định kỳ, dựng facts/narration và lưu internal message có idempotency.
+
 const { isLastDayOfMonth, monthDateRange } = require('../schedules');
 const { resolveTargetUserIds, resolveUserPayday } = require('../userScope');
 const { persistInternalMessage } = require('../internalMessage');

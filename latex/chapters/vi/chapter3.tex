@@ -5,7 +5,7 @@
 
 \subsection{Mô tả tổng quan}
 
-PERFIN là nguyên mẫu ứng dụng di động phục vụ nhập, chuẩn hóa, quản lý và phân tích dữ liệu tài chính cá nhân. Giao diện chat và media là cổng thu nhận bổ sung cho biểu mẫu. Mọi phép tính tài chính, kiểm tra ràng buộc và thay đổi dữ liệu do backend thực hiện; LLM, OCR và STT không truy cập trực tiếp PostgreSQL và không được xem là nguồn số liệu chuẩn. Cách mã hóa FR/NFR và truy vết sang ca kiểm thử vận dụng hướng dẫn kỹ nghệ yêu cầu của ISO/IEC/IEEE~29148:2018 \cite{iso29148}.
+PERFIN là nguyên mẫu ứng dụng di động phục vụ nhập, chuẩn hóa, quản lý và phân tích dữ liệu tài chính cá nhân. Giao diện chat và media là cổng thu nhận bổ sung cho biểu mẫu. Mọi phép tính tài chính, kiểm tra ràng buộc và thay đổi dữ liệu do backend thực hiện; LLM, OCR và STT không truy cập trực tiếp PostgreSQL và không được xem là nguồn số liệu chuẩn. Cách mã hóa và đặc tả FR/NFR vận dụng hướng dẫn kỹ nghệ yêu cầu của ISO/IEC/IEEE~29148:2018 \cite{iso29148}.
 
 \begin{table}[H]
   \centering
@@ -45,7 +45,7 @@ Các quy tắc dùng chung là: số tiền nghiệp vụ phải hữu hạn và
 
 \subsection{Yêu cầu chức năng}
 
-\widereportfigure{14-usecase-overview.pdf}{Sơ đồ use case tổng thể của PERFIN. Chi tiết từng chức năng được mô tả bằng bảng luồng thay cho mười hai sơ đồ riêng lẻ.}{fig:usecase-overview}
+\widereportfigure{figures/drawio/14-usecase-overview.png}{Sơ đồ use case tổng thể của PERFIN. Chi tiết từng chức năng được mô tả bằng bảng luồng thay cho mười hai sơ đồ riêng lẻ.}{fig:usecase-overview}
 
 Hình~\ref{fig:usecase-overview} chỉ mô tả mục tiêu quan sát được của tác nhân. Các bước parser, validation, transaction, TTL và retry là chi tiết thiết kế nên được đặt trong bảng luồng hoặc sơ đồ sequence/flow ở mục~\ref{subsec:detailed-design}.
 
@@ -84,9 +84,9 @@ Hình~\ref{fig:usecase-overview} chỉ mô tả mục tiêu quan sát được c
   \textbf{Các thành phần tham gia và mối quan tâm} & Người dùng cần nhập nhanh; AI Orchestrator cần trả draft có kiểu; Transaction Service phải bảo vệ sổ cái. \frtablerow
   \textbf{Mô tả tóm tắt} & Chuyển một câu thành một hoặc nhiều giao dịch có cấu trúc và tạo bản xem trước trước khi ghi. \frtablerow
   \textbf{Các mối quan hệ} & Bao gồm FR-03 và FR-04; dùng FR-05 khi xác nhận. \frtablerow
-  \textbf{Luồng xử lý bình thường của sự kiện} & \textbf{Bước 1:} Người dùng gửi văn bản. \textbf{Bước 2:} Hệ thống trích xuất và chuẩn hóa. \textbf{Bước 3:} Hệ thống kiểm tra schema, danh mục và ví. \textbf{Sub 1:} Tạo preview. \textbf{Bước 4:} Người dùng xác nhận. \textbf{Bước 5:} Hệ thống ghi nguyên tử và trả kết quả. \frtablerow
-  \textbf{Các luồng sự kiện con (Subflows)} & \textbf{Sub 1 --- Preview:} (1) Lưu draft có TTL; (2) hiển thị amount, type, date, category, wallet và cảnh báo. \frtablerow
-  \textbf{Luồng luân phiên/đặc biệt} & \textbf{Bước 2:} Provider lỗi thì dùng parser cục bộ hoặc báo lỗi. \textbf{Bước 3:} Thiếu/mơ hồ thì chuyển FR-03. \textbf{Bước 4:} Sửa hoặc hủy không ghi dữ liệu. \frtablerow
+  \textbf{Luồng xử lý bình thường của sự kiện} & \frstep{Bước 1:}{Người dùng gửi văn bản.} \frstep{Bước 2:}{Hệ thống trích xuất và chuẩn hóa.} \frstep{Bước 3:}{Hệ thống kiểm tra schema, danh mục và ví.} \frsubstep{Sub 1:}{Tạo preview.} \frstep{Bước 4:}{Người dùng xác nhận.} \frstep{Bước 5:}{Hệ thống ghi nguyên tử và trả kết quả.} \frtablerow
+  \textbf{Các luồng sự kiện con (Subflows)} & \frsubstep{Sub 1 --- Preview:}{Lưu draft có TTL.} \frsubstep{Sub 1.1:}{Hiển thị amount, type, date, category, wallet và cảnh báo.} \frtablerow
+  \textbf{Luồng luân phiên/đặc biệt} & \frstep{Bước 2:}{Provider lỗi thì dùng parser cục bộ hoặc báo lỗi.} \frstep{Bước 3:}{Thiếu/mơ hồ thì chuyển FR-03.} \frstep{Bước 4:}{Sửa hoặc hủy không ghi dữ liệu.} \frtablerow
 \end{frtable}
 
 \begin{frtable}{Đặc tả FR-02 --- Nhập bằng ảnh và giọng nói}{tab:fr02}
@@ -98,9 +98,9 @@ Hình~\ref{fig:usecase-overview} chỉ mô tả mục tiêu quan sát được c
   \textbf{Các thành phần tham gia và mối quan tâm} & Người dùng cần thấy raw text; OCR/STT cục bộ báo provider/lỗi; backend cần chặn tệp sai. \frtablerow
   \textbf{Mô tả tóm tắt} & Chuyển ảnh/audio thành văn bản có thể kiểm tra rồi tái sử dụng pipeline FR-01. \frtablerow
   \textbf{Các mối quan hệ} & Bao gồm FR-01 và FR-03. \frtablerow
-  \textbf{Luồng xử lý bình thường của sự kiện} & \textbf{Bước 1:} Người dùng chọn tệp hợp lệ. \textbf{Bước 2:} Backend gọi OCR hoặc STT. \textbf{Bước 3:} Hiển thị raw text và provider. \textbf{Sub 1:} Người dùng sửa/xác nhận văn bản. \textbf{Bước 4:} Chuyển sang FR-01. \frtablerow
-  \textbf{Các luồng sự kiện con (Subflows)} & \textbf{Sub 1 --- Kiểm tra media:} (1) Với voice, sửa transcript; (2) với receipt, chọn tổng hóa đơn hoặc từng dòng nếu có. \frtablerow
-  \textbf{Luồng luân phiên/đặc biệt} & \textbf{Bước 1:} Sai loại hoặc quá 10~MB thì từ chối. \textbf{Bước 2:} Provider không trả văn bản thì báo lỗi, không tạo mock/pending. \frtablerow
+  \textbf{Luồng xử lý bình thường của sự kiện} & \frstep{Bước 1:}{Người dùng chọn tệp hợp lệ.} \frstep{Bước 2:}{Backend gọi OCR hoặc STT.} \frstep{Bước 3:}{Hiển thị raw text và provider.} \frsubstep{Sub 1:}{Người dùng sửa/xác nhận văn bản.} \frstep{Bước 4:}{Chuyển sang FR-01.} \frtablerow
+  \textbf{Các luồng sự kiện con (Subflows)} & \frsubstep{Sub 1 --- Kiểm tra media:}{Với voice, sửa transcript.} \frsubstep{Sub 1.1:}{Với receipt, chọn tổng hóa đơn hoặc từng dòng nếu có.} \frtablerow
+  \textbf{Luồng luân phiên/đặc biệt} & \frstep{Bước 1:}{Sai loại hoặc quá 10~MB thì từ chối.} \frstep{Bước 2:}{Provider không trả văn bản thì báo lỗi, không tạo mock/pending.} \frtablerow
 \end{frtable}
 
 \begin{frtable}{Đặc tả FR-03 --- Làm rõ và giao dịch chờ}{tab:fr03}
@@ -112,9 +112,9 @@ Hình~\ref{fig:usecase-overview} chỉ mô tả mục tiêu quan sát được c
   \textbf{Các thành phần tham gia và mối quan tâm} & Người dùng cần sửa/hủy; KV store cần TTL; service cần bảo đảm một preview chỉ được dùng một lần. \frtablerow
   \textbf{Mô tả tóm tắt} & Thu thập trường thiếu qua nhiều lượt và chặn việc ghi dữ liệu suy đoán. \frtablerow
   \textbf{Các mối quan hệ} & Được FR-01, FR-02, FR-09, FR-10 và FR-12 sử dụng. \frtablerow
-  \textbf{Luồng xử lý bình thường của sự kiện} & \textbf{Bước 1:} Lưu intent và trường thiếu. \textbf{Bước 2:} Hỏi trường kế tiếp. \textbf{Bước 3:} Merge câu trả lời và validation lại. \textbf{Sub 1:} Tạo/sửa preview. \textbf{Bước 4:} Claim pending nguyên tử. \textbf{Bước 5:} Gọi service nghiệp vụ. \frtablerow
-  \textbf{Các luồng sự kiện con (Subflows)} & \textbf{Sub 1 --- Preview:} (1) Gắn \code{pending_id} và TTL 5 phút; (2) chỉ cập nhật khi payload mới hợp lệ. \frtablerow
-  \textbf{Luồng luân phiên/đặc biệt} & \textbf{Bước 3:} Vẫn thiếu thì hỏi tiếp. \textbf{Bước 4:} Hết hạn, sai ID hoặc đã claim thì không ghi. Hủy sẽ xóa state. \frtablerow
+  \textbf{Luồng xử lý bình thường của sự kiện} & \frstep{Bước 1:}{Lưu intent và trường thiếu.} \frstep{Bước 2:}{Hỏi trường kế tiếp.} \frstep{Bước 3:}{Merge câu trả lời và validation lại.} \frsubstep{Sub 1:}{Tạo/sửa preview.} \frstep{Bước 4:}{Claim pending nguyên tử.} \frstep{Bước 5:}{Gọi service nghiệp vụ.} \frtablerow
+  \textbf{Các luồng sự kiện con (Subflows)} & \frsubstep{Sub 1 --- Preview:}{Gắn \code{pending_id} và TTL 5 phút.} \frsubstep{Sub 1.1:}{Chỉ cập nhật khi payload mới hợp lệ.} \frtablerow
+  \textbf{Luồng luân phiên/đặc biệt} & \frstep{Bước 3:}{Vẫn thiếu thì hỏi tiếp.} \frstep{Bước 4:}{Hết hạn, sai ID hoặc đã claim thì không ghi.} \frstep{Hủy:}{Xóa state và không ghi dữ liệu.} \frtablerow
 \end{frtable}
 
 \begin{frtable}{Đặc tả FR-04 --- Phân loại và học từ phản hồi}{tab:fr04}
@@ -126,9 +126,9 @@ Hình~\ref{fig:usecase-overview} chỉ mô tả mục tiêu quan sát được c
   \textbf{Các thành phần tham gia và mối quan tâm} & Matcher cần kết quả giải thích được; người dùng cần sửa nhãn; feedback store không được làm hỏng giao dịch đã commit. \frtablerow
   \textbf{Mô tả tóm tắt} & Chọn danh mục bằng exact/alias/fuzzy/LLM và dùng correction đã xác nhận cho lần sau. \frtablerow
   \textbf{Các mối quan hệ} & Mở rộng FR-01; có thể được FR-05 kích hoạt khi sửa category. \frtablerow
-  \textbf{Luồng xử lý bình thường của sự kiện} & \textbf{Bước 1:} Chuẩn hóa mô tả. \textbf{Bước 2:} Nạp danh mục và corrections cùng hồ sơ. \textbf{Bước 3:} Xếp hạng ứng viên. \textbf{Sub 1:} Áp correction đủ mạnh. \textbf{Bước 4:} Trả category, confidence và match kind. \textbf{Bước 5:} Ghi feedback sau xác nhận. \frtablerow
-  \textbf{Các luồng sự kiện con (Subflows)} & \textbf{Sub 1 --- Correction:} (1) Chọn tối đa năm mẫu tương tự; (2) dùng làm context hoặc override có kiểm soát. \frtablerow
-  \textbf{Luồng luân phiên/đặc biệt} & \textbf{Bước 3:} Điểm thấp, margin nhỏ hoặc correction xung đột thì trả ``Khác''/yêu cầu chọn. Lỗi ghi feedback chỉ được ghi log. \frtablerow
+  \textbf{Luồng xử lý bình thường của sự kiện} & \frstep{Bước 1:}{Chuẩn hóa mô tả.} \frstep{Bước 2:}{Nạp danh mục và corrections cùng hồ sơ.} \frstep{Bước 3:}{Xếp hạng ứng viên.} \frsubstep{Sub 1:}{Áp correction đủ mạnh.} \frstep{Bước 4:}{Trả category, confidence và match kind.} \frstep{Bước 5:}{Ghi feedback sau xác nhận.} \frtablerow
+  \textbf{Các luồng sự kiện con (Subflows)} & \frsubstep{Sub 1 --- Correction:}{Chọn tối đa năm mẫu tương tự.} \frsubstep{Sub 1.1:}{Dùng làm context hoặc override có kiểm soát.} \frtablerow
+  \textbf{Luồng luân phiên/đặc biệt} & \frstep{Bước 3:}{Điểm thấp, margin nhỏ hoặc correction xung đột thì trả ``Khác''/yêu cầu chọn.} \frstep{Ghi feedback:}{Lỗi chỉ được ghi log.} \frtablerow
 \end{frtable}
 
 \begin{frtable}{Đặc tả FR-05 --- Quản lý dữ liệu tài chính}{tab:fr05}
@@ -140,9 +140,9 @@ Hình~\ref{fig:usecase-overview} chỉ mô tả mục tiêu quan sát được c
   \textbf{Các thành phần tham gia và mối quan tâm} & Người dùng cần CRUD và phục hồi; service cần duy trì số dư và lịch sử nhất quán. \frtablerow
   \textbf{Mô tả tóm tắt} & Tạo, xem, sửa, soft delete và restore giao dịch; quản lý danh mục/ví trong phạm vi hồ sơ. \frtablerow
   \textbf{Các mối quan hệ} & Được FR-01/FR-02 sử dụng; cung cấp dữ liệu cho FR-07--FR-12. \frtablerow
-  \textbf{Luồng xử lý bình thường của sự kiện} & \textbf{Bước 1:} Người dùng chọn thao tác. \textbf{Bước 2:} Backend validation payload và quyền sở hữu. \textbf{Bước 3:} Tính phần chênh lệch số dư. \textbf{Sub 1:} Cập nhật nguyên tử. \textbf{Bước 4:} Trả bản ghi và số dư mới. \frtablerow
-  \textbf{Các luồng sự kiện con (Subflows)} & \textbf{Sub 1 --- Cập nhật:} (1) Ghi transaction; (2) cập nhật ví; (3) commit rồi vô hiệu cache best-effort. \frtablerow
-  \textbf{Luồng luân phiên/đặc biệt} & \textbf{Bước 2:} ID ngoài hồ sơ hoặc dữ liệu sai bị từ chối. \textbf{Bước 3:} Số dư âm vẫn hợp lệ. Lỗi trước commit phải rollback. \frtablerow
+  \textbf{Luồng xử lý bình thường của sự kiện} & \frstep{Bước 1:}{Người dùng chọn thao tác.} \frstep{Bước 2:}{Backend validation payload và quyền sở hữu.} \frstep{Bước 3:}{Tính phần chênh lệch số dư.} \frsubstep{Sub 1:}{Cập nhật nguyên tử.} \frstep{Bước 4:}{Trả bản ghi và số dư mới.} \frtablerow
+  \textbf{Các luồng sự kiện con (Subflows)} & \frsubstep{Sub 1 --- Cập nhật:}{Ghi transaction.} \frsubstep{Sub 1.1:}{Cập nhật ví.} \frsubstep{Sub 1.2:}{Commit rồi vô hiệu cache best-effort.} \frtablerow
+  \textbf{Luồng luân phiên/đặc biệt} & \frstep{Bước 2:}{ID ngoài hồ sơ hoặc dữ liệu sai bị từ chối.} \frstep{Bước 3:}{Số dư âm vẫn hợp lệ.} \frstep{Trước commit:}{Mọi lỗi phải rollback.} \frtablerow
 \end{frtable}
 
 \begin{frtable}{Đặc tả FR-07 --- Phân tích dữ liệu tài chính}{tab:fr07}
@@ -154,9 +154,9 @@ Hình~\ref{fig:usecase-overview} chỉ mô tả mục tiêu quan sát được c
   \textbf{Các thành phần tham gia và mối quan tâm} & Analytics Engine cần dữ liệu sạch; người dùng cần kết quả có kỳ, số mẫu và phương pháp. \frtablerow
   \textbf{Mô tả tóm tắt} & Tính facts bằng hàm xác định trên dữ liệu chưa xóa; trend/correlation dùng kỳ hoàn tất và các trục lịch cố định được zero-fill. \frtablerow
   \textbf{Các mối quan hệ} & Đọc FR-05; cung cấp facts cho FR-08 và FR-11. \frtablerow
-  \textbf{Luồng xử lý bình thường của sự kiện} & \textbf{Bước 1:} Chọn loại phân tích và kỳ. \textbf{Bước 2:} Truy vấn dữ liệu theo hồ sơ. \textbf{Bước 3:} Chuẩn hóa trục lịch và kiểm tra số mẫu. \textbf{Sub 1:} Chạy giải thuật. \textbf{Bước 4:} Trả facts cùng metadata về kỳ, phương pháp, tham số và warning. \frtablerow
-  \textbf{Các luồng sự kiện con (Subflows)} & \textbf{Sub 1 --- Analytics:} chạy OLS, z-score/IQR, runway, recurring hoặc Pearson theo cùng contract kết quả. \frtablerow
-  \textbf{Luồng luân phiên/đặc biệt} & Dữ liệu thiếu/phương sai 0 thì trả kết quả suy giảm hoặc \code{null}; không suy ra nhân quả và không tự tạo giao dịch. \frtablerow
+  \textbf{Luồng xử lý bình thường của sự kiện} & \frstep{Bước 1:}{Chọn loại phân tích và kỳ.} \frstep{Bước 2:}{Truy vấn dữ liệu theo hồ sơ.} \frstep{Bước 3:}{Chuẩn hóa trục lịch và kiểm tra số mẫu.} \frsubstep{Sub 1:}{Chạy giải thuật.} \frstep{Bước 4:}{Trả facts cùng metadata về kỳ, phương pháp, tham số và warning.} \frtablerow
+  \textbf{Các luồng sự kiện con (Subflows)} & \frsubstep{Sub 1 --- Analytics:}{Chạy OLS, z-score/IQR, runway, recurring hoặc Pearson theo cùng contract kết quả.} \frtablerow
+  \textbf{Luồng luân phiên/đặc biệt} & \frstep{Dữ liệu thiếu/phương sai 0:}{Trả kết quả suy giảm hoặc \code{null}.} \frstep{Giới hạn:}{Không suy ra nhân quả và không tự tạo giao dịch.} \frtablerow
 \end{frtable}
 
 \begin{frtable}{Đặc tả FR-08 --- Insight có căn cứ}{tab:fr08}
@@ -168,9 +168,9 @@ Hình~\ref{fig:usecase-overview} chỉ mô tả mục tiêu quan sát được c
   \textbf{Các thành phần tham gia và mối quan tâm} & Người dùng cần lời giải thích dễ hiểu; Analytics Engine giữ facts; narrator không được thay số. \frtablerow
   \textbf{Mô tả tóm tắt} & Diễn giải facts đã tính, đồng thời trả facts để truy vết. \frtablerow
   \textbf{Các mối quan hệ} & Bao gồm FR-07; có thể dùng persona khi consent bật. \frtablerow
-  \textbf{Luồng xử lý bình thường của sự kiện} & \textbf{Bước 1:} Nhận câu hỏi hoặc mở báo cáo. \textbf{Bước 2:} FR-07 tạo facts. \textbf{Bước 3:} Nạp persona được phép. \textbf{Sub 1:} Narrator diễn giải facts. \textbf{Bước 4:} Trả narration, facts và provider. \frtablerow
-  \textbf{Các luồng sự kiện con (Subflows)} & \textbf{Sub 1 --- Narration:} (1) Khóa số/đơn vị trong prompt; (2) dùng template fallback nếu LLM lỗi. \frtablerow
-  \textbf{Luồng luân phiên/đặc biệt} & Facts thiếu thì trả cảnh báo. Numeric grounding checker toàn diện là thiết kế đích, chưa phải kết quả đã đo. \frtablerow
+  \textbf{Luồng xử lý bình thường của sự kiện} & \frstep{Bước 1:}{Nhận câu hỏi hoặc mở báo cáo.} \frstep{Bước 2:}{FR-07 tạo facts.} \frstep{Bước 3:}{Nạp persona được phép.} \frsubstep{Sub 1:}{Narrator diễn giải facts.} \frstep{Bước 4:}{Trả narration, facts và provider.} \frtablerow
+  \textbf{Các luồng sự kiện con (Subflows)} & \frsubstep{Sub 1 --- Narration:}{Khóa số/đơn vị trong prompt.} \frsubstep{Sub 1.1:}{Dùng template fallback nếu LLM lỗi.} \frtablerow
+  \textbf{Luồng luân phiên/đặc biệt} & \frstep{Facts thiếu:}{Trả cảnh báo.} \frstep{Giới hạn:}{Numeric grounding checker toàn diện là thiết kế đích, chưa phải kết quả đã đo.} \frtablerow
 \end{frtable}
 
 \begin{frtable}{Đặc tả FR-09 --- Ngân sách và dự báo}{tab:fr09}
@@ -182,9 +182,9 @@ Hình~\ref{fig:usecase-overview} chỉ mô tả mục tiêu quan sát được c
   \textbf{Các thành phần tham gia và mối quan tâm} & Người dùng cần biết tiến độ; Budget Engine cần lịch sử đủ dài và không tự áp hạn mức. \frtablerow
   \textbf{Mô tả tóm tắt} & Tính spent/remaining, dự báo cuối tháng và đề xuất hạn mức theo lịch sử hoặc khung tỷ lệ. \frtablerow
   \textbf{Các mối quan hệ} & Đọc FR-05; dùng FR-03 khi áp đề xuất từ chat. \frtablerow
-  \textbf{Luồng xử lý bình thường của sự kiện} & \textbf{Bước 1:} Chọn kỳ/danh mục. \textbf{Bước 2:} Tính tiến độ. \textbf{Bước 3:} Tạo forecast hoặc recommendation. \textbf{Sub 1:} Hiển thị confidence/cảnh báo. \textbf{Bước 4:} Người dùng xác nhận áp dụng. \frtablerow
-  \textbf{Các luồng sự kiện con (Subflows)} & \textbf{Sub 1 --- Đề xuất:} (1) Zero-fill tháng; (2) tính hạn mức; (3) co tỷ trọng nếu vượt trần. \frtablerow
-  \textbf{Luồng luân phiên/đặc biệt} & Dưới ba tháng lịch sử phải cảnh báo. Amount không dương hoặc category không phải chi phí bị từ chối. \frtablerow
+  \textbf{Luồng xử lý bình thường của sự kiện} & \frstep{Bước 1:}{Chọn kỳ/danh mục.} \frstep{Bước 2:}{Tính tiến độ.} \frstep{Bước 3:}{Tạo forecast hoặc recommendation.} \frsubstep{Sub 1:}{Hiển thị confidence/cảnh báo.} \frstep{Bước 4:}{Người dùng xác nhận áp dụng.} \frtablerow
+  \textbf{Các luồng sự kiện con (Subflows)} & \frsubstep{Sub 1 --- Đề xuất:}{Zero-fill tháng.} \frsubstep{Sub 1.1:}{Tính hạn mức.} \frsubstep{Sub 1.2:}{Co tỷ trọng nếu vượt trần.} \frtablerow
+  \textbf{Luồng luân phiên/đặc biệt} & \frstep{Lịch sử dưới ba tháng:}{Hiển thị cảnh báo.} \frstep{Dữ liệu không hợp lệ:}{Amount không dương hoặc category không phải chi phí bị từ chối.} \frtablerow
 \end{frtable}
 
 \begin{frtable}{Đặc tả FR-10 --- Mục tiêu và mô phỏng what-if}{tab:fr10}
@@ -196,9 +196,9 @@ Hình~\ref{fig:usecase-overview} chỉ mô tả mục tiêu quan sát được c
   \textbf{Các thành phần tham gia và mối quan tâm} & Người dùng cần kế hoạch minh bạch; Goal Planner phải xử lý tiết kiệm, mua sắm và trả nợ bằng công thức xác định. \frtablerow
   \textbf{Mô tả tóm tắt} & Tính mức góp, thời gian, thiếu hụt và kịch bản thay đổi mà không sửa kế hoạch gốc. \frtablerow
   \textbf{Các mối quan hệ} & Đọc dữ liệu FR-05; dùng FR-03 khi lưu từ chat. \frtablerow
-  \textbf{Luồng xử lý bình thường của sự kiện} & \textbf{Bước 1:} Nhập loại, target, current, date và contribution/rate. \textbf{Bước 2:} Validation. \textbf{Sub 1:} Goal Planner tính kế hoạch. \textbf{Bước 3:} Hiển thị preview/what-if. \textbf{Bước 4:} Xác nhận lưu. \frtablerow
-  \textbf{Các luồng sự kiện con (Subflows)} & \textbf{Sub 1 --- Tính toán:} (1) Saving/purchase tính phần còn thiếu; (2) debt payoff mô phỏng dư nợ theo tháng; (3) what-if chỉ thêm contribution cho saving/purchase và không ghi kế hoạch gốc. \frtablerow
-  \textbf{Luồng luân phiên/đặc biệt} & Contribution bằng 0 trả thời gian không xác định; payment nhỏ hơn hoặc bằng lãi tháng đầu, payment bằng 0 hoặc horizon quá 600 tháng trả cảnh báo, không bịa ngày hoàn tất. \frtablerow
+  \textbf{Luồng xử lý bình thường của sự kiện} & \frstep{Bước 1:}{Nhập loại, target, current, date và contribution/rate.} \frstep{Bước 2:}{Validation.} \frsubstep{Sub 1:}{Goal Planner tính kế hoạch.} \frstep{Bước 3:}{Hiển thị preview/what-if.} \frstep{Bước 4:}{Xác nhận lưu.} \frtablerow
+  \textbf{Các luồng sự kiện con (Subflows)} & \frsubstep{Sub 1 --- Tính toán:}{Saving/purchase tính phần còn thiếu.} \frsubstep{Sub 1.1:}{Debt payoff mô phỏng dư nợ theo tháng.} \frsubstep{Sub 1.2:}{What-if chỉ thêm contribution cho saving/purchase và không ghi kế hoạch gốc.} \frtablerow
+  \textbf{Luồng luân phiên/đặc biệt} & \frstep{Contribution bằng 0:}{Trả thời gian không xác định.} \frstep{Payment/horizon không khả thi:}{Payment nhỏ hơn hoặc bằng lãi tháng đầu, payment bằng 0 hoặc horizon quá 600 tháng trả cảnh báo; không bịa ngày hoàn tất.} \frtablerow
 \end{frtable}
 
 \subsection{Yêu cầu phi chức năng}
@@ -215,50 +215,16 @@ Hình~\ref{fig:usecase-overview} chỉ mô tả mục tiêu quan sát được c
   \endhead
   NFR-01 & Khả năng phục hồi & Lỗi provider/Redis không tạo dữ liệu giả; sau sự cố demo phải khôi phục dịch vụ và dữ liệu đã backup trong tối đa 3 giờ. & Fault injection, restart, restore trên DB test và đối chiếu trước--sau. \\
   NFR-02 & Toàn vẹn & Không có ghi dở dang khi tạo, sửa, xóa, phục hồi, chuyển ví hoặc thanh toán; credential không truyền hay ghi log dạng rõ. & Test rollback, quét cấu hình/log; TLS là bắt buộc khi triển khai qua mạng. \\
-  NFR-03 & Giao diện người dùng & Giao diện tiếng Việt, tông nâu đỏ ấm--kem, điều hướng nhất quán; không overflow ở viewport mobile. & Smoke Expo web bằng Chromium trên Dashboard, Budget, Report, Chat preview và Goal plan ở viewport đã đo 390$\times$844; runner hỗ trợ rerun 360$\times$800 và 412$\times$915. \\
+  NFR-03 & Giao diện người dùng & Giao diện tiếng Việt, hệ màu xanh lam--slate trên nền trung tính, điều hướng nhất quán; không overflow ở viewport mobile. & Kiểm tra thủ công các màn hình chính ở viewport mobile và đối chiếu điều hướng, nội dung, tràn bố cục. \\
   NFR-04 & Thời gian & Backend xác nhận tiếp nhận request trong 3 giây; mục tiêu text p95 $\leq3$ giây, media p95 $\leq8$ giây trong môi trường công bố. & Ít nhất 30 lượt/luồng, ghi provider, phần cứng, cache và error rate. \\
   NFR-05 & Tính đúng & Giải thuật trả expected ở ca thường/biên; số dư âm hợp lệ; narrator không được tự tạo số. & Unit test, invariant và checker facts--response. \\
   NFR-06 & Riêng tư & Media tạm được dọn sau xử lý; traits chỉ dùng khi consent; truy vấn theo ID kèm user scope. & Kiểm tra file tạm, consent và test truy cập chéo. \\
   NFR-07 & Nhất quán worker & Retry cùng event/job không tạo payment, message hoặc export trùng. & Chạy lặp fingerprint và đếm hiệu ứng. \\
-  NFR-08 & Khả năng truy vết & Kết quả phân tích có phiên bản schema, thời điểm, value và metadata theo component gồm đơn vị, kỳ, số mẫu, method, parameters, warning và trạng thái suy giảm. & Contract test và ma trận FR--test--artifact. \\
+  NFR-08 & Khả năng truy vết & Kết quả phân tích có phiên bản schema, thời điểm, value và metadata theo component gồm đơn vị, kỳ, số mẫu, method, parameters, warning và trạng thái suy giảm. & Unit/contract test và kiểm tra metadata trả về. \\
   \bottomrule
 \end{longtable}
 
 NFR-01, NFR-04, độ chính xác OCR/STT và numeric grounding đầy đủ là mục tiêu nghiệm thu; báo cáo không chuyển các mục chưa đo thành kết quả đã đạt.
-
-\subsubsection{Bằng chứng smoke UI trên web mobile}
-
-Các ảnh dưới đây được chụp từ Expo web đang chạy với dữ liệu demo synthetic,
-viewport $390\times844$ CSS pixel và device scale factor 2. Ảnh kiểm tra bố cục
-và luồng xem lại trước khi ghi; không phải ảnh thiết bị native hay bằng chứng UAT.
-
-\begin{figure}[p]
-  \centering
-  \begin{minipage}[t]{0.47\textwidth}
-    \centering
-    \includegraphics[width=\linewidth,height=0.48\textheight,keepaspectratio]{figures/screenshots/01-dashboard.png}
-  \end{minipage}\hfill
-  \begin{minipage}[t]{0.47\textwidth}
-    \centering
-    \includegraphics[width=\linewidth,height=0.48\textheight,keepaspectratio]{figures/screenshots/03-budget.png}
-  \end{minipage}
-  \caption{Smoke Expo web mobile: Dashboard và Budget (dữ liệu synthetic; không phải thiết bị vật lý).}
-  \label{fig:ui-dashboard-budget}
-\end{figure}
-
-\begin{figure}[p]
-  \centering
-  \begin{minipage}[t]{0.47\textwidth}
-    \centering
-    \includegraphics[width=\linewidth,height=0.48\textheight,keepaspectratio]{figures/screenshots/02-chat-preview.png}
-  \end{minipage}\hfill
-  \begin{minipage}[t]{0.47\textwidth}
-    \centering
-    \includegraphics[width=\linewidth,height=0.48\textheight,keepaspectratio]{figures/screenshots/04-report.png}
-  \end{minipage}
-  \caption{Smoke Expo web mobile: Chat preview trước xác nhận và Report đã tải xong (dữ liệu synthetic; không phải UAT).}
-  \label{fig:ui-chat-report}
-\end{figure}
 
 \section{Thiết kế phần mềm}
 
@@ -266,7 +232,7 @@ và luồng xem lại trước khi ghi; không phải ảnh thiết bị native 
 
 PERFIN chọn modular monolith: các route, service, model và engine được tách theo trách nhiệm nhưng API vẫn triển khai trong một tiến trình; worker là tiến trình riêng cho job nền. Cách này phù hợp quy mô niên luận, giảm chi phí vận hành và vẫn cho phép kiểm thử module độc lập.
 
-\widereportfigure{02-runtime-architecture.pdf}{Kiến trúc vận hành của PERFIN; lõi xác định tạo và lưu facts, còn AI Orchestrator chỉ điều phối ngữ nghĩa.}{fig:runtime-architecture}
+\widereportfigure{figures/drawio/02-runtime-architecture.png}{Kiến trúc vận hành của PERFIN; lõi xác định tạo và lưu facts, còn AI Orchestrator chỉ điều phối ngữ nghĩa.}{fig:runtime-architecture}
 
 \begin{table}[H]
   \centering
@@ -291,11 +257,11 @@ Phương án microservice đã được cân nhắc nhưng không chọn vì s�
 
 \subsection{Thiết kế dữ liệu}
 
-\widereportfigure{04-domain-class.pdf}{Class Diagram UML của miền PERFIN, tách sổ cái, kế hoạch, recurring và hội thoại/phản hồi.}{fig:domain-class}
+\widereportfigure{figures/drawio/04-domain-class.png}{Class Diagram UML của miền PERFIN, tách sổ cái, kế hoạch, recurring và hội thoại/phản hồi.}{fig:domain-class}
 
 Hình~\ref{fig:domain-class} mô tả các lớp miền và bội số quan hệ. \code{User} là gốc sở hữu; \code{Wallet}, \code{Transaction} và \code{Category} tạo sổ cái; \code{Budget}, \code{FinancialGoal} và các lớp recurring tạo kế hoạch; \code{ChatMessage} và \code{AIFeedback} lưu tương tác cần truy vết. Các engine không xuất hiện như entity vì chúng chỉ đọc dữ liệu và tạo facts.
 
-\widereportfigure{05-physical-erd.pdf}{ERD vật lý được đối chiếu với chuỗi migration runtime; các khóa ngoại nghiệp vụ chính đi theo những hành lang trực giao tách biệt.}{fig:physical-erd}
+\widereportfigure{figures/drawio/05-physical-erd.png}{ERD vật lý được đối chiếu với chuỗi migration runtime; các khóa ngoại nghiệp vụ chính đi theo những hành lang trực giao tách biệt.}{fig:physical-erd}
 
 \begin{longtable}{@{}L{4.5cm}L{3.0cm}L{6.0cm}@{}}
   \caption{Danh sách thực thể theo thứ tự bảng chữ cái}\label{tab:data-entities}\\
@@ -335,22 +301,22 @@ Tiền dùng \code{DECIMAL(15,2)}; truy vấn báo cáo loại bản ghi soft de
 
 \subsubsection{Ranh giới LLM và nhập liệu}
 
-\widereportfigure{06-llm-boundary.pdf}{Ranh giới trách nhiệm của LLM: typed draft và narration nằm ngoài lõi validation, tính toán và ghi dữ liệu.}{fig:llm-boundary}
+\widereportfigure{figures/drawio/06-llm-boundary.png}{Ranh giới trách nhiệm của LLM: typed draft và narration nằm ngoài lõi validation, tính toán và ghi dữ liệu.}{fig:llm-boundary}
 
 LLM chỉ tạo lệnh có kiểu hoặc diễn giải facts. Backend kiểm tra schema và luật miền, dựng preview, chờ xác nhận rồi mới mở transaction. Với truy vấn phân tích, SQL và engine tạo facts trước khi narrator được gọi. Khi provider lỗi, parser hoặc template là fallback có thể kiểm thử.
 
-\widereportfigure{08-text-sequence.pdf}{Sơ đồ tuần tự nhập giao dịch bằng văn bản; transaction ghi dữ liệu chỉ bắt đầu sau xác nhận.}{fig:text-sequence}
+\widereportfigure{figures/drawio/08-text-sequence.png}{Sơ đồ tuần tự nhập giao dịch bằng văn bản; transaction ghi dữ liệu chỉ bắt đầu sau xác nhận.}{fig:text-sequence}
 
 Hình~\ref{fig:text-sequence} thể hiện hai giai đoạn tách biệt: parse/preview không có side effect và confirm/commit có claim pending. State gồm intent, trường thiếu, candidates và draft, có TTL 5 phút. Xác nhận đồng thời phải dùng claim nguyên tử để một \code{pending_id} không tạo hai giao dịch.
 
-\widereportfigure{09-multimodal-flow.pdf}{Flowchart xử lý ảnh và giọng nói; hai nhánh hội tụ vào pipeline văn bản sau khi raw text được kiểm tra.}{fig:multimodal-flow}
+\widereportfigure{figures/drawio/09-multimodal-flow.png}{Flowchart xử lý ảnh và giọng nói; hai nhánh hội tụ vào pipeline văn bản sau khi raw text được kiểm tra.}{fig:multimodal-flow}
 
 OCR/STT chỉ trả raw text và metadata provider. Phiên bản hiện tại chưa có ground truth đủ lớn và chưa tự đối soát tổng dòng hàng với tổng hóa đơn; vì vậy Hình~\ref{fig:multimodal-flow} là thiết kế luồng, không phải bằng chứng accuracy.
 
 \subsubsection{Phân loại và correction retrieval}
 \label{subsec:classification-design}
 
-\widereportfigure{10-feedback-flow.pdf}{Luồng phân loại và correction retrieval; feedback chỉ được ghi sau khi người dùng xác nhận.}{fig:feedback-flow}
+\widereportfigure{figures/drawio/10-feedback-flow.png}{Luồng phân loại và correction retrieval; feedback chỉ được ghi sau khi người dùng xác nhận.}{fig:feedback-flow}
 
 Điểm tổng hợp dùng trong matcher là
 
@@ -429,149 +395,137 @@ Với mục tiêu saving/purchase còn thiếu $R$ và mức góp tháng $M>0$, 
 
 khi $r>0$; nếu $r=0$ thì $P=L/n_d$. Payment nhỏ hơn hoặc bằng lãi tháng đầu tạo cảnh báo negative amortization; payment bằng 0 được báo riêng. Không có deadline, mã nguồn mô phỏng từng tháng tối đa 600 tháng. What-if hiện chỉ chạy lại hàm saving/purchase với khoản góp thêm; không thay đổi kế hoạch debt và không ghi dữ liệu.
 
-\widereportfigure{12-goal-flow.pdf}{Flowchart lập kế hoạch mục tiêu và what-if; chỉ bước xác nhận cuối cùng mới lưu dữ liệu.}{fig:goal-flow}
+\widereportfigure{figures/drawio/12-goal-flow.png}{Flowchart lập kế hoạch mục tiêu và what-if; chỉ bước xác nhận cuối cùng mới lưu dữ liệu.}{fig:goal-flow}
 
 \subsubsection{Sinh insight có căn cứ}
 
-\widereportfigure{11-insight-sequence.pdf}{Sơ đồ tuần tự sinh insight; Analytics Engine trả facts trước khi persona/LLM diễn giải.}{fig:insight-sequence}
+\widereportfigure{figures/drawio/11-insight-sequence.png}{Sơ đồ tuần tự sinh insight; Analytics Engine trả facts trước khi persona/LLM diễn giải.}{fig:insight-sequence}
 
 Contract facts phiên bản 1.0 trả \code{schema_version}, \code{generated_at}, value của từng component và \code{metadata.components}. Metadata mỗi component có \code{unit}, \code{window}, \code{sample_count}, \code{method}, \code{parameters}, \code{warnings} và \code{status} thuộc \code{ok/no_signal/degraded}. Object window ghi \code{size}, \code{unit} và \code{zero_filled}; một số component thêm \code{category_count} hoặc \code{wallet_count}. Lỗi cục bộ được ghi trong \code{degraded_components} mà không làm mất contract. Persona chỉ thay giọng điệu khi consent bật; response trả narration cùng facts để UI/test đối chiếu. Numeric checker bao phủ mọi biểu thức số vẫn là thiết kế đích.
 
 Quy trình tính, ví dụ số và các trường hợp biên của matcher, correction, Analytics, Budget, Goal và facts contract được mở rộng tại Phụ lục~\ref{app:algorithms}--\ref{app:facts-contract}; Chương này giữ các công thức và quyết định thiết kế chính để bảo đảm mạch trình bày.
 
+\subsection{Thiết kế giao diện (UI Design)}
+\label{subsec:ui-design}
+
+Giao diện được thiết kế theo hướng mobile-first với năm tab chính: Tổng quan, Ngân sách, Chat, Báo cáo và Khác; Chat được đặt ở trung tâm như thao tác nhập liệu ưu tiên. Hệ design token dùng xanh lam làm màu thương hiệu, slate cho chữ và nền trung tính cho bề mặt. Xanh lục và đỏ chỉ biểu đạt ngữ nghĩa thu nhập và chi tiêu. Header, card, hàng danh sách, nút và khoảng cách dùng chung token; các vùng chạm chính có kích thước hiệu dụng tối thiểu 44 pixel.
+
+Các ảnh trong mục này được chụp lại ngày 13/08/2026 từ bản Expo web hiện tại ở viewport $390\times844$ CSS pixel, device scale factor 2 và dữ liệu demo synthetic. Lịch sử Chat được cô lập để làm rõ trạng thái preview. Ảnh chỉ minh họa quyết định thiết kế, không phải kết quả kiểm thử thủ công, ảnh thiết bị native hay bằng chứng UAT.
+
+Hình~\ref{fig:ui-dashboard-chat} cho thấy phân cấp thông tin ở màn hình Tổng quan và luồng review-before-write trong Chat. Dashboard ưu tiên số dư, thu--chi và giao dịch gần đây; Chat chuyển câu tự nhiên thành một card có số tiền, danh mục, ngày cùng ba lựa chọn xác nhận, sửa hoặc hủy. Không có thao tác ghi sổ nào xảy ra chỉ vì card được hiển thị.
+
+Hình~\ref{fig:ui-budget-report} sử dụng cùng ngôn ngữ card và màu ngữ nghĩa cho hai luồng đọc dữ liệu. Budget đưa tiến độ kỳ, cảnh báo forecast và đề xuất vào các khối có thứ bậc; Report tách tổng thu--chi, bội chi, insight nhiều kỳ và breakdown danh mục để người dùng đọc từ tổng quan đến chi tiết.
+
+Hình~\ref{fig:ui-goal-plan} minh họa nguyên tắc preview trước khi lưu ở luồng mục tiêu. Form và kết quả kế hoạch nằm trong cùng ngữ cảnh; nút lưu chỉ được mở sau khi backend trả một preview hợp lệ cho đúng dữ liệu đang hiển thị. Kịch bản what-if được trình bày như thông tin tham khảo và không tự sửa mục tiêu gốc.
+
+\begin{figure}[p]
+  \centering
+  \begin{minipage}[t]{0.44\textwidth}
+    \centering
+    \includegraphics[width=\linewidth,height=0.68\textheight,keepaspectratio]{figures/screenshots/01-dashboard.png}
+  \end{minipage}\hfill
+  \begin{minipage}[t]{0.44\textwidth}
+    \centering
+    \includegraphics[width=\linewidth,height=0.68\textheight,keepaspectratio]{figures/screenshots/02-chat-preview.png}
+  \end{minipage}
+  \caption{Màn hình Tổng quan (trái) và bản xem trước giao dịch từ Chat (phải) trong giao diện mới.}
+  \label{fig:ui-dashboard-chat}
+\end{figure}
+
+\begin{figure}[p]
+  \centering
+  \begin{minipage}[t]{0.44\textwidth}
+    \centering
+    \includegraphics[width=\linewidth,height=0.68\textheight,keepaspectratio]{figures/screenshots/03-budget.png}
+  \end{minipage}\hfill
+  \begin{minipage}[t]{0.44\textwidth}
+    \centering
+    \includegraphics[width=\linewidth,height=0.68\textheight,keepaspectratio]{figures/screenshots/04-report.png}
+  \end{minipage}
+  \caption{Màn hình Ngân sách (trái) và Báo cáo (phải) với cách trình bày dữ liệu tài chính nhất quán.}
+  \label{fig:ui-budget-report}
+\end{figure}
+
+\begin{figure}[p]
+  \centering
+  \includegraphics[width=0.38\textwidth,height=0.70\textheight,keepaspectratio]{figures/screenshots/05-goal-plan.png}
+  \caption{Bản xem trước kế hoạch mục tiêu trong giao diện mới; kế hoạch chưa được lưu tại thời điểm chụp.}
+  \label{fig:ui-goal-plan}
+\end{figure}
+
+\clearpage
 \section{Kiểm thử}
 \label{sec:testing}
 
 \subsection{Kế hoạch kiểm thử}
 
-\begin{longtable}{@{}L{2.2cm}L{3.7cm}L{4.2cm}L{3.9cm}@{}}
-  \caption{Ma trận kế hoạch kiểm thử}\label{tab:test-matrix}\\
+Phạm vi kiểm thử được giới hạn để xác nhận tính đúng của dữ liệu, giải thuật và các luồng chức năng chính của nguyên mẫu. Bộ test tự động hiện có được giữ nguyên làm lưới an toàn hồi quy; kiểm thử hệ thống thủ công bổ sung góc nhìn thao tác người dùng. Kiểm thử do tác giả thực hiện không được xem là UAT.
+
+\begin{longtable}{@{}L{2.4cm}L{3.5cm}L{4.3cm}L{4.0cm}@{}}
+  \caption{Chiến lược kiểm thử lai tối giản}\label{tab:test-strategy}\\
   \toprule
-  \textbf{Cấp} & \textbf{Đối tượng} & \textbf{Kỹ thuật} & \textbf{Bằng chứng dự kiến} \\
+  \textbf{Mức} & \textbf{Phạm vi} & \textbf{Cách thực hiện} & \textbf{Phạm vi kết luận} \\
   \midrule
   \endfirsthead
   \toprule
-  \textbf{Cấp} & \textbf{Đối tượng} & \textbf{Kỹ thuật} & \textbf{Bằng chứng dự kiến} \\
+  \textbf{Mức} & \textbf{Phạm vi} & \textbf{Cách thực hiện} & \textbf{Phạm vi kết luận} \\
   \midrule
   \endhead
-  Unit & Matching, analytics, budget, goal, validation. & Ca thường, biên, expected tính tay và invariant. & \code{node:test}, pass/fail từng ca. \\
-  Integration & Route--service--model, PostgreSQL, Redis. & DB test, rollback, TTL và claim đồng thời. & Log, snapshot DB và mã thoát. \\
-  System & Text/voice/image đến preview/DB. & Smoke theo kịch bản end-to-end. & HTTP response, DB assertion, ảnh UI. \\
-  AI contract & Parser, tool schema, LLM và correction. & Nhãn joint type/category; abstention giữ trong mẫu số; split nguyên nhóm. & JSON records, coverage, accuracy/F1, helped/harmed/net. \\
-  Media & OCR/STT adapter. & Ảnh/audio có ground truth. & CER/WER và field accuracy. \\
-  Worker & Retry, dedup và lịch chạy. & Lặp cùng fingerprint, fault injection. & Số hiệu ứng trước--sau. \\
-  UAT & Người dùng mục tiêu. & Nhiệm vụ có thời gian và số bước. & Completion rate, thời gian, SUS. \\
+  Unit/hồi quy tự động & Công thức, invariant, parser và validation. & Chạy các ca xác định bằng \code{node:test} trên fixture có kiểm soát. & Xác nhận logic trên các ca đã đặc tả; không suy ra độ chính xác ngoài mẫu. \\
+  Tích hợp nội bộ & Các lớp route, service và model. & Kiểm tra contract, nhánh lỗi và rollback bằng mock hoặc bộ nhớ trong. & Xác nhận phối hợp trong tiến trình; không phải bằng chứng PostgreSQL hoặc Redis chạy live. \\
+  Hệ thống thủ công & Các luồng chức năng chính trên giao diện. & Tác giả thao tác với dữ liệu demo và đối chiếu kết quả mong đợi. & Chỉ xác nhận các kịch bản đã chọn; không đo tính dễ dùng, độ chính xác OCR/STT hoặc hiệu năng. \\
+  UAT & Người dùng mục tiêu. & Chưa thực hiện trong phạm vi niên luận. & Không đồng nhất với kiểm thử thủ công của tác giả và không công bố kết quả chấp nhận người dùng. \\
   \bottomrule
 \end{longtable}
-
-Bộ dữ liệu văn bản cần bao phủ đơn vị tiền, số bằng chữ, phép nhân, ngày tương đối, nhiều giao dịch, typo, Việt--Anh, trường hợp thiếu/mơ hồ và correction xung đột. Khi đánh giá correction, mọi dòng cùng loại và mô tả chuẩn hóa phải nằm hoàn toàn ở seed hoặc evaluation. Dữ liệu analytics dùng chuỗi tổng hợp hoặc ẩn danh có slope, outlier, cadence và correlation biết trước. Tập media phải lưu ảnh/audio cùng transcript hoặc bảng hóa đơn chuẩn.
-
-Danh mục ca thường, ca biên, invariant và tệp kiểm thử tương ứng được lập thành ma trận ở Phụ lục~\ref{app:algorithm-tests}; mô tả nguồn, schema, cohort và giới hạn của dataset nằm ở Phụ lục~\ref{app:dataset-description}. Các bảng phụ lục chỉ dẫn đến bằng chứng và không thay thế các kết quả đã công bố trong mục~\ref{subsec:results}.
 
 \subsection{Kết quả và phân tích}
 \label{subsec:results}
 
-\subsubsection{Kết quả vận hành đã đo}
-
-\begin{longtable}{@{}L{3.4cm}L{3.5cm}L{2.4cm}L{4.4cm}@{}}
-  \caption{Kết quả đo và giới hạn kết luận}\label{tab:measured-results}\\
-  \toprule
-  \textbf{Hạng mục} & \textbf{Kết quả} & \textbf{Trạng thái} & \textbf{Phạm vi kết luận} \\
-  \midrule
-  \endfirsthead
-  \toprule
-  \textbf{Hạng mục} & \textbf{Kết quả} & \textbf{Trạng thái} & \textbf{Phạm vi kết luận} \\
-  \midrule
-  \endhead
-  Regression mục tiêu (21 ca) & 21/21 đạt cho analytics, invariant và ranh giới provider media. & \statusmeasured & Lệnh và fixture có thể tái lập; đây là tập con tập trung, không phải full suite. \\
-  Backend \code{npm test} & 247/247 test đạt khi tắt Redis và jobs. & \statusmeasured & Full suite đạt trên worktree hiện tại; chưa đo hành vi Redis worker live. \\
-  Coverage Node 24 & 68,12\% line, 72,77\% branch và 72,27\% function trên toàn bộ file backend đã load. & \statusmeasured & Lệnh có thể tái lập; các ngưỡng mục tiêu theo component (line/function $\geq85\%$, branch $\geq75\%$) chưa được chứng minh. \\
-  Local-parser gate và API smoke & Chờ chạy sạch trên snapshot hiện tại. & \statusmissing & Artifact trước thuộc worktree cũ và không còn là bằng chứng hiện tại. \\
-  Mobile-web UI smoke & 5/5 capture synthetic đạt ở 390$\times$844. & \statusmeasured & Dashboard, Budget, Report, Chat preview và Goal plan tải xong, không overflow; chỉ là Expo web, không phải native-device hay UAT. \\
-  Data profile & 5.328 dòng nguồn, 0 lỗi validation; SHA prefix \code{418a...}. & \statusmeasured & Dry-run bao phủ 01/01/2022--10/08/2026; apply vào PostgreSQL là bước riêng. \\
-  Current experiments & Chờ rerun trên snapshot 5.328 dòng. & \statusmissing & Metric chính là joint type/category; correction phải mô phỏng candidate limit 200 của production. \\
-  Ablation parser--Gemini & Chờ chạy lại với joint label và record đầy đủ theo mẫu. & \statusmissing & Category-only chỉ là phụ; abstention vẫn nằm trong mẫu số. \\
-  Accuracy OCR/STT & Chờ ground truth 20 ảnh và 20 audio. & \statusmissing & Không thể suy ra CER/WER hay field accuracy từ smoke execution. \\
-  Redis worker live, grounding, p95 và UAT & Chờ môi trường có kiểm soát và người tham gia mục tiêu. & \statusmissing & Cần assert duplicate-effect, checker, ít nhất 30 lượt/luồng và từ năm người dùng. \\
-  \bottomrule
-\end{longtable}
-
-Smoke test chỉ chứng minh khả năng hoàn tất kịch bản đã chọn. Vì chưa có ground truth media, báo cáo không gọi OCR/STT là ``đã đo độ chính xác''. Tương tự, việc logic payment/handler vượt qua unit test không đồng nghĩa Redis worker đã chạy live.
-
-\subsubsection{Thí nghiệm phân loại}
-
-Nguồn hiện tại là \code{demo/data/dataFinance.csv}, được profile ở 5.328 dòng với tiền tố SHA-256 \code{418a9439...fbaed7}. Các artifact classification, ablation và correction dùng file 5.265 dòng trước đây vẫn giữ để audit nhưng đã superseded, không được báo như kết quả hiện tại.
-
-Quy trình rerun được khóa trước khi nhận data mới:
+Hai lệnh trong Bảng~\ref{tab:automated-test-results} được chạy lại ngày 13/08/2026 trên snapshot mã nguồn hiện tại với Node.js v24.16.0, Redis và jobs tắt, đồng thời dùng parser cục bộ. Kết quả được báo theo đúng đơn vị mà từng lệnh kiểm tra.
 
 \begin{table}[H]
   \centering
-  \caption{Quy trình rerun classification và correction}
-  \label{tab:exp-classification}
-  \begin{tabularx}{\textwidth}{@{}L{3.0cm}Y Y@{}}
+  \caption{Kết quả kiểm thử tự động}
+  \label{tab:automated-test-results}
+  \begin{tabularx}{\textwidth}{@{}L{3.0cm}L{3.1cm}Y@{}}
     \toprule
-    \textbf{Thí nghiệm} & \textbf{Đo lường chính} & \textbf{Bằng chứng bắt buộc} \\
+    \textbf{Lệnh} & \textbf{Kết quả} & \textbf{Phạm vi kết luận} \\
     \midrule
-    Local parser & Accuracy, macro-F1, weighted-F1 và support theo lớp trên nhãn joint type/category; category-only là phụ. & Hash CSV hiện tại, prediction đầy đủ theo dòng và lệnh deterministic. \\
-    Parser--Gemini ablation & Coverage joint-label, accuracy/F1 toàn mẫu, metric trên câu trả lời và latency; abstention vẫn trong mẫu số. & Record từng mẫu, model/cấu hình và số lỗi provider. \\
-    Correction retrieval & Nhãn joint trước/sau, coverage và helped/harmed/net dưới group split theo thời gian. & Candidate limit 200, không dùng dòng tương lai, overlap khóa seed/evaluation bằng 0 và khoảng tin cậy. \\
+    \code{npm test} & 46/46 tệp kiểm thử đạt. & Bao phủ unit/hồi quy backend và tích hợp nội bộ dùng mock/bộ nhớ trong; chưa xác nhận PostgreSQL hoặc Redis live. \\
+    \code{npm run test:ai} & 31/31 ca parser cục bộ đạt. & Xác nhận các câu fixture đã thiết kế; không phải độ chính xác ngoài mẫu và không đánh giá Gemini, OCR hoặc STT. \\
     \bottomrule
   \end{tabularx}
 \end{table}
 
-Runner correction hiện ghi candidate limit production-equivalent là 200 và số candidate theo từng dòng. Thứ tự hiện dùng source-row như proxy thời gian có ghi rõ; khi có timestamp đáng tin, cần thay bằng temporal replay thực. Runner ablation hiện đặt nhãn joint type/category làm metric chính, còn category-only chỉ là góc nhìn phụ.
+\textbf{Lưu ý về trạng thái:} Các giá trị ``Đạt'' có dấu sao trong Bảng~\ref{tab:manual-test-cases} là giả định của bản dự thảo, chưa phải kết quả đã xác minh. Trước khi nộp, tác giả phải thực hiện từng ca, cập nhật trạng thái theo kết quả thực tế và chỉ sau đó mới bỏ ghi chú này. Kiểm thử thủ công do tác giả thực hiện không phải UAT và không chứng minh độ chính xác OCR/STT, tính dễ dùng hoặc hiệu năng.
 
-\begin{table}[H]
-  \centering
-  \caption{Trạng thái artifact thí nghiệm trên snapshot hiện tại}
-  \label{tab:exp-ablation}
-  \begin{tabularx}{\textwidth}{@{}L{4.0cm}L{3.0cm}Y@{}}
-    \toprule
-    \textbf{Artifact} & \textbf{Trạng thái} & \textbf{Lý do chưa đưa điểm số} \\
-    \midrule
-    Local classification & \statusmissing & Artifact cũ dùng CSV khác và phải sinh lại. \\
-    Parser--Gemini ablation & \statusmissing & Record cũ thiếu prediction joint đầy đủ; rerun cần provider/quota. \\
-    Correction retrieval & \statusmissing & Runner cũ đưa toàn bộ seed log thay vì cửa sổ 200 candidate như production. \\
-    \bottomrule
-  \end{tabularx}
-\end{table}
-
-Các trạng thái này giữ truy vết mà không biến thí nghiệm lịch sử thành claim về mã nguồn hoặc dataset hiện tại. Khi bạn cung cấp fixture có kiểm soát, JSON và Markdown mới có thể chèn vào mà không đổi định nghĩa metric.
-
-\subsection{Truy vết yêu cầu và bằng chứng}
-
-Ma trận truy vết ở Bảng~\ref{tab:traceability} liên kết mục tiêu quan sát được với thiết kế, kiểm thử và trạng thái bằng chứng. Một chức năng chỉ được xem là đã chứng minh trong phạm vi cột cuối; việc có route, mock hoặc sơ đồ không tự động đồng nghĩa đã nghiệm thu end-to-end.
-
-\begin{longtable}{@{}L{2.2cm}L{3.4cm}L{3.5cm}L{4.8cm}@{}}
-  \caption{Ma trận truy vết FR--thiết kế--kiểm thử--bằng chứng}\label{tab:traceability}\\
+\begin{longtable}{@{}L{1.5cm}L{4.6cm}L{6.5cm}C{1.5cm}@{}}
+  \caption{Các ca kiểm thử chức năng thủ công}\label{tab:manual-test-cases}\\
   \toprule
-  \textbf{Yêu cầu} & \textbf{Thiết kế chính} & \textbf{Kiểm thử liên quan} & \textbf{Bằng chứng và khoảng trống} \\
+  \textbf{Mã} & \textbf{Kịch bản/thao tác} & \textbf{Kết quả mong đợi} & \textbf{Trạng thái} \\
   \midrule
   \endfirsthead
   \toprule
-  \textbf{Yêu cầu} & \textbf{Thiết kế chính} & \textbf{Kiểm thử liên quan} & \textbf{Bằng chứng và khoảng trống} \\
+  \textbf{Mã} & \textbf{Kịch bản/thao tác} & \textbf{Kết quả mong đợi} & \textbf{Trạng thái} \\
   \midrule
   \endhead
-  FR-01, FR-03--FR-05 & Typed draft, preview có TTL, service và SQL transaction. & Parser gate; backend unit/service; API--DB smoke. & Có bằng chứng cho fixture chọn trước và invariant rollback; chưa đo thao tác người dùng độc lập. FR-06 được đặc tả ở phụ lục. \\
-  FR-02 & Media adapter, raw-text review và pipeline FR-01 dùng chung. & Upload/media smoke; kế hoạch CER, WER và field accuracy. & Đã chứng minh luồng mẫu đi qua provider; chưa đủ ground truth để công bố accuracy OCR/STT. \\
-  FR-04 & Joint classifier, correction theo type, ngưỡng conflict và group split. & Benchmark classification; ablation coverage; correction helped/harmed/net. & Chờ rerun trên CSV hiện tại và cửa sổ candidate production; điểm lịch sử đã superseded. \\
-  FR-07--FR-10 & Analytics Engine, facts contract, Budget/Goal service và narrator có căn cứ. & Unit với expected tính tay; contract metadata; numeric checker dự kiến. & Công thức, kỳ lịch và metadata có test; grounding toàn bộ response và hiệu chỉnh ngưỡng trên dữ liệu đại diện chưa hoàn tất. \\
-  FR-11 & Recurring service, BullMQ, event key và retry. & Unit payment/handler; fault injection và live worker dự kiến. & Logic nghiệp vụ có test nhưng chưa có bằng chứng queue/worker chạy live trong đợt đánh giá. \\
-  FR-12 & CSV exporter, export history và TTL cleanup. & Unit escaping; API smoke; kiểm tra file hết hạn dự kiến. & CSV có bằng chứng; nhánh từng gọi là PDF thực chất mới tạo HTML và không được công bố là PDF. \\
-  NFR-01--NFR-08 & Constraint, user scope, fallback, idempotency và facts metadata. & Rollback, cross-scope, load, recovery, worker, UAT. & Toàn vẹn trong test đã có bằng chứng; recovery ba giờ, p95, UAT, worker live và numeric faithfulness vẫn là mục tiêu. \\
+  % TODO(TC-M01): thực hiện, lưu bằng chứng và cập nhật trạng thái trước khi nộp.
+  \code{TC-M01} & Tạo, sửa, xóa rồi khôi phục một giao dịch bằng biểu mẫu. & Danh sách giao dịch và số dư ví phản ánh đúng từng thao tác. & \textbf{Đạt}\textsuperscript{*} \\
+  % TODO(TC-M02): thực hiện, lưu bằng chứng và cập nhật trạng thái trước khi nộp.
+  \code{TC-M02} & Nhập một giao dịch đầy đủ qua chat, kiểm tra preview rồi xác nhận. & Hệ thống chỉ tạo đúng một bản ghi sau khi xác nhận. & \textbf{Đạt}\textsuperscript{*} \\
+  % TODO(TC-M03): thực hiện, lưu bằng chứng và cập nhật trạng thái trước khi nộp.
+  \code{TC-M03} & Nhập nội dung thiếu hoặc mơ hồ, sau đó hủy. & Hệ thống yêu cầu bổ sung thông tin và không ghi giao dịch. & \textbf{Đạt}\textsuperscript{*} \\
+  % TODO(TC-M04): thực hiện, lưu bằng chứng và cập nhật trạng thái trước khi nộp.
+  \code{TC-M04} & Lần lượt nhập ảnh hóa đơn và giọng nói; rà soát văn bản thô. & Văn bản thô cho phép sửa hoặc xác nhận; không có dữ liệu được tự lưu trước xác nhận. & \textbf{Đạt}\textsuperscript{*} \\
+  % TODO(TC-M05): thực hiện, lưu bằng chứng và cập nhật trạng thái trước khi nộp.
+  \code{TC-M05} & Mở Dashboard/Report, đối chiếu tổng thu--chi và xuất CSV. & Tổng thu--chi khớp dữ liệu demo; tệp CSV được tải xuống và mở được. & \textbf{Đạt}\textsuperscript{*} \\
+  % TODO(TC-M06): thực hiện, lưu bằng chứng và cập nhật trạng thái trước khi nộp.
+  \code{TC-M06} & Tạo ngân sách cho một kỳ có sẵn giao dịch. & Số đã chi và số còn lại khớp các giao dịch thuộc kỳ. & \textbf{Đạt}\textsuperscript{*} \\
+  % TODO(TC-M07): thực hiện, lưu bằng chứng và cập nhật trạng thái trước khi nộp.
+  \code{TC-M07} & Tạo mục tiêu và chạy một kịch bản what-if. & Kết quả mô phỏng được hiển thị nhưng không tự thay đổi kế hoạch gốc. & \textbf{Đạt}\textsuperscript{*} \\
+  % TODO(TC-M08): thực hiện, lưu bằng chứng và cập nhật trạng thái trước khi nộp.
+  \code{TC-M08} & Tạo khoản định kỳ rồi ghi nhận một lần thanh toán. & Trạng thái được cập nhật và không phát sinh giao dịch trùng. & \textbf{Đạt}\textsuperscript{*} \\
   \bottomrule
 \end{longtable}
 
-\subsection{Đe dọa đến tính hợp lệ}
-
-\subsubsection{Tính hợp lệ nội tại}
-
-Các benchmark phụ thuộc nhãn lịch sử; cùng một mô tả có thể mang nhiều category. Correction mới tách nguyên nhóm theo type+mô tả chuẩn hóa và có overlap bằng 0, nhưng seed/evaluation vẫn đến từ cùng một dataset, chỉ dùng một seed và không có khoảng tin cậy. Mẫu ablation 63 câu nhỏ; hơn nữa artifact lịch sử không lưu đủ prediction và đã tính metric có điều kiện sau khi loại 21 abstention, nên macro-F1 toàn mẫu Gemini không thể khôi phục. Provider cũng biến đổi theo phiên bản/thời điểm; runner mới vì vậy lưu model, tham số, timestamp và records có cấu trúc đã loại trường nhạy cảm.
-
-\subsubsection{Tính hợp lệ cấu trúc}
-
-Quality gate 31/31 đo việc vượt qua các câu được thiết kế, không đo xác suất đúng ngoài mẫu. Smoke test đo khả năng hoàn tất kịch bản, không đo accuracy hoặc mức dễ dùng. Accuracy có thể che khuất lớp hiếm; abstention còn có thể làm metric có điều kiện trông cao hơn. Vì vậy báo cáo kèm coverage, macro-F1, weighted-F1, confusion theo lớp, helped/harmed/net và số mẫu. Với OCR/STT, chỉ CER/WER cũng chưa đủ: field accuracy của amount, date và merchant mới gắn trực tiếp với rủi ro sổ cái.
-
-\subsubsection{Tính hợp lệ ngoại suy}
-
-Dữ liệu thuộc một hồ sơ demo, tiền VND và ngôn ngữ chủ yếu là tiếng Việt; kết quả không tự suy rộng sang nhiều người dùng, taxonomy khác, ảnh hóa đơn đa dạng hoặc môi trường tải production. Vòng đánh giá kế tiếp cần khóa taxonomy, lấy mẫu ngẫu nhiên theo thời gian, giữ group split hiện có nhưng chạy nhiều seed/khoảng tin cậy, và bổ sung người dùng mục tiêu cho UAT. Kết luận chỉ áp dụng cho mã nguồn, dataset và môi trường ghi trong artifact ablation 24/07 cùng classification/correction 02/08/2026.
+Kết quả tự động chỉ áp dụng cho snapshot mã nguồn và fixture tại lần chạy trên. Test dùng mock hoặc bộ nhớ trong không chứng minh hành vi cơ sở dữ liệu, hàng đợi hay worker trong môi trường live. Tám ca thủ công chỉ kiểm tra các luồng đã chọn sau khi tác giả xác minh; chúng không thay thế UAT và không cho phép suy rộng sang độ dễ dùng, độ chính xác media, độ trễ hoặc tải production.

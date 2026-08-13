@@ -1,7 +1,10 @@
+// Vai trò: Cung cấp lựa chọn một giá trị trong nhóm segment điều khiển từ bên ngoài.
+// Luồng chính: so value hiện tại, tô segment active và phát onChange khi người dùng chọn.
+
 import { View, Text, TouchableOpacity } from 'react-native';
 import { useTheme } from '../../theme/ThemeContext';
 
-// iOS-style segmented control. options: [{ value, label }]. Controlled via value/onChange.
+// Flat segmented control. options: [{ value, label }]. Controlled via value/onChange.
 export default function SegmentedControl({ options, value, onChange, style }) {
   const { theme } = useTheme();
   const c = theme.colors;
@@ -23,18 +26,20 @@ export default function SegmentedControl({ options, value, onChange, style }) {
         const active = opt.value === value;
         return (
           <TouchableOpacity
-            accessibilityRole="button"
+            accessibilityRole="tab"
+            accessibilityLabel={opt.label}
+            accessibilityState={{ selected: active }}
             key={opt.value}
             onPress={() => onChange(opt.value)}
             activeOpacity={0.8}
             style={{
               flex: 1,
+              minHeight: 44,
               alignItems: 'center',
               justifyContent: 'center',
               paddingVertical: 9,
               borderRadius: theme.radius.sm,
               backgroundColor: active ? c.surface : 'transparent',
-              ...(active ? theme.shadows.sm : null),
             }}
           >
             <Text

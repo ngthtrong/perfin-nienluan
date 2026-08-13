@@ -1,3 +1,6 @@
+// Vai trò: Entrypoint Expo đăng ký component gốc cho native, web và Expo Go.
+// Luồng chính: chuyển App cho registerRootComponent để Expo thiết lập đúng runtime.
+
 import { registerRootComponent } from 'expo';
 
 import App from './App';

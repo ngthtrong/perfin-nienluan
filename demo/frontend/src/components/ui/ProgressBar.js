@@ -1,3 +1,6 @@
+// Vai trò: Cung cấp thanh tiến độ dùng màu semantic hoặc màu caller chỉ định.
+// Luồng chính: giới hạn percentage về miền hiển thị và render track/fill theo theme.
+
 import { View } from 'react-native';
 import { useTheme } from '../../theme/ThemeContext';
 

@@ -1,3 +1,6 @@
+// Vai trò: Là client HTTP duy nhất nối giao diện với các endpoint backend PERFIN.
+// Luồng chính: suy base URL theo runtime, chuẩn hóa request/response và công bố API theo miền.
+
 import { NativeModules, Platform } from 'react-native';
 
 function getDevServerHost() {
@@ -146,6 +149,7 @@ async function unwrapResponse(response) {
   return data;
 }
 
+// Gửi request JSON, chuẩn hóa lỗi mạng/HTTP và giữ một contract cho mọi endpoint.
 async function request(path, options = {}) {
   let response;
   try {
@@ -232,6 +236,7 @@ async function upload(path, fieldName, asset, fallbackMimeType, fields = {}) {
   return unwrapResponse(response);
 }
 
+// Nhóm endpoint theo miền để screen không tự ghép URL hoặc xử lý transport.
 export const api = {
   getBaseUrl: () => BASE_URL,
   resolveMediaUri,

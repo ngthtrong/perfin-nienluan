@@ -1,3 +1,6 @@
+// Vai trò: Parser xác định cho câu giao dịch tiếng Việt và fallback khi không dùng LLM.
+// Luồng chính: chuẩn hóa văn bản/số tiền, suy loại-ngày-danh mục và validation bản nháp.
+
 const { inferCategoryFromText, findSafeCategoryMatch } = require('./feedback/categoryMatcher');
 
 const CATEGORY_ALIASES = {

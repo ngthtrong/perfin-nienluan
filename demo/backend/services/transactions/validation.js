@@ -1,3 +1,6 @@
+// Vai trò: Xác thực contract giao dịch dùng chung cho REST, chat và model.
+// Luồng chính: kiểm tra field, tiền, loại, ngày không ở tương lai và trả dữ liệu chuẩn hóa.
+
 const EDITABLE_FIELDS = new Set([
   'description',
   'amount',

@@ -1,3 +1,6 @@
+// Vai trò: Cung cấp button dùng chung với variant, icon và trạng thái loading.
+// Luồng chính: ánh xạ variant sang token, khóa tương tác khi cần và giữ accessibility label.
+
 import { Text, TouchableOpacity, ActivityIndicator, View } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '../../theme/ThemeContext';
@@ -26,8 +29,8 @@ export default function Button({
   }[variant];
 
   const pad = size === 'sm'
-    ? { paddingVertical: 9, paddingHorizontal: 14 }
-    : { paddingVertical: 14, paddingHorizontal: 18 };
+    ? { minHeight: 44, paddingVertical: 10, paddingHorizontal: 14 }
+    : { minHeight: 48, paddingVertical: 12, paddingHorizontal: 18 };
   const fontSize = size === 'sm' ? 14 : 15;
   const iconSize = size === 'sm' ? 16 : 18;
 
@@ -37,6 +40,7 @@ export default function Button({
     <TouchableOpacity
       accessibilityRole="button"
       accessibilityLabel={label}
+      accessibilityState={{ disabled: isDisabled, busy: loading }}
       onPress={onPress}
       disabled={isDisabled}
       activeOpacity={0.8}
@@ -52,7 +56,6 @@ export default function Button({
           borderColor: palette.border,
           opacity: isDisabled ? 0.55 : 1,
           ...pad,
-          ...(variant === 'primary' ? theme.shadows.sm : null),
         },
         fullWidth && { alignSelf: 'stretch' },
         style,
@@ -67,7 +70,7 @@ export default function Button({
             numberOfLines={1}
             adjustsFontSizeToFit
             minimumFontScale={0.82}
-            style={{ color: palette.fg, fontWeight: '800', fontSize, flexShrink: 1 }}
+            style={{ color: palette.fg, fontWeight: '700', fontSize, flexShrink: 1 }}
           >
             {label}
           </Text>

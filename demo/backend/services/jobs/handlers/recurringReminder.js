@@ -1,9 +1,13 @@
+// Vai trò: Nhắc các recurring bill sắp hoặc đã đến hạn cho đúng người dùng.
+// Luồng chính: truy vấn bill, dựng thông điệp có metadata và lưu một lần theo ngày.
+
 const { localDateKey } = require('../schedules');
 const { recurringReminderMessage } = require('../messages');
 const { resolveTargetUserIds } = require('../userScope');
 const { persistInternalMessage } = require('../internalMessage');
 const { decorateProactiveMessage } = require('../persona');
 
+// Trả handler tìm bill đến hạn cho từng user và ghi reminder chống lặp theo ngày.
 function createRecurringReminderHandler(deps = {}) {
   const model = deps.recurringBillModel || require('../../../models/recurringBill.model');
   const persist = deps.persistInternalMessage || persistInternalMessage;

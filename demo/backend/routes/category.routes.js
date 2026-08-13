@@ -1,3 +1,6 @@
+// Vai trò: Công bố API quản lý danh mục và thao tác gắn lại giao dịch khi đổi danh mục.
+// Luồng chính: validation, gọi CategoryModel/feedback service và trả kết quả có scope.
+
 const express = require('express');
 const CategoryModel = require('../models/category.model');
 const { CategoryRetagService } = require('../services/feedback');
@@ -15,11 +18,13 @@ router.get('/suggestions', async (req, res) => {
   res.json({ success: true, data });
 });
 
+// Dựng plan retag từ suggestion; chưa sửa giao dịch tại bước preview này.
 router.post('/suggestions/plan', async (req, res) => {
   const data = await CategoryRetagService.preparePlan(userId, req.body || {});
   res.status(201).json({ success: true, data });
 });
 
+// Chỉ áp dụng retag khi plan ID hợp lệ được xác nhận rõ ràng.
 router.post('/suggestions/:planId/confirm', async (req, res) => {
   const data = await CategoryRetagService.confirmPlan(userId, req.params.planId, req.body.confirmed === true);
   res.json({ success: true, data });

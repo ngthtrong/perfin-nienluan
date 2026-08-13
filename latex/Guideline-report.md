@@ -66,7 +66,7 @@ Write a concise summary (150–200 words) that includes:
 #### 2.4 List of Tables and List of Figures
 
 - Include a **List of Tables** and a **List of Figures**.
-- Number illustrations sequentially (Figure 1, Figure 2, etc.).
+-  (`số theo chương (Hình 1.1, Hình 3.1…`)).
 
 #### 2.5 List of Abbreviations
 
@@ -183,13 +183,15 @@ Trình bày các chức năng chính (key functions), công thức đề xuất,
 
 > **Note:** Accompany each diagram with a short explanation and document the key algorithms, techniques, libraries, and APIs used.
 
+3.2.3 UI Design
+
 ##### 3.3 Testing
 
 Explain how you ensured the project works as intended.
 
 ###### 3.3.1 Test Plan
 
-- Detail the testing strategy, including test types (unit, integration, system, and user acceptance testing), tools used for testing (if any), and test cases.
+- Detail the testing strategy, including test types (unit, integration, system, and user acceptance testing, manual,..), tools used for testing (if any), and test cases.
 
 ###### 3.3.2 Results and Analysis
 

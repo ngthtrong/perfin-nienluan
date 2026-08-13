@@ -1,37 +1,36 @@
+// Vai trò: Hiển thị một giao dịch trong danh sách với số tiền và metadata chính.
+// Luồng chính: suy chiều thu/chi, định dạng nội dung và mở thao tác khi card có handler.
+
 import { useMemo } from 'react';
 import { TouchableOpacity, View, Text, StyleSheet } from 'react-native';
 import BalanceDisplay from './BalanceDisplay';
-import CategoryIcon from './CategoryIcon';
+import AppIcon from './AppIcon';
 import { useTheme } from '../theme/ThemeContext';
-import { formatDate } from '../utils/formatters';
+import { formatDate, formatVND } from '../utils/formatters';
 
-export default function TransactionCard({ transaction, onPress, onLongPress }) {
+export default function TransactionCard({ transaction, onPress, onLongPress, expanded = false }) {
   const { theme } = useTheme();
   const styles = useMemo(() => createStyles(theme), [theme]);
   const c = theme.colors;
 
   const isIncome = transaction.type === 'income';
   const signAmount = isIncome ? Number(transaction.amount) : -Number(transaction.amount);
-  const accent = isIncome ? c.income : c.expense;
-  const accentSoft = isIncome ? c.incomeSoft : c.expenseSoft;
+  const interactive = Boolean(onPress || onLongPress);
 
   return (
     <TouchableOpacity
+      accessible={interactive}
+      accessibilityRole={interactive ? 'button' : undefined}
+      accessibilityLabel={interactive
+        ? `${transaction.description}, ${isIncome ? 'thu' : 'chi'} ${formatVND(transaction.amount)}. ${expanded ? 'Ẩn' : 'Mở'} thao tác giao dịch`
+        : undefined}
+      accessibilityState={interactive ? { expanded } : undefined}
+      aria-expanded={interactive ? expanded : undefined}
       style={styles.card}
       onPress={onPress}
       onLongPress={onLongPress}
       activeOpacity={onPress || onLongPress ? 0.7 : 1}
     >
-      <View style={[styles.iconWrapper, { backgroundColor: accentSoft }]}>
-        <CategoryIcon
-          icon={transaction.category_icon}
-          name={transaction.category_name}
-          type={transaction.type}
-          size={20}
-          color={accent}
-        />
-      </View>
-
       <View style={styles.main}>
         <Text style={styles.title} numberOfLines={1}>{transaction.description}</Text>
         <View style={styles.metaRow}>
@@ -45,15 +44,21 @@ export default function TransactionCard({ transaction, onPress, onLongPress }) {
         </View>
         {transaction.source === 'ai_chat' && (
           <View style={styles.aiBadge}>
-            <Text style={styles.aiBadgeText}>✨ AI</Text>
+            <Text style={styles.aiBadgeText}>AI</Text>
           </View>
         )}
       </View>
 
-      <View style={styles.amountCol}>
+      <View style={[styles.amountCol, interactive && styles.amountColInteractive]}>
         <BalanceDisplay amount={signAmount} showSign size={15} />
         {transaction.wallet_name && <Text numberOfLines={1} style={styles.wallet}>{transaction.wallet_name}</Text>}
       </View>
+
+      {interactive && (
+        <View style={styles.disclosure} accessible={false}>
+          <AppIcon name={expanded ? 'expand-less' : 'more-horiz'} size={22} color={expanded ? c.brand : c.textMuted} />
+        </View>
+      )}
     </TouchableOpacity>
   );
 }
@@ -63,15 +68,13 @@ const createStyles = (t) => StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: t.colors.surface,
-    borderRadius: t.radius.md,
-    marginBottom: 8,
-    borderWidth: 1,
-    borderColor: t.colors.border,
+    minHeight: 68,
+    borderBottomWidth: 1,
+    borderBottomColor: t.colors.border,
     gap: 12,
-    paddingHorizontal: 14,
+    paddingHorizontal: 4,
     paddingVertical: 12,
   },
-  iconWrapper: { width: 42, height: 42, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
   main: { flex: 1, minWidth: 0 },
   title: { fontSize: 15, fontWeight: '700', color: t.colors.text, marginBottom: 3 },
   metaRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
@@ -85,7 +88,12 @@ const createStyles = (t) => StyleSheet.create({
     borderRadius: t.radius.pill,
     marginTop: 4,
   },
-  aiBadgeText: { color: t.colors.brandText, fontSize: 10, fontWeight: '700' },
+  aiBadgeText: { color: t.colors.brandText, fontSize: 12, fontWeight: '700' },
   amountCol: { flexShrink: 1, maxWidth: '42%', alignItems: 'flex-end' },
-  wallet: { maxWidth: '100%', color: t.colors.textMuted, fontSize: 10, marginTop: 2, fontWeight: '500' },
+  amountColInteractive: { maxWidth: '36%' },
+  wallet: { maxWidth: '100%', color: t.colors.textMuted, fontSize: 12, marginTop: 2, fontWeight: '500' },
+  disclosure: {
+    width: 32, minHeight: 44, alignItems: 'center', justifyContent: 'center',
+    marginRight: -6,
+  },
 });

@@ -1,3 +1,6 @@
+// Vai trò: Cung cấp chuẩn hóa tiếng Việt và các phép đo tương đồng văn bản thuần.
+// Luồng chính: bỏ dấu/tokenize, tính Levenshtein hoặc Dice và kiểm tra ranh giới cụm từ.
+
 function removeDiacritics(value = '') {
   return String(value)
     .normalize('NFD')
@@ -49,6 +52,7 @@ function diceCoefficient(leftTokens, rightTokens) {
   return (2 * overlap) / (left.size + right.size);
 }
 
+// Kết hợp độ giống token và edit distance thành điểm dùng chung từ 0 đến 1.
 function textSimilarity(left, right) {
   const a = normalizeForMatch(left);
   const b = normalizeForMatch(right);
@@ -86,4 +90,3 @@ module.exports = {
   textSimilarity,
   containsNormalizedPhrase,
 };
-

@@ -15,7 +15,7 @@ PERFIN follows one principle: PostgreSQL and deterministic functions are the sou
   \item Where should an LLM participate to improve natural interaction without taking over computation or modifying data autonomously?
 \end{enumerate}
 
-\widereportfigure{01-system-context.pdf}{PERFIN system context and scope; LLM, OCR and STT services remain outside the trusted data boundary.}{fig:system-context}
+\widereportfigure{figures/drawio/01-system-context.png}{PERFIN system context and scope; LLM, OCR and STT services remain outside the trusted data boundary.}{fig:system-context}
 
 Figure~\ref{fig:system-context} limits the project to acquiring, organizing and analysing personal-finance data. Bank connectivity, shared wallets, production authentication and high-availability infrastructure are out of scope.
 
@@ -35,7 +35,7 @@ The overall objective is to complete, within 13 weeks, a personal-finance protot
     O2 & Build text, image and speech extraction with clarification, preview and confirmation. & No database write when fields are missing; retain source and intermediate data. & Week 8 \\
     O3 & Implement trend, anomaly, runway, recurring, correlation, budget and goal algorithms. & Normal, boundary and invariant cases agree with hand-computed results. & Week 9 \\
     O4 & Restrict the LLM to intent understanding, tool calling and fact narration. & Tool schema, validation, fallback and confirmation remain separate from write authority. & Week 10 \\
-    O5 & Evaluate the prototype with reproducible tests and experiments. & Report unit/integration/smoke scope, joint metrics, coverage/abstention and correction effects; disclose missing measurements. & Week 13 \\
+    O5 & Evaluate the prototype with a simplified hybrid test strategy. & Use automated tests for the data/algorithm core and manual functional cases for main flows; state mock/live and UAT boundaries. & Week 13 \\
     \bottomrule
   \end{tabularx}
 \end{table}
@@ -50,7 +50,7 @@ The project combines four methods:
   \item \textbf{Literature review:} synthesize relational data, text similarity, explainable statistics, OCR, STT and function calling to establish the LLM boundary.
   \item \textbf{Requirements and systems analysis:} study the input--confirmation--analysis process and model actors, data, constraints and ledger-corruption failure modes.
   \item \textbf{Prototype design:} develop in short iterations; separate route--service--model responsibilities and implement formulas as independently testable deterministic functions.
-  \item \textbf{Experimentation:} use unit, integration and system smoke tests plus labelled datasets to compare the parser with the LLM, measure correction retrieval and analyse errors. Media smoke tests demonstrate execution only, not accuracy.
+  \item \textbf{Testing:} use unit/regression tests over controlled fixtures, internal integration checks with mocks or in-memory substitutes, and manual functional scenarios conducted by the author. Conclusions remain within scope; author testing is not treated as UAT or OCR/STT accuracy.
 \end{enumerate}
 
 \section{Implementation Plan}
@@ -77,7 +77,7 @@ The plan starts on 11 May 2026 and spans 13 weeks. Testing and report writing ma
   8 & 29 Jun--05 Jul & Integrate OCR/STT through adapters. & Media pipeline and provider-error handling. \\
   9 & 06--12 Jul & Implement analytics, budget and goal planning. & O3 and formula unit tests. \\
   10 & 13--19 Jul & Complete narration, feedback and worker logic. & O4, fallback and side-effect controls. \\
-  11 & 20--26 Jul & Run integration tests, import data and conduct experiments. & Logs, result JSON and error analysis. \\
+  11 & 20--26 Jul & Run automated core tests, define manual functional cases and profile the data. & Test logs, manual checklist and data summary. \\
   12 & 27 Jul--02 Aug & Restructure the report and normalize diagrams. & Guideline-compliant LaTeX v2. \\
   13 & 03--09 Aug & Review, compile, repair references and prepare the demo. & Submission PDF, source and user guide. \\
   \bottomrule
@@ -91,7 +91,7 @@ Open Banking, foundation-model training, shared wallets, investment advice, prod
 
 \section{Contributions}
 
-The principal contributions are a constrained data model with atomic updates; a multimodal human-in-the-loop pipeline; independently testable analytics; an LLM boundary limited to extraction and narration; and an evaluation protocol that separates algorithm quality, provider execution and system readiness.
+The principal contributions are a constrained data model with atomic updates; a multimodal human-in-the-loop pipeline; independently testable analytics; an LLM boundary limited to extraction and narration; and a hybrid test strategy that separates core correctness from interface-flow checks.
 
 \section{Report Structure}
 

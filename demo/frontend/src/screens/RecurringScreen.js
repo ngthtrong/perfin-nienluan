@@ -1,3 +1,6 @@
+// Vai trò: Quản lý recurring bill, ngày đến hạn và lịch sử thanh toán.
+// Luồng chính: tải danh sách, validation form, ghi nhận thanh toán và refresh dữ liệu liên quan.
+
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, FlatList,
@@ -29,6 +32,7 @@ const STATUS_FILTERS = [
 ];
 const EMPTY_FORM = { id: null, name: '', amount: '', frequency: 'monthly', due_day: '1', category_id: null };
 
+// Quản lý danh sách, form và modal lịch sử của toàn bộ recurring bill.
 export default function RecurringScreen() {
   const { theme } = useTheme();
   const styles = useMemo(() => createStyles(theme), [theme]);
@@ -88,6 +92,7 @@ export default function RecurringScreen() {
     setShowForm(true);
   }
 
+  // Tạo/cập nhật bill sau validation form và làm mới các summary liên quan.
   async function save() {
     const amount = parseMoneyInput(form.amount);
     if (!form.name.trim() || !(amount > 0) || !form.due_day) {
@@ -126,6 +131,7 @@ export default function RecurringScreen() {
     ]);
   }
 
+  // Ghi nhận thanh toán qua endpoint nguyên tử rồi tải lại lịch sử và số liệu.
   async function pay(bill) {
     try {
       await api.payRecurringBill(bill.id, { period_due_date: bill.next_due_date });
@@ -251,7 +257,6 @@ export default function RecurringScreen() {
         ListEmptyComponent={
           filtersActive ? (
             <EmptyState
-              emoji="🔎"
               title="Không tìm thấy khoản định kỳ"
               message="Thử đổi từ khóa hoặc đặt lại các bộ lọc đang chọn."
               actionLabel="Đặt lại bộ lọc"
@@ -260,7 +265,6 @@ export default function RecurringScreen() {
             />
           ) : (
             <EmptyState
-              emoji="🔔"
               title="Chưa có chi phí cố định"
               message="Thêm các khoản như tiền trọ, điện nước, internet để được nhắc đúng hạn."
               actionLabel="Thêm khoản chi"
@@ -291,9 +295,6 @@ function RecurringFilters({
   return (
     <View style={styles.filterPanel}>
       <View style={styles.filterHeadingRow}>
-        <View style={styles.filterIcon}>
-          <AppIcon name="tune" size={18} color={c.brand} />
-        </View>
         <View style={{ flex: 1, minWidth: 0 }}>
           <Text style={styles.filterTitle}>Lọc chi phí định kỳ</Text>
           <Text style={styles.filterSummary}>Hiển thị {resultCount} / {totalCount} khoản</Text>
@@ -327,6 +328,7 @@ function RecurringFilters({
             accessibilityRole="button"
             accessibilityLabel="Xóa từ khóa tìm chi phí định kỳ"
             onPress={() => onSearchChange('')}
+            style={styles.clearSearchButton}
           >
             <AppIcon name="close" size={17} color={c.textMuted} />
           </TouchableOpacity>
@@ -369,15 +371,11 @@ function RecurringHeader({ styles, c, totalMonthly, count, suggestions, onAccept
           <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.68} style={styles.overviewAmount}>{formatVND(totalMonthly)}</Text>
           <Text style={styles.overviewSub}>{count} khoản đang theo dõi</Text>
         </View>
-        <View style={styles.overviewIcon}>
-          <AppIcon name="event-repeat" size={26} color={c.brand} />
-        </View>
       </View>
 
       {suggestions.length > 0 && (
         <View style={styles.suggestBox}>
           <View style={styles.suggestHeader}>
-            <AppIcon name="auto-awesome" size={15} color={c.brandText} />
             <Text style={styles.suggestTitle}>AI gợi ý từ lịch sử chi tiêu</Text>
           </View>
           {suggestions.map((s) => (
@@ -430,9 +428,6 @@ function BillCard({ styles, c, bill, onPay, onEdit, onDelete, onTogglePause, onH
     <View style={[styles.card, paused && styles.cardPaused]}>
       <View style={styles.cardHeader}>
         <View style={styles.cardTitleRow}>
-          <View style={styles.catIcon}>
-            <CategoryIcon icon={bill.category_icon || '🔔'} name={bill.category_name} type="expense" size={16} color={c.brand} />
-          </View>
           <View style={{ flex: 1, minWidth: 0 }}>
             <Text numberOfLines={1} style={styles.cardTitle}>{bill.name}</Text>
             <Text style={styles.cardSub}>{FREQ_LABEL[bill.frequency]} · kỳ kế {bill.next_due_date}</Text>
@@ -450,7 +445,7 @@ function BillCard({ styles, c, bill, onPay, onEdit, onDelete, onTogglePause, onH
 
       <View style={styles.actionRow}>
         {!paused && !paid && (
-          <TouchableOpacity style={[styles.actionBtn, styles.payBtn]} onPress={onPay}>
+          <TouchableOpacity accessibilityRole="button" accessibilityLabel={`Đánh dấu ${bill.name} đã trả`} style={[styles.actionBtn, styles.payBtn]} onPress={onPay}>
             <AppIcon name="check" size={15} color="#fff" />
             <Text style={styles.payBtnText}>Đã trả</Text>
           </TouchableOpacity>
@@ -516,7 +511,13 @@ function BillFormModal({ styles, c, visible, form, setForm, categories, saving, 
               {FREQ_OPTIONS.map((f) => {
                 const active = form.frequency === f.key;
                 return (
-                  <TouchableOpacity key={f.key} style={[styles.freqChip, active && styles.freqChipActive]} onPress={() => set('frequency')(f.key)}>
+                  <TouchableOpacity
+                    key={f.key}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: active }}
+                    style={[styles.freqChip, active && styles.freqChipActive]}
+                    onPress={() => set('frequency')(f.key)}
+                  >
                     <Text style={[styles.freqChipText, active && styles.freqChipTextActive]}>{f.label}</Text>
                   </TouchableOpacity>
                 );
@@ -531,8 +532,14 @@ function BillFormModal({ styles, c, visible, form, setForm, categories, saving, 
               {categories.map((cat) => {
                 const active = form.category_id === cat.id;
                 return (
-                  <TouchableOpacity key={cat.id} style={[styles.catChip, active && styles.catChipActive]} onPress={() => set('category_id')(cat.id)}>
-                    <CategoryIcon icon={cat.icon} name={cat.name} type="expense" size={14} color={active ? c.onBrand : c.textSecondary} />
+                  <TouchableOpacity
+                    key={cat.id}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: active }}
+                    style={[styles.catChip, active && styles.catChipActive]}
+                    onPress={() => set('category_id')(cat.id)}
+                  >
+                    <CategoryIcon icon={cat.icon} name={cat.name} type="expense" size={14} color={active ? c.brandText : c.textSecondary} />
                     <Text style={[styles.catChipText, active && styles.catChipTextActive]}>{cat.name}</Text>
                   </TouchableOpacity>
                 );
@@ -604,92 +611,87 @@ const createStyles = (t) => StyleSheet.create({
 
   overviewCard: {
     flexDirection: 'row', alignItems: 'center', backgroundColor: t.colors.surface,
-    padding: 18, borderRadius: t.radius.xl, borderWidth: 1, borderColor: t.colors.border, marginBottom: 12, ...t.shadows.sm,
+    padding: 18, borderRadius: t.radius.xl, borderWidth: 1, borderColor: t.colors.border, marginBottom: 12,
   },
   overviewLabel: { fontSize: 12, color: t.colors.textMuted, fontWeight: '600' },
-  overviewAmount: { fontSize: 26, fontWeight: '900', color: t.colors.text, marginVertical: 4 },
+  overviewAmount: { fontSize: 26, fontWeight: '700', color: t.colors.text, marginVertical: 4 },
   overviewSub: { fontSize: 12, color: t.colors.textMuted },
-  overviewIcon: { width: 56, height: 56, borderRadius: 18, backgroundColor: t.colors.brandSoft, alignItems: 'center', justifyContent: 'center' },
 
-  suggestBox: { backgroundColor: t.colors.surface, borderRadius: t.radius.lg, borderWidth: 1, borderColor: t.colors.border, padding: 14, marginBottom: 12, ...t.shadows.sm },
+  suggestBox: { backgroundColor: t.colors.surface, borderRadius: t.radius.lg, borderWidth: 1, borderColor: t.colors.border, padding: 14, marginBottom: 12 },
   suggestHeader: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 10 },
-  suggestTitle: { fontSize: 13, fontWeight: '800', color: t.colors.text },
+  suggestTitle: { fontSize: 13, fontWeight: '700', color: t.colors.text },
   suggestItem: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 8, borderTopWidth: 1, borderTopColor: t.colors.border },
   suggestName: { fontSize: 14, fontWeight: '700', color: t.colors.text },
   suggestMeta: { fontSize: 12, color: t.colors.textMuted, marginTop: 2 },
-  suggestAccept: { width: 32, height: 32, borderRadius: 16, backgroundColor: t.colors.brand, alignItems: 'center', justifyContent: 'center' },
-  suggestDismiss: { width: 32, height: 32, borderRadius: 16, backgroundColor: t.colors.surfaceAlt, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: t.colors.border },
+  suggestAccept: { width: 44, height: 44, borderRadius: 22, backgroundColor: t.colors.brand, alignItems: 'center', justifyContent: 'center' },
+  suggestDismiss: { width: 44, height: 44, borderRadius: 22, backgroundColor: t.colors.surfaceAlt, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: t.colors.border },
 
   filterPanel: {
     padding: 14, marginBottom: 14, backgroundColor: t.colors.surface,
-    borderWidth: 1, borderColor: t.colors.border, borderRadius: t.radius.lg, ...t.shadows.sm,
+    borderWidth: 1, borderColor: t.colors.border, borderRadius: t.radius.lg,
   },
   filterHeadingRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 12 },
-  filterIcon: {
-    width: 36, height: 36, borderRadius: 12, alignItems: 'center', justifyContent: 'center',
-    backgroundColor: t.colors.brandSoft,
-  },
-  filterTitle: { color: t.colors.text, fontSize: 14, fontWeight: '900' },
-  filterSummary: { color: t.colors.textMuted, fontSize: 11, fontWeight: '600', marginTop: 2 },
+  filterTitle: { color: t.colors.text, fontSize: 14, fontWeight: '700' },
+  filterSummary: { color: t.colors.textMuted, fontSize: 12, fontWeight: '600', marginTop: 2 },
   resetFilterButton: {
     flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 9, paddingVertical: 7,
     borderRadius: t.radius.pill, backgroundColor: t.colors.brandSoft,
   },
-  resetFilterText: { color: t.colors.brandText, fontSize: 11, fontWeight: '800' },
+  resetFilterText: { color: t.colors.brandText, fontSize: 12, fontWeight: '700' },
   searchWrapper: {
     flexDirection: 'row', alignItems: 'center', gap: 9, paddingHorizontal: 12, paddingVertical: 10,
     marginBottom: 13, backgroundColor: t.colors.surfaceAlt, borderWidth: 1.5,
     borderColor: t.colors.border, borderRadius: t.radius.md,
   },
   searchInput: { flex: 1, minWidth: 0, color: t.colors.text, fontSize: 14 },
-  filterLabel: { color: t.colors.textSecondary, fontSize: 11, fontWeight: '800', marginBottom: 7 },
+  clearSearchButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', marginVertical: -10, marginRight: -12 },
+  filterLabel: { color: t.colors.textSecondary, fontSize: 12, fontWeight: '700', marginBottom: 7 },
   filterRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 7, marginBottom: 13 },
   filterRowLast: { marginBottom: 0 },
 
-  card: { backgroundColor: t.colors.surface, padding: 16, borderRadius: t.radius.lg, borderWidth: 1, borderColor: t.colors.border, marginBottom: 10, ...t.shadows.sm },
+  card: { backgroundColor: t.colors.surface, padding: 16, borderRadius: t.radius.lg, borderWidth: 1, borderColor: t.colors.border, marginBottom: 10 },
   cardPaused: { opacity: 0.7 },
   cardHeader: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' },
   cardTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1, minWidth: 0 },
-  catIcon: { width: 38, height: 38, borderRadius: 12, backgroundColor: t.colors.brandSoft, alignItems: 'center', justifyContent: 'center' },
-  cardTitle: { fontSize: 15, fontWeight: '800', color: t.colors.text },
+  cardTitle: { fontSize: 15, fontWeight: '700', color: t.colors.text },
   cardSub: { fontSize: 12, color: t.colors.textMuted, marginTop: 2 },
-  cardAmount: { flexShrink: 1, maxWidth: '38%', textAlign: 'right', fontSize: 16, fontWeight: '900', color: t.colors.expense },
+  cardAmount: { flexShrink: 1, maxWidth: '38%', textAlign: 'right', fontSize: 16, fontWeight: '700', color: t.colors.expense },
   badgeRow: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 8, marginTop: 12 },
   badge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: t.radius.pill },
-  badgeText: { fontSize: 11, fontWeight: '700' },
+  badgeText: { fontSize: 12, fontWeight: '700' },
   walletText: { fontSize: 12, color: t.colors.textMuted },
   actionRow: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 8, marginTop: 14 },
-  actionBtn: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 14, paddingVertical: 8, borderRadius: t.radius.pill },
+  actionBtn: { minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 14, paddingVertical: 8, borderRadius: t.radius.md },
   payBtn: { backgroundColor: t.colors.income, flexGrow: 1, flexBasis: 100, justifyContent: 'center' },
-  payBtnText: { color: '#fff', fontWeight: '800', fontSize: 13 },
-  iconAction: { width: 38, height: 38, borderRadius: 12, backgroundColor: t.colors.surfaceAlt, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: t.colors.border },
+  payBtnText: { color: '#fff', fontWeight: '700', fontSize: 13 },
+  iconAction: { width: 44, height: 44, borderRadius: 12, backgroundColor: t.colors.surfaceAlt, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: t.colors.border },
 
   emptyMsgInline: { color: t.colors.textMuted, textAlign: 'center', paddingVertical: 16 },
 
   modalBackdrop: { flex: 1, backgroundColor: t.colors.overlay, justifyContent: 'flex-end' },
   modalSheet: { width: '100%', maxWidth: 720, alignSelf: 'center', backgroundColor: t.colors.surface, borderTopLeftRadius: t.radius.xl, borderTopRightRadius: t.radius.xl, padding: 20, maxHeight: '88%' },
   modalHandle: { width: 40, height: 4, borderRadius: 2, backgroundColor: t.colors.border, alignSelf: 'center', marginBottom: 14 },
-  modalTitle: { fontSize: 18, fontWeight: '900', color: t.colors.text, marginBottom: 14 },
+  modalTitle: { fontSize: 18, fontWeight: '700', color: t.colors.text, marginBottom: 14 },
   formLabel: { color: t.colors.textMuted, fontWeight: '700', fontSize: 13, marginBottom: 8, marginTop: 6 },
   input: { borderWidth: 1.5, borderColor: t.colors.border, borderRadius: t.radius.md, padding: 13, fontSize: 15, color: t.colors.text, backgroundColor: t.colors.surfaceAlt },
   freqRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  freqChip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: t.radius.pill, backgroundColor: t.colors.surfaceAlt, borderWidth: 1.5, borderColor: t.colors.border },
-  freqChipActive: { backgroundColor: t.colors.brand, borderColor: t.colors.brand },
+  freqChip: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 14, paddingVertical: 8, borderRadius: t.radius.pill, backgroundColor: t.colors.surfaceAlt, borderWidth: 1.5, borderColor: t.colors.border },
+  freqChipActive: { backgroundColor: t.colors.brandSoft, borderColor: t.colors.brand },
   freqChipText: { fontSize: 13, color: t.colors.textSecondary, fontWeight: '600' },
-  freqChipTextActive: { color: t.colors.onBrand, fontWeight: '700' },
-  catChip: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 12, paddingVertical: 8, borderRadius: t.radius.pill, backgroundColor: t.colors.surfaceAlt, borderWidth: 1.5, borderColor: t.colors.border },
-  catChipActive: { backgroundColor: t.colors.brand, borderColor: t.colors.brand },
+  freqChipTextActive: { color: t.colors.brandText, fontWeight: '700' },
+  catChip: { minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 12, paddingVertical: 8, borderRadius: t.radius.pill, backgroundColor: t.colors.surfaceAlt, borderWidth: 1.5, borderColor: t.colors.border },
+  catChipActive: { backgroundColor: t.colors.brandSoft, borderColor: t.colors.brand },
   catChipText: { fontSize: 13, color: t.colors.textSecondary, fontWeight: '600' },
-  catChipTextActive: { color: t.colors.onBrand, fontWeight: '700' },
+  catChipTextActive: { color: t.colors.brandText, fontWeight: '700' },
   modalActions: { flexDirection: 'row', gap: 10, marginTop: 16 },
 
   summaryRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 14, gap: 8 },
   summaryItem: { flex: 1, alignItems: 'center', backgroundColor: t.colors.surfaceAlt, paddingVertical: 12, borderRadius: t.radius.md },
-  summaryValue: { maxWidth: '100%', fontSize: 15, fontWeight: '900', color: t.colors.text },
-  summaryLabel: { fontSize: 11, color: t.colors.textMuted, marginTop: 2 },
+  summaryValue: { maxWidth: '100%', fontSize: 15, fontWeight: '700', color: t.colors.text },
+  summaryLabel: { fontSize: 12, color: t.colors.textMuted, marginTop: 2 },
   histRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: t.colors.border },
   histDate: { fontSize: 14, fontWeight: '700', color: t.colors.text },
   histSub: { fontSize: 12, color: t.colors.textMuted, marginTop: 2 },
-  histAmount: { fontSize: 14, fontWeight: '800', color: t.colors.text },
-  histStatus: { fontSize: 11, color: t.colors.income, fontWeight: '700', marginTop: 2 },
+  histAmount: { fontSize: 14, fontWeight: '700', color: t.colors.text },
+  histStatus: { fontSize: 12, color: t.colors.income, fontWeight: '700', marginTop: 2 },
 });

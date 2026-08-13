@@ -1,4 +1,6 @@
-// Pure goal-planning math (Flow 16). No DB/LLM — deterministic and testable.
+// Vai trò: Cung cấp phép tính lập kế hoạch tiết kiệm và trả nợ hoàn toàn xác định.
+// Luồng chính: validation tham số, mô phỏng từng tháng, tính deadline/what-if và cảnh báo.
+// Module không truy cập DB hoặc LLM nên có thể kiểm thử độc lập.
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const EPSILON = 1e-8;
@@ -121,6 +123,7 @@ function savingWarning(result) {
 // Saving/purchase: calculate the payoff horizon and the contribution required for
 // a deadline. A null contribution means "use available surplus"; an explicit zero
 // means the user currently plans no contribution.
+// Lập lịch tiết kiệm theo số còn thiếu, khoản góp tháng và deadline tùy chọn.
 function planSaving({
   targetAmount,
   currentAmount = 0,
@@ -248,6 +251,7 @@ function debtWarning(result) {
 
 // Debt payoff amortization with an optional deadline. `principal` is the current
 // outstanding balance, not the original debt amount.
+// Mô phỏng dư nợ theo tháng và cảnh báo khi payment không thắng được tiền lãi.
 function planDebtPayoff({
   principal,
   monthlyPayment,
@@ -380,6 +384,7 @@ function planDebtPayoff({
 
 // Re-run a saving/purchase plan with cash freed up elsewhere. When the base plan
 // has no contribution, the scenario can turn an impossible horizon into a finite one.
+// Đánh giá tác động của khoản góp thêm mà không thay đổi base plan đầu vào.
 function whatIf(basePlan, extraMonthly, params) {
   if (!basePlan || !['saving', 'purchase'].includes(basePlan.goal_type)) return null;
   const extra = asNumber(extraMonthly, 'extraMonthly', { min: 0 });

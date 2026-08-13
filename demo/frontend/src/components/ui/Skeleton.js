@@ -1,3 +1,6 @@
+// Vai trò: Cung cấp placeholder shimmer và nhóm thông báo trạng thái tải cho trợ năng.
+// Luồng chính: chạy opacity animation, ẩn khối trang trí và công bố loading một lần ở group.
+
 import { useEffect, useRef } from 'react';
 import { Animated, View } from 'react-native';
 import { useTheme } from '../../theme/ThemeContext';

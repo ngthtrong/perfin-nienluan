@@ -1,6 +1,6 @@
-// Pure statistical helpers for the Analytics Engine. No DB, no LLM — deterministic
-// math on plain arrays so they are unit-testable in isolation. The engine feeds these
-// with data from analytics.model.js and hands the numeric results to the LLM to phrase.
+// Vai trò: Cung cấp các thuật toán thống kê thuần cho Analytics Engine.
+// Luồng chính: nhận mảng số, tính trend/anomaly/runway/correlation xác định và trả facts.
+// Module không truy cập DB hoặc LLM nên kết quả có thể kiểm thử độc lập.
 
 const { localDayKey } = require('./timeSeries');
 

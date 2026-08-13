@@ -1,3 +1,6 @@
+// Vai trò: Công bố API tìm kiếm, tạo, sửa, xóa mềm và khôi phục giao dịch.
+// Luồng chính: validation request, gọi TransactionModel và ghi feedback sau commit theo best effort.
+
 const express = require('express');
 const TransactionModel = require('../models/transaction.model');
 const AccountModel = require('../models/account.model');
@@ -22,6 +25,7 @@ router.get('/', validateTransactionQuery, async (req, res) => {
   res.json({ success: true, ...result, total: result.pagination.total });
 });
 
+// Tạo trực tiếp qua REST sau validation; luồng chat vẫn phải đi qua pending confirm.
 router.post('/', validateTransaction, async (req, res) => {
   const wallet = req.body.wallet_id ? await AccountModel.getById(req.body.wallet_id, userId) : await AccountModel.ensureDefault(userId);
   if (!wallet) return res.status(400).json({ success: false, error: 'Ví không tồn tại' });
@@ -53,6 +57,7 @@ router.put('/:id/category', validateTransactionCategoryUpdate, async (req, res) 
   res.json({ success: true, data, message: 'Đã cập nhật danh mục giao dịch' });
 });
 
+// Sửa transaction và ghi feedback correction sau khi commit thành công.
 router.put('/:id', validateTransactionUpdate, async (req, res) => {
   const before = await TransactionModel.getById(req.params.id, userId);
   const data = await TransactionModel.update(req.params.id, req.body, userId);
@@ -85,6 +90,7 @@ router.put('/:id', validateTransactionUpdate, async (req, res) => {
   res.json({ success: true, data, wallet_balance: Number(data.wallet_balance) });
 });
 
+// Xóa mềm để còn khả năng phục hồi và giữ lịch sử sổ cái.
 router.delete('/:id', async (req, res) => {
   const data = await TransactionModel.softDelete(req.params.id, userId);
   if (!data) return res.status(404).json({ success: false, error: 'Không tìm thấy giao dịch' });

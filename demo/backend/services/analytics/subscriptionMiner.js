@@ -1,6 +1,6 @@
-// Detects recurring/subscription-like spending hidden across transactions.
-// The function is deliberately deterministic: a repeated description is only a
-// candidate when both its amount and its observed intervals are stable.
+// Vai trò: Dò các khoản chi có dấu hiệu subscription trong lịch sử giao dịch.
+// Luồng chính: gom mô tả tương đồng, kiểm tra độ ổn định số tiền/khoảng cách rồi suy ra cadence.
+// Chỉ candidate đủ bằng chứng mới được trả về; module không tự tạo recurring bill.
 
 const DAYS_PER_MONTH = 365.25 / 12;
 

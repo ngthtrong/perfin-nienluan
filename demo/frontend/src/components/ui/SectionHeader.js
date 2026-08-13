@@ -1,3 +1,6 @@
+// Vai trò: Hiển thị tiêu đề section cùng hành động phụ tùy chọn.
+// Luồng chính: render nhãn và biến action thành nút có icon khi callback tồn tại.
+
 import { View, Text, TouchableOpacity } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '../../theme/ThemeContext';

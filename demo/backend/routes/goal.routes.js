@@ -1,3 +1,6 @@
+// Vai trò: Công bố API xem, lập preview, xác nhận và quản lý mục tiêu tài chính.
+// Luồng chính: validation đầu vào, tính kế hoạch xác định, giữ pending rồi mới lưu khi xác nhận.
+
 const express = require('express');
 const crypto = require('crypto');
 const GoalModel = require('../models/goal.model');
@@ -79,6 +82,7 @@ router.get('/surplus', async (req, res) => {
 });
 
 // Preview a plan WITHOUT saving — for "what if I set this goal?" exploration.
+// Tính preview và ký token cho đúng payload mà người dùng vừa xem.
 router.post('/plan', async (req, res) => {
   const validation = validateGoalPayload(req.body, { mode: 'plan' });
   if (validation.errors.length) return validationError(res, validation.errors);
@@ -86,6 +90,7 @@ router.post('/plan', async (req, res) => {
   res.json({ success: true, data: { ...plan, preview_token: issuePreviewToken(validation.value) } });
 });
 
+// Chỉ tạo mục tiêu khi payload khớp preview token còn hạn.
 router.post('/', async (req, res) => {
   const { preview_token: previewToken, ...payload } = req.body || {};
   const validation = validateGoalPayload(payload, { mode: 'create' });

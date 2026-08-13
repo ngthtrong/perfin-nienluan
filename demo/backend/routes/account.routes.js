@@ -1,3 +1,6 @@
+// Vai trò: Công bố API số dư và quản lý ví cho frontend.
+// Luồng chính: nhận request, gọi AccountModel và chuyển lỗi về middleware chung.
+
 const express = require('express');
 const AccountModel = require('../models/account.model');
 const { validateWalletCreate } = require('../middleware/wallet.validation.middleware');

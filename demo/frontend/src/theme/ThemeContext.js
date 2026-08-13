@@ -1,9 +1,13 @@
+// Vai trò: Quản lý lựa chọn light/dark/system và cung cấp theme cho toàn ứng dụng.
+// Luồng chính: theo dõi Appearance, dựng token theo mode và phát context cho component con.
+
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { Appearance } from 'react-native';
 import { buildTheme } from './tokens';
 
 const ThemeContext = createContext(null);
 
+// Tính theme hiệu lực từ lựa chọn người dùng và thay đổi Appearance của hệ điều hành.
 export function ThemeProvider({ children }) {
   // 'light' | 'dark' | 'system'
   const [scheme, setScheme] = useState('system');

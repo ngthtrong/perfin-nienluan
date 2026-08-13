@@ -1,3 +1,6 @@
+// Vai trò: Nhận diện nhanh các intent tài chính tiếng Việt mà không cần gọi LLM.
+// Luồng chính: phân biệt câu hỏi với lệnh ghi tiền, trích tham số và trả intent có cấu trúc.
+
 const { normalizeAmount, normalizeText, parseLocalTransaction } = require('../parser.service');
 const { detectPeriodFromText } = require('./periodResolver');
 
@@ -252,6 +255,7 @@ function parseGoalQuery(text) {
   return { intent: 'query_goals', query: { query: 'goals' } };
 }
 
+// Áp dụng thứ tự ưu tiên intent để câu hỏi tra cứu không bị biến thành lệnh ghi tiền.
 function routeLocalIntent(text, categories) {
   const normalized = normalizeText(text);
   const normalizedSentence = normalized.replace(/[?!.]+$/g, '').trim();

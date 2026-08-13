@@ -1,3 +1,7 @@
+// Vai trò: Điều phối hội thoại từ câu tự nhiên đến tra cứu hoặc bản nháp nghiệp vụ an toàn.
+// Luồng chính: phân loại intent, quản lý clarification/pending, validation và chỉ ghi sau xác nhận.
+// Đây là ranh giới trung tâm giữa AI, quy tắc xác định và các model tài chính.
+
 const express = require('express');
 const AIService = require('../services/ai.service');
 const CategoryModel = require('../models/category.model');
@@ -74,6 +78,7 @@ function hasOwn(value, key) {
   return Object.prototype.hasOwnProperty.call(value, key);
 }
 
+// Hợp nhất thay đổi draft, validation lại và ghi metadata nếu người dùng sửa category AI chọn.
 async function preparePendingTransactionUpdates(currentTransaction, rawUpdates, {
   categories = null,
   today = new Date(),
@@ -325,6 +330,7 @@ function coveredRecurringBillIds(messages, dateKey) {
 
 // Build a dynamic fallback when the worker is disabled/unavailable. Bills already
 // persisted by today's worker message are filtered out to avoid duplicate prompts.
+// Dựng reminder từ recurring bill và proactive message nhưng loại nội dung đã được bao phủ.
 async function buildReminders(messages = [], now = new Date()) {
   const dateKey = localDateKey(now, process.env.JOBS_TIMEZONE || 'Asia/Bangkok');
   const covered = coveredRecurringBillIds(messages, dateKey);
@@ -584,6 +590,7 @@ function abandonsConversation(text, state, categories) {
   return isQuestionLike(text);
 }
 
+// Giải quyết lượt clarification tiếp theo hoặc chủ động thoát state khi người dùng hỏi việc khác.
 async function resolveConversation(text, state, categories) {
   const awaiting = Array.isArray(state.awaiting) ? [...state.awaiting] : [state.awaiting].filter(Boolean);
   if (!awaiting.length) return null;
@@ -796,6 +803,7 @@ async function handleTransactionQuery(parsed) {
   };
 }
 
+// Trả lời các read intent từ dữ liệu thật, kèm đúng cửa sổ thời gian đã resolve.
 async function handleFinancialQuery(parsed) {
   switch (parsed.intent) {
     case 'query_transactions':
@@ -1038,6 +1046,7 @@ async function handleExport(parsed) {
   };
 }
 
+// Dùng feedback gần nhất làm correction/few-shot trước khi chấp nhận kết quả parser.
 async function parseWithLearnedFeedback(text, categories) {
   const examples = await FeedbackService.getFewShotExamples(userId, text, { limit: 5 }).catch(() => []);
   const fewShot = examples.length
@@ -1109,6 +1118,7 @@ async function categorySuggestionsForTransactions(transactions) {
   return CategoryRetagService.discover(userId, { type: 'expense', months: 6, minimumOccurrences: 3 }).catch(() => []);
 }
 
+// Commit từng loại pending qua model tương ứng; transaction nhiều dòng vẫn all-or-nothing.
 async function commitPendingItem(item) {
   let data;
   if (item.kind === 'recurring_bill') {
@@ -1264,6 +1274,7 @@ async function cancelPendingWork(expectedId = null) {
   return { item };
 }
 
+// Nhận một lượt chat: ưu tiên state/read intent, sau đó mới tạo preview cho thao tác ghi.
 router.post('/message', async (req, res) => {
   const text = String(req.body.text || '').trim();
   if (!text || text.length > 500) return res.status(400).json({ success: false, error: 'Nội dung không hợp lệ' });
@@ -1364,6 +1375,7 @@ router.post('/message', async (req, res) => {
   res.json({ success: true, data });
 });
 
+// Claim pending đúng một lần rồi commit; request xác nhận lặp không tạo dữ liệu trùng.
 router.post('/confirm', async (req, res) => {
   const claimed = await claimPendingRequest(pendingIdFromBody(req.body));
   if (!claimed.item) return res.status(claimed.status).json({ success: false, error: claimed.error });
@@ -1373,6 +1385,7 @@ router.post('/confirm', async (req, res) => {
   res.json({ success: true, data });
 });
 
+// Validation và cập nhật draft đang chờ, chưa tác động tới sổ cái.
 router.post('/edit', async (req, res) => {
   const current = await pending.get(userId);
   const expectedId = pendingIdFromBody(req.body) || current?.id || null;
@@ -1424,6 +1437,7 @@ router.post('/edit', async (req, res) => {
   res.json({ success: true, data });
 });
 
+// Hủy pending/clarification liên quan mà không tạo side effect tài chính.
 router.post('/cancel', async (req, res) => {
   const cancelled = await cancelPendingWork(pendingIdFromBody(req.body));
   if (cancelled.error) return res.status(cancelled.status).json({ success: false, error: cancelled.error });

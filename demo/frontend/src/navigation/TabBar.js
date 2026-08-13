@@ -1,3 +1,6 @@
+// Vai trò: Hiển thị thanh tab chính có icon, nhãn và trạng thái truy cập được.
+// Luồng chính: đọc navigation state, phát sự kiện tabPress và điều hướng khi được phép.
+
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -5,7 +8,7 @@ import { useTheme } from '../theme/ThemeContext';
 
 const ICONS = {
   Dashboard: 'space-dashboard',
-  Chat: 'auto-awesome',
+  Chat: 'chat-bubble-outline',
   Budget: 'account-balance-wallet',
   Report: 'bar-chart',
   More: 'grid-view',
@@ -19,6 +22,7 @@ const LABELS = {
   More: 'Khác',
 };
 
+// Phát sự kiện chuẩn của React Navigation trước khi thay đổi tab đang chọn.
 export default function TabBar({ state, navigation }) {
   const { theme } = useTheme();
   const c = theme.colors;
@@ -47,7 +51,16 @@ export default function TabBar({ state, navigation }) {
         // Center Chat tab: prominent floating brand button
         if (isChat) {
           return (
-            <TouchableOpacity key={route.key} style={styles.item} onPress={onPress} activeOpacity={0.85}>
+            <TouchableOpacity
+              key={route.key}
+              accessibilityRole="tab"
+              accessibilityLabel={LABELS.Chat}
+              accessibilityState={{ selected: focused }}
+              aria-selected={focused}
+              style={styles.item}
+              onPress={onPress}
+              activeOpacity={0.82}
+            >
               <View style={[styles.chatButton, { backgroundColor: c.brand }, theme.shadows.md]}>
                 <MaterialIcons name={ICONS.Chat} size={26} color={c.onBrand} />
               </View>
@@ -59,8 +72,17 @@ export default function TabBar({ state, navigation }) {
         }
 
         return (
-          <TouchableOpacity key={route.key} style={styles.item} onPress={onPress} activeOpacity={0.7}>
-            <View style={[styles.iconWrap, focused && { backgroundColor: c.brandSoft }]}>
+          <TouchableOpacity
+            key={route.key}
+            accessibilityRole="tab"
+            accessibilityLabel={LABELS[route.name]}
+            accessibilityState={{ selected: focused }}
+            aria-selected={focused}
+            style={styles.item}
+            onPress={onPress}
+            activeOpacity={0.65}
+          >
+            <View style={styles.iconWrap}>
               <MaterialIcons name={ICONS[route.name]} size={22} color={focused ? c.brandText : c.textMuted} />
             </View>
             <Text style={[styles.label, { color: focused ? c.brandText : c.textMuted }]}>
@@ -80,7 +102,7 @@ const styles = StyleSheet.create({
     paddingTop: 8,
     paddingHorizontal: 6,
   },
-  item: { flex: 1, alignItems: 'center', gap: 3 },
+  item: { flex: 1, minHeight: 48, alignItems: 'center', justifyContent: 'center', gap: 2 },
   iconWrap: {
     width: 46,
     height: 30,
@@ -96,5 +118,5 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginTop: -22,
   },
-  label: { fontSize: 10, fontWeight: '700' },
+  label: { fontSize: 12, lineHeight: 16, fontWeight: '600' },
 });

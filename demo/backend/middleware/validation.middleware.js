@@ -1,3 +1,6 @@
+// Vai trò: Đưa các quy tắc validation nghiệp vụ vào middleware Express tái sử dụng.
+// Luồng chính: chuẩn hóa payload/query, gắn dữ liệu đã kiểm tra vào request hoặc chuyển lỗi tiếp.
+
 const { validateTransactionPayload } = require('../services/transactions/validation');
 const { normalizeTransactionQuery } = require('../services/transactions/query');
 const {
@@ -12,6 +15,7 @@ function bad(message) {
   return err;
 }
 
+// Kiểm tra payload tạo giao dịch và lưu bản đã chuẩn hóa vào request.
 function validateTransaction(req, res, next) {
   try {
     validateTransactionPayload(req.body);

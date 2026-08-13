@@ -1,15 +1,13 @@
-// Pending transaction/recurring-bill state, backed by the unified KV store
-// (Redis when available, in-memory fallback otherwise). TTL is enforced by the
-// store itself, so no manual expiry bookkeeping is needed.
-//
-// NOTE: the API is now async (get/set/update/clear all return promises) because the
-// backing store may be Redis. Call sites must await.
+// Vai trò: Giữ bản nháp transaction/recurring có TTL cho luồng xem lại và xác nhận.
+// Luồng chính: set/get/update qua KV store và dùng take để một pending ID chỉ được claim một lần.
+// API là bất đồng bộ vì backend lưu trữ có thể là Redis hoặc in-memory fallback.
 
 const KVStore = require('./store/kv.store');
 
 const TTL_SECONDS = 5 * 60; // 5 minutes, matches the documented pending window
 const keyFor = (userId) => `pending:${userId}`;
 
+// Claim tạm item khỏi KV store, áp dụng thay đổi và đặt lại nếu mutator thất bại.
 async function mutate(userId, expectedId, mutator) {
   const key = keyFor(userId);
   const item = await KVStore.take(key, expectedId);
@@ -51,10 +49,12 @@ module.exports = {
     return KVStore.get(keyFor(userId));
   },
 
+  // Lấy và xóa nguyên tử pending để hai request confirm không thể cùng commit.
   async claim(userId, pendingId = null) {
     return KVStore.take(keyFor(userId), pendingId);
   },
 
+  // Sửa một draft sau validation mà vẫn giữ TTL và metadata correction.
   async update(userId, updates, pendingId = null, options = {}) {
     return mutate(userId, pendingId, (item) => {
       const data = { ...item.data, ...updates };

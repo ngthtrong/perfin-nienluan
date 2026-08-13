@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import argparse
 import re
+import shutil
 import struct
 import subprocess
 import tempfile
@@ -39,24 +40,6 @@ EN_FILES = [
     ROOT / "chapters/en/references.tex",
     ROOT / "chapters/en/appendices.tex",
 ]
-
-META = {
-    "university": "CAN THO UNIVERSITY",
-    "college": "COLLEGE OF INFORMATION AND COMMUNICATION TECHNOLOGY",
-    "projecttype": "Project – Fundamental Topics",
-    "projecttitle": (
-        "A MOBILE PERSONAL FINANCE MANAGEMENT APPLICATION SUPPORTED BY "
-        "A LARGE LANGUAGE MODEL — PERFIN"
-    ),
-    "major": "Software Engineering",
-    "cohort": "49",
-    "courseclass": "CT239H M01",
-    "advisor": "Dr. Phan Phuong Lan",
-    "studentname": "Nguyen Thanh Trong",
-    "studentid": "B2305615",
-    "semester": "3",
-    "academicyear": "2025–2026",
-}
 
 HEADING_ONE = "00B0F0"
 HEADING_TWO = "2F5496"
@@ -117,6 +100,50 @@ def command_args(line: str, command: str, count: int) -> list[str]:
     return args
 
 
+def read_tex_source(path: Path, stack: tuple[Path, ...] = ()) -> str:
+    r"""Read a TeX source and expand report-local ``\input`` directives."""
+    path = path.resolve()
+    if path in stack:
+        chain = " -> ".join(str(item.relative_to(ROOT)) for item in (*stack, path))
+        raise ValueError(f"Circular TeX input: {chain}")
+    if not path.is_relative_to(ROOT):
+        raise ValueError(f"TeX input is outside the report directory: {path}")
+
+    text = strip_comments(path.read_text(encoding="utf-8"))
+    input_re = re.compile(r"\\input\{([^{}]+)\}")
+
+    def expand(match: re.Match[str]) -> str:
+        value = match.group(1).replace(r"\doclang", "en")
+        included = ROOT / value
+        if included.suffix == "":
+            included = included.with_suffix(".tex")
+        return read_tex_source(included, (*stack, path))
+
+    return input_re.sub(expand, text)
+
+
+def load_metadata() -> dict[str, str]:
+    """Load cover metadata from the English LaTeX source of truth."""
+    text = strip_comments((ROOT / "metadata-en.tex").read_text(encoding="utf-8"))
+    keys = (
+        "university", "college", "projecttype", "projecttitle", "major",
+        "cohort", "courseclass", "advisor", "studentname", "studentid",
+        "semester", "academicyear",
+    )
+    result: dict[str, str] = {}
+    for key in keys:
+        marker = rf"\newcommand{{\{key}}}"
+        start = text.find(marker)
+        if start < 0:
+            raise ValueError(f"Missing metadata command: {key}")
+        value, _ = brace_arg(text, start + len(marker))
+        result[key] = value.replace("---", "—").replace("--", "–")
+    return result
+
+
+META = load_metadata()
+
+
 @dataclass
 class ReferenceMap:
     labels: dict[str, str] = field(default_factory=dict)
@@ -133,11 +160,14 @@ def build_reference_map() -> ReferenceMap:
     appendix_index = 0
     table_no = figure_no = 0
     pending_ref: str | None = None
+    environment: list[str] = []
 
     token_re = re.compile(
         r"\\appendix\b|"
         r"\\(?:chapter|section|subsection|subsubsection)\{|"
         r"\\begin\{frtable\}|"
+        r"\\begin\{(?:table|longtable|figure)\}|"
+        r"\\end\{(?:table|longtable|figure)\}|"
         r"\\caption\{|"
         r"\\widereportfigure\{|"
         r"\\label\{|"
@@ -145,7 +175,7 @@ def build_reference_map() -> ReferenceMap:
     )
 
     for path in EN_FILES:
-        text = strip_comments(path.read_text(encoding="utf-8"))
+        text = read_tex_source(path)
         pos = 0
         while True:
             match = token_re.search(text, pos)
@@ -165,6 +195,7 @@ def build_reference_map() -> ReferenceMap:
             if token.startswith("\\chapter"):
                 _, pos = brace_arg(text, pos - 1)
                 section = subsection = subsubsection = 0
+                table_no = figure_no = 0
                 if appendix:
                     appendix_index += 1
                     pending_ref = chr(64 + appendix_index)
@@ -197,23 +228,39 @@ def build_reference_map() -> ReferenceMap:
                 label, pos = brace_arg(text, p1)
                 table_no += 1
                 result.table_captions.append(caption)
-                result.labels[label] = str(table_no)
-                pending_ref = str(table_no)
+                prefix = chr(64 + appendix_index) if appendix else str(chapter)
+                result.labels[label] = f"{prefix}.{table_no}"
+                pending_ref = f"{prefix}.{table_no}"
+                continue
+            if token.startswith("\\begin"):
+                environment.append(token[7:-1])
+                continue
+            if token.startswith("\\end"):
+                name = token[5:-1]
+                if name in environment:
+                    del environment[len(environment) - 1 - environment[::-1].index(name):]
                 continue
             if token.startswith("\\caption"):
                 caption, pos = brace_arg(text, pos - 1)
-                table_no += 1
-                result.table_captions.append(caption)
-                pending_ref = str(table_no)
+                prefix = chr(64 + appendix_index) if appendix else str(chapter)
+                if environment and environment[-1] == "figure":
+                    figure_no += 1
+                    result.figure_captions.append(caption)
+                    pending_ref = f"{prefix}.{figure_no}"
+                else:
+                    table_no += 1
+                    result.table_captions.append(caption)
+                    pending_ref = f"{prefix}.{table_no}"
                 continue
             if token.startswith("\\widereportfigure"):
-                filename, p1 = brace_arg(text, pos - 1)
+                _, p1 = brace_arg(text, pos - 1)
                 caption, p2 = brace_arg(text, p1)
                 label, pos = brace_arg(text, p2)
                 figure_no += 1
                 result.figure_captions.append(caption)
-                result.labels[label] = str(figure_no)
-                pending_ref = str(figure_no)
+                prefix = chr(64 + appendix_index) if appendix else str(chapter)
+                result.labels[label] = f"{prefix}.{figure_no}"
+                pending_ref = f"{prefix}.{figure_no}"
                 continue
             if token.startswith("\\label"):
                 label, pos = brace_arg(text, pos - 1)
@@ -302,6 +349,21 @@ def configure_styles(doc: Document) -> None:
     caption.paragraph_format.space_before = Pt(4)
     caption.paragraph_format.space_after = Pt(6)
     caption.paragraph_format.keep_with_next = True
+
+    for name in ("Table Caption", "Figure Caption"):
+        if name not in styles:
+            st = styles.add_style(name, WD_STYLE_TYPE.PARAGRAPH)
+        else:
+            st = styles[name]
+        st.base_style = caption
+        set_style_font(st, "Times New Roman", 13)
+        st.paragraph_format.first_line_indent = Cm(0)
+        st.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        st.paragraph_format.space_before = Pt(4)
+        st.paragraph_format.space_after = Pt(6)
+        st.paragraph_format.keep_with_next = True
+
+    styles["Heading 1"].paragraph_format.page_break_before = True
 
     for name in ("List Bullet", "List Number"):
         st = styles[name]
@@ -593,6 +655,29 @@ class InlineWriter:
                 self._plain(paragraph, status[0], bold=True, italic=False, code=False, color=status[1])
                 pos = cend
                 continue
+            if command in ("frstep", "frsubstep"):
+                first, next_pos = brace_arg(text, cend)
+                second, final_pos = brace_arg(text, next_pos)
+                if final_pos == next_pos:
+                    pos = cend
+                    continue
+                flush()
+                if paragraph.text:
+                    paragraph.add_run("\n")
+                self._walk(paragraph, first, bold=True, italic=italic, code=code, color=color)
+                self._plain(paragraph, " ", bold=bold, italic=italic, code=code, color=color)
+                self._walk(paragraph, second, bold=bold, italic=italic, code=code, color=color)
+                pos = final_pos
+                continue
+            if command == "textsuperscript":
+                arg, next_pos = brace_arg(text, cend)
+                flush()
+                first_run = len(paragraph.runs)
+                self._walk(paragraph, arg, bold=bold, italic=italic, code=code, color=color)
+                for run in paragraph.runs[first_run:]:
+                    run.font.superscript = True
+                pos = next_pos
+                continue
             if command in ("cite", "ref", "textbf", "textit", "emph", "code", "path", "url", "text", "mathrm", "operatorname", "makecell"):
                 arg_pos = cend
                 if command == "makecell" and arg_pos < len(text) and text[arg_pos] == "[":
@@ -756,6 +841,22 @@ def extract_table(block: str, env: str) -> tuple[str | None, str | None, list[li
     return caption, label, rows
 
 
+def extract_figure(block: str) -> tuple[list[str], str | None, str | None]:
+    """Extract image paths, caption and label from a regular figure block."""
+    images = [
+        match.group(1).strip()
+        for match in re.finditer(r"\\includegraphics(?:\[[^\]]*\])?\{([^{}]+)\}", block)
+    ]
+    caption = label = None
+    cap_match = re.search(r"\\caption\{", block)
+    if cap_match:
+        caption, _ = brace_arg(block, cap_match.end() - 1)
+    label_match = re.search(r"\\label\{", block)
+    if label_match:
+        label, _ = brace_arg(block, label_match.end() - 1)
+    return images, caption, label
+
+
 def png_size(path: Path) -> tuple[int, int]:
     with path.open("rb") as handle:
         sig = handle.read(24)
@@ -808,13 +909,13 @@ class ReportExporter:
         self.add_front_title("List of Tables")
         p = self.doc.add_paragraph()
         p.paragraph_format.first_line_indent = Cm(0)
-        add_field(p, ' TOC \\h \\z \\c "Table" ', "Right-click and update this field to generate the list of tables.")
+        add_field(p, ' TOC \\h \\z \\t "Table Caption,1" ', "Open or update this field in Word to generate the list of tables.")
 
         self.doc.add_page_break()
         self.add_front_title("List of Figures")
         p = self.doc.add_paragraph()
         p.paragraph_format.first_line_indent = Cm(0)
-        add_field(p, ' TOC \\h \\z \\c "Figure" ', "Right-click and update this field to generate the list of figures.")
+        add_field(p, ' TOC \\h \\z \\t "Figure Caption,1" ', "Open or update this field in Word to generate the list of figures.")
 
     def add_caption(self, kind: str, caption: str):
         if kind == "Table":
@@ -823,13 +924,12 @@ class ReportExporter:
         else:
             self.figure_seq += 1
             sequence_number = self.figure_seq
-        p = self.doc.add_paragraph(style="Caption")
-        run = p.add_run(kind + " ")
+        prefix = chr(64 + self.appendix_index) if self.appendix else str(self.chapter)
+        number = f"{prefix}.{sequence_number}" if prefix else str(sequence_number)
+        p = self.doc.add_paragraph(style=f"{kind} Caption")
+        run = p.add_run(f"{kind} {number}. ")
         set_run_font(run, "Times New Roman", 13)
         run.bold = True
-        add_field(p, f" SEQ {kind} \\* ARABIC ", str(sequence_number))
-        run = p.add_run(". ")
-        set_run_font(run, "Times New Roman", 13)
         self.writer.add(p, caption)
         return p
 
@@ -889,6 +989,8 @@ class ReportExporter:
             "\\end{document}\n"
         )
         tex_file.write_text(source, encoding="utf-8")
+        if not shutil.which("xelatex") or not shutil.which("mutool"):
+            return None
         proc = subprocess.run(
             ["xelatex", "-interaction=nonstopmode", "-halt-on-error", tex_file.name],
             cwd=self.tmpdir,
@@ -927,6 +1029,19 @@ class ReportExporter:
             set_run_font(run, "Cambria Math", 13)
             run.italic = True
 
+    def resolve_image(self, filename: str) -> Path:
+        path = Path(filename)
+        candidates = [
+            path if path.is_absolute() else ROOT / path,
+            ROOT / "figures/drawio" / path.name,
+            ROOT / "figures/screenshots" / path.name,
+            ROOT / "images" / path.name,
+        ]
+        for candidate in candidates:
+            if candidate.exists():
+                return candidate
+        raise FileNotFoundError(candidates[0])
+
     def add_figure(self, filename: str, caption: str):
         # LaTeX deliberately places these wide diagrams on landscape pages.
         landscape = self.doc.add_section(WD_SECTION.NEW_PAGE)
@@ -936,9 +1051,7 @@ class ReportExporter:
         p = self.doc.add_paragraph()
         p.alignment = WD_ALIGN_PARAGRAPH.CENTER
         p.paragraph_format.first_line_indent = Cm(0)
-        png = ROOT / "figures/rendered" / (Path(filename).stem + ".png")
-        if not png.exists():
-            raise FileNotFoundError(png)
+        png = self.resolve_image(filename)
         px_w, px_h = png_size(png)
         max_w, max_h = 9.65, 5.75
         width = min(max_w, max_h * px_w / max(px_h, 1))
@@ -950,9 +1063,38 @@ class ReportExporter:
         set_page_number_format(portrait, "decimal")
         add_page_number(portrait)
 
+    def add_regular_figure(self, filenames: list[str], caption: str):
+        """Add one portrait figure, including current two-up UI screenshots."""
+        if not filenames:
+            raise ValueError(f"Figure has no images: {caption}")
+        self.doc.add_page_break()
+        images = [self.resolve_image(filename) for filename in filenames]
+        if len(images) == 1:
+            p = self.doc.add_paragraph()
+            p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+            p.paragraph_format.first_line_indent = Cm(0)
+            px_w, px_h = png_size(images[0])
+            width = min(4.7, 6.8 * px_w / max(px_h, 1))
+            p.add_run().add_picture(str(images[0]), width=Inches(max(1.5, width)))
+        else:
+            table = self.doc.add_table(rows=1, cols=len(images))
+            table.alignment = WD_TABLE_ALIGNMENT.CENTER
+            table.autofit = False
+            for cell, image in zip(table.rows[0].cells, images):
+                cell.width = Inches(3.0)
+                cell.vertical_alignment = WD_CELL_VERTICAL_ALIGNMENT.CENTER
+                p = cell.paragraphs[0]
+                p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                p.paragraph_format.first_line_indent = Cm(0)
+                p.add_run().add_picture(str(image), width=Inches(2.85))
+        self.add_caption("Figure", caption)
+        self.audit.figures += 1
+        self.doc.add_page_break()
+
     def add_heading(self, level: str, title: str):
         if level == "chapter":
             self.section = self.subsection = self.subsubsection = 0
+            self.table_seq = self.figure_seq = 0
             if self.appendix:
                 self.appendix_index += 1
                 number = chr(64 + self.appendix_index)
@@ -1029,7 +1171,7 @@ class ReportExporter:
             self.audit.bibliography += 1
 
     def process_file(self, path: Path, *, suppress_first_front_break: bool = False):
-        text = strip_comments(path.read_text(encoding="utf-8"))
+        text = read_tex_source(path)
         lines = text.splitlines()
         paragraph = []
         first_front = True
@@ -1088,6 +1230,9 @@ class ReportExporter:
                 if env in ("table", "longtable", "frtable"):
                     caption, _, rows = extract_table(block, env)
                     self.add_table(rows, caption)
+                elif env == "figure":
+                    filenames, caption, _ = extract_figure(block)
+                    self.add_regular_figure(filenames, caption or "")
                 elif env == "equation":
                     body = block.split("\\begin{equation}", 1)[1].rsplit("\\end{equation}", 1)[0]
                     self.add_equation(body)

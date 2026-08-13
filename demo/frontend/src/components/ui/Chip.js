@@ -1,3 +1,6 @@
+// Vai trò: Cung cấp chip dạng pill cho filter và lựa chọn ngắn.
+// Luồng chính: render trạng thái active/disabled, icon tùy chọn và callback chọn.
+
 import { Text, TouchableOpacity } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '../../theme/ThemeContext';
@@ -19,20 +22,21 @@ export default function Chip({ label, active = false, icon, onPress, disabled = 
         {
           flexDirection: 'row',
           alignItems: 'center',
+          minHeight: 44,
           gap: 6,
           paddingHorizontal: 14,
           paddingVertical: 8,
           borderRadius: theme.radius.pill,
           borderWidth: 1.5,
-          backgroundColor: active ? c.brand : c.surfaceAlt,
+          backgroundColor: active ? c.brandSoft : c.surfaceAlt,
           borderColor: active ? c.brand : c.border,
           opacity: disabled ? 0.45 : 1,
         },
         style,
       ]}
     >
-      {icon && <MaterialIcons name={icon} size={15} color={active ? c.onBrand : c.textSecondary} />}
-      <Text numberOfLines={1} style={{ flexShrink: 1, fontSize: 13, fontWeight: '700', color: active ? c.onBrand : c.textSecondary }}>
+      {icon && <MaterialIcons name={icon} size={15} color={active ? c.brandText : c.textSecondary} />}
+      <Text numberOfLines={1} style={{ flexShrink: 1, fontSize: 13, fontWeight: '600', color: active ? c.brandText : c.textSecondary }}>
         {label}
       </Text>
     </TouchableOpacity>

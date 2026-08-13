@@ -1,3 +1,6 @@
+// Vai trò: Công bố báo cáo tổng hợp và insight phân tích cho frontend.
+// Luồng chính: lấy facts xác định, ghép lời khuyên/persona và fallback khi AI không sẵn sàng.
+
 const express = require('express');
 const ReportService = require('../services/report.service');
 const AnalyticsEngine = require('../services/analytics');

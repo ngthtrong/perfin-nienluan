@@ -1,106 +1,114 @@
-<?xml version='1.0' encoding='utf-8'?>
-<mxfile>
-  <diagram id="seqlayout" name="Grounded Insight Generation">
-    <mxGraphModel dx="800" dy="600" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1580" pageHeight="940" math="0" shadow="0" reportStyled="1">
-      <root>
-        <mxCell id="0" />
-        <mxCell id="1" parent="0" />
-        <mxCell id="report-title" value="Grounded Insight Generation Sequence" style="text;html=1;align=left;verticalAlign=middle;fontSize=20;fontStyle=1;fontColor=#22303F;" vertex="1" parent="1"><mxGeometry x="40" y="14" width="1500" height="28" as="geometry" /></mxCell><mxCell id="report-subtitle" value="Analytics computes facts first; the persona and LLM only adjust the wording." style="text;html=1;align=left;verticalAlign=middle;fontSize=13;fontColor=#5A6A78;whiteSpace=wrap;" vertex="1" parent="1"><mxGeometry x="40" y="44" width="1500" height="30" as="geometry" /></mxCell><mxCell id="user" value="&lt;b&gt;User&lt;/b&gt;" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;participant=umlActor;verticalAlign=bottom;spacingBottom=-14;labelBackgroundColor=#ffffff;fillColor=#EEF2F7;strokeColor=#5B7290;fontColor=#22303F;fontSize=15;strokeWidth=1.2;size=48;" vertex="1" parent="1">
-          <mxGeometry x="40" y="95" width="100" height="808" as="geometry" />
-        </mxCell>
-        <mxCell id="screen" value="&lt;b&gt;Report Screen&lt;/b&gt;" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;fillColor=#EEF2F7;strokeColor=#5B7290;fontColor=#22303F;fontSize=15;strokeWidth=1.2;size=48;" vertex="1" parent="1">
-          <mxGeometry x="240" y="95" width="100" height="808" as="geometry" />
-        </mxCell>
-        <mxCell id="route" value="&lt;b&gt;Report Route&lt;/b&gt;" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;fillColor=#EEF2F7;strokeColor=#5B7290;fontColor=#22303F;fontSize=15;strokeWidth=1.2;size=48;" vertex="1" parent="1">
-          <mxGeometry x="440" y="95" width="100" height="808" as="geometry" />
-        </mxCell>
-        <mxCell id="analytics" value="&lt;b&gt;Analytics Engine&lt;/b&gt;" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;fillColor=#E6F4EA;strokeColor=#2E7D46;fontColor=#1B4429;fontSize=15;strokeWidth=1.2;size=48;" vertex="1" parent="1">
-          <mxGeometry x="640" y="95" width="100" height="808" as="geometry" />
-        </mxCell>
-        <mxCell id="db" value="&lt;b&gt;PostgreSQL&lt;/b&gt;" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;fillColor=#E6F4EA;strokeColor=#2E7D46;fontColor=#1B4429;fontSize=15;strokeWidth=1.2;size=48;" vertex="1" parent="1">
-          <mxGeometry x="840" y="95" width="100" height="808" as="geometry" />
-        </mxCell>
-        <mxCell id="cache" value="&lt;b&gt;KV / Redis&lt;/b&gt;" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;fillColor=#FBF3D9;strokeColor=#B08900;fontColor=#5A4700;fontSize=15;strokeWidth=1.2;size=48;" vertex="1" parent="1">
-          <mxGeometry x="1040" y="95" width="100" height="808" as="geometry" />
-        </mxCell>
-        <mxCell id="persona" value="&lt;b&gt;Persona Service&lt;/b&gt;" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;fillColor=#F0EAF9;strokeColor=#7C5CBF;fontColor=#3A2A5F;fontSize=15;strokeWidth=1.2;size=48;" vertex="1" parent="1">
-          <mxGeometry x="1240" y="95" width="100" height="808" as="geometry" />
-        </mxCell>
-        <mxCell id="llm" value="&lt;b&gt;LLM Narrator&lt;/b&gt;" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;fillColor=#F0EAF9;strokeColor=#7C5CBF;fontColor=#3A2A5F;fontSize=15;strokeWidth=1.2;size=48;dashed=1;" vertex="1" parent="1">
-          <mxGeometry x="1440" y="95" width="100" height="808" as="geometry" />
-        </mxCell>
-        <mxCell id="act0" value="" style="html=1;points=[];perimeter=orthogonalPerimeter;outlineConnect=0;fillColor=#ffffff;" vertex="1" parent="cache">
-          <mxGeometry x="45" y="192" width="10" height="40" as="geometry" />
-        </mxCell>
-        <mxCell id="act1" value="" style="html=1;points=[];perimeter=orthogonalPerimeter;outlineConnect=0;fillColor=#ffffff;" vertex="1" parent="db">
-          <mxGeometry x="45" y="272" width="10" height="40" as="geometry" />
-        </mxCell>
-        <mxCell id="act2" value="" style="html=1;points=[];perimeter=orthogonalPerimeter;outlineConnect=0;fillColor=#ffffff;" vertex="1" parent="analytics">
-          <mxGeometry x="45" y="152" width="10" height="344" as="geometry" />
-        </mxCell>
-        <mxCell id="act3" value="" style="html=1;points=[];perimeter=orthogonalPerimeter;outlineConnect=0;fillColor=#ffffff;" vertex="1" parent="persona">
-          <mxGeometry x="45" y="536" width="10" height="40" as="geometry" />
-        </mxCell>
-        <mxCell id="act4" value="" style="html=1;points=[];perimeter=orthogonalPerimeter;outlineConnect=0;fillColor=#ffffff;" vertex="1" parent="llm">
-          <mxGeometry x="45" y="616" width="10" height="40" as="geometry" />
-        </mxCell>
-        <mxCell id="act5" value="" style="html=1;points=[];perimeter=orthogonalPerimeter;outlineConnect=0;fillColor=#ffffff;" vertex="1" parent="route">
-          <mxGeometry x="45" y="112" width="10" height="584" as="geometry" />
-        </mxCell>
-        <mxCell id="m0" value="Open report or request insight" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;exitX=0.5;exitY=0.0891;entryX=0.5;entryY=0.0891;fontSize=14;labelBackgroundColor=#FFFFFF;fontColor=#3D4B5A;strokeWidth=1.15;strokeColor=#5B7290;" edge="1" parent="1" source="user" target="screen">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="m1" value="GET /api/reports/insights" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;exitX=0.5;exitY=0.1386;entryX=0;entryY=0.0;fontSize=14;labelBackgroundColor=#FFFFFF;fontColor=#3D4B5A;strokeWidth=1.15;strokeColor=#5B7290;" edge="1" parent="1" source="screen" target="act5">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="m2" value="buildInsightFacts(user, payday)" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;exitX=1;exitY=0.0685;entryX=0;entryY=0.0;fontSize=14;labelBackgroundColor=#FFFFFF;fontColor=#3D4B5A;strokeWidth=1.15;strokeColor=#5B7290;" edge="1" parent="1" source="act5" target="act2">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="m3" value="GET cache:insights:user" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;exitX=1;exitY=0.1163;entryX=0;entryY=0.0;fontSize=14;labelBackgroundColor=#FFFFFF;fontColor=#3D4B5A;strokeWidth=1.15;strokeColor=#5B7290;" edge="1" parent="1" source="act2" target="act0">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="m4" value="Miss or cached facts" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;curved=0;rounded=0;exitX=0;exitY=1.0;entryX=1;entryY=0.2326;fontSize=14;labelBackgroundColor=#FFFFFF;fontColor=#6B7A89;strokeWidth=1.15;strokeColor=#9AA7B4;" edge="1" parent="1" source="act0" target="act2">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="m5" value="Query monthly, daily, category and wallet series" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;exitX=1;exitY=0.3488;entryX=0;entryY=0.0;fontSize=14;labelBackgroundColor=#FFFFFF;fontColor=#3D4B5A;strokeWidth=1.15;strokeColor=#5B7290;" edge="1" parent="1" source="act2" target="act1">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="m6" value="Structured numeric data" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;curved=0;rounded=0;exitX=0;exitY=1.0;entryX=1;entryY=0.4651;fontSize=14;labelBackgroundColor=#FFFFFF;fontColor=#6B7A89;strokeWidth=1.15;strokeColor=#9AA7B4;" edge="1" parent="1" source="act1" target="act2">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="m7" value="Regression · z-score/IQR · runway · Pearson" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;exitX=1;exitY=0.5814;entryX=1;entryY=0.6512;fontSize=14;labelBackgroundColor=#FFFFFF;fontColor=#3D4B5A;strokeWidth=1.15;strokeColor=#5B7290;" edge="1" parent="1" source="act2" target="act2">
-          <mxGeometry relative="1" as="geometry">
-            <Array as="points"><mxPoint x="750" y="447" /><mxPoint x="750" y="471" /></Array>
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="note8" value="Numbers come only from deterministic algorithms" style="shape=note;whiteSpace=wrap;html=1;size=14;fillColor=#FBF3D9;strokeColor=#B08900;fontColor=#5A4700;fontSize=14;strokeWidth=1.1;" vertex="1" parent="1">
-          <mxGeometry x="710" y="487" width="140" height="54" as="geometry" />
-        </mxCell>
-        <mxCell id="m9" value="SET facts TTL" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;exitX=1;exitY=0.8837;entryX=0.5;entryY=0.5644;fontSize=14;labelBackgroundColor=#FFFFFF;fontColor=#3D4B5A;strokeWidth=1.15;strokeColor=#5B7290;" edge="1" parent="1" source="act2" target="cache">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="m10" value="Insight facts" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;curved=0;rounded=0;exitX=0;exitY=1.0;entryX=1;entryY=0.6575;fontSize=14;labelBackgroundColor=#FFFFFF;fontColor=#6B7A89;strokeWidth=1.15;strokeColor=#9AA7B4;" edge="1" parent="1" source="act2" target="act5">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="m11" value="Load consented style prompt" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;exitX=1;exitY=0.726;entryX=0;entryY=0.0;fontSize=14;labelBackgroundColor=#FFFFFF;fontColor=#3D4B5A;strokeWidth=1.15;strokeColor=#5B7290;" edge="1" parent="1" source="act5" target="act3">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="m12" value="Active persona" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;curved=0;rounded=0;exitX=0;exitY=1.0;entryX=1;entryY=0.7945;fontSize=14;labelBackgroundColor=#FFFFFF;fontColor=#6B7A89;strokeWidth=1.15;strokeColor=#9AA7B4;" edge="1" parent="1" source="act3" target="act5">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="m13" value="Narrate(facts, persona); do not invent numbers" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;exitX=1;exitY=0.863;entryX=0;entryY=0.0;fontSize=14;labelBackgroundColor=#FFFFFF;fontColor=#3D4B5A;strokeWidth=1.15;strokeColor=#5B7290;" edge="1" parent="1" source="act5" target="act4">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="m14" value="Narration or template fallback" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;curved=0;rounded=0;exitX=0;exitY=1.0;entryX=1;entryY=0.9315;fontSize=14;labelBackgroundColor=#FFFFFF;fontColor=#6B7A89;strokeWidth=1.15;strokeColor=#9AA7B4;" edge="1" parent="1" source="act4" target="act5">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="m15" value="facts + narration + provider_used" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;curved=0;rounded=0;exitX=0;exitY=1.0;entryX=0.5;entryY=0.8614;fontSize=14;labelBackgroundColor=#FFFFFF;fontColor=#6B7A89;strokeWidth=1.15;strokeColor=#9AA7B4;" edge="1" parent="1" source="act5" target="screen">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="m16" value="Consistent chart and explanation" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;curved=0;rounded=0;exitX=0.5;exitY=0.9109;entryX=0.5;entryY=0.9109;fontSize=14;labelBackgroundColor=#FFFFFF;fontColor=#6B7A89;strokeWidth=1.15;strokeColor=#9AA7B4;" edge="1" parent="1" source="screen" target="user">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-      </root>
-    </mxGraphModel>
-  </diagram>
+<mxfile host="65bd71144e">
+    <diagram id="seqlayout" name="Grounded Insight Generation">
+        <mxGraphModel dx="805" dy="468" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1580" pageHeight="940" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="report-title" value="Grounded Insight Generation Sequence" style="text;html=1;align=left;verticalAlign=middle;fontSize=20;fontStyle=1;fontColor=#22303F;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="14" width="1500" height="28" as="geometry"/>
+                </mxCell>
+                <mxCell id="report-subtitle" value="Analytics computes facts first; the persona and LLM only adjust the wording." style="text;html=1;align=left;verticalAlign=middle;fontSize=13;fontColor=#5A6A78;whiteSpace=wrap;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="44" width="1500" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="user" value="&lt;b&gt;User&lt;/b&gt;" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;participant=umlActor;verticalAlign=bottom;spacingBottom=-14;labelBackgroundColor=#ffffff;fillColor=#EEF2F7;strokeColor=#5B7290;fontColor=#22303F;fontSize=15;strokeWidth=1.2;size=70;" parent="1" vertex="1">
+                    <mxGeometry x="50" y="95" width="70" height="782.5" as="geometry"/>
+                </mxCell>
+                <mxCell id="screen" value="&lt;b&gt;Report Screen&lt;/b&gt;" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;fillColor=#EEF2F7;strokeColor=#5B7290;fontColor=#22303F;fontSize=15;strokeWidth=1.2;size=48;" parent="1" vertex="1">
+                    <mxGeometry x="240" y="95" width="100" height="808" as="geometry"/>
+                </mxCell>
+                <mxCell id="route" value="&lt;b&gt;Report Route&lt;/b&gt;" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;fillColor=#EEF2F7;strokeColor=#5B7290;fontColor=#22303F;fontSize=15;strokeWidth=1.2;size=48;" parent="1" vertex="1">
+                    <mxGeometry x="440" y="95" width="100" height="808" as="geometry"/>
+                </mxCell>
+                <mxCell id="act5" value="" style="html=1;points=[];perimeter=orthogonalPerimeter;outlineConnect=0;fillColor=#ffffff;" parent="route" vertex="1">
+                    <mxGeometry x="45" y="112" width="10" height="584" as="geometry"/>
+                </mxCell>
+                <mxCell id="analytics" value="&lt;b&gt;Analytics Engine&lt;/b&gt;" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;fillColor=#E6F4EA;strokeColor=#2E7D46;fontColor=#1B4429;fontSize=15;strokeWidth=1.2;size=48;" parent="1" vertex="1">
+                    <mxGeometry x="640" y="95" width="100" height="808" as="geometry"/>
+                </mxCell>
+                <mxCell id="act2" value="" style="html=1;points=[];perimeter=orthogonalPerimeter;outlineConnect=0;fillColor=#ffffff;" parent="analytics" vertex="1">
+                    <mxGeometry x="45" y="152" width="10" height="344" as="geometry"/>
+                </mxCell>
+                <mxCell id="db" value="&lt;b&gt;PostgreSQL&lt;/b&gt;" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;fillColor=#E6F4EA;strokeColor=#2E7D46;fontColor=#1B4429;fontSize=15;strokeWidth=1.2;size=48;" parent="1" vertex="1">
+                    <mxGeometry x="840" y="95" width="100" height="808" as="geometry"/>
+                </mxCell>
+                <mxCell id="act1" value="" style="html=1;points=[];perimeter=orthogonalPerimeter;outlineConnect=0;fillColor=#ffffff;" parent="db" vertex="1">
+                    <mxGeometry x="45" y="272" width="10" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="cache" value="&lt;b&gt;KV / Redis&lt;/b&gt;" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;fillColor=#FBF3D9;strokeColor=#B08900;fontColor=#5A4700;fontSize=15;strokeWidth=1.2;size=48;" parent="1" vertex="1">
+                    <mxGeometry x="1040" y="95" width="100" height="808" as="geometry"/>
+                </mxCell>
+                <mxCell id="act0" value="" style="html=1;points=[];perimeter=orthogonalPerimeter;outlineConnect=0;fillColor=#ffffff;" parent="cache" vertex="1">
+                    <mxGeometry x="45" y="192" width="10" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="persona" value="&lt;b&gt;Persona Service&lt;/b&gt;" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;fillColor=#F0EAF9;strokeColor=#7C5CBF;fontColor=#3A2A5F;fontSize=15;strokeWidth=1.2;size=48;" parent="1" vertex="1">
+                    <mxGeometry x="1240" y="95" width="100" height="808" as="geometry"/>
+                </mxCell>
+                <mxCell id="act3" value="" style="html=1;points=[];perimeter=orthogonalPerimeter;outlineConnect=0;fillColor=#ffffff;" parent="persona" vertex="1">
+                    <mxGeometry x="45" y="536" width="10" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="llm" value="&lt;b&gt;LLM Narrator&lt;/b&gt;" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;fillColor=#F0EAF9;strokeColor=#7C5CBF;fontColor=#3A2A5F;fontSize=15;strokeWidth=1.2;size=48;dashed=1;" parent="1" vertex="1">
+                    <mxGeometry x="1440" y="95" width="100" height="808" as="geometry"/>
+                </mxCell>
+                <mxCell id="act4" value="" style="html=1;points=[];perimeter=orthogonalPerimeter;outlineConnect=0;fillColor=#ffffff;" parent="llm" vertex="1">
+                    <mxGeometry x="45" y="616" width="10" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="m0" value="Open report or request insight" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;exitX=0.5;exitY=0.0891;entryX=0.5;entryY=0.0891;fontSize=14;labelBackgroundColor=#FFFFFF;fontColor=#3D4B5A;strokeWidth=1.15;strokeColor=#5B7290;" parent="1" source="user" target="screen" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="m1" value="GET /api/reports/insights" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;exitX=0.5;exitY=0.1386;entryX=0;entryY=0.0;fontSize=14;labelBackgroundColor=#FFFFFF;fontColor=#3D4B5A;strokeWidth=1.15;strokeColor=#5B7290;" parent="1" source="screen" target="act5" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="m2" value="buildInsightFacts(user, payday)" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;exitX=1;exitY=0.0685;entryX=0;entryY=0.0;fontSize=14;labelBackgroundColor=#FFFFFF;fontColor=#3D4B5A;strokeWidth=1.15;strokeColor=#5B7290;" parent="1" source="act5" target="act2" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="m3" value="GET cache:insights:user" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;exitX=1;exitY=0.1163;entryX=0;entryY=0.0;fontSize=14;labelBackgroundColor=#FFFFFF;fontColor=#3D4B5A;strokeWidth=1.15;strokeColor=#5B7290;" parent="1" source="act2" target="act0" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="m4" value="Miss or cached facts" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;curved=0;rounded=0;exitX=0;exitY=1.0;entryX=1;entryY=0.2326;fontSize=14;labelBackgroundColor=#FFFFFF;fontColor=#6B7A89;strokeWidth=1.15;strokeColor=#9AA7B4;" parent="1" source="act0" target="act2" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="m5" value="Query monthly, daily, category and wallet series" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;exitX=1;exitY=0.3488;entryX=0;entryY=0.0;fontSize=14;labelBackgroundColor=#FFFFFF;fontColor=#3D4B5A;strokeWidth=1.15;strokeColor=#5B7290;" parent="1" source="act2" target="act1" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="m6" value="Structured numeric data" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;curved=0;rounded=0;exitX=0;exitY=1.0;entryX=1;entryY=0.4651;fontSize=14;labelBackgroundColor=#FFFFFF;fontColor=#6B7A89;strokeWidth=1.15;strokeColor=#9AA7B4;" parent="1" source="act1" target="act2" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="m7" value="Regression · z-score/IQR · runway · Pearson" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;exitX=1;exitY=0.5814;entryX=1;entryY=0.6512;fontSize=14;labelBackgroundColor=#FFFFFF;fontColor=#3D4B5A;strokeWidth=1.15;strokeColor=#5B7290;" parent="1" source="act2" target="act2" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="750" y="447"/>
+                            <mxPoint x="750" y="471"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="note8" value="Numbers come only from deterministic algorithms" style="shape=note;whiteSpace=wrap;html=1;size=14;fillColor=#FBF3D9;strokeColor=#B08900;fontColor=#5A4700;fontSize=14;strokeWidth=1.1;" parent="1" vertex="1">
+                    <mxGeometry x="710" y="487" width="140" height="54" as="geometry"/>
+                </mxCell>
+                <mxCell id="m9" value="SET facts TTL" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;exitX=1;exitY=0.8837;entryX=0.5;entryY=0.5644;fontSize=14;labelBackgroundColor=#FFFFFF;fontColor=#3D4B5A;strokeWidth=1.15;strokeColor=#5B7290;" parent="1" source="act2" target="cache" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="m10" value="Insight facts" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;curved=0;rounded=0;exitX=0;exitY=1.0;entryX=1;entryY=0.6575;fontSize=14;labelBackgroundColor=#FFFFFF;fontColor=#6B7A89;strokeWidth=1.15;strokeColor=#9AA7B4;" parent="1" source="act2" target="act5" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="m11" value="Load consented style prompt" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;exitX=1;exitY=0.726;entryX=0;entryY=0.0;fontSize=14;labelBackgroundColor=#FFFFFF;fontColor=#3D4B5A;strokeWidth=1.15;strokeColor=#5B7290;" parent="1" source="act5" target="act3" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="m12" value="Active persona" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;curved=0;rounded=0;exitX=0;exitY=1.0;entryX=1;entryY=0.7945;fontSize=14;labelBackgroundColor=#FFFFFF;fontColor=#6B7A89;strokeWidth=1.15;strokeColor=#9AA7B4;" parent="1" source="act3" target="act5" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="m13" value="Narrate(facts, persona); do not invent numbers" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;exitX=1;exitY=0.863;entryX=0;entryY=0.0;fontSize=14;labelBackgroundColor=#FFFFFF;fontColor=#3D4B5A;strokeWidth=1.15;strokeColor=#5B7290;" parent="1" source="act5" target="act4" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="m14" value="Narration or template fallback" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;curved=0;rounded=0;exitX=0;exitY=1.0;entryX=1;entryY=0.9315;fontSize=14;labelBackgroundColor=#FFFFFF;fontColor=#6B7A89;strokeWidth=1.15;strokeColor=#9AA7B4;" parent="1" source="act4" target="act5" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="m15" value="facts + narration + provider_used" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;curved=0;rounded=0;exitX=0;exitY=1.0;entryX=0.5;entryY=0.8614;fontSize=14;labelBackgroundColor=#FFFFFF;fontColor=#6B7A89;strokeWidth=1.15;strokeColor=#9AA7B4;" parent="1" source="act5" target="screen" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="m16" value="Consistent chart and explanation" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;curved=0;rounded=0;exitX=0.5;exitY=0.9109;fontSize=14;labelBackgroundColor=#FFFFFF;fontColor=#6B7A89;strokeWidth=1.15;strokeColor=#9AA7B4;" parent="1" source="screen" target="user" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
 </mxfile>

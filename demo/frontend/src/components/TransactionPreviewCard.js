@@ -1,12 +1,15 @@
+// Vai trò: Cho xem và chỉnh sửa một giao dịch nháp trước khi ghi vào sổ cái.
+// Luồng chính: đồng bộ form với pending data, validation rồi gọi edit/confirm/cancel.
+
 import { useEffect, useState, useMemo } from 'react';
 import { ActivityIndicator, ScrollView, View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
 import BalanceDisplay from './BalanceDisplay';
 import AppIcon from './AppIcon';
 import { useTheme } from '../theme/ThemeContext';
-import { HIT_SLOP } from '../theme/tokens';
 import { formatDate, formatMoneyValue, parseMoneyInput, toDateInputValue } from '../utils/formatters';
 import { Chip, DatePickerField, MoneyInput } from './ui';
 
+// Giữ draft cục bộ của một giao dịch và liên kết nó với pending ID từ backend.
 export default function TransactionPreviewCard({
   transaction,
   categories = [],
@@ -33,6 +36,7 @@ export default function TransactionPreviewCard({
     setCategoryId(transaction.category_id || null);
   }, [transaction.amount, transaction.category_id, transaction.description, transaction.transaction_date]);
 
+  // Chuyển form sang payload chuẩn trước khi gọi endpoint edit pending.
   async function saveEdit() {
     const parsedAmount = parseMoneyInput(amount);
     if (!description.trim() || !(parsedAmount > 0) || !categoryId || !transactionDate) return;
@@ -52,9 +56,6 @@ export default function TransactionPreviewCard({
     <View style={styles.wrapper}>
       <View style={styles.card}>
         <View style={styles.header}>
-          <View style={styles.headerIcon}>
-            <AppIcon name="receipt-long" size={16} color={c.brand} />
-          </View>
           <Text style={styles.heading}>Xác nhận giao dịch</Text>
           <View style={[styles.typeBadge, { backgroundColor: isIncome ? c.incomeSoft : c.expenseSoft }]}>
             <Text style={[styles.typeBadgeText, { color: isIncome ? c.income : c.expense }]}>
@@ -120,7 +121,7 @@ export default function TransactionPreviewCard({
           </View>
         ) : (
           <View style={styles.detailSection}>
-            <Text style={styles.desc}>{transaction.category_icon} {transaction.description}</Text>
+            <Text style={styles.desc}>{transaction.description}</Text>
             <BalanceDisplay amount={signed} showSign size={26} style={{ marginBottom: 10 }} />
             <View style={styles.metaRow}>
               <View style={styles.metaChip}>
@@ -133,25 +134,24 @@ export default function TransactionPreviewCard({
 
         {!editing && !resolved && (
           <View style={styles.actions}>
-            <TouchableOpacity style={styles.confirmBtn} onPress={onConfirm} disabled={busy}>
+            <TouchableOpacity accessibilityRole="button" accessibilityState={{ disabled: busy }} style={styles.confirmBtn} onPress={onConfirm} disabled={busy}>
               {busy
                 ? <ActivityIndicator size="small" color={c.onBrand} />
                 : <AppIcon name="check" size={16} color={c.onBrand} />}
               <Text style={styles.confirmText}>Xác nhận</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.editBtn} onPress={() => setEditing(true)} disabled={busy}>
-              <AppIcon name="edit" size={16} color={c.brand} />
+            <TouchableOpacity accessibilityRole="button" accessibilityState={{ disabled: busy }} style={styles.editBtn} onPress={() => setEditing(true)} disabled={busy}>
               <Text style={styles.editText}>Sửa</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.cancelBtn}
               onPress={onCancel}
               disabled={busy}
-              hitSlop={HIT_SLOP}
               accessibilityRole="button"
-              accessibilityLabel="Bỏ qua giao dịch đề xuất"
+              accessibilityLabel="Hủy giao dịch đề xuất"
+              accessibilityState={{ disabled: busy }}
             >
-              <AppIcon name="close" size={16} color={c.textMuted} />
+              <Text style={styles.cancelText}>Hủy</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -171,10 +171,9 @@ const createStyles = (t) => StyleSheet.create({
   card: {
     backgroundColor: t.colors.surface,
     borderRadius: t.radius.xl,
-    borderWidth: 1.5,
+    borderWidth: 1,
     borderColor: t.colors.border,
     overflow: 'hidden',
-    ...t.shadows.md,
   },
   header: {
     flexDirection: 'row',
@@ -183,22 +182,16 @@ const createStyles = (t) => StyleSheet.create({
     padding: 14,
     borderBottomWidth: 1,
     borderBottomColor: t.colors.border,
-    backgroundColor: t.colors.surfaceAlt,
   },
-  headerIcon: {
-    width: 30, height: 30, borderRadius: 10,
-    backgroundColor: t.colors.brandSoft,
-    alignItems: 'center', justifyContent: 'center',
-  },
-  heading: { flex: 1, fontWeight: '800', color: t.colors.text, fontSize: 14 },
+  heading: { flex: 1, fontWeight: '700', color: t.colors.text, fontSize: 15 },
   typeBadge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: t.radius.pill },
-  typeBadgeText: { fontSize: 11, fontWeight: '700' },
+  typeBadgeText: { fontSize: 12, fontWeight: '700' },
 
   detailSection: { padding: 16 },
-  desc: { fontSize: 16, fontWeight: '700', color: t.colors.text, marginBottom: 8 },
+  desc: { fontSize: 16, lineHeight: 24, fontWeight: '600', color: t.colors.text, marginBottom: 8 },
   metaRow: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 8 },
-  metaChip: { backgroundColor: t.colors.brandSoft, paddingHorizontal: 10, paddingVertical: 4, borderRadius: t.radius.pill },
-  metaChipText: { color: t.colors.brandText, fontSize: 12, fontWeight: '700' },
+  metaChip: { paddingVertical: 4 },
+  metaChipText: { color: t.colors.textSecondary, fontSize: 13, fontWeight: '600' },
   metaDate: { color: t.colors.textMuted, fontSize: 12, fontWeight: '600' },
 
   editSection: { padding: 16 },
@@ -211,32 +204,32 @@ const createStyles = (t) => StyleSheet.create({
   categoryList: { gap: 7, paddingBottom: 12 },
   saveBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
-    backgroundColor: t.colors.brand, padding: 13, borderRadius: t.radius.md, ...t.shadows.sm,
+    minHeight: 48, backgroundColor: t.colors.brand, padding: 13, borderRadius: t.radius.md,
   },
-  saveBtnText: { color: t.colors.onBrand, fontWeight: '800', fontSize: 14 },
+  saveBtnText: { color: t.colors.onBrand, fontWeight: '700', fontSize: 14 },
 
   actions: {
     flexDirection: 'row', gap: 8, padding: 12,
-    borderTopWidth: 1, borderTopColor: t.colors.border, backgroundColor: t.colors.surfaceAlt,
+    borderTopWidth: 1, borderTopColor: t.colors.border,
   },
   confirmBtn: {
     flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5,
-    backgroundColor: t.colors.brand, paddingVertical: 11, borderRadius: t.radius.md, ...t.shadows.sm,
+    minHeight: 44, backgroundColor: t.colors.brand, paddingVertical: 11, borderRadius: t.radius.md,
   },
-  confirmText: { color: t.colors.onBrand, fontWeight: '800', fontSize: 14 },
+  confirmText: { color: t.colors.onBrand, fontWeight: '700', fontSize: 14 },
   editBtn: {
     flexDirection: 'row', alignItems: 'center', gap: 5,
-    paddingHorizontal: 14, paddingVertical: 11, borderRadius: t.radius.md,
-    borderWidth: 1.5, borderColor: t.colors.brand, backgroundColor: t.colors.brandSoft,
+    minHeight: 44, paddingHorizontal: 14, paddingVertical: 11, borderRadius: t.radius.md,
   },
   editText: { color: t.colors.brandText, fontWeight: '700', fontSize: 14 },
   cancelBtn: {
-    width: 42, alignItems: 'center', justifyContent: 'center', borderRadius: t.radius.md,
+    minHeight: 44, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 14, borderRadius: t.radius.md,
     borderWidth: 1.5, borderColor: t.colors.border, backgroundColor: t.colors.surfaceAlt,
   },
+  cancelText: { color: t.colors.textSecondary, fontSize: 14, fontWeight: '600' },
   resolvedBar: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
     padding: 12, borderTopWidth: 1, borderTopColor: t.colors.border, backgroundColor: t.colors.incomeSoft,
   },
-  resolvedText: { color: t.colors.income, fontSize: 12, fontWeight: '800' },
+  resolvedText: { color: t.colors.income, fontSize: 12, fontWeight: '700' },
 });

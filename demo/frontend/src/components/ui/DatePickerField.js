@@ -1,3 +1,6 @@
+// Vai trò: Cung cấp trường chọn ngày native có modal và validation hiển thị.
+// Luồng chính: mở picker theo nền tảng, chuẩn hóa ngày được chọn và trả giá trị date-only.
+
 import { useMemo, useState } from 'react';
 import {
   Modal,
@@ -156,7 +159,7 @@ const createStyles = (theme) => StyleSheet.create({
     borderBottomColor: theme.colors.border,
     borderBottomWidth: 1,
   },
-  modalTitle: { color: theme.colors.text, fontSize: 15, fontWeight: '800' },
-  modalPrimary: { color: theme.colors.brandText, fontSize: 15, fontWeight: '800' },
+  modalTitle: { color: theme.colors.text, fontSize: 15, fontWeight: '700' },
+  modalPrimary: { color: theme.colors.brandText, fontSize: 15, fontWeight: '700' },
   modalSecondary: { color: theme.colors.textMuted, fontSize: 15, fontWeight: '700' },
 });

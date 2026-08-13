@@ -1,6 +1,6 @@
-// Data-access for the Analytics Engine. Returns raw numeric series the pure
-// algorithms operate on. Kept separate from services/analytics/* so the math stays
-// unit-testable without a database.
+// Vai trò: Cung cấp chuỗi số liệu thô từ PostgreSQL cho Analytics Engine.
+// Luồng chính: truy vấn dữ liệu đã scope và hoàn thiện trục thời gian trước khi giao cho hàm thuần.
+// Tách lớp truy cập dữ liệu giúp các thuật toán được kiểm thử mà không cần database.
 
 const { query } = require('../config/database');
 const {

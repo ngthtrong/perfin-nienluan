@@ -1,5 +1,10 @@
+// Vai trò: Hiển thị icon danh mục thống nhất cho cả dữ liệu mới và emoji legacy.
+// Luồng chính: dịch emoji/tên cũ sang MaterialIcons rồi áp dụng màu và kích thước được truyền.
+
 import AppIcon from './AppIcon';
 
+// Legacy category records may still contain an emoji in the `icon` field.
+// Translate it at the boundary so the interface always renders MaterialIcons.
 const ICON_BY_EMOJI = {
   '🍜': 'restaurant',
   '🚗': 'directions-car',

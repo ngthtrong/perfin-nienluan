@@ -1,10 +1,6 @@
-// Unified period ("kỳ") resolution for financial questions.
-//
-// Every query handler used to understand only `month` + `year`, so "tuần này",
-// "hôm qua" or "7 ngày qua" silently collapsed into the current calendar month
-// and the answer was then labelled "trong tháng M/YYYY" — confidently wrong.
-// This module turns either an explicit tool argument (`period`/`from`/`to`) or
-// raw Vietnamese text into one concrete window plus the label used in replies.
+// Vai trò: Chuẩn hóa cách hiểu “kỳ” trong mọi câu hỏi tài chính.
+// Luồng chính: đổi tham số tool hoặc cụm thời gian tiếng Việt thành một cửa sổ ngày cụ thể.
+// Nhờ đó “tuần này”, “hôm qua” hay “7 ngày qua” không bị quy nhầm về tháng hiện tại.
 
 const { normalizeText } = require('../parser.service');
 

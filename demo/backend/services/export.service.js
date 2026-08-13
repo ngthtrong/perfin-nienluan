@@ -1,3 +1,6 @@
+// Vai trò: Tạo lịch sử export, CSV, báo cáo HTML và gói backup có checksum.
+// Luồng chính: truy vấn dữ liệu theo bộ lọc, sinh tệp quản lý và restore bằng transaction.
+
 const { pool, query, rollbackAfterFailure } = require('../config/database');
 const path = require('path');
 const fs = require('fs');

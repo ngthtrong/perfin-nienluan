@@ -1,9 +1,12 @@
+// Vai trò: Hiển thị trạng thái chưa có dữ liệu cùng hành động phục hồi tùy chọn.
+// Luồng chính: render tiêu đề/mô tả và chỉ thêm button khi caller cung cấp callback.
+
 import { View, Text } from 'react-native';
 import { useTheme } from '../../theme/ThemeContext';
 import Button from './Button';
 
-// Centered empty placeholder with emoji, message, and optional CTA.
-export default function EmptyState({ emoji = '📭', title, message, actionLabel, onAction, actionIcon, style }) {
+// Quiet empty placeholder with an optional recovery/creation action.
+export default function EmptyState({ title, message, actionLabel, onAction, actionIcon, style }) {
   const { theme } = useTheme();
   const c = theme.colors;
 
@@ -12,33 +15,14 @@ export default function EmptyState({ emoji = '📭', title, message, actionLabel
       style={[
         {
           alignItems: 'center',
-          paddingVertical: 44,
+          paddingVertical: 36,
           paddingHorizontal: 24,
           backgroundColor: c.surface,
-          borderRadius: theme.radius.xl,
-          borderWidth: 1,
-          borderColor: c.border,
+          borderRadius: theme.radius.lg,
         },
         style,
       ]}
     >
-      {/* Emoji chỉ là hình trang trí: ẩn khỏi cây trợ năng để trình đọc màn hình
-          không đọc tên emoji trước nội dung thật. */}
-      <View
-        accessibilityElementsHidden
-        importantForAccessibility="no-hide-descendants"
-        style={{
-          width: 72,
-          height: 72,
-          borderRadius: 36,
-          backgroundColor: c.brandSoft,
-          alignItems: 'center',
-          justifyContent: 'center',
-          marginBottom: 16,
-        }}
-      >
-        <Text style={{ fontSize: 34 }}>{emoji}</Text>
-      </View>
       {title && <Text style={{ ...theme.typo.heading, color: c.text, marginBottom: 6 }}>{title}</Text>}
       {message && (
         <Text style={{ ...theme.typo.body, color: c.textMuted, textAlign: 'center', marginBottom: 20 }}>

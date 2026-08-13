@@ -1,8 +1,6 @@
-// Gemini function declarations used by PERFIN's intent router.
-//
-// The model only selects and fills a typed command here. Actual side effects remain in
-// the chat orchestration layer, after validation and (where appropriate) user
-// confirmation. This separation makes tool-use safe and keeps the local fallback usable.
+// Vai trò: Khai báo các tool có kiểu để Gemini ánh xạ câu nói thành intent PERFIN.
+// Luồng chính: mô hình chỉ chọn tool và điền tham số; chat route vẫn giữ validation và side effect.
+// Ranh giới này giúp function calling không thể tự ghi dữ liệu tài chính.
 
 const FINANCIAL_TOOL_DECLARATIONS = [
   {

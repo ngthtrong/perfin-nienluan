@@ -1,3 +1,6 @@
+// Vai trò: Là lớp truy cập sổ cái cho giao dịch thu, chi và số dư ví.
+// Luồng chính: validation, khóa ví, ghi hoặc sửa transaction nguyên tử rồi cập nhật cache.
+
 const { pool, query, rollbackAfterFailure } = require('../config/database');
 const KVStore = require('../services/store/kv.store');
 const { EDITABLE_FIELDS, validateTransactionPayload } = require('../services/transactions/validation');
@@ -112,6 +115,7 @@ async function hydrateAfterCommit(id, userId, fallback, includeDeleted = false) 
 }
 
 const TransactionModel = {
+  // Tạo một giao dịch và cập nhật số dư ví trong cùng database transaction.
   async create(data) {
     const ownerId = data.userId || DEFAULT_USER;
     validateTransactionPayload(data, { requireWallet: true });
@@ -162,6 +166,7 @@ const TransactionModel = {
 
   // Atomically create all transactions from a multi-transaction preview. If any
   // row is invalid, none of the wallet balances or transactions are committed.
+  // Ghi nhiều giao dịch theo kiểu all-or-nothing để preview nhiều dòng không bị lưu dở.
   async createMany(items, userId = DEFAULT_USER) {
     if (!Array.isArray(items) || !items.length) return [];
     for (const item of items) validateTransactionPayload(item, { requireWallet: true });
@@ -273,6 +278,7 @@ const TransactionModel = {
     return getJoinedById(id, userId, false);
   },
 
+  // Tính chênh lệch số dư giữa bản cũ/mới rồi khóa và cập nhật các ví liên quan.
   async update(id, data, userId = DEFAULT_USER) {
     validateTransactionPayload(data, { partial: true, rejectUnknown: true });
     const client = await pool.connect();
@@ -395,6 +401,7 @@ const TransactionModel = {
     });
   },
 
+  // Đánh dấu xóa và hoàn lại ảnh hưởng số dư thay vì loại bản ghi khỏi lịch sử.
   async softDelete(id, userId = DEFAULT_USER) {
     const client = await pool.connect();
     let transactionClosed = false;
@@ -432,6 +439,7 @@ const TransactionModel = {
     return { success: true, deleted_at: tx.deleted_at, restore_deadline: new Date(deletedAt.getTime() + 30000).toISOString() };
   },
 
+  // Khôi phục giao dịch đã xóa mềm và áp dụng lại đúng delta vào ví.
   async restore(id, userId = DEFAULT_USER) {
     const client = await pool.connect();
     let transactionClosed = false;

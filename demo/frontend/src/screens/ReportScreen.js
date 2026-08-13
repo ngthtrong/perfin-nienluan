@@ -1,8 +1,11 @@
+// Vai trò: Trình bày báo cáo kỳ, breakdown và các insight xác định của Analytics Engine.
+// Luồng chính: tải summary/facts, hiển thị trạng thái degraded và cho phép refresh theo kỳ.
+
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { api } from '../services/api.service';
-import { CATEGORY_COLORS, HIT_SLOP } from '../theme/tokens';
+import { HIT_SLOP } from '../theme/tokens';
 import { useTheme } from '../theme/ThemeContext';
 import { currentPeriod, formatDate, formatVND } from '../utils/formatters';
 import AppIcon from '../components/AppIcon';
@@ -12,6 +15,7 @@ import {
 
 const MONTHS_VI = ['T1','T2','T3','T4','T5','T6','T7','T8','T9','T10','T11','T12'];
 
+// Điều phối summary tháng, breakdown và insight facts cho màn hình báo cáo.
 export default function ReportScreen() {
   const { theme } = useTheme();
   const styles = useMemo(() => createStyles(theme), [theme]);
@@ -24,10 +28,12 @@ export default function ReportScreen() {
   const [trend, setTrend] = useState([]);
   const [insights, setInsights] = useState(null);
   const [insightsError, setInsightsError] = useState(null);
+  const [showInsightDetails, setShowInsightDetails] = useState(false);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
 
+  // Tải các phần báo cáo song song; freshInsights buộc backend bỏ cache khi refresh tay.
   const load = useCallback(async (m, y, freshInsights = false) => {
     setLoading(true);
     try {
@@ -80,7 +86,7 @@ export default function ReportScreen() {
   if (error) {
     return (
       <SafeAreaView style={styles.safe} edges={['top']}>
-        <AppHeader subtitle="Báo cáo" showAIStatus={false} />
+        <AppHeader title="Báo cáo" />
         <ErrorState message={error} onRetry={() => load(period.month, period.year)} />
       </SafeAreaView>
     );
@@ -88,7 +94,7 @@ export default function ReportScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
-      <AppHeader subtitle="Báo cáo" showAIStatus={false} />
+      <AppHeader title="Báo cáo" />
       <ScrollView
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
@@ -105,7 +111,6 @@ export default function ReportScreen() {
             <AppIcon name="chevron-left" size={22} color={c.brandText} />
           </TouchableOpacity>
           <View style={styles.monthTitle}>
-            <AppIcon name="calendar-today" size={15} color={c.brandText} />
             <Text style={styles.monthTitleText}>Tháng {period.month} · {period.year}</Text>
           </View>
           <TouchableOpacity
@@ -128,15 +133,14 @@ export default function ReportScreen() {
           </SkeletonGroup>
         ) : (
           <View style={styles.statsRow}>
-            <StatCard label="Thu nhập" value={formatVND(summary.total_income)} icon="trending-up" tone="income" />
-            <StatCard label="Chi tiêu" value={formatVND(summary.total_expense)} icon="trending-down" tone="expense" />
+            <StatCard label="Thu nhập" value={formatVND(summary.total_income)} tone="income" />
+            <StatCard label="Chi tiêu" value={formatVND(summary.total_expense)} tone="expense" />
           </View>
         )}
 
         {!loading && (
-          <View style={[styles.netCard, { backgroundColor: netPositive ? c.incomeSoft : c.expenseSoft }]}>
+          <View style={[styles.netCard, { borderLeftColor: netPositive ? c.income : c.expense }]}>
             <View style={styles.netLeft}>
-              <AppIcon name={netPositive ? 'savings' : 'money-off'} size={20} color={netPositive ? c.income : c.expense} />
               <Text style={styles.netLabel}>{netPositive ? 'Tiết kiệm được' : 'Bội chi'}</Text>
             </View>
             <View style={{ alignItems: 'flex-end' }}>
@@ -158,18 +162,24 @@ export default function ReportScreen() {
           <>
             <View style={styles.insightCard}>
               <View style={styles.insightHeader}>
-                <View style={styles.insightIcon}>
-                  <AppIcon name="auto-awesome" size={18} color={c.onBrand} />
-                </View>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.insightTitle}>Góc nhìn từ {insights.persona?.name || 'PERFIN'}</Text>
                   <Text style={styles.insightProvider}>{insights.provider_used || 'Phân tích cục bộ'}</Text>
                 </View>
               </View>
-              <Text style={styles.insightComment}>{insights.ai_comment}</Text>
+              <Text numberOfLines={showInsightDetails ? undefined : 3} style={styles.insightComment}>{insights.ai_comment}</Text>
+              <TouchableOpacity
+                accessibilityRole="button"
+                accessibilityState={{ expanded: showInsightDetails }}
+                onPress={() => setShowInsightDetails((value) => !value)}
+                style={styles.insightDisclosure}
+              >
+                <Text style={styles.insightDisclosureText}>{showInsightDetails ? 'Thu gọn' : 'Xem phân tích chi tiết'}</Text>
+                <AppIcon name={showInsightDetails ? 'expand-less' : 'expand-more'} size={18} color={c.brandText} />
+              </TouchableOpacity>
             </View>
 
-            {insights.overall_advice ? (
+            {showInsightDetails && insights.overall_advice ? (
               <View style={styles.adviceCard}>
                 <View style={styles.adviceIcon}>
                   <AppIcon name="tips-and-updates" size={18} color={c.brandText} />
@@ -182,7 +192,7 @@ export default function ReportScreen() {
               </View>
             ) : null}
 
-            {insights.facts?.degraded_components?.length > 0 && (
+            {showInsightDetails && insights.facts?.degraded_components?.length > 0 && (
               <View style={styles.insightNotice}>
                 <AppIcon name="warning-amber" size={15} color={c.warning} />
                 <Text style={styles.insightNoticeText}>
@@ -191,7 +201,7 @@ export default function ReportScreen() {
               </View>
             )}
 
-            {insights.facts?.runway && (
+            {showInsightDetails && insights.facts?.runway && (
               <View style={[styles.analyticsCard, insights.facts.runway.beforePayday && styles.analyticsWarningCard]}>
                 <View style={styles.analyticsHeader}>
                   <View style={[styles.analyticsIcon, { backgroundColor: insights.facts.runway.beforePayday ? c.warningSoft : c.infoSoft }]}>
@@ -230,7 +240,7 @@ export default function ReportScreen() {
               </View>
             )}
 
-            {insights.facts?.subscriptions?.subscriptions?.length > 0 && (
+            {showInsightDetails && insights.facts?.subscriptions?.subscriptions?.length > 0 && (
               <View style={styles.analyticsCard}>
                 <View style={styles.analyticsHeader}>
                   <View style={[styles.analyticsIcon, { backgroundColor: c.brandSoft }]}>
@@ -267,7 +277,6 @@ export default function ReportScreen() {
           </View>
         ) : (
           <View style={styles.emptyState}>
-            <Text style={styles.emptyIcon}>✨</Text>
             <Text style={styles.emptyMsg}>Chưa đủ dữ liệu để tạo phân tích thông minh</Text>
           </View>
         )}
@@ -277,18 +286,17 @@ export default function ReportScreen() {
           [1, 2, 3].map((i) => <Skeleton key={i} height={70} radius={14} style={{ marginBottom: 8 }} />)
         ) : breakdown.length === 0 ? (
           <View style={styles.emptyState}>
-            <Text style={styles.emptyIcon}>📊</Text>
             <Text style={styles.emptyMsg}>Chưa có dữ liệu chi tiêu tháng này</Text>
           </View>
         ) : (
           breakdown.map((item, index) => {
-            const color = CATEGORY_COLORS[index % CATEGORY_COLORS.length];
+            const color = index === 0 ? c.brand : c.textMuted;
             return (
               <View key={item.category_id} style={styles.catRow}>
                 <View style={styles.catHeader}>
                   <View style={styles.catLeft}>
                     <View style={[styles.catDot, { backgroundColor: color }]} />
-                    <Text numberOfLines={1} style={styles.catName}>{item.icon} {item.category_name}</Text>
+                    <Text numberOfLines={1} style={styles.catName}>{item.category_name}</Text>
                   </View>
                   <View style={{ alignItems: 'flex-end' }}>
                     <Text style={styles.catPct}>{item.percentage}%</Text>
@@ -355,88 +363,87 @@ const createStyles = (t) => StyleSheet.create({
   monthNav: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     backgroundColor: t.colors.surface, padding: 12, borderRadius: t.radius.lg,
-    borderWidth: 1, borderColor: t.colors.border, marginBottom: 14, ...t.shadows.sm,
+    marginBottom: 14,
   },
-  monthNavBtn: { width: 38, height: 38, borderRadius: 19, backgroundColor: t.colors.brandSoft, alignItems: 'center', justifyContent: 'center' },
-  monthNavBtnDisabled: { backgroundColor: t.colors.surfaceAlt },
+  monthNavBtn: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
+  monthNavBtnDisabled: { opacity: 0.45 },
   monthTitle: { flexDirection: 'row', alignItems: 'center', gap: 7 },
-  monthTitleText: { fontSize: 16, fontWeight: '800', color: t.colors.text },
+  monthTitleText: { fontSize: 16, fontWeight: '600', color: t.colors.text },
 
   netCard: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    padding: 14, borderRadius: t.radius.lg, marginBottom: 20,
+    padding: 14, borderRadius: t.radius.md, marginBottom: 24,
+    backgroundColor: t.colors.surface, borderLeftWidth: 3,
   },
   netLeft: { flex: 1, minWidth: 0, flexDirection: 'row', alignItems: 'center', gap: 8 },
   netLabel: { flexShrink: 1, fontWeight: '700', color: t.colors.text, fontSize: 14 },
-  netValue: { fontSize: 18, fontWeight: '900' },
-  netSub: { color: t.colors.textMuted, fontSize: 11, marginTop: 2 },
+  netValue: { fontSize: 18, fontWeight: '700' },
+  netSub: { color: t.colors.textMuted, fontSize: 12, marginTop: 2 },
 
-  sectionTitle: { fontSize: 16, fontWeight: '800', color: t.colors.text, marginBottom: 12 },
-  currentInsightNote: { color: t.colors.textMuted, fontSize: 10, lineHeight: 15, fontWeight: '600', marginTop: -7, marginBottom: 12 },
+  sectionTitle: { fontSize: 18, lineHeight: 26, fontWeight: '700', color: t.colors.text, marginBottom: 12 },
+  currentInsightNote: { color: t.colors.textMuted, fontSize: 13, lineHeight: 19, fontWeight: '400', marginTop: -7, marginBottom: 12 },
 
   insightCard: {
-    backgroundColor: t.colors.brandSoft, padding: 16, borderRadius: t.radius.lg,
-    borderWidth: 1.5, borderColor: t.colors.brand, marginBottom: 10,
+    backgroundColor: t.colors.surface, padding: 16, borderRadius: t.radius.lg,
+    borderLeftWidth: 3, borderLeftColor: t.colors.brand, marginBottom: 10,
   },
   insightHeader: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 11 },
-  insightIcon: {
-    width: 36, height: 36, borderRadius: 12, backgroundColor: t.colors.brand,
-    alignItems: 'center', justifyContent: 'center',
-  },
-  insightTitle: { color: t.colors.text, fontSize: 14, fontWeight: '900' },
-  insightProvider: { color: t.colors.textMuted, fontSize: 10, fontWeight: '600', marginTop: 2 },
-  insightComment: { color: t.colors.textSecondary, fontSize: 13, lineHeight: 19, fontWeight: '600' },
+  insightTitle: { color: t.colors.text, fontSize: 16, fontWeight: '700' },
+  insightProvider: { color: t.colors.textMuted, fontSize: 12, fontWeight: '400', marginTop: 2 },
+  insightComment: { color: t.colors.textSecondary, fontSize: 14, lineHeight: 21, fontWeight: '400' },
+  insightDisclosure: { minHeight: 44, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, marginTop: 8 },
+  insightDisclosureText: { color: t.colors.brandText, fontSize: 13, fontWeight: '600' },
   adviceCard: {
     flexDirection: 'row', alignItems: 'flex-start', gap: 10, padding: 14,
     backgroundColor: t.colors.surface, borderRadius: t.radius.lg,
-    borderWidth: 1, borderColor: t.colors.border, marginBottom: 10, ...t.shadows.sm,
+    borderWidth: 1, borderColor: t.colors.border, marginBottom: 10,
   },
   adviceIcon: {
     width: 36, height: 36, borderRadius: 12, alignItems: 'center', justifyContent: 'center',
     backgroundColor: t.colors.brandSoft,
   },
-  adviceTitle: { color: t.colors.text, fontSize: 13, fontWeight: '900', marginBottom: 4 },
-  adviceText: { color: t.colors.textSecondary, fontSize: 13, lineHeight: 19, fontWeight: '600' },
-  adviceScope: { color: t.colors.textMuted, fontSize: 10, fontWeight: '600', marginTop: 6 },
+  adviceTitle: { color: t.colors.text, fontSize: 14, fontWeight: '700', marginBottom: 4 },
+  adviceText: { color: t.colors.textSecondary, fontSize: 14, lineHeight: 21, fontWeight: '400' },
+  adviceScope: { color: t.colors.textMuted, fontSize: 12, fontWeight: '400', marginTop: 6 },
   insightNotice: {
     flexDirection: 'row', alignItems: 'flex-start', gap: 7, padding: 10,
     borderRadius: t.radius.md, backgroundColor: t.colors.warningSoft, marginBottom: 10,
   },
-  insightNoticeText: { flex: 1, color: t.colors.warning, fontSize: 10, lineHeight: 15, fontWeight: '700' },
+  insightNoticeText: { flex: 1, color: t.colors.warning, fontSize: 12, lineHeight: 15, fontWeight: '700' },
 
   analyticsCard: {
     backgroundColor: t.colors.surface, padding: 15, borderRadius: t.radius.lg,
-    borderWidth: 1, borderColor: t.colors.border, marginBottom: 10, ...t.shadows.sm,
+    borderWidth: 1, borderColor: t.colors.border, marginBottom: 10,
   },
   analyticsWarningCard: { borderColor: t.colors.warning },
   analyticsHeader: { flexDirection: 'row', alignItems: 'center', gap: 9, minWidth: 0 },
   analyticsIcon: { width: 34, height: 34, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
-  analyticsTitle: { color: t.colors.text, fontSize: 13, fontWeight: '900' },
-  analyticsSubtitle: { color: t.colors.textMuted, fontSize: 10, fontWeight: '600', marginTop: 2 },
+  analyticsTitle: { color: t.colors.text, fontSize: 13, fontWeight: '700' },
+  analyticsSubtitle: { color: t.colors.textMuted, fontSize: 12, fontWeight: '600', marginTop: 2 },
   analyticsCount: {
     minWidth: 27, height: 27, paddingHorizontal: 7, borderRadius: 14,
     backgroundColor: t.colors.brandSoft, alignItems: 'center', justifyContent: 'center',
   },
-  analyticsCountText: { color: t.colors.brandText, fontSize: 11, fontWeight: '900' },
-  runwayDays: { flexShrink: 1, maxWidth: '30%', textAlign: 'right', fontSize: 19, fontWeight: '900' },
+  analyticsCountText: { color: t.colors.brandText, fontSize: 12, fontWeight: '700' },
+  runwayDays: { flexShrink: 1, maxWidth: '30%', textAlign: 'right', fontSize: 19, fontWeight: '700' },
   runwayStats: { flexDirection: 'row', flexWrap: 'wrap', marginTop: 13, gap: 6 },
   runwayStat: { flexGrow: 1, flexBasis: 96, minWidth: 0, padding: 9, borderRadius: t.radius.sm, backgroundColor: t.colors.surfaceAlt },
-  runwayStatLabel: { color: t.colors.textMuted, fontSize: 9, fontWeight: '700', marginBottom: 3 },
-  runwayStatValue: { color: t.colors.textSecondary, fontSize: 10, fontWeight: '800' },
+  runwayStatLabel: { color: t.colors.textMuted, fontSize: 12, fontWeight: '700', marginBottom: 3 },
+  runwayStatValue: { color: t.colors.textSecondary, fontSize: 12, fontWeight: '700' },
   runwayWarning: {
     flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 10,
     padding: 8, borderRadius: t.radius.sm, backgroundColor: t.colors.warningSoft,
   },
-  runwayWarningText: { flex: 1, color: t.colors.warning, fontSize: 10, fontWeight: '700' },
+  runwayWarningText: { flex: 1, color: t.colors.warning, fontSize: 12, fontWeight: '700' },
   subscriptionRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 10 },
   subscriptionBorder: { borderTopWidth: 1, borderTopColor: t.colors.border },
-  subscriptionName: { color: t.colors.text, fontSize: 12, fontWeight: '800' },
-  subscriptionMeta: { color: t.colors.textMuted, fontSize: 10, fontWeight: '600', marginTop: 2 },
-  subscriptionAmount: { flexShrink: 1, maxWidth: '42%', color: t.colors.expense, fontSize: 10, lineHeight: 14, fontWeight: '800', textAlign: 'right' },
+  subscriptionName: { color: t.colors.text, fontSize: 12, fontWeight: '700' },
+  subscriptionMeta: { color: t.colors.textMuted, fontSize: 12, fontWeight: '600', marginTop: 2 },
+  subscriptionAmount: { flexShrink: 1, maxWidth: '42%', color: t.colors.expense, fontSize: 12, lineHeight: 14, fontWeight: '700', textAlign: 'right' },
 
   catRow: {
     backgroundColor: t.colors.surface, padding: 14, borderRadius: t.radius.md,
-    borderWidth: 1, borderColor: t.colors.border, marginBottom: 8, ...t.shadows.sm,
+    borderBottomWidth: 1, borderBottomColor: t.colors.border, marginBottom: 0,
   },
   catHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
   catLeft: { flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1 },
@@ -447,7 +454,7 @@ const createStyles = (t) => StyleSheet.create({
 
   trendCard: {
     backgroundColor: t.colors.surface, padding: 16, borderRadius: t.radius.lg,
-    borderWidth: 1, borderColor: t.colors.border, ...t.shadows.sm,
+    borderWidth: 1, borderColor: t.colors.border,
   },
   trend: { height: 122, flexDirection: 'row', alignItems: 'stretch', marginBottom: 8, gap: 1 },
   trendMonth: { flex: 1, minWidth: 0, alignItems: 'center', justifyContent: 'flex-end' },
@@ -455,14 +462,13 @@ const createStyles = (t) => StyleSheet.create({
   incomeBar: { width: '30%', maxWidth: 6, minWidth: 2, backgroundColor: t.colors.income, borderTopLeftRadius: 3, borderTopRightRadius: 3, opacity: 0.65 },
   expenseBar: { width: '38%', maxWidth: 7, minWidth: 2, backgroundColor: t.colors.expense, borderTopLeftRadius: 3, borderTopRightRadius: 3, opacity: 0.6 },
   expenseBarActive: { opacity: 1 },
-  monthLabel: { fontSize: 9, color: t.colors.textMuted, marginTop: 4, fontWeight: '600' },
-  monthLabelActive: { color: t.colors.brandText, fontWeight: '900' },
+  monthLabel: { fontSize: 12, color: t.colors.textMuted, marginTop: 4, fontWeight: '600' },
+  monthLabelActive: { color: t.colors.brandText, fontWeight: '700' },
   legend: { flexDirection: 'row', gap: 16, justifyContent: 'center', marginTop: 10 },
   legendItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   legendDot: { width: 10, height: 10, borderRadius: 5 },
   legendText: { fontSize: 12, color: t.colors.textMuted, fontWeight: '600' },
 
   emptyState: { alignItems: 'center', paddingVertical: 24 },
-  emptyIcon: { fontSize: 40, marginBottom: 8 },
-  emptyMsg: { color: t.colors.textMuted, textAlign: 'center', fontWeight: '600' },
+  emptyMsg: { color: t.colors.textMuted, textAlign: 'center', fontSize: 14, lineHeight: 21, fontWeight: '400' },
 });

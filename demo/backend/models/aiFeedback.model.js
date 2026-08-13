@@ -1,3 +1,6 @@
+// Vai trò: Lưu và truy vấn lịch sử người dùng sửa kết quả trích xuất hoặc phân loại AI.
+// Luồng chính: chuẩn hóa giới hạn truy vấn, scope theo người dùng và ghi metadata phục vụ học lại.
+
 const { query } = require('../config/database');
 
 const DEFAULT_USER = 'default_user';
@@ -18,6 +21,7 @@ function validateFeedbackType(value) {
 }
 
 const AiFeedbackModel = {
+  // Lưu cả kết quả AI ban đầu và correction để truy vết quá trình học.
   async create({
     userId = DEFAULT_USER,
     transactionId = null,
@@ -88,6 +92,7 @@ const AiFeedbackModel = {
     return result.rows;
   },
 
+  // Chỉ lấy candidate phân loại có đủ ngữ cảnh để correction service xếp hạng.
   async getClassificationCandidates(userId = DEFAULT_USER, limit = 200) {
     return this.getRecent(userId, {
       feedbackType: 'classification',
@@ -103,4 +108,3 @@ const AiFeedbackModel = {
 module.exports = AiFeedbackModel;
 module.exports.FEEDBACK_TYPES = FEEDBACK_TYPES;
 module.exports.clampLimit = clampLimit;
-

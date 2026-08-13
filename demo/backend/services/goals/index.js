@@ -1,6 +1,6 @@
-// Goal service: ties the pure planner to real cashflow data.
-// Computes the user's average monthly surplus (income − expense) and runs the
-// appropriate plan for a goal. Used by /api/goals and the chat goal_create flow.
+// Vai trò: Nối dữ liệu dòng tiền thực tế với bộ lập kế hoạch mục tiêu thuần.
+// Luồng chính: tính thặng dư trung bình rồi chọn kế hoạch tiết kiệm hoặc trả nợ phù hợp.
+// Service trả preview/facts; route hoặc chat mới quyết định lưu sau xác nhận.
 
 const AnalyticsModel = require('../../models/analytics.model');
 const { planSaving, planDebtPayoff, whatIf, assessProgress } = require('./planner');
@@ -9,6 +9,7 @@ const algo = require('../analytics/algorithms');
 const DEFAULT_USER = 'default_user';
 
 // Average monthly surplus over the last N months (positive = money left over).
+// Tính thặng dư trung bình từ các tháng hoàn tất để planner không dựa vào số AI suy đoán.
 async function computeSurplus(userId = DEFAULT_USER, months = 6) {
   if (!Number.isInteger(months) || months < 1 || months > 60) {
     throw new RangeError('months phải là số nguyên từ 1 đến 60');
@@ -28,6 +29,7 @@ async function computeSurplus(userId = DEFAULT_USER, months = 6) {
 }
 
 // Build a plan object for a goal row (or a draft goal), enriched with surplus context.
+// Chọn planner theo loại mục tiêu và gắn context dòng tiền thực tế vào kết quả.
 async function buildPlan(goal, userId = DEFAULT_USER, { today = new Date() } = {}) {
   const cash = await computeSurplus(userId);
   const targetAmount = Number(goal.target_amount);

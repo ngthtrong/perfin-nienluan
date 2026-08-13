@@ -1,8 +1,6 @@
-// Analytics Engine — the "bộ não phân tích".
-//
-// Pattern (PROPOSAL_Backend_v2 §3.2): deterministic algorithms compute the numbers,
-// then hand a structured `insight facts` object to the LLM to phrase per persona.
-// The LLM never invents figures; it only narrates what the engine calculated.
+// Vai trò: Điều phối Analytics Engine và tạo contract facts thống nhất cho báo cáo.
+// Luồng chính: lấy dữ liệu đã scope, chạy từng thuật toán độc lập, gắn metadata rồi cache.
+// Các con số do hàm xác định tính; LLM chỉ được dùng để diễn giải facts đã có.
 
 const AnalyticsModel = require('../../models/analytics.model');
 const AccountModel = require('../../models/account.model');
@@ -329,6 +327,7 @@ async function correlationFacts(userId, weeks = ANALYTICS_WINDOWS.correlationWee
 
 // ── Public: full engine run → structured facts object ─────────────────────────────
 
+// Chạy sáu component độc lập; một component degraded không làm mất toàn bộ contract.
 async function buildInsightFacts(userId = DEFAULT_USER, { payday = null, useCache = true } = {}) {
   const key = `cache:insights:${userId}`;
   const normalizedPayday = Number.isInteger(Number(payday)) && Number(payday) >= 1 && Number(payday) <= 31

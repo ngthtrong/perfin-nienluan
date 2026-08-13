@@ -1,12 +1,6 @@
-// Persona Engine (REQ-09). Replaces the no-op applyPersona().
-//
-// Two modes:
-//   - style_prompt: injected into LLM calls so generated text carries the persona voice.
-//   - decorate(): a cheap, no-LLM wrapper (prefix/emoji) for short system lines where
-//     spending an LLM call is not worth it (e.g. "Đã lưu", "Đã hủy").
-//
-// Personas are seeded from a built-in registry; when the DB has an ai_personalities
-// table (schema Phương án A) the active persona can be loaded from there and cached.
+// Vai trò: Cung cấp persona cho lời đáp dài qua style prompt và câu ngắn qua decorate.
+// Luồng chính: tải persona từ DB hoặc registry dựng sẵn, hydrate hành vi rồi cache theo người dùng.
+// Persona chỉ đổi cách diễn đạt, không thay đổi facts hoặc quyết định nghiệp vụ.
 
 const KVStore = require('./store/kv.store');
 

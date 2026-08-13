@@ -1,7 +1,6 @@
-// Redis connection wrapper with graceful degradation.
-// If ioredis is not installed OR no server is reachable, every method resolves to a
-// "miss" so callers transparently fall back to the in-memory store. This keeps the app
-// runnable with zero infra while upgrading to real Redis the moment it is available.
+// Vai trò: Quản lý một kết nối Redis dùng chung với cơ chế degrade có kiểm soát.
+// Luồng chính: lazy-connect ioredis, cooldown sau lỗi và báo unavailable để KV store fallback.
+// Thiếu Redis không làm backend mất khả năng chạy các luồng không bắt buộc queue.
 
 let clientPromise = null;
 let activeClient = null;

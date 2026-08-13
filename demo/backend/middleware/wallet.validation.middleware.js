@@ -1,3 +1,6 @@
+// Vai trò: Kiểm tra payload tạo và cập nhật ví trước khi chạm tới model.
+// Luồng chính: xác thực loại ví, tiền tệ, số dư và trả lỗi 400 cho dữ liệu ngoài miền.
+
 const WALLET_TYPES = Object.freeze(['cash', 'bank', 'e_wallet', 'credit_card', 'investment', 'savings']);
 const CURRENCIES = Object.freeze(['VND', 'USD']);
 const MAX_ABS_BALANCE = 9_999_999_999_999.99;
@@ -48,6 +51,7 @@ function normalizeWalletInput(data) {
   return { name, type, balance, currency };
 }
 
+// Xác thực đầy đủ payload ví mới trước khi route gọi AccountModel.
 function validateWalletCreate(req, res, next) {
   try {
     req.walletInput = normalizeWalletInput(req.body);

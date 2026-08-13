@@ -1,3 +1,6 @@
+// Vai trò: Nối dữ liệu lịch sử thực tế với thuật toán đề xuất ngân sách thuần.
+// Luồng chính: chọn cửa sổ tháng hoàn tất, lấy thu/chi rồi tạo đề xuất kèm nguồn căn cứ.
+
 const BudgetModel = require('../../models/budget.model');
 const { recommendCategoryBudgets } = require('./recommender');
 const { localDayKey, recentMonthKeys } = require('../analytics/timeSeries');
@@ -5,6 +8,7 @@ const { localDayKey, recentMonthKeys } = require('../analytics/timeSeries');
 const DEFAULT_USER = 'default_user';
 
 const BudgetRecommendationService = {
+  // Lấy lịch sử các tháng hoàn tất rồi chuyển sang recommender thuần cùng metadata nguồn.
   async recommend(userId = DEFAULT_USER, options = {}) {
     const historyMonths = Number(options.historyMonths ?? 6);
     if (!Number.isInteger(historyMonths) || historyMonths < 1 || historyMonths > 24) {

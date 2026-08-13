@@ -4,8 +4,7 @@
 The following full tables retain the same fields and identifiers as the
 specification template. They are moved here only to keep the main chapter
 focused on the nine core requirements (FR-01--05 and FR-07--10); the summary
-table and traceability matrix in Chapter~\ref{chap:results} still list all
-twelve requirements.
+table in Chapter~\ref{chap:results} still lists all twelve requirements.
 
 \begin{frtable}{FR-06 --- Transfer Funds and Record Special Cash Flows}{tab:app-fr06}
   \textbf{Feature name} & Wallet transfer and investment gain/loss. \frtablerow
@@ -16,9 +15,9 @@ twelve requirements.
   \textbf{Participants and concerns} & One user action must update both wallets and history consistently. \frtablerow
   \textbf{Summary} & Record internal transfers without changing total assets and classify investment cash flow correctly. \frtablerow
   \textbf{Relationships} & Uses FR-05 wallet and transaction entities. \frtablerow
-  \textbf{Normal flow} & Enter source, target, amount and date; validate distinct wallets; lock in stable order; debit, credit and write history; commit. \frtablerow
-  \textbf{Subflows} & In one transaction, subtract source, add target and write \code{wallet_transfers}; net change equals zero. \frtablerow
-  \textbf{Alternate flows} & Same, missing or out-of-scope wallets, invalid amount/date, or different wallet currencies roll back. A future negative source balance alone is not rejected. \frtablerow
+  \textbf{Normal flow} & \frstep{Step 1:}{Enter source, target, amount and date.} \frstep{Step 2:}{Validate distinct wallets.} \frstep{Step 3:}{Lock in stable order.} \frsubstep{Sub 1:}{Debit, credit and write history.} \frstep{Step 4:}{Commit and return the result.} \frtablerow
+  \textbf{Subflows} & \frsubstep{Sub 1 --- Transaction:}{Subtract from the source.} \frsubstep{Sub 1.1:}{Add to the target.} \frsubstep{Sub 1.2:}{Write \code{wallet_transfers}; the net change equals zero.} \frtablerow
+  \textbf{Alternate flows} & \frstep{Invalid wallets:}{Same, missing, out-of-scope or different-currency wallets roll back.} \frstep{Invalid amount or date:}{Roll back the transaction.} \frstep{Negative source balance:}{Do not reject solely because the resulting source balance is negative.} \frtablerow
 \end{frtable}
 
 \begin{frtable}{FR-11 --- Manage Recurring Bills and Proactive Jobs}{tab:app-fr11}
@@ -30,9 +29,9 @@ twelve requirements.
   \textbf{Participants and concerns} & The user needs correct due dates; the worker needs retry and idempotency; PostgreSQL must prevent duplicate effects. \frtablerow
   \textbf{Summary} & Manage schedules, record one payment per period and generate grounded reminders/alerts. \frtablerow
   \textbf{Relationships} & Reads FR-05/FR-07; may call FR-08 for wording only. \frtablerow
-  \textbf{Normal flow} & Scheduler enqueues a user-scoped job; worker loads due data; computes deterministic facts; persists an event by unique key; advances schedule after success. \frtablerow
-  \textbf{Subflows} & Payment writes payment history, transaction and next due date atomically. \frtablerow
-  \textbf{Alternate flows} & Duplicate event/job returns the existing result. Transient failure retries with backoff. Redis failure stops the worker while the interactive API may continue. \frtablerow
+  \textbf{Normal flow} & \frstep{Step 1:}{Create a valid schedule.} \frstep{Step 2:}{The scheduler enqueues a user-scoped job.} \frstep{Step 3:}{The worker loads due data and computes deterministic facts.} \frsubstep{Sub 1:}{Invoke the idempotent handler.} \frstep{Step 4:}{Persist an event by unique key and advance the schedule after success.} \frtablerow
+  \textbf{Subflows} & \frsubstep{Sub 1 --- Payment:}{Write payment history.} \frsubstep{Sub 1.1:}{Write the transaction.} \frsubstep{Sub 1.2:}{Update the next due date atomically.} \frtablerow
+  \textbf{Alternate flows} & \frstep{Duplicate event or job:}{Return the existing result.} \frstep{Transient failure:}{Retry with backoff.} \frstep{Redis failure:}{Stop the worker while the interactive API may continue.} \frtablerow
 \end{frtable}
 
 \begin{frtable}{FR-12 --- Export Data and Remove Expired Files}{tab:app-fr12}
@@ -44,7 +43,7 @@ twelve requirements.
   \textbf{Participants and concerns} & The user needs correct data; the exporter needs safe escaping; cleanup cannot remove valid files. \frtablerow
   \textbf{Summary} & Generate filtered CSV, store history and delete files after TTL. \frtablerow
   \textbf{Relationships} & Reads FR-05, may use FR-03 from chat, and delegates cleanup to the worker. \frtablerow
-  \textbf{Normal flow} & Select format/period; validate and query profile data; create a safe file; write \code{export_history}; return a download link. \frtablerow
-  \textbf{Subflows} & Escape formula-like cells, write UTF-8 BOM and row count, then assign TTL. \frtablerow
-  \textbf{Alternate flows} & Empty data returns a header-only file. The path once labelled PDF only creates HTML and is not claimed as a true PDF export. \frtablerow
+  \textbf{Normal flow} & \frstep{Step 1:}{Select the format and period.} \frstep{Step 2:}{Validate and query profile data.} \frsubstep{Sub 1:}{Create a safe file.} \frstep{Step 3:}{Write \code{export_history}.} \frstep{Step 4:}{Return a download link.} \frtablerow
+  \textbf{Subflows} & \frsubstep{Sub 1 --- CSV:}{Escape formula-like cells.} \frsubstep{Sub 1.1:}{Write a UTF-8 BOM and row count.} \frsubstep{Sub 1.2:}{Assign the TTL.} \frtablerow
+  \textbf{Alternate flows} & \frstep{Empty data:}{Return a header-only file.} \frstep{PDF format:}{The path once labelled PDF only creates HTML and is not claimed as a true PDF export.} \frtablerow
 \end{frtable}

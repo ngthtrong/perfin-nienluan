@@ -1,3 +1,6 @@
+// Vai trò: Là barrel export cho bộ UI primitive dùng xuyên suốt frontend.
+// Luồng chính: công bố component qua một điểm import mà không thêm logic runtime.
+
 export { default as Screen } from './Screen';
 export { default as Card } from './Card';
 export { default as Button } from './Button';

@@ -6,6 +6,7 @@
     "start": "expo start",
     "start:lan": "expo start --lan",
     "start:tunnel": "expo start --tunnel",
+    "assets:brand": "bash scripts/generate-brand-assets.sh",
     "ui:smoke": "node scripts/mobile-web-smoke.js",
     "android": "expo start --android",
     "ios": "expo start --ios",

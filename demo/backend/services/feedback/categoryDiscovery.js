@@ -1,3 +1,6 @@
+// Vai trò: Phát hiện cụm giao dịch có thể cần danh mục mới và dựng kế hoạch retag.
+// Luồng chính: chuẩn hóa mô tả, gom theo độ tương đồng, lọc bằng chứng rồi validation tên đề xuất.
+
 const { normalizeForMatch, textSimilarity } = require('./textSimilarity');
 const { findSafeCategoryMatch } = require('./categoryMatcher');
 
@@ -76,6 +79,7 @@ function clusterTransactions(transactions, threshold = 0.9) {
   return clusters;
 }
 
+// Tìm cluster đủ support mà chưa khớp an toàn với category hiện có.
 function discoverCategorySuggestions(transactions = [], existingCategories = [], options = {}) {
   const type = validateCategoryType(options.type || 'expense');
   const minimumOccurrences = boundedInteger(options.minimumOccurrences, 3, 2, 20);
@@ -132,6 +136,7 @@ function validateSuggestedCategoryName(value) {
   return name;
 }
 
+// Khóa suggestion thành danh sách transaction cụ thể để người dùng xem trước retag.
 function buildRetagPlan(input, options = {}) {
   const ids = [...new Set((input.transaction_ids || input.transactionIds || [])
     .map(Number)

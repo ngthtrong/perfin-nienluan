@@ -1,3 +1,6 @@
+// Vai trò: Cung cấp hàng menu/cài đặt gồm icon, nội dung và phần trailing.
+// Luồng chính: chọn layout theo props và chuyển thành nút truy cập được khi có onPress.
+
 import { View, Text, TouchableOpacity } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '../../theme/ThemeContext';
@@ -23,13 +26,13 @@ export default function ListRow({
         {
           flexDirection: 'row',
           alignItems: 'center',
-          gap: 14,
+          gap: 12,
+          minHeight: 64,
           backgroundColor: c.surface,
-          borderRadius: theme.radius.lg,
-          borderWidth: 1,
-          borderColor: c.border,
-          paddingVertical: 14,
-          paddingHorizontal: 16,
+          borderBottomWidth: 1,
+          borderBottomColor: c.border,
+          paddingVertical: 12,
+          paddingHorizontal: 4,
         },
         style,
       ]}
@@ -37,15 +40,13 @@ export default function ListRow({
       {icon && (
         <View
           style={{
-            width: 40,
+            width: 28,
             height: 40,
-            borderRadius: 12,
-            backgroundColor: iconBg || c.brandSoft,
             alignItems: 'center',
             justifyContent: 'center',
           }}
         >
-          <MaterialIcons name={icon} size={20} color={iconColor || c.brand} />
+          <MaterialIcons name={icon} size={20} color={iconColor || c.textSecondary} />
         </View>
       )}
       <View style={{ flex: 1, minWidth: 0 }}>
@@ -61,7 +62,7 @@ export default function ListRow({
 
   if (onPress) {
     return (
-      <TouchableOpacity accessibilityRole="button" onPress={onPress} activeOpacity={0.75}>
+      <TouchableOpacity accessibilityRole="button" accessibilityLabel={subtitle ? `${title}. ${subtitle}` : title} onPress={onPress} activeOpacity={0.65}>
         {content}
       </TouchableOpacity>
     );

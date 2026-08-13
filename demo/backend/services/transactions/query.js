@@ -1,3 +1,6 @@
+// Vai trò: Chuẩn hóa filter, phân trang và sắp xếp cho truy vấn danh sách giao dịch.
+// Luồng chính: parse scalar/ngày, giới hạn giá trị và chỉ trả sort expression trong allowlist.
+
 const { isValidDateOnly } = require('./validation');
 
 const SORT_EXPRESSIONS = Object.freeze({
@@ -41,6 +44,7 @@ function optionalDate(value, label) {
   return parsed;
 }
 
+// Trả filter chuẩn hóa và sort SQL từ allowlist, không nội suy chuỗi tùy ý của client.
 function normalizeTransactionQuery(input = {}) {
   if (!input || typeof input !== 'object' || Array.isArray(input)) {
     throw bad('Bộ lọc giao dịch không hợp lệ');

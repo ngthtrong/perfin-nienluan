@@ -56,14 +56,7 @@ For a phone on the same LAN, replace \code{127.0.0.1} with the backend host's LA
   \item Correct an incorrect category. Confirmed corrections may be retrieved for a later input.
 \end{enumerate}
 
-The prototype has no login and uses \code{default_user}. Do not enter sensitive data or treat results as guaranteed investment advice.
-
-\begin{figure}[p]
-  \centering
-  \includegraphics[width=0.55\textwidth,height=0.70\textheight,keepaspectratio]{figures/screenshots/05-goal-plan.png}
-  \caption{Goal-plan form preview in the Expo web mobile viewport (synthetic data; plan is not saved).}
-  \label{fig:ui-goal-plan}
-\end{figure}
+The prototype has no login and uses \code{default_user}. Do not enter sensitive data or treat results as guaranteed investment advice. The interface and goal-plan preview are illustrated together in Section~\ref{subsec:ui-design}.
 
 \input{chapters/\doclang/appendix-fr-supplement}
 
@@ -72,15 +65,15 @@ The prototype has no login and uses \code{default_user}. Do not enter sensitive 
 
 This appendix expands the formulas and rules summarized in Chapter~\ref{chap:results}. It lets a reader follow the path from scoped input data to facts or a plan; it does not introduce a second source of truth or change prototype behavior. Examples use synthetic values, while names, thresholds and statuses are checked against the current implementation.
 
-\section{Test Dataset Description}
+\section{Data and Fixture Description}
 \label{app:dataset-description}
 
-This section documents the data sources used for tests and benchmark measurements. The main data is not an external, independently collected test set: classification and correction experiments both read \path{demo/data/dataFinance.csv}, then apply different cohorts or splits. The report publishes aggregate statistics and checksums only; raw transaction descriptions are not copied into the appendix.
+This section documents data used for profiling/import and controlled fixtures used by automated tests. The transaction CSV belongs to one demo profile rather than an independent evaluation set. The report publishes aggregate statistics and checksums only; raw transaction descriptions are not copied into the appendix.
 
 \subsection{Dataset inventory}
 
 \begin{longtable}{@{}L{3.3cm}L{4.2cm}L{7.0cm}@{}}
-  \caption{Test data sources and roles}
+  \caption{Data sources, fixtures and roles}
   \label{tab:app-dataset-sources}\\
   \toprule
   \textbf{Source} & \textbf{Size/scope} & \textbf{Role and status} \\
@@ -90,12 +83,10 @@ This section documents the data sources used for tests and benchmark measurement
   \textbf{Source} & \textbf{Size/scope} & \textbf{Role and status} \\
   \midrule
   \endhead
-  Transaction CSV & 5,328 source rows, 8 columns; 1 Jan 2022--10 Aug 2026. & \code{dataFinance.csv} is the current import and benchmark source. Dry-run validation rejects zero rows; PostgreSQL apply and benchmark reruns are pending. SHA-256 is \code{418a9439...fbaed7}. \\
+  Transaction CSV & 5,328 source rows, 8 columns; 1 Jan 2022--10 Aug 2026. & \code{dataFinance.csv} is used for import and data profiling. Dry-run validation rejects zero rows; SHA-256 is \code{418a9439...fbaed7}. \\
   Category mapping & Crosswalk from the historical taxonomy to PERFIN's 17 type/category labels. & \code{dataFinance.category-map.json} is checked against the current CSV checksum; its SHA-256 is \code{8072dc3d...c6b573c}. It creates post-import gold labels, not parser predictions. \\
-  Parser--Gemini ablation & Protocol fixed; historical 63-sentence artifact is superseded. & The rerun must use joint labels, keep abstentions in the denominator and store every sample-level record. \\
-  Correction group split & Protocol fixed; historical evaluation artifact is superseded. & Split whole type/normalized-description groups, replay chronologically and expose the production candidate limit of 200. \\
-  Media fixtures & Public synthetic set pending; the existing two images contain PII and are unsafe to distribute. & \code{media-fixtures.json} remains private smoke material. The planned 20 images and 20 audio files will carry reference text/fields. \\
-  Analytics/unit fixtures & Synthetic or anonymized series with known slope, outlier, cadence and correlation. & Used to check Analytics/Budget/Goal formulas, edge cases and invariants; not a real-user benchmark. \\
+  Media fixtures & Two images and one audio file for internal use; the images contain PII and are unsafe to distribute. & \code{media-fixtures.json} supports input/preview-flow checks, not OCR/STT accuracy claims. \\
+  Analytics/unit fixtures & Synthetic or anonymized series with known slope, outlier, cadence and correlation. & Used to check Analytics/Budget/Goal formulas, edge cases and invariants; not representative of real users. \\
   \bottomrule
 \end{longtable}
 
@@ -139,40 +130,17 @@ The importer does not silently remove duplicates: the current dry-run reports 23
     \textbf{Attribute} & \textbf{Value} & \textbf{Interpretation} \\
     \midrule
     Source rows / validation rejects & 5,328 / 0 & Current dry-run profile; database apply remains a separate measured step. \\
-    Date range & 1 Jan 2022--10 Aug 2026 & The profile covers the current snapshot; per-year and direction counts will be regenerated with the benchmark. \\
-    Amount totals & Income 373,432,659 VND; expense 373,062,659 VND & Net cashflow in the source profile is 370,000 VND; no classification score is inferred from totals. \\
+    Date range & 1 Jan 2022--10 Aug 2026 & The profile covers the current data snapshot. \\
+    Amount totals & Income 373,432,659 VND; expense 373,062,659 VND & Net cashflow is 370,000 VND; the values cross-check importer and report output. \\
     Amount outlier flag & 615 rows above the IQR threshold 91,500 VND & Outliers are retained because they can be legitimate tuition, lending or household payments. \\
     Exact duplicates & 23 groups / 24 extra rows & Retained by default to preserve the source; no duplicate error is asserted without a transaction identifier. \\
     \bottomrule
   \end{tabularx}
 \end{table}
 
-The post-mapping class distribution and supported-label count are intentionally left
-pending until the current CSV is benchmarked. The previous 13-class table belonged to
-the superseded 5,265-row snapshot and must not be reused.
+\subsection{Fixture scope and limitations}
 
-\subsection{Cohorts, splits and reproducibility}
-
-\begin{longtable}{@{}L{3.3cm}L{4.2cm}L{7.0cm}@{}}
-  \caption{Cohorts used by the reported measurements}
-  \label{tab:app-dataset-cohorts}\\
-  \toprule
-  \textbf{Measurement} & \textbf{Denominator} & \textbf{Rule and cross-check artifact} \\
-  \midrule
-  \endfirsthead
-  \toprule
-  \textbf{Measurement} & \textbf{Denominator} & \textbf{Rule and cross-check artifact} \\
-  \midrule
-  \endhead
-  Classification & 5,328 rows (planned) & Run the local parser over the current CSV with no provider calls; the primary label is joint type/category. The old 5,265-row artifact is superseded. \\
-  Parser--Gemini ablation & Protocol pending rerun & Stratify from the current source, record joint labels and keep abstentions in the denominator; provider access/quota is required. \\
-  Correction retrieval & Protocol pending rerun & Use whole-group temporal replay, production candidate limit 200 and a confidence interval; no old aggregate is reused. \\
-  \makecell[l]{Analytics/\\Budget/Goal unit} & Synthetic cases & There is no single transaction benchmark for these components; fixtures set known slope, zero-fill, outlier, cadence, correlation, budget caps and what-if outcomes. Tests are indexed in Table~\ref{tab:app-algorithm-tests}. \\
-  Media ground truth & 20 images + 20 audio (planned) & Store redacted synthetic files, reference transcript/fields and a manifest; compute CER/WER plus transaction-field accuracy. \\
-  \bottomrule
-\end{longtable}
-
-Runners must store data and mapping checksums, Node version, run time and involved source files under \path{log/}. The CSV represents one demo profile, is primarily Vietnamese and uses VND; raw content is not treated as anonymized material for public release. Existing media fixtures remain private because their manifest marks PII and unsafe distribution. Until the controlled media set, external holdout and confidence intervals exist, the report describes implementation and protocol rather than generalization or production OCR/STT accuracy.
+Analytics/Budget/Goal fixtures set known slope, zero-fill, outlier, cadence, correlation, budget caps and what-if outcomes for deterministic comparison. The CSV represents one demo profile, is primarily Vietnamese and uses VND; raw content is not treated as anonymized material for public release. Existing media fixtures remain private because their manifest marks PII, and they are insufficient as ground truth. These sources therefore support only the specified cases, not out-of-sample accuracy or production generalization.
 
 \section{Scope and data conventions}
 \label{app:algorithm-conventions}
@@ -258,7 +226,7 @@ The winning candidate exposes \code{support} (group count), \code{bestScore} (ma
 
 Few-shot examples use a separate policy: at most five by default, an absolute limit of 20, and a minimum score of 0.35. Conflicting labels for the same typed normalized input are discarded, and duplicate labels keep only the nearest example. Correction therefore is not majority voting and cannot change transaction type.
 
-Normalization, typo, ambiguous alias, exact/fuzzy correction, label conflict and name-only/id+name cases are covered by \path{feedback.test.js}. Coverage, helped/harmed/net and group-split metrics are covered by \path{experiment-metrics.test.js}.
+Normalization, typo, ambiguous alias, exact/fuzzy correction, label-conflict and name-only/id+name cases use regression fixtures in \path{feedback.test.js}; results apply only to the specified cases.
 
 \section{Financial analysis algorithms}
 \label{app:analytics-algorithms}
@@ -434,64 +402,22 @@ The \code{window} object records size, unit and whether zero-fill was used; sele
 
 The numeric boundary is: SQL/Model reads source data, Analytics Engine computes facts, and only then does the narrator receive them. The LLM cannot call models, replace numbers, write transactions or turn \code{null} into a concrete value. A persona changes tone only when consent is enabled. A numeric grounding checker covering every numeric expression remains target design, not a measured result.
 
-\section{Algorithm--test matrix and reproducibility}
-\label{app:algorithm-tests}
-
-The following table points to tests and artifacts rather than copying raw data. ``Checked'' means that the selected test behavior passed; it is not production accuracy.
-
-\begin{longtable}{@{}L{3.2cm}L{2.8cm}L{3.5cm}L{3.8cm}@{}}
-  \caption{Algorithm, boundary-case and evidence matrix}
-  \label{tab:app-algorithm-tests}\\
-  \toprule
-  \textbf{Group} & \textbf{Normal cases} & \textbf{Boundary cases/invariants} & \textbf{Evidence} \\
-  \midrule
-  \endfirsthead
-  \toprule
-  \textbf{Group} & \textbf{Normal cases} & \textbf{Boundary cases/invariants} & \textbf{Evidence} \\
-  \midrule
-  \endhead
-  Matcher & exact name, exact alias and clear typo. & Ambiguous alias, empty input, below threshold, small margin, aliases must use word boundaries. & \code{feedback.test.js}; focused subset and 247-test backend suite pass. \\
-  Correction & exact/fuzzy same-type corrections and nearest few-shot examples. & Conflicting exact labels, missing type, agreement below 0.8, name-only/id+name. & \code{feedback.test.js}; correction JSON/Markdown in \code{log/}. \\
-  Calendar/runway & complete axis, liquid VND wallet and depletion date. & Zero balance, zero burn, USD/investment exclusion, day-31 payday. & \path{analytics-engine.test.js}, \path{analytics-time-series.test.js}, \path{wallet-policy.test.js}. \\
-  Trend/anomaly & increasing series and upper-tail outlier. & Fewer than 3 positive periods, fewer than 4 positive days, constant series, zero IQR or variance. & \path{analytics-engine.test.js}, \path{analytics-time-series.test.js}. \\
-  Recurring & cadence; strong pair. & Amount variation above 15\%, gap CV above 0.12, stale candidate, fewer than 4 periods or undefined Pearson. & \path{subscription-miner.test.js}, \path{analytics-engine.test.js}. \\
-  Budget & category average, hybrid and 50--30--20. & Inactive month remains in denominator, missing income, rate sum above 100\%, rounded cap overflow. & \path{budget-recommender.test.js}, \path{budget-forecast.test.js}. \\
-  Goal & saving contribution, debt amortization and what-if. & Completed goal, zero contribution, end-of-month clamp, negative amortization, zero payment, horizon exceeded. & \path{goal-planner.test.js}, \path{goal-service.test.js}, \path{goal-validation.test.js}. \\
-  Facts contract & complete metadata and \code{ok} status. & Component failure preserves contract, \code{no_signal}, no error-message leak, mismatched cache context. & \path{analytics-engine.test.js}; contract version 1.0. \\
-  \bottomrule
-\end{longtable}
-
-The classification and correction runners write structured records under \code{log/}; current-snapshot reruns are described in Chapter~\ref{subsec:results}. OCR/STT accuracy, complete numeric grounding, p95, UAT and live Redis-worker execution remain targets or unmeasured; they cannot be inferred from pure unit tests.
-
 \chapter{Reproduction Commands}
 
-Run each command from the named component directory. Record commit, Node version, provider configuration and PostgreSQL/Redis state without storing secrets in artifacts.
+Run the two automated test commands from the backend directory with Redis/jobs disabled and the local parser selected. Record the commit, Node version and run time without storing secrets in artifacts.
 
 \begin{verbatim}
 cd demo/backend
-export REDIS_ENABLED=false JOBS_ENABLED=false
-node --test tests/analytics-engine.test.js
-node --test tests/analytics-time-series.test.js
-node --test tests/property-invariants.test.js
-node --test tests/media-provider.test.js
+export REDIS_ENABLED=false JOBS_ENABLED=false AI_PROVIDER=local
 npm test
-node --experimental-test-coverage --test tests/*.test.js
 npm run test:ai
-npm run smoke:full
-node --test tests/experiment-metrics.test.js
-node tests/experiments/classification-benchmark.js --out ../../log
-node tests/experiments/feedback-before-after.js --out ../../log
-
-cd ../frontend
-npm run ui:smoke
-npx expo export --platform web --output-dir /tmp/perfin-web
 \end{verbatim}
 
-The four focused regression commands above are run with Redis and jobs disabled. Freeze the commit and CSV before running the full suite, API/DB smoke, parser benchmark, Gemini ablation or correction replay. The Gemini rerun requires provider access/quota; media accuracy requires the redacted fixture manifest. Integration tests need a separate test database and cleanup after each group.
+Current results are summarized in Section~\ref{sec:testing}. These commands do not invoke live PostgreSQL/Redis, Gemini, OCR or STT and therefore provide no evidence for those services.
 
 \chapter{Diagram Sources}
 
-The report keeps 14 editable Draw.io sources and one overall use case. Every diagram label is English so the Vietnamese and English reports share the same set. Sources are in \path{latex/figures/drawio/}; PDF/PNG/SVG exports are in \path{latex/figures/rendered/}.
+The report keeps 14 editable Draw.io sources and one overall use case. Every diagram label is English so the Vietnamese and English reports share the same set. Editable sources and manually exported PNG files are stored together in \path{latex/figures/drawio/}.
 
 \begin{longtable}{@{}C{1.0cm}L{5.2cm}L{6.8cm}@{}}
   \toprule

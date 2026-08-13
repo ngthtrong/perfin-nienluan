@@ -1,8 +1,12 @@
+// Vai trò: Quét định kỳ các khoản chi có dấu hiệu subscription mới.
+// Luồng chính: lấy facts, tạo fingerprint chống lặp và lưu thông báo khi có tín hiệu.
+
 const { subscriptionFingerprint, subscriptionScanMessage } = require('../messages');
 const { resolveTargetUserIds } = require('../userScope');
 const { persistInternalMessage } = require('../internalMessage');
 const { decorateProactiveMessage } = require('../persona');
 
+// Trả handler tạo message khi fingerprint subscription mới chưa từng được gửi.
 function createSubscriptionScanHandler(deps = {}) {
   const analytics = deps.analytics || require('../../analytics');
   const persist = deps.persistInternalMessage || persistInternalMessage;

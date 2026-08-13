@@ -1,3 +1,6 @@
+// Vai trò: Khai báo stack điều hướng cho các công cụ nằm trong tab “Khác”.
+// Luồng chính: ánh xạ route tới screen và áp dụng header theo theme hiện tại.
+
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useTheme } from '../theme/ThemeContext';
 import MoreScreen from '../screens/MoreScreen';
@@ -11,6 +14,7 @@ import CategoryScreen from '../screens/CategoryScreen';
 
 const Stack = createNativeStackNavigator();
 
+// Tạo native stack cho các màn hình công cụ và cấu hình header theo theme.
 export default function MoreStack() {
   const { theme } = useTheme();
   const c = theme.colors;
@@ -20,7 +24,7 @@ export default function MoreStack() {
       screenOptions={{
         headerStyle: { backgroundColor: c.bg },
         headerTintColor: c.text,
-        headerTitleStyle: { fontWeight: '800' },
+        headerTitleStyle: { fontWeight: '700' },
         headerShadowVisible: false,
         contentStyle: { backgroundColor: c.bg },
       }}

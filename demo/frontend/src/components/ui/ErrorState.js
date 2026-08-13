@@ -1,3 +1,6 @@
+// Vai trò: Hiển thị lỗi tải dữ liệu theo một mẫu thống nhất có thể thử lại.
+// Luồng chính: trình bày icon/nội dung và render retry action khi có handler.
+
 import { View, Text } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '../../theme/ThemeContext';

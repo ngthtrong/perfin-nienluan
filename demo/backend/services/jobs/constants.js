@@ -1,3 +1,6 @@
+// Vai trò: Định nghĩa tên queue, job và scheduler dùng thống nhất trong worker.
+// Luồng chính: đóng băng các identifier để producer, scheduler và processor không lệch contract.
+
 const QUEUE_NAME = process.env.JOBS_QUEUE_NAME || 'perfin-proactive';
 
 const JOB_NAMES = Object.freeze({

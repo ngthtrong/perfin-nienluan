@@ -1,3 +1,6 @@
+// Vai trò: Lưu thông báo nội bộ do worker tạo vào lịch sử chat một cách idempotent.
+// Luồng chính: làm sạch metadata, claim khóa dedupe rồi ghi message hoặc bỏ qua bản trùng.
+
 const { query } = require('../../config/database');
 
 function safeMetadata(metadata) {
@@ -5,6 +8,7 @@ function safeMetadata(metadata) {
   return JSON.parse(JSON.stringify(metadata));
 }
 
+// Claim khóa idempotency trước khi insert để retry job không tạo message trùng.
 async function persistInternalMessage({
   userId,
   content,

@@ -1,3 +1,7 @@
+// Vai trò: Là giao diện nhập liệu tự nhiên qua text, ảnh và giọng nói của PERFIN.
+// Luồng chính: gửi input, hiển thị clarification/preview và gọi confirm/cancel trước khi ghi dữ liệu.
+// Screen giữ trạng thái trình bày; backend vẫn chịu trách nhiệm validation và side effect.
+
 import { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, FlatList,
@@ -21,7 +25,11 @@ import { AppHeader } from '../components/ui';
 
 const FALLBACK_AI_CONFIG = {
   models: {
-    gemini: { status: 'unavailable', selected: 'gemini-3.1-flash-lite', models: ['gemini-3.1-flash-lite'] },
+    gemini: {
+      status: 'unavailable',
+      selected: 'gemini-3.1-flash-lite',
+      models: ['gemini-3.5-flash-lite', 'gemini-3.1-flash-lite'],
+    },
     local: { status: 'available', selected: 'local', models: ['local'] },
   },
   status: {
@@ -104,6 +112,7 @@ function RecordingPulse({ styles, color }) {
   );
 }
 
+// Điều phối composer, lịch sử và các card pending của toàn bộ trải nghiệm chat.
 export default function ChatScreen() {
   const { theme } = useTheme();
   const styles = useMemo(() => createStyles(theme), [theme]);
@@ -168,7 +177,7 @@ export default function ChatScreen() {
       id: 'welcome',
       role: 'assistant',
       type: 'text',
-      text: 'Xin chào! Mình là PERFIN 👋\nHãy nhắn khoản thu chi như "ăn phở 50k" hay chụp hóa đơn để mình ghi nhận nhé!',
+      text: 'Xin chào! Mình là PERFIN.\nHãy nhắn khoản thu chi như "ăn phở 50k" hay chụp hóa đơn để mình ghi nhận nhé!',
     }]);
     setHistoryLoading(false);
   }
@@ -219,6 +228,7 @@ export default function ChatScreen() {
     }
   }
 
+  // Gửi text tới backend và chèn response có cấu trúc vào đúng luồng hội thoại.
   async function send(textOverride, { pushUser = true } = {}) {
     const text = (textOverride || input).trim();
     if (!text || (loading && !textOverride)) return;
@@ -236,6 +246,7 @@ export default function ChatScreen() {
     }
   }
 
+  // Thu audio cục bộ; khi dừng mới upload để backend tạo transcript có thể kiểm tra.
   async function startRecording() {
     if (loading || isRecording) return;
     try {
@@ -320,12 +331,13 @@ export default function ChatScreen() {
     }
   }
 
+  // Upload ảnh cùng context, sau đó chờ bước chọn cách ghi hóa đơn.
   async function sendImage(imageDraft, context = '') {
     if (!imageDraft || imageLoading || loading) return;
     let imageMessageId = null;
     let imageAnalyzed = false;
     const cleanContext = String(context || '').trim();
-    const fallbackCaption = imageDraft.useCamera ? '📸 Ảnh hóa đơn đã chụp' : '🖼️ Ảnh hóa đơn đã chọn';
+    const fallbackCaption = imageDraft.useCamera ? 'Ảnh hóa đơn đã chụp' : 'Ảnh hóa đơn đã chọn';
     setImageLoading(true);
     try {
       imageMessageId = push({
@@ -386,6 +398,7 @@ export default function ChatScreen() {
     await send();
   }
 
+  // Xác nhận đúng pending ID gắn với message để tránh thao tác nhầm preview cũ.
   async function confirm(messageId, pendingId) {
     if (pendingActionId) return;
     setPendingActionId(messageId);
@@ -452,6 +465,7 @@ export default function ChatScreen() {
     }
   }
 
+  // Chuyển lựa chọn OCR thành preview giao dịch, chưa commit sổ cái ở bước này.
   async function confirmReceipt(messageId, text, mode, context = '') {
     if (pendingActionId) return;
     setPendingActionId(messageId);
@@ -549,7 +563,6 @@ export default function ChatScreen() {
       return (
         <View style={styles.systemMsgWrap}>
           <View style={styles.systemMsg}>
-            <AppIcon name="info-outline" size={12} color={c.textMuted} />
             <Text style={styles.systemMsgText}>{item.text}</Text>
           </View>
         </View>
@@ -558,11 +571,6 @@ export default function ChatScreen() {
 
     return (
       <View style={[styles.msgRow, isUser ? styles.msgRowUser : styles.msgRowAI]}>
-        {!isUser && (
-          <View style={styles.aiAvatar}>
-            <AppIcon name="auto-awesome" size={12} color={c.onBrand} />
-          </View>
-        )}
         <View style={[
           styles.bubble,
           isUser ? styles.userBubble : styles.aiBubble,
@@ -584,9 +592,17 @@ export default function ChatScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <AppHeader
+        title="Chat"
         subtitle="Trò chuyện & nhập liệu"
         right={
-          <TouchableOpacity style={styles.aiPill} onPress={() => setShowAiPanel((v) => !v)} activeOpacity={0.8}>
+          <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityLabel={`Mô hình ${PROVIDER_META[selectedProvider]?.label}`}
+            accessibilityState={{ expanded: showAiPanel }}
+            style={styles.aiPill}
+            onPress={() => setShowAiPanel((v) => !v)}
+            activeOpacity={0.7}
+          >
             <View style={[styles.providerDot, { backgroundColor: c.income }]} />
             <Text style={styles.aiPillText} numberOfLines={1}>{PROVIDER_META[selectedProvider]?.label}</Text>
             <AppIcon name={showAiPanel ? 'keyboard-arrow-up' : 'keyboard-arrow-down'} size={16} color={c.textMuted} />
@@ -606,6 +622,8 @@ export default function ChatScreen() {
                 return (
                   <TouchableOpacity
                     key={provider}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: active, disabled: disabled || aiLoading }}
                     disabled={disabled || aiLoading}
                     style={[styles.providerChip, active && styles.providerChipActive, (disabled) && styles.disabled]}
                     onPress={() => selectAI(provider)}
@@ -622,6 +640,8 @@ export default function ChatScreen() {
                 {currentModels.map((model) => (
                   <TouchableOpacity
                     key={model}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: selectedModel === model, disabled: aiLoading || selectedProvider === 'local' }}
                     disabled={aiLoading || selectedProvider === 'local'}
                     style={[styles.modelChip, selectedModel === model && styles.modelChipActive]}
                     onPress={() => selectAI(selectedProvider, model)}
@@ -694,13 +714,22 @@ export default function ChatScreen() {
           {showImageOptions && !pendingImage && !isRecording && (
             <View style={styles.imageOptions}>
               <TouchableOpacity
+                accessibilityLabel="Ghi âm giao dịch"
+                accessibilityRole="button"
+                style={styles.imageOption}
+                onPress={() => { setShowImageOptions(false); startRecording(); }}
+              >
+                <AppIcon name="mic" size={18} color={c.brand} />
+                <Text style={styles.imageOptionText}>Ghi âm</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
                 accessibilityLabel="Chụp ảnh hóa đơn"
                 accessibilityRole="button"
                 style={styles.imageOption}
                 onPress={() => pickImage(true)}
               >
                 <AppIcon name="photo-camera" size={18} color={c.brand} />
-                <Text style={styles.imageOptionText}>Chụp ảnh</Text>
+                <Text style={styles.imageOptionText}>Camera</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 accessibilityLabel="Chọn ảnh hóa đơn từ thư viện"
@@ -709,21 +738,22 @@ export default function ChatScreen() {
                 onPress={() => pickImage(false)}
               >
                 <AppIcon name="image" size={18} color={c.brand} />
-                <Text style={styles.imageOptionText}>Chọn từ thư viện</Text>
+                <Text style={styles.imageOptionText}>Thư viện</Text>
               </TouchableOpacity>
             </View>
           )}
 
           <View style={styles.inputRow}>
             <TouchableOpacity
-              style={[styles.micBtn, isRecording && styles.micBtnActive]}
-              onPress={isRecording ? stopRecording : startRecording}
+              style={[styles.iconBtn, (showImageOptions || isRecording) && styles.iconBtnActive, isRecording && styles.stopBtn]}
+              onPress={isRecording ? stopRecording : () => setShowImageOptions((visible) => !visible)}
               disabled={(isLoadingAny || pendingImage) && !isRecording}
               activeOpacity={0.75}
               accessibilityRole="button"
-              accessibilityLabel={isRecording ? 'Dừng ghi âm' : 'Ghi âm giao dịch'}
+              accessibilityLabel={isRecording ? 'Dừng ghi âm' : 'Thêm cách nhập'}
+              accessibilityState={{ expanded: showImageOptions, disabled: (isLoadingAny || Boolean(pendingImage)) && !isRecording }}
             >
-              <AppIcon name={isRecording ? 'stop' : 'mic'} size={20} color={isRecording ? c.onBrand : c.brand} />
+              <AppIcon name={isRecording ? 'stop' : 'add'} size={21} color={isRecording ? c.onBrand : c.textSecondary} />
             </TouchableOpacity>
 
             <TextInput
@@ -736,21 +766,9 @@ export default function ChatScreen() {
               onSubmitEditing={submitComposer}
               returnKeyType="send"
               editable={!isLoadingAny}
+              accessibilityLabel="Nội dung giao dịch"
               multiline
             />
-
-            {!isRecording && !pendingImage && (
-              <TouchableOpacity
-                style={[styles.iconBtn, showImageOptions && styles.iconBtnActive]}
-                onPress={() => setShowImageOptions((visible) => !visible)}
-                disabled={isLoadingAny}
-                accessibilityRole="button"
-                accessibilityLabel="Thêm ảnh hóa đơn"
-                accessibilityState={{ expanded: showImageOptions }}
-              >
-                <AppIcon name="add-photo-alternate" size={20} color={showImageOptions ? c.brand : c.textSecondary} />
-              </TouchableOpacity>
-            )}
 
             {!isRecording && (input.trim().length > 0 || pendingImage) && (
               <TouchableOpacity
@@ -759,6 +777,7 @@ export default function ChatScreen() {
                 disabled={isLoadingAny}
                 accessibilityRole="button"
                 accessibilityLabel="Gửi tin nhắn"
+                accessibilityState={{ disabled: isLoadingAny }}
               >
                 <AppIcon name="send" size={18} color={c.onBrand} />
               </TouchableOpacity>
@@ -775,11 +794,11 @@ const createStyles = (t) => StyleSheet.create({
 
   aiPill: {
     flexDirection: 'row', alignItems: 'center', gap: 6,
-    backgroundColor: t.colors.surfaceAlt, paddingHorizontal: 10, paddingVertical: 6, borderRadius: t.radius.pill,
-    borderWidth: 1, borderColor: t.colors.border, maxWidth: 130,
+    minHeight: 44, backgroundColor: 'transparent', paddingHorizontal: 8, borderRadius: t.radius.sm,
+    maxWidth: 130,
   },
   providerDot: { width: 7, height: 7, borderRadius: 3.5 },
-  aiPillText: { fontSize: 12, color: t.colors.textSecondary, fontWeight: '700' },
+  aiPillText: { fontSize: 12, color: t.colors.textSecondary, fontWeight: '600' },
 
   aiPanel: {
     width: '100%', maxWidth: 720, alignSelf: 'center',
@@ -789,7 +808,7 @@ const createStyles = (t) => StyleSheet.create({
   providerRow: { flexDirection: 'row', gap: 8, paddingTop: 10 },
   providerChip: {
     flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5,
-    paddingVertical: 8, borderRadius: t.radius.sm, backgroundColor: t.colors.surfaceAlt,
+    minHeight: 44, paddingVertical: 8, borderRadius: t.radius.sm, backgroundColor: t.colors.surfaceAlt,
     borderWidth: 1.5, borderColor: t.colors.border,
   },
   providerChipActive: { borderColor: t.colors.brand, backgroundColor: t.colors.brandSoft },
@@ -799,12 +818,12 @@ const createStyles = (t) => StyleSheet.create({
   disabled: { opacity: 0.4 },
   modelRow: { paddingTop: 8, gap: 6 },
   modelChip: {
-    paddingHorizontal: 12, paddingVertical: 6, borderRadius: t.radius.pill,
+    minHeight: 44, justifyContent: 'center', paddingHorizontal: 12, paddingVertical: 6, borderRadius: t.radius.pill,
     backgroundColor: t.colors.surfaceAlt, borderWidth: 1, borderColor: t.colors.border,
   },
-  modelChipActive: { backgroundColor: t.colors.brand, borderColor: t.colors.brand },
+  modelChipActive: { backgroundColor: t.colors.brandSoft, borderColor: t.colors.brand },
   modelChipText: { fontSize: 12, color: t.colors.textMuted },
-  modelChipTextActive: { color: t.colors.onBrand, fontWeight: '700' },
+  modelChipTextActive: { color: t.colors.brandText, fontWeight: '600' },
 
   historyLoading: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 10 },
   historyLoadingText: { color: t.colors.textMuted, fontSize: 14 },
@@ -813,19 +832,15 @@ const createStyles = (t) => StyleSheet.create({
   msgRow: { flexDirection: 'row', alignItems: 'flex-end', marginBottom: 12, gap: 8 },
   msgRowUser: { justifyContent: 'flex-end' },
   msgRowAI: { justifyContent: 'flex-start' },
-  aiAvatar: {
-    width: 28, height: 28, borderRadius: 14, backgroundColor: t.colors.brand,
-    alignItems: 'center', justifyContent: 'center', marginBottom: 2, ...t.shadows.sm,
-  },
   bubble: { maxWidth: '78%', paddingVertical: 10, paddingHorizontal: 14, borderRadius: 18 },
   imageBubble: { width: '78%', maxWidth: 280, padding: 4, overflow: 'hidden' },
-  userBubble: { backgroundColor: t.colors.chatUserBubble, borderBottomRightRadius: 4, ...t.shadows.sm },
+  userBubble: { backgroundColor: t.colors.chatUserBubble, borderBottomRightRadius: 4 },
   aiBubble: {
     backgroundColor: t.colors.chatAiBubble, borderBottomLeftRadius: 4,
-    borderWidth: 1, borderColor: t.colors.border, ...t.shadows.sm,
+    borderWidth: 1, borderColor: t.colors.border,
   },
-  userText: { color: '#fff', fontSize: 15, lineHeight: 21 },
-  aiText: { color: t.colors.text, fontSize: 15, lineHeight: 21 },
+  userText: { color: '#fff', fontSize: 16, lineHeight: 24 },
+  aiText: { color: t.colors.text, fontSize: 16, lineHeight: 24 },
 
   systemMsgWrap: { alignItems: 'center', marginBottom: 10 },
   systemMsg: {
@@ -839,7 +854,7 @@ const createStyles = (t) => StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start', gap: 5,
     backgroundColor: t.colors.surface, paddingVertical: 12, paddingHorizontal: 16,
     borderRadius: 18, borderBottomLeftRadius: 4, borderWidth: 1, borderColor: t.colors.border,
-    marginLeft: 36, marginBottom: 12, ...t.shadows.sm,
+    marginBottom: 12,
   },
 
   recordingOverlay: {
@@ -849,9 +864,9 @@ const createStyles = (t) => StyleSheet.create({
   pulseBg: { position: 'absolute', width: 64, height: 64, borderRadius: 32, backgroundColor: t.colors.expense, opacity: 0.15 },
   pulseIcon: {
     width: 56, height: 56, borderRadius: 28, backgroundColor: t.colors.expense,
-    alignItems: 'center', justifyContent: 'center', marginBottom: 10, ...t.shadows.md,
+    alignItems: 'center', justifyContent: 'center', marginBottom: 10,
   },
-  recordingLabel: { fontSize: 14, fontWeight: '800' },
+  recordingLabel: { fontSize: 14, fontWeight: '700' },
   recordingHint: { fontSize: 12, color: t.colors.textMuted, marginTop: 2 },
 
   imageBanner: {
@@ -863,7 +878,7 @@ const createStyles = (t) => StyleSheet.create({
 
   inputArea: {
     backgroundColor: t.colors.surface, borderTopWidth: 1, borderTopColor: t.colors.border,
-    paddingHorizontal: 12, paddingVertical: 10, ...t.shadows.sm,
+    paddingHorizontal: 12, paddingVertical: 10,
   },
   attachmentDraft: {
     width: '100%', maxWidth: 720, alignSelf: 'center', flexDirection: 'row', alignItems: 'center', gap: 10,
@@ -872,9 +887,9 @@ const createStyles = (t) => StyleSheet.create({
   },
   attachmentThumb: { width: 56, height: 56, borderRadius: t.radius.sm, backgroundColor: t.colors.bg },
   attachmentCopy: { flex: 1, minWidth: 0 },
-  attachmentTitle: { color: t.colors.text, fontSize: 13, fontWeight: '800' },
-  attachmentHint: { color: t.colors.textMuted, fontSize: 11, lineHeight: 15, marginTop: 2 },
-  attachmentMeta: { color: t.colors.textMuted, fontSize: 9, fontWeight: '600', marginTop: 3 },
+  attachmentTitle: { color: t.colors.text, fontSize: 13, fontWeight: '700' },
+  attachmentHint: { color: t.colors.textMuted, fontSize: 12, lineHeight: 18, marginTop: 2 },
+  attachmentMeta: { color: t.colors.textMuted, fontSize: 12, fontWeight: '500', marginTop: 3 },
   removeAttachment: {
     width: 36, height: 36, alignItems: 'center', justifyContent: 'center',
     borderRadius: 18, backgroundColor: t.colors.surface,
@@ -884,19 +899,14 @@ const createStyles = (t) => StyleSheet.create({
     paddingBottom: 8,
   },
   imageOption: {
-    flex: 1, minHeight: 40, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7,
+    flex: 1, minHeight: 44, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7,
     borderRadius: t.radius.md, borderWidth: 1, borderColor: t.colors.border, backgroundColor: t.colors.surfaceAlt,
   },
   imageOptionText: { color: t.colors.textSecondary, fontSize: 12, fontWeight: '700' },
   inputRow: { width: '100%', maxWidth: 720, alignSelf: 'center', flexDirection: 'row', alignItems: 'flex-end', gap: 8 },
-  micBtn: {
-    width: 44, height: 44, borderRadius: 22, backgroundColor: t.colors.brandSoft,
-    alignItems: 'center', justifyContent: 'center', borderWidth: 1.5, borderColor: t.colors.brand,
-  },
-  micBtnActive: { backgroundColor: t.colors.expense, borderColor: t.colors.expense, ...t.shadows.md },
   input: {
     flex: 1, minHeight: 44, maxHeight: 100, backgroundColor: t.colors.surfaceAlt,
-    paddingHorizontal: 14, paddingVertical: 10, borderRadius: 22, fontSize: 15, color: t.colors.text,
+    paddingHorizontal: 14, paddingVertical: 10, borderRadius: 22, fontSize: 16, color: t.colors.text,
     borderWidth: 1.5, borderColor: t.colors.border,
   },
   inputHidden: { display: 'none' },
@@ -905,8 +915,9 @@ const createStyles = (t) => StyleSheet.create({
     alignItems: 'center', justifyContent: 'center', borderWidth: 1.5, borderColor: t.colors.border,
   },
   iconBtnActive: { borderColor: t.colors.brand, backgroundColor: t.colors.brandSoft },
+  stopBtn: { borderColor: t.colors.expense, backgroundColor: t.colors.expense },
   sendBtn: {
     width: 44, height: 44, borderRadius: 22, backgroundColor: t.colors.brand,
-    alignItems: 'center', justifyContent: 'center', ...t.shadows.sm,
+    alignItems: 'center', justifyContent: 'center',
   },
 });

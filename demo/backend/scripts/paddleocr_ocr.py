@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# Vai trò: Chạy PaddleOCR cục bộ để trích văn bản từ ảnh hóa đơn.
+# Luồng chính: tiền xử lý ảnh, thử các cấu hình OCR và in đúng một JSON result cho Node.js.
 
 import json
 import os
@@ -41,6 +43,7 @@ def collect_text(value, texts):
 
 # Preprocess the receipt image to improve OCR accuracy: convert to grayscale, upscale small
 # images, and boost contrast. Returns a path to the processed image (or the original on failure).
+# Làm sạch ảnh đầu vào để chữ hóa đơn nhỏ và xoay theo EXIF dễ nhận dạng hơn.
 def preprocess_image(image_path):
     try:
         from PIL import Image, ImageOps, ImageEnhance

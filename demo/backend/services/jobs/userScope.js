@@ -1,3 +1,6 @@
+// Vai trò: Xác định tập người dùng và ngày nhận lương mà một proactive job được phép xử lý.
+// Luồng chính: chuẩn hóa ID từ payload hoặc DB và fallback về cấu hình hồ sơ hiện tại.
+
 const DEFAULT_USER = 'default_user';
 
 function normalizeUserIds(values) {

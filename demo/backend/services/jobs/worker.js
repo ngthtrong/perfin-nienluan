@@ -1,3 +1,6 @@
+// Vai trò: Khởi động BullMQ worker, processor và các scheduler chủ động.
+// Luồng chính: kiểm tra cấu hình/Redis, đồng bộ lịch, tạo worker và trả hàm đóng tài nguyên.
+
 const { Worker } = require('bullmq');
 const { getClient } = require('../store/redis.client');
 const { QUEUE_NAME } = require('./constants');
@@ -14,6 +17,7 @@ function withTimeout(promise, timeoutMs, label) {
   return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
 }
 
+// Dựng toàn bộ worker runtime hoặc trả trạng thái unavailable khi jobs/Redis chưa sẵn sàng.
 async function startJobWorker({ env = process.env, logger = console, handlers = null } = {}) {
   if (!booleanFromEnv(env.JOBS_ENABLED, true)) {
     return { available: false, reason: 'jobs_disabled', schedules: [], close: async () => {} };

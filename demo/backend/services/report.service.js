@@ -1,9 +1,13 @@
+// Vai trò: Tổng hợp số liệu báo cáo tháng, breakdown danh mục và xu hướng năm.
+// Luồng chính: gọi model phân tích đã scope và trả facts phẳng để route/frontend trình bày.
+
 const { query } = require('../config/database');
 const TransactionModel = require('../models/transaction.model');
 
 const DEFAULT_USER = 'default_user';
 
 const ReportService = {
+  // Trả các tổng thu, chi và net của một tháng từ dữ liệu giao dịch đã scope.
   async getMonthlySummary(userId = DEFAULT_USER, month, year) {
     return TransactionModel.getMonthlySummary(userId, month, year);
   },
@@ -34,6 +38,7 @@ const ReportService = {
     }));
   },
 
+  // Tổng hợp chuỗi tháng trong năm và zero-fill kỳ thiếu để biểu đồ không lệch trục.
   async getMonthlyTrend(userId = DEFAULT_USER, year) {
     const y = Number(year || new Date().getFullYear());
     const result = await query(

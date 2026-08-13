@@ -1,9 +1,6 @@
-// Unified key/value store with TTL. Backed by Redis when available, otherwise an
-// in-memory Map with lazy expiry. All values are JSON-serialized. TTL is in seconds.
-//
-// This is the single abstraction the rest of the app uses for ephemeral state
-// (pending transactions, conversation/clarification context) and caching
-// (categories, wallets, LLM results). Swapping infra never touches call sites.
+// Vai trò: Cung cấp key/value store có TTL thống nhất cho state tạm và cache.
+// Luồng chính: ưu tiên Redis, fallback về Map in-memory và giữ cùng contract bất đồng bộ.
+// Pending/clarification dùng thao tác nguyên tử để tránh xác nhận trùng.
 
 const { getClient } = require('./redis.client');
 

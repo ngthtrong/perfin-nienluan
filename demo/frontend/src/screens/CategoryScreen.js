@@ -1,3 +1,6 @@
+// Vai trò: Quản lý danh mục và quy trình xem trước retag giao dịch liên quan.
+// Luồng chính: tải khi screen focus, CRUD danh mục và chỉ áp dụng plan sau xác nhận.
+
 import { useCallback, useMemo, useState } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, RefreshControl, StyleSheet,
@@ -19,8 +22,9 @@ const TYPE_OPTIONS = [
   { key: 'income', label: 'Thu nhập' },
 ];
 
-const EMPTY_CREATE_FORM = { name: '', icon: '📁', type: 'expense' };
+const EMPTY_CREATE_FORM = { name: '', icon: 'category', type: 'expense' };
 
+// Quản lý danh mục và giữ bước preview riêng cho thao tác retag hàng loạt.
 export default function CategoryScreen({ navigation }) {
   const { theme } = useTheme();
   const styles = useMemo(() => createStyles(theme), [theme]);
@@ -71,7 +75,7 @@ export default function CategoryScreen({ navigation }) {
       await api.createCategory({
         name,
         type: createForm.type,
-        icon: createForm.icon.trim() || '📁',
+        icon: 'category',
       });
       setCreateForm(EMPTY_CREATE_FORM);
       setShowCreate(false);
@@ -190,7 +194,6 @@ export default function CategoryScreen({ navigation }) {
       contentContainerStyle={{ paddingBottom: 40 }}
     >
       <View style={styles.infoCard} accessibilityRole="summary">
-        <View style={styles.infoIcon}><AppIcon name="category" size={20} color={c.brand} /></View>
         <View style={{ flex: 1 }}>
           <Text style={styles.infoTitle}>Danh mục giúp báo cáo chính xác hơn</Text>
           <Text style={styles.infoText}>
@@ -210,28 +213,17 @@ export default function CategoryScreen({ navigation }) {
       {showCreate && (
         <View style={styles.createCard}>
           <Text style={styles.sectionTitle}>Danh mục mới</Text>
-          <View style={styles.formRow}>
-            <TextInput
-              accessibilityLabel="Biểu tượng danh mục"
-              style={[styles.input, styles.iconInput]}
-              value={createForm.icon}
-              onChangeText={(icon) => setCreateForm((form) => ({ ...form, icon }))}
-              maxLength={8}
-              placeholder="📁"
-              placeholderTextColor={c.textMuted}
-            />
-            <TextInput
-              accessibilityLabel="Tên danh mục mới"
-              style={[styles.input, { flex: 1 }]}
-              value={createForm.name}
-              onChangeText={(name) => setCreateForm((form) => ({ ...form, name }))}
-              placeholder="Ví dụ: Thú cưng"
-              placeholderTextColor={c.textMuted}
-              maxLength={50}
-              returnKeyType="done"
-              onSubmitEditing={createCategory}
-            />
-          </View>
+          <TextInput
+            accessibilityLabel="Tên danh mục mới"
+            style={styles.input}
+            value={createForm.name}
+            onChangeText={(name) => setCreateForm((form) => ({ ...form, name }))}
+            placeholder="Ví dụ: Thú cưng"
+            placeholderTextColor={c.textMuted}
+            maxLength={50}
+            returnKeyType="done"
+            onSubmitEditing={createCategory}
+          />
           <View style={styles.chipRow}>
             {TYPE_OPTIONS.slice(1).map((option) => (
               <Chip
@@ -266,8 +258,8 @@ export default function CategoryScreen({ navigation }) {
         return (
           <View key={category.id} style={styles.categoryCard}>
             <View style={styles.categoryHeader}>
-              <View style={[styles.categoryIcon, { backgroundColor: category.type === 'income' ? c.incomeSoft : c.expenseSoft }]}>
-                <CategoryIcon icon={category.icon} name={category.name} type={category.type} size={21} />
+              <View style={styles.categoryIcon}>
+                <CategoryIcon icon={category.icon} name={category.name} type={category.type} size={20} color={c.textSecondary} />
               </View>
               <View style={{ flex: 1, minWidth: 0 }}>
                 {isEditing ? (
@@ -357,7 +349,7 @@ export default function CategoryScreen({ navigation }) {
       })}
 
       {!visibleCategories.length && (
-        <EmptyState emoji="🏷️" title="Chưa có danh mục" message="Tạo danh mục đầu tiên để phân loại giao dịch." />
+        <EmptyState title="Chưa có danh mục" message="Tạo danh mục đầu tiên để phân loại giao dịch." />
       )}
     </Screen>
   );
@@ -366,12 +358,8 @@ export default function CategoryScreen({ navigation }) {
 const createStyles = (t) => StyleSheet.create({
   infoCard: {
     flexDirection: 'row', alignItems: 'flex-start', gap: 12,
-    backgroundColor: t.colors.brandSoft, borderWidth: 1, borderColor: t.colors.brand,
+    backgroundColor: t.colors.surface, borderLeftWidth: 3, borderLeftColor: t.colors.brand,
     borderRadius: t.radius.lg, padding: 14, marginBottom: 14,
-  },
-  infoIcon: {
-    width: 38, height: 38, borderRadius: 12, backgroundColor: t.colors.surface,
-    alignItems: 'center', justifyContent: 'center',
   },
   infoTitle: { ...t.typo.bodyStrong, color: t.colors.text },
   infoText: { ...t.typo.caption, color: t.colors.textSecondary, marginTop: 3 },
@@ -380,22 +368,20 @@ const createStyles = (t) => StyleSheet.create({
     borderRadius: t.radius.lg, padding: 14, marginBottom: 16, gap: 12,
   },
   sectionTitle: { ...t.typo.subhead, color: t.colors.text },
-  formRow: { flexDirection: 'row', gap: 10 },
   input: {
     borderWidth: 1.5, borderColor: t.colors.border, borderRadius: t.radius.md,
     paddingHorizontal: 12, paddingVertical: 11, fontSize: 15,
     color: t.colors.text, backgroundColor: t.colors.surfaceAlt,
   },
-  iconInput: { width: 64, textAlign: 'center' },
   filterLabel: { ...t.typo.label, color: t.colors.textMuted, marginLeft: 4, marginBottom: 8 },
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 12 },
   resultText: { ...t.typo.caption, color: t.colors.textMuted, marginBottom: 10 },
   categoryCard: {
-    backgroundColor: t.colors.surface, borderWidth: 1, borderColor: t.colors.border,
-    borderRadius: t.radius.lg, padding: 14, marginBottom: 10,
+    backgroundColor: t.colors.surface, borderBottomWidth: 1, borderColor: t.colors.border,
+    padding: 14,
   },
   categoryHeader: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  categoryIcon: { width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+  categoryIcon: { width: 28, height: 44, alignItems: 'flex-start', justifyContent: 'center' },
   categoryName: { ...t.typo.bodyStrong, color: t.colors.text },
   renameInput: {
     borderWidth: 1.5, borderColor: t.colors.brand, borderRadius: t.radius.sm,
@@ -407,12 +393,12 @@ const createStyles = (t) => StyleSheet.create({
   countText: { ...t.typo.label, color: t.colors.textMuted },
   defaultBadge: {
     color: t.colors.textMuted, backgroundColor: t.colors.surfaceAlt, overflow: 'hidden',
-    borderRadius: t.radius.pill, paddingHorizontal: 7, paddingVertical: 3, fontSize: 9, fontWeight: '800',
+    borderRadius: t.radius.pill, paddingHorizontal: 7, paddingVertical: 3, fontSize: 12, fontWeight: '700',
   },
   actionRow: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 8, marginTop: 12 },
   iconButton: {
-    width: 40, height: 40, borderRadius: t.radius.md, backgroundColor: t.colors.brandSoft,
-    alignItems: 'center', justifyContent: 'center',
+    width: 44, height: 44, borderRadius: t.radius.md,
+    alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: t.colors.border,
   },
-  deleteButton: { backgroundColor: t.colors.expenseSoft },
+  deleteButton: { borderColor: t.colors.expense },
 });

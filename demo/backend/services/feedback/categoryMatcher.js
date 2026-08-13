@@ -1,3 +1,6 @@
+// Vai trò: Ghép tên hoặc alias người dùng nhập với danh mục hợp lệ một cách thận trọng.
+// Luồng chính: ưu tiên exact/alias, dùng fuzzy có ngưỡng và trả fallback khi kết quả mơ hồ.
+
 const {
   normalizeForMatch,
   textSimilarity,
@@ -50,6 +53,7 @@ function inferCategoryFromText(text, aliases = {}, fallbackName = 'Khác') {
   };
 }
 
+// Trả match kèm loại bằng chứng hoặc fallback nếu điểm/margin chưa đủ an toàn.
 function findSafeCategoryMatch(input, categories = [], options = {}) {
   const scoped = categories.filter((category) => !options.type || category.type === options.type);
   const fallback = getFallback(scoped, options.fallbackName);
@@ -104,4 +108,3 @@ module.exports = {
   inferCategoryFromText,
   findSafeCategoryMatch,
 };
-

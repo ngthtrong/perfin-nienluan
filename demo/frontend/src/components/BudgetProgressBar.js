@@ -1,3 +1,6 @@
+// Vai trò: Trình bày tiến độ ngân sách bằng thanh màu, phần trăm và số đã chi.
+// Luồng chính: ánh xạ status sang màu semantic rồi giới hạn phần fill hiển thị.
+
 import { View, Text } from 'react-native';
 import { useTheme } from '../theme/ThemeContext';
 import { formatVND } from '../utils/formatters';
@@ -14,7 +17,7 @@ export default function BudgetProgressBar({ percentage = 0, spent = 0, status = 
       <ProgressBar percentage={percentage} color={color} style={{ marginVertical: 4 }} />
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 2 }}>
         <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75} style={{ flex: 1, color: c.textMuted, fontSize: 12, fontWeight: '500' }}>{formatVND(spent)} đã chi</Text>
-        <Text numberOfLines={1} style={{ flexShrink: 0, fontSize: 12, fontWeight: '800', color }}>{Number(percentage).toFixed(1)}%</Text>
+        <Text numberOfLines={1} style={{ flexShrink: 0, fontSize: 12, fontWeight: '700', color }}>{Number(percentage).toFixed(1)}%</Text>
       </View>
     </View>
   );

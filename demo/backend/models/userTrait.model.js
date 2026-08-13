@@ -1,8 +1,12 @@
+// Vai trò: Lưu hồ sơ cá nhân hóa, trait và consent dùng khi tạo lời đáp.
+// Luồng chính: đọc song song profile/trait và chỉ ghi học được khi người dùng cho phép.
+
 const { query } = require('../config/database');
 
 const DEFAULT_USER = 'default_user';
 
 const UserTraitModel = {
+  // Đọc consent và trait song song để dựng profile cá nhân hóa hiện tại.
   async getProfile(userId = DEFAULT_USER) {
     const [user, traits] = await Promise.all([
       query('SELECT personalization_consent FROM users WHERE user_key = $1', [userId]),
@@ -23,6 +27,7 @@ const UserTraitModel = {
     return Boolean(result.rows[0]?.personalization_consent);
   },
 
+  // Upsert một trait trong hồ sơ được chỉ định và giữ nguồn dữ liệu truy vết được.
   async upsert(userId = DEFAULT_USER, traitType, traitValue) {
     const type = String(traitType || '').trim();
     const value = String(traitValue || '').trim();

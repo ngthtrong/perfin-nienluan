@@ -1,3 +1,6 @@
+// Vai trò: Công bố API CRUD, tiến độ, dự báo và đề xuất ngân sách.
+// Luồng chính: validation request, gọi model/service xác định và trả facts cho giao diện.
+
 const express = require('express');
 const BudgetModel = require('../models/budget.model');
 const BudgetRecommendationService = require('../services/budgets');
@@ -7,6 +10,7 @@ const { validateBudget } = require('../middleware/validation.middleware');
 const router = express.Router();
 const userId = 'default_user';
 
+// Lấy đề xuất dựa trên lịch sử; kết quả chỉ là facts, chưa thay đổi hạn mức.
 router.get('/recommendations', async (req, res) => {
   const data = await BudgetRecommendationService.recommend(userId, {
     strategy: req.query.strategy || 'hybrid',
@@ -16,6 +20,7 @@ router.get('/recommendations', async (req, res) => {
   res.json({ success: true, data });
 });
 
+// Áp dụng có chủ đích danh sách đề xuất đã được frontend chọn.
 router.post('/recommendations/apply', async (req, res) => {
   if (req.body.confirmed !== true) {
     return res.status(400).json({ success: false, error: 'Cần confirmed=true trước khi áp dụng ngân sách' });

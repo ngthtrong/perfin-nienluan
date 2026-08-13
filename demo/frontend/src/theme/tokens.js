@@ -1,10 +1,9 @@
-// ─── Design tokens ───────────────────────────────────────────────────────────
-// Modern minimal fintech (Wise / Revolut / Cash App): clean surfaces, one accent,
-// generous whitespace, bold type. Semantic tokens power both light & dark themes.
+// Vai trò: Định nghĩa design token dùng chung và dựng theme sáng/tối cho PERFIN.
+// Luồng chính: gom màu, khoảng cách, bán kính và typography; màu semantic chỉ biểu đạt ý nghĩa tài chính.
 
-const RADIUS = { xs: 6, sm: 10, md: 14, lg: 18, xl: 24, pill: 999 };
+const RADIUS = { xs: 8, sm: 12, md: 16, lg: 20, xl: 20, pill: 999 };
 
-const SPACING = { xs: 4, sm: 8, md: 12, lg: 16, xl: 20, xxl: 28 };
+const SPACING = { xs: 4, sm: 8, md: 12, lg: 16, xl: 24, xxl: 32 };
 
 // Vùng chạm mở rộng cho nút chỉ có icon. Nút 32--38 px cộng thêm hitSlop này
 // đạt ngưỡng chạm 44 px mà không phải nới rộng bố cục.
@@ -12,99 +11,92 @@ const HIT_SLOP = { top: 6, bottom: 6, left: 6, right: 6 };
 
 // Font scale — role → { size, weight, lineHeight }
 const TYPO = {
-  display: { fontSize: 32, fontWeight: '800', lineHeight: 38 },
-  title:   { fontSize: 22, fontWeight: '800', lineHeight: 28 },
-  heading: { fontSize: 18, fontWeight: '800', lineHeight: 24 },
-  subhead: { fontSize: 16, fontWeight: '700', lineHeight: 22 },
-  body:    { fontSize: 15, fontWeight: '500', lineHeight: 21 },
-  bodyStrong: { fontSize: 15, fontWeight: '700', lineHeight: 21 },
-  caption: { fontSize: 13, fontWeight: '600', lineHeight: 18 },
-  label:   { fontSize: 11, fontWeight: '700', lineHeight: 14 },
+  display: { fontSize: 32, fontWeight: '700', lineHeight: 40 },
+  title:   { fontSize: 24, fontWeight: '700', lineHeight: 32 },
+  heading: { fontSize: 18, fontWeight: '700', lineHeight: 26 },
+  subhead: { fontSize: 16, fontWeight: '600', lineHeight: 24 },
+  body:    { fontSize: 16, fontWeight: '400', lineHeight: 24 },
+  bodyStrong: { fontSize: 16, fontWeight: '600', lineHeight: 24 },
+  caption: { fontSize: 14, fontWeight: '400', lineHeight: 20 },
+  label:   { fontSize: 12, fontWeight: '600', lineHeight: 16 },
 };
-
-// Warm, restrained chart palette. Color differentiates data series without
-// turning ordinary surfaces and notifications into decorative color blocks.
-const CATEGORY_COLORS = [
-  '#A84B32', '#C3744F', '#D39A56', '#8B7651',
-  '#B35D62', '#7F675A', '#C88766', '#6E7A5C',
-];
 
 const lightColors = {
   // Backgrounds
-  bg: '#F7F4F1',
+  bg: '#F6F8FB',
   bgElevated: '#FFFFFF',
   surface: '#FFFFFF',
-  surfaceAlt: '#F2EDE9',
-  overlay: 'rgba(35, 27, 23, 0.48)',
+  surfaceAlt: '#EFF3F8',
+  overlay: 'rgba(15, 23, 42, 0.52)',
 
   // Text
-  text: '#261F1B',
-  textSecondary: '#5E514A',
-  textMuted: '#7B6F68',
+  text: '#172033',
+  textSecondary: '#526071',
+  textMuted: '#6B7788',
   onBrand: '#FFFFFF',
 
   // Borders
-  border: '#E7DED8',
-  borderStrong: '#D5C8C0',
+  border: '#DCE3ED',
+  borderStrong: '#C6D0DE',
 
   // Brand accent
-  brand: '#A84B32',
-  brandSoft: '#FBECE6',
-  brandStrong: '#833722',
-  brandText: '#8E3E29',
+  brand: '#1E40AF',
+  brandSoft: '#E8EEFF',
+  brandStrong: '#16358F',
+  brandText: '#1E40AF',
 
   // Semantic
-  income: '#287A55',
-  incomeSoft: '#E3F1E9',
-  expense: '#B33A4A',
-  expenseSoft: '#F8E7E9',
-  warning: '#936015',
-  warningSoft: '#F7EFD9',
-  info: '#8E5945',
-  infoSoft: '#F5EAE5',
+  income: '#16794C',
+  incomeSoft: '#E7F5EE',
+  expense: '#B4233B',
+  expenseSoft: '#FBEAEC',
+  warning: '#8A5A00',
+  warningSoft: '#FFF4D8',
+  info: '#1E40AF',
+  infoSoft: '#E8EEFF',
 
   // Chat
-  chatUserBubble: '#A84B32',
+  chatUserBubble: '#1E40AF',
   chatAiBubble: '#FFFFFF',
 };
 
 const darkColors = {
   // Backgrounds
-  bg: '#151210',
-  bgElevated: '#1C1815',
-  surface: '#211C19',
-  surfaceAlt: '#2B2521',
+  bg: '#0F1520',
+  bgElevated: '#131B28',
+  surface: '#171E2B',
+  surfaceAlt: '#202A39',
   overlay: 'rgba(0, 0, 0, 0.6)',
 
   // Text
-  text: '#F5F0EC',
-  textSecondary: '#C9BCB4',
-  textMuted: '#A89990',
+  text: '#F4F7FB',
+  textSecondary: '#C4CDDA',
+  textMuted: '#9AA7B8',
   onBrand: '#FFFFFF',
 
   // Borders
-  border: '#3A312C',
-  borderStrong: '#50433C',
+  border: '#2D3849',
+  borderStrong: '#435067',
 
   // Brand accent (slightly lighter for dark bg)
-  brand: '#B85B3C',
-  brandSoft: '#3A251E',
-  brandStrong: '#D77B59',
-  brandText: '#F0A080',
+  brand: '#315FC0',
+  brandSoft: '#1B2B4D',
+  brandStrong: '#5C83DB',
+  brandText: '#9AB7FF',
 
   // Semantic
-  income: '#68C394',
-  incomeSoft: '#193126',
-  expense: '#F07C88',
-  expenseSoft: '#391E24',
-  warning: '#E0AE5B',
-  warningSoft: '#352A18',
-  info: '#D89A7E',
-  infoSoft: '#34241E',
+  income: '#5FC795',
+  incomeSoft: '#163628',
+  expense: '#F08A99',
+  expenseSoft: '#3D2029',
+  warning: '#E4B65E',
+  warningSoft: '#3A2E18',
+  info: '#9AB7FF',
+  infoSoft: '#1B2B4D',
 
   // Chat
-  chatUserBubble: '#B85B3C',
-  chatAiBubble: '#211C19',
+  chatUserBubble: '#315FC0',
+  chatAiBubble: '#171E2B',
 };
 
 function makeShadows(dark) {
@@ -117,9 +109,9 @@ function makeShadows(dark) {
     };
   }
   return {
-    sm: { shadowColor: '#3B2B25', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.045, shadowRadius: 6, elevation: 1 },
-    md: { shadowColor: '#3B2B25', shadowOffset: { width: 0, height: 5 }, shadowOpacity: 0.07, shadowRadius: 14, elevation: 3 },
-    lg: { shadowColor: '#3B2B25', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.1, shadowRadius: 26, elevation: 7 },
+    sm: { shadowColor: '#10234D', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 6, elevation: 1 },
+    md: { shadowColor: '#10234D', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.12, shadowRadius: 16, elevation: 4 },
+    lg: { shadowColor: '#10234D', shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.16, shadowRadius: 28, elevation: 8 },
   };
 }
 
@@ -134,4 +126,4 @@ export function buildTheme(dark) {
   };
 }
 
-export { RADIUS, SPACING, TYPO, HIT_SLOP, CATEGORY_COLORS, lightColors, darkColors };
+export { RADIUS, SPACING, TYPO, HIT_SLOP, lightColors, darkColors };

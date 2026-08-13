@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# Vai trò: Chạy PhoWhisper cục bộ để chuyển audio tiếng Việt thành transcript.
+# Luồng chính: đổi audio về WAV mono 16 kHz, chạy pipeline và in JSON result cho Node.js.
 
 import json
 import os
@@ -11,6 +13,7 @@ def print_json(payload):
     print(json.dumps(payload, ensure_ascii=False))
 
 
+# Chuyển mọi định dạng đầu vào về WAV mono 16 kHz mà model nhận ổn định.
 def convert_to_wav(input_path):
     import imageio_ffmpeg
 
@@ -33,6 +36,7 @@ def convert_to_wav(input_path):
     return output.name
 
 
+# Nạp pipeline PhoWhisper, chạy transcription theo chunk và trả text đã chuẩn hóa.
 def transcribe(audio_path):
     import soundfile as sf
     import torch

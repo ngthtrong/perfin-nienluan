@@ -1,3 +1,6 @@
+// Vai trò: Hiển thị ảnh đính kèm trong chat và khôi phục ảnh từ metadata/API khi cần.
+// Luồng chính: tìm URI khả dụng, tải blob có kiểm soát và render loading/error/preview.
+
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Image, StyleSheet, Text, View } from 'react-native';
 import { api } from '../services/api.service';
@@ -205,19 +208,19 @@ const createStyles = (t) => StyleSheet.create({
     alignItems: 'center', justifyContent: 'center', gap: 7,
     backgroundColor: t.colors.surfaceAlt, padding: 16,
   },
-  loadingText: { color: t.colors.textMuted, fontSize: 11, fontWeight: '700' },
+  loadingText: { color: t.colors.textMuted, fontSize: 12, fontWeight: '700' },
   errorIcon: {
     width: 38, height: 38, borderRadius: 12, alignItems: 'center', justifyContent: 'center',
     backgroundColor: t.colors.surface,
   },
-  errorText: { color: t.colors.textMuted, fontSize: 11, lineHeight: 15, fontWeight: '700', textAlign: 'center' },
+  errorText: { color: t.colors.textMuted, fontSize: 12, lineHeight: 15, fontWeight: '700', textAlign: 'center' },
   receiptBadge: {
     position: 'absolute', top: 8, right: 8, flexDirection: 'row', alignItems: 'center', gap: 4,
     paddingHorizontal: 8, paddingVertical: 5, borderRadius: 999, backgroundColor: 'rgba(38, 31, 27, 0.72)',
   },
-  receiptBadgeText: { color: '#fff', fontSize: 10, fontWeight: '800' },
+  receiptBadgeText: { color: '#fff', fontSize: 12, fontWeight: '700' },
   captionRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 6, paddingHorizontal: 8, paddingTop: 8, paddingBottom: 5 },
   caption: { flex: 1, fontSize: 12, lineHeight: 16, fontWeight: '700' },
   statusRow: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 8, paddingBottom: 7 },
-  statusText: { flexShrink: 1, fontSize: 10, lineHeight: 13, fontWeight: '700', opacity: 0.84 },
+  statusText: { flexShrink: 1, fontSize: 12, lineHeight: 13, fontWeight: '700', opacity: 0.84 },
 });

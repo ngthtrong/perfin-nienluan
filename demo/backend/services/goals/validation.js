@@ -1,3 +1,6 @@
+// Vai trò: Chuẩn hóa và xác thực payload mục tiêu cho cả route lẫn chat.
+// Luồng chính: kiểm tra tiền, ngày, loại mục tiêu và mode create/update trước khi lập plan.
+
 const GOAL_TYPES = new Set(['saving', 'purchase', 'debt_payoff']);
 const GOAL_STATUSES = new Set(['active', 'achieved', 'paused', 'cancelled']);
 const MAX_MONEY = 9_999_999_999_999.99; // DECIMAL(15,2)

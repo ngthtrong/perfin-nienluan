@@ -1,3 +1,6 @@
+// Vai trò: Cung cấp ô nhập tiền có định dạng hàng nghìn nhưng giữ giá trị form ổn định.
+// Luồng chính: format text hiển thị, chuyển thay đổi về caller và hỗ trợ số âm khi cho phép.
+
 import { TextInput } from 'react-native';
 import { useTheme } from '../../theme/ThemeContext';
 import { formatMoneyInput } from '../../utils/formatters';

@@ -56,14 +56,7 @@ Nếu chạy trên điện thoại cùng LAN, thay \code{127.0.0.1} bằng IP LA
   \item Nếu kết quả phân loại sai, sửa danh mục của giao dịch. Correction đã xác nhận có thể được truy hồi cho lần nhập sau.
 \end{enumerate}
 
-Nguyên mẫu chưa có đăng nhập và dùng hồ sơ \code{default_user}. Không nhập dữ liệu nhạy cảm hoặc dùng kết quả như tư vấn đầu tư chắc chắn.
-
-\begin{figure}[p]
-  \centering
-  \includegraphics[width=0.55\textwidth,height=0.70\textheight,keepaspectratio]{figures/screenshots/05-goal-plan.png}
-  \caption{Preview biểu mẫu lập mục tiêu trên Expo web mobile (dữ liệu synthetic; chưa lưu kế hoạch).}
-  \label{fig:ui-goal-plan}
-\end{figure}
+Nguyên mẫu chưa có đăng nhập và dùng hồ sơ \code{default_user}. Không nhập dữ liệu nhạy cảm hoặc dùng kết quả như tư vấn đầu tư chắc chắn. Giao diện và preview kế hoạch mục tiêu được minh họa tập trung tại Mục~\ref{subsec:ui-design}.
 
 \input{chapters/\doclang/appendix-fr-supplement}
 
@@ -72,15 +65,15 @@ Nguyên mẫu chưa có đăng nhập và dùng hồ sơ \code{default_user}. Kh
 
 Phụ lục này mở rộng các công thức và quy tắc đã trình bày cô đọng ở Chương~\ref{chap:results}. Mục đích là giúp người đọc kiểm tra đường đi từ dữ liệu đầu vào đến facts hoặc kế hoạch đầu ra; phụ lục không bổ sung một nguồn dữ liệu sự thật thứ hai và không thay đổi hành vi của nguyên mẫu. Các ví dụ dùng số liệu tổng hợp, còn tên hàm, ngưỡng và trạng thái được đối chiếu với mã nguồn hiện tại.
 
-\section{Mô tả bộ dữ liệu kiểm thử}
+\section{Mô tả dữ liệu và fixture}
 \label{app:dataset-description}
 
-Mục này mô tả các nguồn dữ liệu được dùng để kiểm thử và đo benchmark. Dữ liệu chính không phải một tập test độc lập được lấy từ bên ngoài: các thí nghiệm phân loại và correction đều đọc cùng \path{demo/data/dataFinance.csv}, sau đó áp dụng cohort hoặc split khác nhau. Báo cáo chỉ công bố thống kê tổng hợp và checksum; không sao chép các mô tả giao dịch thô vào phụ lục.
+Mục này mô tả dữ liệu dùng để profile/import và các fixture có kiểm soát dùng trong test tự động. CSV giao dịch thuộc một hồ sơ demo, không phải tập đánh giá độc lập; báo cáo chỉ công bố thống kê tổng hợp và checksum, không sao chép mô tả giao dịch thô vào phụ lục.
 
 \subsection{Danh mục nguồn dữ liệu}
 
 \begin{longtable}{@{}L{3.3cm}L{4.2cm}L{7.0cm}@{}}
-  \caption{Các nguồn dữ liệu kiểm thử và vai trò}
+  \caption{Các nguồn dữ liệu, fixture và vai trò}
   \label{tab:app-dataset-sources}\\
   \toprule
   \textbf{Nguồn} & \textbf{Quy mô/phạm vi} & \textbf{Vai trò và trạng thái} \\
@@ -90,12 +83,10 @@ Mục này mô tả các nguồn dữ liệu được dùng để kiểm thử v
   \textbf{Nguồn} & \textbf{Quy mô/phạm vi} & \textbf{Vai trò và trạng thái} \\
   \midrule
   \endhead
-  CSV giao dịch & 5.328 dòng nguồn, 8 cột; ngày 01/01/2022--10/08/2026. & \code{dataFinance.csv} là nguồn import và benchmark hiện tại. Dry-run reject 0 dòng; apply PostgreSQL và benchmark còn chờ. SHA-256 là \code{418a9439...fbaed7}. \\
+  CSV giao dịch & 5.328 dòng nguồn, 8 cột; ngày 01/01/2022--10/08/2026. & \code{dataFinance.csv} là nguồn import và profile dữ liệu. Dry-run reject 0 dòng; SHA-256 là \code{418a9439...fbaed7}. \\
   Mapping category & Crosswalk taxonomy lịch sử sang 17 nhãn type/category của PERFIN. & \code{dataFinance.category-map.json} được kiểm tra theo checksum CSV hiện tại; SHA-256 là \code{8072dc3d...c6b573c}. File tạo gold sau import, không phải nhãn parser. \\
-  Ablation parser--Gemini & Protocol đã khóa; artifact 63 câu lịch sử đã superseded. & Rerun dùng joint label, giữ abstention trong mẫu số và lưu record đầy đủ theo mẫu. \\
-  Correction group split & Protocol đã khóa; artifact evaluation lịch sử đã superseded. & Tách nguyên nhóm type/mô tả chuẩn hóa, replay theo thời gian và công khai candidate limit production là 200. \\
-  Media fixtures & Bộ synthetic công khai còn chờ; hai ảnh hiện tại có PII và không an toàn để phát hành. & \code{media-fixtures.json} chỉ giữ cho smoke riêng tư. Bộ 20 ảnh và 20 audio dự kiến sẽ có text/trường tham chiếu. \\
-  Fixture analytics/unit & Chuỗi tổng hợp hoặc ẩn danh có slope, outlier, cadence và correlation biết trước. & Dùng để kiểm tra công thức, ca biên và invariant của Analytics/Budget/Goal; không đại diện cho benchmark người dùng thật. \\
+  Media fixtures & Hai ảnh và một audio dùng nội bộ; ảnh chứa PII và không an toàn để phát hành. & \code{media-fixtures.json} hỗ trợ kiểm tra luồng nhập và preview, không phải ground truth để công bố độ chính xác OCR/STT. \\
+  Fixture analytics/unit & Chuỗi tổng hợp hoặc ẩn danh có slope, outlier, cadence và correlation biết trước. & Dùng để kiểm tra công thức, ca biên và invariant của Analytics/Budget/Goal; không đại diện cho người dùng thật. \\
   \bottomrule
 \end{longtable}
 
@@ -139,38 +130,17 @@ Importer không tự xóa bản sao: dry-run hiện tại báo 23 nhóm trùng h
     \textbf{Đặc trưng} & \textbf{Giá trị} & \textbf{Diễn giải} \\
     \midrule
     Dòng nguồn / lỗi validation & 5.328 / 0 & Profile dry-run hiện tại; apply database là bước đo riêng. \\
-    Khoảng ngày & 01/01/2022--10/08/2026 & Bao phủ snapshot hiện tại; số theo năm và chiều thu/chi sẽ sinh lại cùng benchmark. \\
-    Tổng tiền & Thu 373.432.659 VND; chi 373.062.659 VND & Dòng tiền ròng trong profile là 370.000 VND; không suy ra classification score từ tổng tiền. \\
+    Khoảng ngày & 01/01/2022--10/08/2026 & Bao phủ snapshot dữ liệu hiện tại. \\
+    Tổng tiền & Thu 373.432.659 VND; chi 373.062.659 VND & Dòng tiền ròng trong profile là 370.000 VND; dùng để đối chiếu importer và báo cáo. \\
     Cờ outlier amount & 615 dòng vượt ngưỡng IQR 91.500 VND & Giữ lại vì có thể là học phí, cho vay hoặc khoản gia đình hợp lệ. \\
     Bản sao exact & 23 nhóm / 24 dòng dư & Giữ nguyên ở chế độ mặc định để bảo toàn nguồn; không gọi đây là lỗi dữ liệu nếu chưa có định danh giao dịch. \\
     \bottomrule
   \end{tabularx}
 \end{table}
 
-Phân bố lớp sau mapping và số nhãn có support được để pending cho tới khi benchmark CSV hiện tại. Bảng 13 lớp trước đây thuộc snapshot 5.265 dòng đã superseded và không được dùng lại.
+\subsection{Phạm vi fixture và giới hạn}
 
-\subsection{Cohort, split và khả năng tái lập}
-
-\begin{longtable}{@{}L{3.3cm}L{4.2cm}L{7.0cm}@{}}
-  \caption{Cách hình thành các cohort dùng trong phép đo}
-  \label{tab:app-dataset-cohorts}\\
-  \toprule
-  \textbf{Phép đo} & \textbf{Mẫu số} & \textbf{Quy tắc và artifact đối chiếu} \\
-  \midrule
-  \endfirsthead
-  \toprule
-  \textbf{Phép đo} & \textbf{Mẫu số} & \textbf{Quy tắc và artifact đối chiếu} \\
-  \midrule
-  \endhead
-  Classification & 5.328 dòng (dự kiến) & Chạy parser local trên CSV hiện tại, không gọi provider; nhãn chính là joint type/category. Artifact 5.265 dòng cũ đã superseded. \\
-  Parser--Gemini ablation & Protocol chờ rerun & Lấy mẫu từ nguồn hiện tại, ghi joint label và giữ abstention trong mẫu số; cần provider/quota. \\
-  Correction retrieval & Protocol chờ rerun & Replay nguyên nhóm theo thời gian, candidate limit 200 và có khoảng tin cậy; không dùng aggregate cũ. \\
-  \makecell[l]{Analytics/\\Budget/Goal unit} & Ca tổng hợp & Không có một tập giao dịch benchmark chung; fixture đặt slope, zero-fill, outlier, cadence, correlation, trần ngân sách và what-if biết trước. Test tương ứng được lập ở Bảng~\ref{tab:app-algorithm-tests}. \\
-  Media ground truth & 20 ảnh + 20 audio (dự kiến) & Lưu file synthetic đã redact, transcript/trường tham chiếu và manifest; tính CER/WER cùng transaction-field accuracy. \\
-  \bottomrule
-\end{longtable}
-
-Runner phải lưu checksum dữ liệu/mapping, Node version, thời điểm và mã nguồn liên quan trong \path{log/}. CSV phản ánh một hồ sơ demo, chủ yếu tiếng Việt và VND; raw content không được coi là đã ẩn danh để phát hành. Fixture media hiện tại vẫn private vì manifest đánh dấu PII và unsafe distribution. Khi chưa có media set có kiểm soát, external holdout và confidence interval, báo cáo chỉ mô tả implementation/protocol, không suy ra generalization hay production OCR/STT accuracy.
+Fixture Analytics/Budget/Goal đặt trước slope, zero-fill, outlier, cadence, correlation, trần ngân sách và kết quả what-if để đối chiếu hàm xác định. CSV phản ánh một hồ sơ demo, chủ yếu tiếng Việt và VND; nội dung thô không được coi là đã ẩn danh để phát hành. Fixture media hiện tại vẫn riêng tư vì manifest đánh dấu PII và không đủ làm ground truth. Vì vậy dữ liệu này chỉ hỗ trợ kiểm tra các ca đã đặc tả, không cho phép suy rộng sang độ chính xác ngoài mẫu hoặc môi trường production.
 
 \section{Phạm vi và quy ước dữ liệu}
 \label{app:algorithm-conventions}
@@ -256,7 +226,7 @@ Với mỗi candidate, service tính \code{textSimilarity}, giữ bản ghi exac
 
 Few-shot examples dùng quy tắc riêng: mặc định tối đa 5 mẫu, giới hạn tuyệt đối 20, điểm tối thiểu 0,35; các input cùng loại và cùng chuỗi chuẩn hóa nhưng có nhãn xung đột bị loại, các cặp trùng nhãn chỉ giữ một mẫu gần nhất. Do đó correction không hoạt động như bỏ phiếu đa số và không được phép đổi transaction type.
 
-Các ca chuẩn hóa, typo, alias mơ hồ, correction exact/fuzzy, xung đột nhãn và log name-only/id+name được kiểm tra trong \path{feedback.test.js}. Các metric coverage, helped/harmed/net và group split được kiểm tra trong \path{experiment-metrics.test.js}.
+Các ca chuẩn hóa, typo, alias mơ hồ, correction exact/fuzzy, xung đột nhãn và log name-only/id+name được kiểm tra bằng fixture hồi quy trong \path{feedback.test.js}; kết quả chỉ áp dụng cho các ca đã đặc tả.
 
 \section{Các thuật toán phân tích tài chính}
 \label{app:analytics-algorithms}
@@ -432,64 +402,22 @@ Object \code{window} ghi kích thước, đơn vị và có zero-fill hay không
 
 Luồng bảo vệ số liệu là: SQL/Model truy vấn dữ liệu chuẩn, Analytics Engine tính facts, sau đó narrator mới nhận facts để viết lời. LLM không được quyền gọi model, tự thay số, ghi giao dịch hoặc biến \code{null} thành giá trị cụ thể. Persona chỉ ảnh hưởng giọng điệu khi consent bật. Numeric grounding checker bao phủ toàn bộ biểu thức số vẫn là thiết kế đích, không được trình bày như kết quả đã đo.
 
-\section{Ma trận thuật toán--kiểm thử và khả năng tái lập}
-\label{app:algorithm-tests}
-
-Bảng sau chỉ dẫn đến test và artifact, không sao chép dữ liệu thô. Trạng thái ``đã kiểm tra'' nói về hành vi của ca test đã chọn, không phải accuracy production.
-
-\begin{longtable}{@{}L{3.2cm}L{2.8cm}L{3.5cm}L{3.8cm}@{}}
-  \caption{Ma trận thuật toán, ca biên và bằng chứng}
-  \label{tab:app-algorithm-tests}\\
-  \toprule
-  \textbf{Nhóm} & \textbf{Ca thường} & \textbf{Ca biên/invariant} & \textbf{Bằng chứng} \\
-  \midrule
-  \endfirsthead
-  \toprule
-  \textbf{Nhóm} & \textbf{Ca thường} & \textbf{Ca biên/invariant} & \textbf{Bằng chứng} \\
-  \midrule
-  \endhead
-  Matcher & exact name, alias exact, typo rõ ràng. & Alias mơ hồ, input rỗng, dưới ngưỡng, margin nhỏ, alias phải theo ranh giới từ. & \code{feedback.test.js}; tập trung và full suite 247 test đều đạt. \\
-  Correction & exact và fuzzy cùng type, few-shot gần nhất. & Nhãn exact xung đột, thiếu type, agreement dưới 0,8, name-only/id+name. & \code{feedback.test.js}; JSON/Markdown correction trong \code{log/}. \\
-  Calendar/runway & axis đủ ngày, ví thanh khoản VND, ngày cạn. & Ngày 0, burn 0, ví USD/đầu tư bị loại, payday ngày 31. & \path{analytics-engine.test.js}, \path{analytics-time-series.test.js}, \path{wallet-policy.test.js}. \\
-  Trend/anomaly & chuỗi tăng, outlier phía tăng. & Dưới 3 kỳ dương, dưới 4 ngày dương, chuỗi hằng, IQR hoặc phương sai bằng 0. & \path{analytics-engine.test.js}, \path{analytics-time-series.test.js}. \\
-  \makecell[l]{Recurring/\\correlation} & cadence tuần/tháng/quý, cặp tương quan mạnh. & Amount lệch quá 15\%, CV gap quá 0,12, candidate cũ, dưới 4 kỳ hoặc Pearson không xác định. & \path{subscription-miner.test.js}, \path{analytics-engine.test.js}. \\
-  Budget & category average, hybrid và 50--30--20. & Tháng không phát sinh vẫn nằm mẫu số, thiếu income, tổng tỷ lệ >100\%, trần bị vượt sau làm tròn. & \path{budget-recommender.test.js}, \path{budget-forecast.test.js}. \\
-  Goal & saving có contribution, debt amortization, what-if. & Goal hoàn tất, contribution 0, ngày cuối tháng, negative amortization, payment 0, quá horizon. & \path{goal-planner.test.js}, \path{goal-service.test.js}, \path{goal-validation.test.js}. \\
-  Facts contract & đủ metadata và trạng thái \code{ok}. & Component lỗi giữ contract, \code{no_signal}, không rò message lỗi, cache context khác. & \path{analytics-engine.test.js}; contract version 1.0. \\
-  \bottomrule
-\end{longtable}
-
-Runner classification/correction ghi record có cấu trúc tại \code{log/}; rerun trên snapshot hiện tại được mô tả ở Chương~\ref{subsec:results}. OCR/STT accuracy, numeric grounding đầy đủ, p95, UAT và Redis worker live vẫn là mục tiêu hoặc chưa đo; không được suy ra từ unit test thuần.
-
 \chapter{Lệnh tái lập kiểm thử}
 
-Các lệnh sau chạy từ đúng thư mục thành phần. Người thực hiện cần ghi commit, Node version, cấu hình provider và trạng thái PostgreSQL/Redis; không ghi secret vào artifact.
+Hai lệnh kiểm thử tự động được chạy từ thư mục backend với Redis/jobs tắt và parser cục bộ. Người thực hiện cần ghi commit, Node version và thời điểm chạy; không ghi secret vào artifact.
 
 \begin{verbatim}
 cd demo/backend
-export REDIS_ENABLED=false JOBS_ENABLED=false
-node --test tests/analytics-engine.test.js
-node --test tests/analytics-time-series.test.js
-node --test tests/property-invariants.test.js
-node --test tests/media-provider.test.js
+export REDIS_ENABLED=false JOBS_ENABLED=false AI_PROVIDER=local
 npm test
-node --experimental-test-coverage --test tests/*.test.js
 npm run test:ai
-npm run smoke:full
-node --test tests/experiment-metrics.test.js
-node tests/experiments/classification-benchmark.js --out ../../log
-node tests/experiments/feedback-before-after.js --out ../../log
-
-cd ../frontend
-npm run ui:smoke
-npx expo export --platform web --output-dir /tmp/perfin-web
 \end{verbatim}
 
-Bốn lệnh regression tập trung ở trên được chạy với Redis và jobs tắt. Freeze commit và CSV trước khi chạy full suite, API/DB smoke, parser benchmark, Gemini ablation hoặc correction replay. Rerun Gemini cần provider/quota; media accuracy cần manifest fixture đã redact. Integration test phải dùng database test riêng và dọn dữ liệu sau mỗi nhóm ca.
+Kết quả hiện tại được tóm tắt tại Mục~\ref{sec:testing}. Các lệnh này không gọi PostgreSQL/Redis live, Gemini, OCR hoặc STT nên không được dùng làm bằng chứng cho các dịch vụ đó.
 
 \chapter{Nguồn sơ đồ}
 
-Báo cáo giữ 14 nguồn Draw.io, trong đó chỉ một use case tổng thể. Tất cả nhãn trong sơ đồ dùng tiếng Anh và được dùng chung cho bản báo cáo Việt/Anh. Nguồn chỉnh sửa nằm tại \path{latex/figures/drawio/}; bản PDF/PNG/SVG nằm tại \path{latex/figures/rendered/}.
+Báo cáo giữ 14 nguồn Draw.io, trong đó chỉ một use case tổng thể. Tất cả nhãn trong sơ đồ dùng tiếng Anh và được dùng chung cho bản báo cáo Việt/Anh. Nguồn chỉnh sửa và các bản PNG xuất thủ công cùng nằm tại \path{latex/figures/drawio/}.
 
 \begin{longtable}{@{}C{1.0cm}L{5.2cm}L{6.8cm}@{}}
   \toprule

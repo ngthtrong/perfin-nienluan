@@ -1,3 +1,6 @@
+// Vai trò: Quản lý hạn mức ngân sách và tổng hợp tiến độ chi theo danh mục, kỳ.
+// Luồng chính: kiểm tra danh mục, ghi transaction an toàn và tính trạng thái từ số đã chi.
+
 const { pool, query, rollbackAfterFailure } = require('../config/database');
 const CategoryModel = require('./category.model');
 const { localDayKey } = require('../services/analytics/timeSeries');

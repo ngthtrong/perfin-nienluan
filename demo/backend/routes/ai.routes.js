@@ -1,3 +1,6 @@
+// Vai trò: Tiếp nhận yêu cầu AI trực tiếp cùng ảnh hóa đơn hoặc audio tải lên.
+// Luồng chính: kiểm tra media, gọi OCR/STT hoặc parser rồi trả dữ liệu nháp để người dùng xem lại.
+
 const express = require('express');
 const multer = require('multer');
 const fs = require('fs');
@@ -187,6 +190,7 @@ router.post('/chat', async (req, res) => {
   res.json({ success: true, text: data.text, data });
 });
 
+// Tiền xử lý ảnh, chạy OCR và giữ raw text để người dùng có thể kiểm tra.
 async function handleOcr(req, res, next) {
   try {
     if (!req.file) return res.status(400).json({ success: false, error: 'Chưa có ảnh' });
@@ -239,6 +243,7 @@ async function handleOcr(req, res, next) {
   }
 }
 
+// Chạy STT và trả transcript để người dùng xác nhận trước bước parse giao dịch.
 async function handleSpeech(req, res, next) {
   try {
     if (!req.file) return res.status(400).json({ success: false, error: 'Chưa có audio' });
@@ -360,6 +365,7 @@ router.post('/ocr/confirm', async (req, res) => {
   });
 });
 
+// Chuyển kết quả media thành pending preview; không ghi transaction tại endpoint này.
 async function createMediaPendingPreview(parsed, originalText, source) {
   const transactions = parsed?.transactions || (parsed?.transaction ? [parsed.transaction] : []);
   if (!transactions.length) {

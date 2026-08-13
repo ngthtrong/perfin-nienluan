@@ -1,3 +1,6 @@
+// Vai trò: Công bố API quản lý, dò tìm và ghi nhận thanh toán khoản định kỳ.
+// Luồng chính: đối chiếu ví/danh mục, gọi model và yêu cầu xác nhận trước side effect từ chat.
+
 const express = require('express');
 const RecurringBillModel = require('../models/recurringBill.model');
 const CategoryModel = require('../models/category.model');
@@ -53,6 +56,7 @@ router.post('/suggestions/dismiss', async (req, res) => {
   res.json({ success: true, data: await RecurringBillModel.dismissSuggestion(userId, req.body.signature) });
 });
 
+// Tạo recurring bill sau khi đã resolve category và validation lịch thanh toán.
 router.post('/', async (req, res) => {
   const errors = validateBillInput(req.body);
   if (errors.length) return res.status(400).json({ success: false, error: errors.join('; ') });
@@ -104,6 +108,7 @@ router.get('/:id/payments', async (req, res) => {
   res.json({ success: true, data: await RecurringBillModel.getPaymentHistory(req.params.id, userId) });
 });
 
+// Ghi một lần thanh toán và transaction liên quan qua model nguyên tử.
 router.post('/:id/pay', async (req, res) => {
   const body = req.body || {};
   const expectedPeriod = body.periodDueDate ?? body.period_due_date;

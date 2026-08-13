@@ -1,3 +1,6 @@
+// Vai trò: Tạo system prompt và prompt theo tác vụ cho lớp AI của PERFIN.
+// Luồng chính: đưa ngày, danh mục và ràng buộc output vào prompt; không thực hiện side effect.
+
 const { localDateKey } = require('../services/transactions/validation');
 
 function categoryList(categories, type) {

@@ -1,3 +1,6 @@
+// Vai trò: Ánh xạ tên job sang đúng handler thực thi trong worker.
+// Luồng chính: dựng dependency handler và từ chối rõ ràng các job không được hỗ trợ.
+
 const { JOB_NAMES } = require('./constants');
 const { createRecurringReminderHandler } = require('./handlers/recurringReminder');
 const { createMonthEndInsightsHandler } = require('./handlers/monthEndInsights');
@@ -17,6 +20,7 @@ function createHandlers(options = {}) {
   };
 }
 
+// Dispatch job theo allowlist handler và từ chối tên lạ để tránh thực thi ngoài ý muốn.
 function createJobProcessor(handlers = createHandlers()) {
   return async function processJob(job) {
     const handler = handlers[job.name];

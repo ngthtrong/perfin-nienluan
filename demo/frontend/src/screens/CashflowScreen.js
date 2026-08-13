@@ -1,3 +1,6 @@
+// Vai trò: Quản lý chuyển ví, hiệu quả đầu tư, tài sản ròng và lịch sử dòng tiền.
+// Luồng chính: tải các khối dữ liệu, validation form và gửi thao tác tài chính qua API.
+
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet,
@@ -51,6 +54,7 @@ function CashflowBar({ label, value, maxValue, color, styles }) {
   );
 }
 
+// Điều phối các form thay đổi tiền và các summary chỉ đọc trên cùng màn hình.
 export default function CashflowScreen() {
   const { theme } = useTheme();
   const styles = useMemo(() => createStyles(theme), [theme]);
@@ -269,10 +273,13 @@ export default function CashflowScreen() {
         return (
           <TouchableOpacity
             key={w.id}
+            accessibilityRole="button"
+            accessibilityLabel={`Chọn ví ${w.name}`}
+            accessibilityState={{ selected: active }}
             style={[styles.walletChip, active && styles.walletChipActive]}
             onPress={() => onSelect(String(w.id))}
           >
-            <Text style={[styles.walletChipText, active && { color: c.onBrand }]}>{w.name}</Text>
+            <Text style={[styles.walletChipText, active && { color: c.brandText }]}>{w.name}</Text>
           </TouchableOpacity>
         );
       })}
@@ -306,17 +313,16 @@ export default function CashflowScreen() {
     >
       <View style={styles.netWorthCard}>
         <View style={styles.netWorthHeader}>
-          <AppIcon name="account-balance" size={18} color={c.onBrand} />
           <Text style={styles.netWorthTitle}>Tài sản ròng (Net Worth)</Text>
         </View>
         <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.65} style={styles.netWorthValue}>{formatVND(netWorth?.net_worth || 0)}</Text>
         <View style={styles.netWorthBreakdown}>
           <View style={{ flex: 1 }}>
-            <Text style={styles.nwLabel}>💰 Ví thường</Text>
+            <Text style={styles.nwLabel}>Ví thường</Text>
             <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} style={styles.nwValue}>{formatVND(netWorth?.regular_wallets || 0)}</Text>
           </View>
           <View style={{ flex: 1, alignItems: 'flex-end' }}>
-            <Text style={styles.nwLabel}>📈 Đầu tư</Text>
+            <Text style={styles.nwLabel}>Đầu tư</Text>
             <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} style={styles.nwValue}>{formatVND(netWorth?.investment_wallets || 0)}</Text>
           </View>
         </View>
@@ -328,10 +334,12 @@ export default function CashflowScreen() {
           return (
             <TouchableOpacity
               key={p.key}
+              accessibilityRole="button"
+              accessibilityState={{ selected: active }}
               style={[styles.periodBtn, active && styles.periodBtnActive]}
               onPress={() => setPeriod(p.key)}
             >
-              <Text style={[styles.periodText, active && { color: c.onBrand }]}>{p.label}</Text>
+              <Text style={[styles.periodText, active && { color: c.brandText }]}>{p.label}</Text>
             </TouchableOpacity>
           );
         })}
@@ -372,7 +380,7 @@ export default function CashflowScreen() {
 
           <View style={styles.divider} />
           <View style={styles.netRow}>
-            <Text style={[styles.netLabel, { fontWeight: '900' }]}>Dòng tiền ròng:</Text>
+            <Text style={[styles.netLabel, { fontWeight: '700' }]}>Dòng tiền ròng:</Text>
             <Text style={[styles.netValue, { color: cashflow.net_cashflow >= 0 ? c.income : c.expense }]}>
               {cashflow.net_cashflow >= 0 ? '+' : ''}{formatVND(cashflow.net_cashflow)}
             </Text>
@@ -381,15 +389,49 @@ export default function CashflowScreen() {
       )}
 
       <View style={styles.actionRow}>
-        <Button label="Tạo ví" icon="account-balance-wallet" variant="secondary" onPress={() => setShowWalletForm((v) => !v)} style={{ flexGrow: 1, flexBasis: 120 }} fullWidth={false} />
-        <Button label="Chuyển tiền" icon="swap-horiz" onPress={() => setShowTransferForm((v) => !v)} style={{ flexGrow: 1, flexBasis: 140 }} fullWidth={false} />
-        <Button label="Lãi/Lỗ đầu tư" icon="trending-up" variant="secondary" onPress={() => setShowPnLForm((v) => !v)} style={{ flexGrow: 1, flexBasis: 140 }} fullWidth={false} />
+        <Button
+          label="Tạo ví"
+          icon="account-balance-wallet"
+          variant="secondary"
+          onPress={() => {
+            setShowWalletForm((value) => !value);
+            setShowTransferForm(false);
+            setShowPnLForm(false);
+          }}
+          style={{ flexGrow: 1, flexBasis: 120 }}
+          fullWidth={false}
+        />
+        <Button
+          label="Chuyển tiền"
+          icon="swap-horiz"
+          variant={showWalletForm || showTransferForm || showPnLForm ? 'secondary' : 'primary'}
+          onPress={() => {
+            setShowTransferForm((value) => !value);
+            setShowWalletForm(false);
+            setShowPnLForm(false);
+          }}
+          style={{ flexGrow: 1, flexBasis: 140 }}
+          fullWidth={false}
+        />
+        <Button
+          label="Lãi/Lỗ đầu tư"
+          icon="trending-up"
+          variant="secondary"
+          onPress={() => {
+            setShowPnLForm((value) => !value);
+            setShowWalletForm(false);
+            setShowTransferForm(false);
+          }}
+          style={{ flexGrow: 1, flexBasis: 140 }}
+          fullWidth={false}
+        />
       </View>
 
       {showWalletForm && (
         <View style={styles.formCard}>
           <Text style={styles.formTitle}>Tạo ví tài chính</Text>
           <TextInput
+            accessibilityLabel="Tên ví"
             style={styles.input}
             placeholder="Tên ví, ví dụ: Tài khoản đầu tư"
             placeholderTextColor={c.textMuted}
@@ -403,10 +445,12 @@ export default function CashflowScreen() {
               return (
                 <TouchableOpacity
                   key={type.key}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: active }}
                   style={[styles.typeChip, active && styles.walletTypeActive]}
                   onPress={() => setWalletForm((form) => ({ ...form, type: type.key }))}
                 >
-                  <Text style={[styles.typeChipText, active && { color: c.onBrand }]}>{type.label}</Text>
+                  <Text style={[styles.typeChipText, active && { color: c.brandText }]}>{type.label}</Text>
                 </TouchableOpacity>
               );
             })}
@@ -433,11 +477,12 @@ export default function CashflowScreen() {
               return (
                 <TouchableOpacity
                   key={t.key}
-                  style={[styles.typeChip, active && { backgroundColor: t.color, borderColor: t.color }]}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: active }}
+                  style={[styles.typeChip, active && styles.walletTypeActive]}
                   onPress={() => setTransferForm((f) => ({ ...f, transfer_type: t.key }))}
                 >
-                  <AppIcon name={t.icon} size={13} color={active ? c.onBrand : c.textMuted} />
-                  <Text style={[styles.typeChipText, active && { color: c.onBrand }]}>{t.label}</Text>
+                  <Text style={[styles.typeChipText, active && { color: c.brandText }]}>{t.label}</Text>
                 </TouchableOpacity>
               );
             })}
@@ -527,7 +572,6 @@ export default function CashflowScreen() {
         })
       ) : (
         <EmptyState
-          emoji="👛"
           title="Chưa có ví nào"
           message='Tạo ví đầu tiên bằng nút "Tạo ví" phía trên.'
           style={styles.compactEmpty}
@@ -569,9 +613,6 @@ export default function CashflowScreen() {
                   </View>
                 ) : (
                   <>
-                    <View style={[styles.transferIcon, { backgroundColor: pnlColor + '20' }]}>
-                      <AppIcon name={positive ? 'trending-up' : 'trending-down'} size={18} color={pnlColor} />
-                    </View>
                     <View style={styles.transferInfo}>
                       <Text numberOfLines={1} style={styles.transferType}>{row.wallet_name}</Text>
                       <Text numberOfLines={1} style={styles.transferMeta}>{row.note || (positive ? 'Lãi đầu tư' : 'Lỗ đầu tư')}</Text>
@@ -614,9 +655,6 @@ export default function CashflowScreen() {
             const meta = TRANSFER_TYPES.find((tt) => tt.key === t.transfer_type) || TRANSFER_TYPES[0];
             return (
               <View key={t.id} style={styles.transferRow}>
-                <View style={[styles.transferIcon, { backgroundColor: meta.color + '20' }]}>
-                  <AppIcon name={meta.icon} size={18} color={meta.color} />
-                </View>
                 <View style={styles.transferInfo}>
                   <Text style={styles.transferType}>{meta.label}</Text>
                   <Text numberOfLines={1} style={styles.transferMeta}>{t.from_wallet_name || '?'} → {t.to_wallet_name || '?'}</Text>
@@ -628,7 +666,6 @@ export default function CashflowScreen() {
         </>
       ) : (
         <EmptyState
-          emoji="⇄"
           title="Chưa có lịch sử điều chuyển"
           message="Các giao dịch giữa ví và tài khoản đầu tư sẽ xuất hiện tại đây."
           style={styles.compactEmpty}
@@ -644,33 +681,33 @@ const createStyles = (t) => StyleSheet.create({
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: t.colors.bg },
   loadingScreen: { flex: 1, width: '100%', maxWidth: 720, alignSelf: 'center', padding: 16, backgroundColor: t.colors.bg },
 
-  netWorthCard: { backgroundColor: t.colors.brand, borderRadius: t.radius.xl, padding: 20, marginBottom: 14, ...t.shadows.md },
+  netWorthCard: { backgroundColor: t.colors.brand, borderRadius: t.radius.xl, padding: 20, marginBottom: 14 },
   netWorthHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12, opacity: 0.9 },
   netWorthTitle: { color: t.colors.onBrand, fontWeight: '700', fontSize: 14 },
-  netWorthValue: { color: t.colors.onBrand, fontSize: 32, fontWeight: '900', marginBottom: 16 },
+  netWorthValue: { color: t.colors.onBrand, fontSize: 32, fontWeight: '700', marginBottom: 16 },
   netWorthBreakdown: { flexDirection: 'row', backgroundColor: 'rgba(0,0,0,0.15)', borderRadius: t.radius.md, padding: 12 },
   nwLabel: { color: 'rgba(255,255,255,0.75)', fontSize: 12, marginBottom: 4 },
-  nwValue: { color: t.colors.onBrand, fontWeight: '800', fontSize: 15 },
+  nwValue: { color: t.colors.onBrand, fontWeight: '700', fontSize: 15 },
 
   periodRow: { flexDirection: 'row', gap: 8, marginBottom: 14 },
   periodBtn: {
-    flex: 1, paddingVertical: 9, borderRadius: t.radius.pill,
+    flex: 1, minHeight: 44, justifyContent: 'center', paddingVertical: 9, borderRadius: t.radius.pill,
     backgroundColor: t.colors.surface, borderWidth: 1.5, borderColor: t.colors.border, alignItems: 'center',
   },
-  periodBtnActive: { backgroundColor: t.colors.brand, borderColor: t.colors.brand },
+  periodBtnActive: { backgroundColor: t.colors.brandSoft, borderColor: t.colors.brand },
   periodText: { fontSize: 12, color: t.colors.textMuted, fontWeight: '700' },
 
-  card: { backgroundColor: t.colors.surface, borderRadius: t.radius.lg, padding: 16, borderWidth: 1, borderColor: t.colors.border, marginBottom: 14, ...t.shadows.sm },
-  cardTitle: { fontSize: 14, fontWeight: '800', color: t.colors.text, marginBottom: 10 },
+  card: { backgroundColor: t.colors.surface, borderRadius: t.radius.lg, padding: 16, borderWidth: 1, borderColor: t.colors.border, marginBottom: 14 },
+  cardTitle: { fontSize: 14, fontWeight: '700', color: t.colors.text, marginBottom: 10 },
   barGroup: { marginBottom: 12 },
   barHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 7 },
   barLabel: { flex: 1, fontSize: 12, color: t.colors.textMuted, fontWeight: '700' },
   barTrack: { flex: 1, height: 8, backgroundColor: t.colors.surfaceAlt, borderRadius: 4, overflow: 'hidden' },
   barFill: { height: 8, borderRadius: 4 },
-  barValue: { flexShrink: 1, maxWidth: '62%', textAlign: 'right', fontSize: 13, fontWeight: '800' },
+  barValue: { flexShrink: 1, maxWidth: '62%', textAlign: 'right', fontSize: 13, fontWeight: '700' },
   netRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 },
   netLabel: { color: t.colors.textMuted, fontSize: 13, fontWeight: '700' },
-  netValue: { fontSize: 15, fontWeight: '800' },
+  netValue: { fontSize: 15, fontWeight: '700' },
   divider: { height: 1, backgroundColor: t.colors.border, marginVertical: 12 },
   investRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 },
   investLabel: { color: t.colors.textMuted, fontSize: 13 },
@@ -678,33 +715,33 @@ const createStyles = (t) => StyleSheet.create({
 
   actionRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 14 },
 
-  formCard: { backgroundColor: t.colors.surface, borderRadius: t.radius.lg, padding: 16, borderWidth: 1, borderColor: t.colors.border, marginBottom: 14, ...t.shadows.sm },
-  formTitle: { fontSize: 15, fontWeight: '800', color: t.colors.text, marginBottom: 14 },
+  formCard: { backgroundColor: t.colors.surface, borderRadius: t.radius.lg, padding: 16, borderWidth: 1, borderColor: t.colors.border, marginBottom: 14 },
+  formTitle: { fontSize: 15, fontWeight: '700', color: t.colors.text, marginBottom: 14 },
   formLabel: { color: t.colors.textMuted, fontSize: 12, fontWeight: '700', marginBottom: 8 },
   transferTypeRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 14 },
   typeChip: {
     flexGrow: 1, flexBasis: 90, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4,
-    paddingVertical: 8, borderRadius: t.radius.md, borderWidth: 1.5, borderColor: t.colors.border, backgroundColor: t.colors.surfaceAlt,
+    minHeight: 44, paddingVertical: 8, borderRadius: t.radius.md, borderWidth: 1.5, borderColor: t.colors.border, backgroundColor: t.colors.surfaceAlt,
   },
-  typeChipText: { fontSize: 11, fontWeight: '700', color: t.colors.textMuted },
-  walletTypeActive: { backgroundColor: t.colors.brand, borderColor: t.colors.brand },
-  walletChip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: t.radius.pill, backgroundColor: t.colors.surfaceAlt, borderWidth: 1.5, borderColor: t.colors.border },
-  walletChipActive: { backgroundColor: t.colors.brand, borderColor: t.colors.brand },
+  typeChipText: { fontSize: 12, fontWeight: '700', color: t.colors.textMuted },
+  walletTypeActive: { backgroundColor: t.colors.brandSoft, borderColor: t.colors.brand },
+  walletChip: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 14, paddingVertical: 8, borderRadius: t.radius.pill, backgroundColor: t.colors.surfaceAlt, borderWidth: 1.5, borderColor: t.colors.border },
+  walletChipActive: { backgroundColor: t.colors.brandSoft, borderColor: t.colors.brand },
   walletChipText: { fontSize: 13, color: t.colors.textSecondary, fontWeight: '600' },
   input: { borderWidth: 1.5, borderColor: t.colors.border, borderRadius: t.radius.md, padding: 13, marginBottom: 12, fontSize: 14, color: t.colors.text, backgroundColor: t.colors.surfaceAlt },
 
-  sectionTitle: { fontSize: 15, fontWeight: '800', color: t.colors.text, marginBottom: 10 },
-  transferRow: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: t.colors.surface, padding: 13, borderRadius: t.radius.md, marginBottom: 8, borderWidth: 1, borderColor: t.colors.border, ...t.shadows.sm },
+  sectionTitle: { fontSize: 15, fontWeight: '700', color: t.colors.text, marginBottom: 10 },
+  transferRow: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 64, backgroundColor: t.colors.surface, padding: 13, borderBottomWidth: 1, borderColor: t.colors.border },
   transferIcon: { width: 40, height: 40, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
   transferInfo: { flex: 1, minWidth: 0 },
   transferType: { fontSize: 14, fontWeight: '700', color: t.colors.text },
   transferMeta: { fontSize: 12, color: t.colors.textMuted },
-  transferAmount: { flexShrink: 1, maxWidth: '40%', textAlign: 'right', fontSize: 15, fontWeight: '800' },
+  transferAmount: { flexShrink: 1, maxWidth: '40%', textAlign: 'right', fontSize: 15, fontWeight: '700' },
   compactEmpty: { paddingVertical: 24, marginBottom: 8 },
 
-  walletRow: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: t.colors.surface, padding: 13, borderRadius: t.radius.md, marginBottom: 8, borderWidth: 1, borderColor: t.colors.border, ...t.shadows.sm },
-  walletBalance: { flexShrink: 1, maxWidth: '38%', textAlign: 'right', fontSize: 14, fontWeight: '800', color: t.colors.text },
+  walletRow: { flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 64, backgroundColor: t.colors.surface, padding: 13, borderBottomWidth: 1, borderColor: t.colors.border },
+  walletBalance: { flexShrink: 1, maxWidth: '38%', textAlign: 'right', fontSize: 14, fontWeight: '700', color: t.colors.text },
   walletEditActions: { flexDirection: 'row', gap: 8 },
-  iconButton: { width: 38, height: 38, borderRadius: t.radius.md, alignItems: 'center', justifyContent: 'center', backgroundColor: t.colors.surfaceAlt, borderWidth: 1, borderColor: t.colors.border },
-  pnlRow: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: t.colors.surface, padding: 13, borderRadius: t.radius.md, marginBottom: 8, borderWidth: 1, borderColor: t.colors.border, ...t.shadows.sm },
+  iconButton: { width: 44, height: 44, borderRadius: t.radius.md, alignItems: 'center', justifyContent: 'center', backgroundColor: t.colors.surfaceAlt, borderWidth: 1, borderColor: t.colors.border },
+  pnlRow: { flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 64, backgroundColor: t.colors.surface, padding: 13, borderBottomWidth: 1, borderColor: t.colors.border },
 });

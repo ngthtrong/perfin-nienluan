@@ -1,3 +1,6 @@
+// Vai trò: Cho phép tạo/tải export và cấu hình backup từ giao diện.
+// Luồng chính: tải lịch sử/cấu hình, gửi yêu cầu export hoặc restore và phản hồi trạng thái.
+
 import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet,
@@ -12,9 +15,9 @@ import { EmptyState, ErrorState, Skeleton, SkeletonGroup } from '../components/u
 
 function ExportHistoryItem({ item, onDelete, onDownload, styles, c }) {
   const typeMeta = {
-    csv: { label: 'CSV', icon: 'table-chart', color: c.income, bg: c.incomeSoft },
-    pdf: { label: 'Báo cáo', icon: 'picture-as-pdf', color: c.expense, bg: c.expenseSoft },
-    backup: { label: 'Backup', icon: 'cloud-done', color: c.brand, bg: c.brandSoft },
+    csv: { label: 'CSV', icon: 'table-chart' },
+    pdf: { label: 'Báo cáo', icon: 'picture-as-pdf' },
+    backup: { label: 'Backup', icon: 'cloud-done' },
   };
   const meta = typeMeta[item.export_type] || typeMeta.csv;
   const created = new Date(item.created_at);
@@ -24,8 +27,8 @@ function ExportHistoryItem({ item, onDelete, onDownload, styles, c }) {
 
   return (
     <View style={styles.historyItem}>
-      <View style={[styles.historyIcon, { backgroundColor: meta.bg }]}>
-        <AppIcon name={meta.icon} size={18} color={meta.color} />
+      <View style={styles.historyIcon}>
+        <AppIcon name={meta.icon} size={18} color={c.textSecondary} />
       </View>
       <View style={styles.historyInfo}>
         <View style={styles.historyTitleRow}>
@@ -68,6 +71,7 @@ const FREQ_OPTIONS = [
   { key: 'monthly', label: 'Hàng tháng' },
 ];
 
+// Điều phối tạo tệp, lịch sử export, restore và cấu hình backup trong một screen.
 export default function ExportScreen() {
   const { theme } = useTheme();
   const styles = useMemo(() => createStyles(theme), [theme]);
@@ -109,7 +113,7 @@ export default function ExportScreen() {
       const result = await api.exportFromIntent(format, {});
       if (result.data?.download_url) {
         const url = api.getBaseUrl() + result.data.download_url;
-        showAlert('✅ Xuất thành công', `File: ${result.data.file_name}\nTruy cập server để tải file.`, [
+        showAlert('Xuất thành công', `File: ${result.data.file_name}\nTruy cập server để tải file.`, [
           { text: 'Mở link', onPress: () => Linking.openURL(url) },
           { text: 'OK' },
         ]);
@@ -186,7 +190,7 @@ export default function ExportScreen() {
         summary.wallet_transfers != null ? `${summary.wallet_transfers} điều chuyển` : null,
         summary.investment_pnl != null ? `${summary.investment_pnl} lãi/lỗ` : null,
       ].filter(Boolean);
-      showAlert('✅ Khôi phục thành công', parts.length ? `Đã khôi phục: ${parts.join(', ')}.` : 'Dữ liệu đã được khôi phục từ backup.');
+      showAlert('Khôi phục thành công', parts.length ? `Đã khôi phục: ${parts.join(', ')}.` : 'Dữ liệu đã được khôi phục từ backup.');
       await load();
     } catch (err) {
       showAlert('Khôi phục thất bại', err.message || 'Không đọc được file backup.');
@@ -220,9 +224,9 @@ export default function ExportScreen() {
   }
 
   const EXPORT_CARDS = [
-    { format: 'csv', icon: 'table-chart', title: 'Xuất CSV', desc: 'Danh sách giao dịch\nmã hóa UTF-8', color: c.income },
-    { format: 'pdf', icon: 'picture-as-pdf', title: 'Báo cáo', desc: 'Báo cáo HTML\nin PDF qua trình duyệt', color: c.expense },
-    { format: 'backup', icon: 'cloud-done', title: 'Sao lưu', desc: 'File mã hóa\nAES-256', color: c.brand },
+    { format: 'csv', icon: 'table-chart', title: 'Xuất CSV', desc: 'Danh sách giao dịch\nmã hóa UTF-8' },
+    { format: 'pdf', icon: 'picture-as-pdf', title: 'Báo cáo', desc: 'Báo cáo HTML\nin PDF qua trình duyệt' },
+    { format: 'backup', icon: 'cloud-done', title: 'Sao lưu', desc: 'File mã hóa\nAES-256' },
   ];
 
   return (
@@ -237,14 +241,17 @@ export default function ExportScreen() {
         {EXPORT_CARDS.map((card) => (
           <TouchableOpacity
             key={card.format}
-            style={[styles.exportCard, { borderColor: card.color }]}
+            accessibilityRole="button"
+            accessibilityLabel={card.title}
+            accessibilityState={{ disabled: Boolean(exporting), busy: exporting === card.format }}
+            style={styles.exportCard}
             onPress={() => doExport(card.format)}
             disabled={!!exporting}
           >
             {exporting === card.format
-              ? <ActivityIndicator color={card.color} size="small" />
-              : <AppIcon name={card.icon} size={28} color={card.color} />}
-            <Text style={[styles.exportCardTitle, { color: card.color }]}>{card.title}</Text>
+              ? <ActivityIndicator color={c.brand} size="small" />
+              : <AppIcon name={card.icon} size={24} color={c.brandText} />}
+            <Text style={[styles.exportCardTitle, { color: c.text }]}>{card.title}</Text>
             <Text style={styles.exportCardDesc}>{card.desc}</Text>
           </TouchableOpacity>
         ))}
@@ -254,7 +261,6 @@ export default function ExportScreen() {
       <View style={styles.configCard}>
         <View style={styles.configRow}>
           <View style={styles.configLeft}>
-            <AppIcon name="schedule" size={16} color={c.brandText} />
             <Text style={styles.configLabel}>Bật sao lưu tự động</Text>
           </View>
           <Switch
@@ -262,6 +268,8 @@ export default function ExportScreen() {
             onValueChange={toggleAutoBackup}
             trackColor={{ false: c.border, true: c.brand }}
             thumbColor={'#fff'}
+            accessibilityLabel="Bật sao lưu tự động"
+            accessibilityRole="switch"
           />
         </View>
 
@@ -275,6 +283,8 @@ export default function ExportScreen() {
                 return (
                   <TouchableOpacity
                     key={f.key}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: active }}
                     style={[styles.freqChip, active && styles.freqChipActive]}
                     onPress={() => changeFrequency(f.key)}
                   >
@@ -295,9 +305,6 @@ export default function ExportScreen() {
       <Text style={styles.sectionTitle}>Khôi phục từ bản sao lưu</Text>
       <View style={styles.configCard}>
         <View style={styles.restoreRow}>
-          <View style={styles.restoreIcon}>
-            <AppIcon name="restore" size={18} color={c.brand} />
-          </View>
           <View style={{ flex: 1, minWidth: 0 }}>
             <Text style={styles.configLabel}>Nạp lại dữ liệu từ file .pfbak</Text>
             <Text style={styles.restoreHint}>
@@ -329,7 +336,6 @@ export default function ExportScreen() {
       </View>
 
       <View style={styles.infoBox}>
-        <AppIcon name="info-outline" size={16} color={c.brandText} />
         <Text style={styles.infoText}>
           File backup được mã hóa AES-256-GCM với checksum SHA-256; chỉ khôi phục được từ file .pfbak do PERFIN tạo.{'\n'}
           File CSV dùng mã UTF-8, có thể mở bằng Excel/Google Sheets.{'\n'}
@@ -339,7 +345,7 @@ export default function ExportScreen() {
 
       <Text style={styles.sectionTitle}>Lịch sử xuất & sao lưu ({history.length})</Text>
       {history.length === 0 ? (
-        <EmptyState emoji="📁" title="Chưa có lịch sử xuất" message="Các file dữ liệu và bản sao lưu sẽ xuất hiện tại đây." />
+        <EmptyState title="Chưa có lịch sử xuất" message="Các file dữ liệu và bản sao lưu sẽ xuất hiện tại đây." />
       ) : (
         history.map((item) => (
           <ExportHistoryItem key={item.id} item={item} onDelete={handleDelete} onDownload={handleDownload} styles={styles} c={c} />
@@ -355,20 +361,20 @@ const createStyles = (t) => StyleSheet.create({
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: t.colors.bg },
   loadingScreen: { flex: 1, width: '100%', maxWidth: 720, alignSelf: 'center', padding: 16, backgroundColor: t.colors.bg },
 
-  sectionTitle: { fontSize: 15, fontWeight: '800', color: t.colors.text, marginBottom: 12 },
+  sectionTitle: { fontSize: 15, fontWeight: '700', color: t.colors.text, marginBottom: 12 },
 
   exportGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 20 },
   exportCard: {
     flexGrow: 1, flexBasis: 112, alignItems: 'center', gap: 8,
-    backgroundColor: t.colors.surface, padding: 14, borderRadius: t.radius.lg, borderWidth: 1.5,
-    ...t.shadows.sm, minHeight: 120, justifyContent: 'center',
+    backgroundColor: t.colors.surface, padding: 14, borderRadius: t.radius.lg, borderWidth: 1.5, borderColor: t.colors.border,
+     minHeight: 120, justifyContent: 'center',
   },
-  exportCardTitle: { fontSize: 13, fontWeight: '800' },
-  exportCardDesc: { fontSize: 11, color: t.colors.textMuted, textAlign: 'center', lineHeight: 16 },
+  exportCardTitle: { fontSize: 13, fontWeight: '700' },
+  exportCardDesc: { fontSize: 12, color: t.colors.textMuted, textAlign: 'center', lineHeight: 16 },
 
   configCard: {
     backgroundColor: t.colors.surface, borderRadius: t.radius.lg, padding: 16,
-    borderWidth: 1, borderColor: t.colors.border, marginBottom: 16, ...t.shadows.sm,
+    borderWidth: 1, borderColor: t.colors.border, marginBottom: 16,
   },
   configRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   configLeft: { flexDirection: 'row', alignItems: 'center', gap: 8 },
@@ -376,22 +382,21 @@ const createStyles = (t) => StyleSheet.create({
   divider: { height: 1, backgroundColor: t.colors.border, marginVertical: 12 },
   freqRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   freqChip: {
-    flexGrow: 1, flexBasis: 92, paddingVertical: 9, borderRadius: t.radius.pill,
+    flexGrow: 1, flexBasis: 92, minHeight: 44, justifyContent: 'center', paddingVertical: 9, borderRadius: t.radius.pill,
     backgroundColor: t.colors.surfaceAlt, borderWidth: 1.5, borderColor: t.colors.border, alignItems: 'center',
   },
-  freqChipActive: { backgroundColor: t.colors.brand, borderColor: t.colors.brand },
+  freqChipActive: { backgroundColor: t.colors.brandSoft, borderColor: t.colors.brand },
   freqText: { fontSize: 12, color: t.colors.textMuted, fontWeight: '700' },
-  freqTextActive: { color: t.colors.onBrand },
+  freqTextActive: { color: t.colors.brandText },
   lastBackupText: { marginTop: 10, color: t.colors.textMuted, fontSize: 12 },
 
   restoreRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, marginBottom: 14 },
-  restoreIcon: { width: 36, height: 36, borderRadius: 12, backgroundColor: t.colors.brandSoft, alignItems: 'center', justifyContent: 'center' },
   restoreHint: { color: t.colors.textMuted, fontSize: 12, lineHeight: 17, marginTop: 3 },
   restoreButton: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, minHeight: 44,
     backgroundColor: t.colors.brand, borderRadius: t.radius.md,
   },
-  restoreButtonText: { color: t.colors.onBrand, fontWeight: '800', fontSize: 14 },
+  restoreButtonText: { color: t.colors.onBrand, fontWeight: '700', fontSize: 14 },
 
   infoBox: {
     flexDirection: 'row', gap: 10, backgroundColor: t.colors.brandSoft,
@@ -401,19 +406,19 @@ const createStyles = (t) => StyleSheet.create({
 
   historyItem: {
     flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: t.colors.surface,
-    padding: 13, borderRadius: t.radius.md, marginBottom: 8, borderWidth: 1, borderColor: t.colors.border, ...t.shadows.sm,
+    padding: 13, borderRadius: t.radius.md, marginBottom: 8, borderWidth: 1, borderColor: t.colors.border,
   },
-  historyIcon: { width: 42, height: 42, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+  historyIcon: { width: 28, height: 42, alignItems: 'flex-start', justifyContent: 'center' },
   historyInfo: { flex: 1, minWidth: 0 },
   historyTitleRow: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 6, marginBottom: 2 },
-  historyType: { fontWeight: '800', fontSize: 14, color: t.colors.text },
+  historyType: { fontWeight: '700', fontSize: 14, color: t.colors.text },
   autoBadge: { backgroundColor: t.colors.brandSoft, paddingHorizontal: 6, paddingVertical: 2, borderRadius: t.radius.pill },
-  autoBadgeText: { color: t.colors.brandText, fontSize: 10, fontWeight: '700' },
+  autoBadgeText: { color: t.colors.brandText, fontSize: 12, fontWeight: '700' },
   historyLabel: { color: t.colors.textSecondary, fontSize: 12, marginBottom: 2 },
-  historyMeta: { color: t.colors.textMuted, fontSize: 11 },
+  historyMeta: { color: t.colors.textMuted, fontSize: 12 },
   historyActions: { flexDirection: 'row', gap: 4 },
-  dlBtn: { width: 36, height: 36, borderRadius: 12, backgroundColor: t.colors.brandSoft, alignItems: 'center', justifyContent: 'center' },
-  delBtn: { width: 36, height: 36, borderRadius: 12, backgroundColor: t.colors.expenseSoft, alignItems: 'center', justifyContent: 'center' },
+  dlBtn: { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  delBtn: { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
 
   emptyState: { alignItems: 'center', paddingVertical: 32 },
   emptyIcon: { fontSize: 40, marginBottom: 8 },

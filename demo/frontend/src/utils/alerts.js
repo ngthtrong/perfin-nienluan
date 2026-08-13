@@ -1,3 +1,6 @@
+// Vai trò: Chuẩn hóa dialog thông báo giữa native Alert và fallback trên web.
+// Luồng chính: ghép nội dung/nút, chọn hành động mặc định và giữ cùng interface đa nền tảng.
+
 import { Alert, Platform } from 'react-native';
 
 function messageText(title, message) {
@@ -36,4 +39,3 @@ export function showAlert(title, message, buttons, options) {
   const selectedButton = confirmed ? actionButton : cancelButton;
   return selectedButton?.onPress?.();
 }
-

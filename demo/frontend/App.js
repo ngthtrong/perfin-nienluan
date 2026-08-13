@@ -1,3 +1,6 @@
+// Vai trò: Lắp ghép provider cấp ứng dụng và khởi tạo cây điều hướng PERFIN.
+// Luồng chính: lấy theme hiện tại, ánh xạ sang NavigationContainer rồi render RootNavigator.
+
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { NavigationContainer, DefaultTheme, DarkTheme } from '@react-navigation/native';
@@ -29,6 +32,7 @@ function ThemedApp() {
   );
 }
 
+// Bọc toàn bộ ứng dụng bằng safe-area và theme trước khi render navigation.
 export default function App() {
   return (
     <SafeAreaProvider>

@@ -1,3 +1,6 @@
+// Vai trò: Tính hạn mức ngân sách đề xuất theo lịch sử và chiến lược needs/wants.
+// Luồng chính: tổng hợp kỳ, phân nhóm, thêm buffer, làm tròn và ép tổng không vượt trần.
+
 const { normalizeForMatch } = require('../feedback/textSimilarity');
 
 const DEFAULT_NEEDS = new Set([
@@ -128,6 +131,7 @@ function normalizeStrategy(value = 'hybrid') {
   return aliases[value] || null;
 }
 
+// Tạo đề xuất theo strategy, dữ liệu kỳ hoàn tất và các trần phân bổ đã cấu hình.
 function recommendCategoryBudgets(rows = [], options = {}) {
   const summary = summarizeHistory(rows, options.historyPeriods);
   const requestedStrategy = options.strategy || 'hybrid';

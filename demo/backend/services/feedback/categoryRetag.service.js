@@ -1,3 +1,6 @@
+// Vai trò: Điều phối preview và xác nhận đổi danh mục hàng loạt từ gợi ý discovery.
+// Luồng chính: khóa plan pending, kiểm tra giao dịch đủ điều kiện rồi retag nguyên tử khi xác nhận.
+
 const crypto = require('crypto');
 const { pool, query, rollbackAfterFailure } = require('../../config/database');
 const CategoryModel = require('../../models/category.model');
@@ -56,6 +59,7 @@ const CategoryRetagService = {
     return discoverCategorySuggestions(transactionsResult.rows, categories, { ...options, type });
   },
 
+  // Tạo pending plan có TTL từ suggestion và danh sách giao dịch vẫn còn hợp lệ.
   async preparePlan(userId = DEFAULT_USER, suggestion = {}, options = {}) {
     const transactionIds = [...new Set((suggestion.transaction_ids || suggestion.transactionIds || []).map(Number))]
       .filter((id) => Number.isInteger(id) && id > 0);
@@ -104,6 +108,7 @@ const CategoryRetagService = {
     return { cancelled: Boolean(plan), plan_id: planId };
   },
 
+  // Claim plan một lần rồi đổi category trong database transaction all-or-nothing.
   async confirmPlan(userId = DEFAULT_USER, planId, confirmed = false) {
     const plan = await this.getPlan(userId, planId);
     if (!plan) {

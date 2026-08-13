@@ -3,7 +3,7 @@
 
 \section{Objective Completion}
 
-PERFIN now forms a prototype with a clear separation between data, algorithms and the LLM layer. It contains 18 business tables plus the technical \code{_migrations} table, transaction, analytics, feedback, budget, goal and state modules, and an automated test suite. Its central contribution is not replacing business logic with an LLM, but using the model as a language-conversion layer while the backend retains validation, computation and data-write authority.
+PERFIN now forms a prototype with a clear separation between data, algorithms and the LLM layer. It contains 18 business tables plus the technical \code{_migrations} table, transaction, analytics, feedback, budget, goal and state modules, and a hybrid automated/manual test strategy. Its central contribution is not replacing business logic with an LLM, but using the model as a language-conversion layer while the backend retains validation, computation and data-write authority.
 
 \begin{table}[H]
   \centering
@@ -17,12 +17,12 @@ PERFIN now forms a prototype with a clear separation between data, algorithms an
     O2 & Text/media adapters, typed draft, clarification, preview and confirmation. & Flow executes; OCR/STT accuracy is unmeasured. \\
     O3 & Trend, anomaly, runway, recurring, correlation, budget and goal planner. & Implemented with unit tests; thresholds need representative calibration. \\
     O4 & Tool schema, service validation, facts--narrator flow and fallback. & Boundary implemented; complete numeric faithfulness is unmeasured. \\
-    O5 & A reproducible test plan, a 247-test backend suite, 21 focused regression cases and a current data profile are available; benchmark reruns are pending. & The evidence boundary is explicit; live worker, p95, UAT and current benchmark scores remain unmeasured. \\
+    O5 & The hybrid plan includes 46/46 passing backend test files, 31/31 passing local-parser cases and eight specified manual functional cases. & Automated evidence is measured; manual statuses are draft assumptions awaiting verification, while UAT and live services remain unmeasured. \\
     \bottomrule
   \end{tabularx}
 \end{table}
 
-The current data profile reports 5,328 source rows, zero validation errors and SHA-256 \code{418a9439...fbaed7}. The older classification, ablation and correction scores used a different CSV and are therefore superseded. They will be replaced only after a clean rerun with joint type/category metrics, a 200-candidate chronological correction window and complete sample-level records.
+The current data profile reports 5,328 source rows, zero validation errors and SHA-256 \code{418a9439...fbaed7}. Test results apply only to the source snapshot, fixtures and configuration disclosed in Section~\ref{sec:testing}.
 
 \begin{table}[H]
   \centering
@@ -32,18 +32,18 @@ The current data profile reports 5,328 source rows, zero validation errors and S
     \toprule
     \textbf{RQ} & \textbf{Answer supported by the prototype} & \textbf{Boundary of the answer} \\
     \midrule
-    RQ1 & Typed drafts, local media extraction, validation, preview and confirmation keep inferred values out of the ledger until review. & OCR/STT CER/WER and field accuracy require the planned 20-image/20-audio ground truth. \\
-    RQ2 & Deterministic OLS, robust anomaly signals, calendar-aware cashflow, budgets, goals and guarded correlation produce explainable facts; invariant tests are present. & Threshold calibration and representative multi-seed evaluation are pending. \\
-    RQ3 & Gemini is limited to language extraction/narration; backend services own validation, computation and writes. & The current ablation is historical; a joint-label rerun is required before claiming comparative benefit. \\
+    RQ1 & Typed drafts, local media extraction, validation, preview and confirmation keep inferred values out of the ledger until review. & OCR/STT CER/WER and field accuracy require a controlled ground-truth set. \\
+    RQ2 & Deterministic OLS, robust anomaly signals, calendar-aware cashflow, budgets, goals and guarded correlation produce explainable facts; invariant tests are present. & Thresholds still require calibration on representative data. \\
+    RQ3 & Gemini is limited to language extraction/narration; backend services own validation, computation and writes. & Comparative provider benefit has not been evaluated; current evidence supports only the responsibility boundary. \\
     \bottomrule
   \end{tabularx}
 \end{table}
 
 \section{Deliverables}
 
-Deliverables include mobile/backend source, PostgreSQL migrations, Redis/BullMQ configuration, Gemini plus local PaddleOCR/PhoWhisper adapters, tests, a reconciled demo dataset, experiment protocols and this LaTeX report. The prototype supports text/media entry with review, ledger management, analytics, budgets and goals, and returns facts with controlled narration.
+Deliverables include mobile/backend source, PostgreSQL migrations, Redis/BullMQ configuration, Gemini plus local PaddleOCR/PhoWhisper adapters, the automated suite, a manual checklist, a reconciled demo dataset and this LaTeX report. The prototype supports text/media entry with review, ledger management, analytics, budgets and goals, and returns facts with controlled narration.
 
-The architecture makes an LLM useful without granting it ledger authority. Any comparative claim is deliberately deferred until the current-snapshot ablation is rerun; schema, validation, preview/confirmation and fact grounding remain mandatory controls. PERFIN is therefore a financial-data system with an LLM interaction layer, not a chatbot that calculates or decides on the user's behalf.
+The architecture makes an LLM useful without granting it ledger authority; schema, validation, preview/confirmation and fact grounding remain mandatory controls. PERFIN is therefore a financial-data system with an LLM interaction layer, not a chatbot that calculates or decides on the user's behalf.
 
 \section{Limitations}
 
@@ -52,13 +52,13 @@ The architecture makes an LLM useful without granting it ledger authority. Any c
   \item The controlled media set and reference transcripts have not yet been supplied; until then CER, WER and transaction-field accuracy are unmeasured.
   \item Live Redis worker behaviour, retry/idempotency, p95 and UAT were not confirmed in a version-locked environment.
   \item Fuzzy, anomaly, recurring and correlation thresholds and time windows are initial configurations rather than universal optima.
-  \item Historical taxonomy is inconsistent; old artifacts use the superseded CSV, and the corrected runner still needs repeated seeds and confidence intervals.
+  \item The eight manual-test statuses in the draft are not completion evidence until the author runs and verifies every case.
   \item The numeric-grounding checker remains target design, and persona effects have not been evaluated.
   \item Remaining gaps include true PDF export, full backup/restore, push notification and complete fresh-install wallet creation.
 \end{enumerate}
 
 \section{Future Work}
 
-Next priorities are to freeze a clean commit and current dataset, rerun the complete suite and offline experiments, create the 20-image/20-audio ground truth, run temporal correction replay with 200 candidates, exercise PostgreSQL confirmation and Redis duplicate delivery end-to-end, implement numeric grounding, measure p50/p95 over at least 30 runs per flow, conduct counterbalanced UAT with five or more users, and add authentication, authorization, audit and secret management before real deployment.
+Next priorities are to run and retain evidence for the eight manual cases; exercise rollback and duplicate prevention end-to-end with live PostgreSQL and Redis; build controlled media ground truth; implement numeric grounding and measure p50/p95 in a fixed environment; conduct UAT with target users; and add authentication, authorization, audit and secret management before real deployment.
 
 Bank synchronization, shared wallets and high availability should follow only after data correctness and empirical evidence stabilize. This ordering preserves the basic-topic project's intended focus: data and algorithms are the core, while the LLM is a replaceable, measurable supporting component.

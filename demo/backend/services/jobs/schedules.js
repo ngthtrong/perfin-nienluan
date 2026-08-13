@@ -1,3 +1,6 @@
+// Vai trò: Chuyển biến môi trường thành lịch chạy, timezone và tùy chọn worker hợp lệ.
+// Luồng chính: parse cấu hình có giới hạn và cung cấp helper ngày địa phương cho handler.
+
 const { JOB_NAMES, SCHEDULER_IDS } = require('./constants');
 
 function booleanFromEnv(value, fallback = true) {

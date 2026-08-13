@@ -1,3 +1,6 @@
+// Vai trò: Hiện thực DatePickerField dành riêng cho web bằng input ngày native.
+// Luồng chính: tạo input qua React, chuẩn hóa giá trị và giữ giao diện chung với bản mobile.
+
 import { createElement, useMemo } from 'react';
 import { StyleSheet, TouchableOpacity, View } from 'react-native';
 import { useTheme } from '../../theme/ThemeContext';

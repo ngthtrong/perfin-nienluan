@@ -1,11 +1,14 @@
+// Vai trò: Cho xem và chỉnh sửa nhiều giao dịch trước khi xác nhận tất cả.
+// Luồng chính: quản lý draft từng dòng, validation form và gọi edit/confirm/cancel theo pending ID.
+
 import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useTheme } from '../theme/ThemeContext';
-import { HIT_SLOP } from '../theme/tokens';
 import { formatDate, formatMoneyValue, formatVND, parseMoneyInput, toDateInputValue } from '../utils/formatters';
 import AppIcon from './AppIcon';
 import { Chip, DatePickerField, MoneyInput } from './ui';
 
+// Quản lý nhiều draft con nhưng vẫn xác nhận bằng một pending transaction chung.
 export default function MultiTransactionPreviewCard({
   transactions = [],
   categories = [],
@@ -51,6 +54,7 @@ export default function MultiTransactionPreviewCard({
     });
   }
 
+  // Chỉ cập nhật dòng đang sửa; backend validation lại toàn bộ field thay đổi.
   async function saveEdit() {
     const amount = parseMoneyInput(draft?.amount);
     if (!draft?.description.trim() || !(amount > 0) || !draft.category_id || !draft.transaction_date) return;
@@ -83,9 +87,6 @@ export default function MultiTransactionPreviewCard({
     <View style={styles.wrapper}>
       <View style={styles.card}>
         <View style={styles.header}>
-          <View style={styles.headerIcon}>
-            <AppIcon name="playlist-add-check" size={18} color={c.brand} />
-          </View>
           <View style={{ flex: 1 }}>
             <Text style={styles.heading}>Xác nhận nhiều giao dịch</Text>
             <Text style={styles.subheading}>{transactions.length} khoản được nhận diện</Text>
@@ -188,7 +189,7 @@ export default function MultiTransactionPreviewCard({
                     </View>
                     <View style={{ flex: 1 }}>
                       <Text style={styles.description} numberOfLines={2}>
-                        {transaction.category_icon ? `${transaction.category_icon} ` : ''}{transaction.description}
+                        {transaction.description}
                       </Text>
                       <Text style={styles.category}>
                         {transaction.category_name || 'Chưa phân loại'}
@@ -235,11 +236,11 @@ export default function MultiTransactionPreviewCard({
               style={styles.cancelButton}
               onPress={onCancel}
               disabled={busy}
-              hitSlop={HIT_SLOP}
               accessibilityRole="button"
-              accessibilityLabel="Bỏ qua tất cả giao dịch đề xuất"
+              accessibilityLabel="Hủy tất cả giao dịch đề xuất"
+              accessibilityState={{ disabled: busy }}
             >
-              <AppIcon name="close" size={17} color={c.textMuted} />
+              <Text style={styles.cancelText}>Hủy</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -252,34 +253,30 @@ const createStyles = (t) => StyleSheet.create({
   wrapper: { alignSelf: 'flex-start', width: '96%', marginBottom: 12 },
   card: {
     backgroundColor: t.colors.surface, borderRadius: t.radius.xl,
-    borderWidth: 1.5, borderColor: t.colors.border, overflow: 'hidden', ...t.shadows.md,
+    borderWidth: 1, borderColor: t.colors.border, overflow: 'hidden',
   },
   header: {
     flexDirection: 'row', alignItems: 'center', gap: 9, padding: 14,
-    borderBottomWidth: 1, borderBottomColor: t.colors.border, backgroundColor: t.colors.surfaceAlt,
+    borderBottomWidth: 1, borderBottomColor: t.colors.border,
   },
-  headerIcon: {
-    width: 34, height: 34, borderRadius: 11, backgroundColor: t.colors.brandSoft,
-    alignItems: 'center', justifyContent: 'center',
-  },
-  heading: { color: t.colors.text, fontSize: 14, fontWeight: '800' },
-  subheading: { color: t.colors.textMuted, fontSize: 11, fontWeight: '600', marginTop: 2 },
+  heading: { color: t.colors.text, fontSize: 14, fontWeight: '700' },
+  subheading: { color: t.colors.textMuted, fontSize: 12, fontWeight: '600', marginTop: 2 },
   countBadge: {
     minWidth: 28, height: 28, borderRadius: 14, paddingHorizontal: 7,
-    alignItems: 'center', justifyContent: 'center', backgroundColor: t.colors.brand,
+    alignItems: 'center', justifyContent: 'center', backgroundColor: t.colors.brandSoft,
   },
-  countText: { color: t.colors.onBrand, fontWeight: '900', fontSize: 12 },
+  countText: { color: t.colors.brandText, fontWeight: '700', fontSize: 12 },
   list: { paddingHorizontal: 14 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 9, paddingVertical: 12 },
   rowBorder: { borderTopWidth: 1, borderTopColor: t.colors.border },
   typeIcon: { width: 30, height: 30, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
   description: { color: t.colors.text, fontSize: 13, lineHeight: 18, fontWeight: '700' },
-  category: { color: t.colors.textMuted, fontSize: 11, fontWeight: '600', marginTop: 2 },
+  category: { color: t.colors.textMuted, fontSize: 12, fontWeight: '600', marginTop: 2 },
   amountColumn: { flexShrink: 1, alignItems: 'flex-end', maxWidth: '40%' },
-  amount: { fontSize: 12, fontWeight: '900' },
+  amount: { fontSize: 12, fontWeight: '700' },
   editIcon: { flexDirection: 'row', alignItems: 'center', gap: 3, paddingTop: 5, paddingLeft: 8 },
-  editLabel: { color: t.colors.brandText, fontSize: 10, fontWeight: '700' },
-  fieldLabel: { color: t.colors.textMuted, fontSize: 11, fontWeight: '700', marginBottom: 5 },
+  editLabel: { color: t.colors.brandText, fontSize: 12, fontWeight: '700' },
+  fieldLabel: { color: t.colors.textMuted, fontSize: 12, fontWeight: '700', marginBottom: 5 },
   input: {
     borderWidth: 1.5, borderColor: t.colors.border, borderRadius: t.radius.sm,
     paddingHorizontal: 11, paddingVertical: 9, marginBottom: 9,
@@ -293,14 +290,14 @@ const createStyles = (t) => StyleSheet.create({
     borderWidth: 1, borderColor: t.colors.border, backgroundColor: t.colors.surfaceAlt,
   },
   typeChipActive: { backgroundColor: t.colors.brandSoft, borderColor: t.colors.brand },
-  typeChipText: { color: t.colors.textMuted, fontSize: 11, fontWeight: '700' },
+  typeChipText: { color: t.colors.textMuted, fontSize: 12, fontWeight: '700' },
   typeChipTextActive: { color: t.colors.brandText },
   editActions: { flexDirection: 'row', gap: 8 },
   saveButton: {
     flex: 1, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 5,
     backgroundColor: t.colors.brand, paddingVertical: 9, borderRadius: t.radius.sm,
   },
-  saveText: { color: t.colors.onBrand, fontSize: 12, fontWeight: '800' },
+  saveText: { color: t.colors.onBrand, fontSize: 12, fontWeight: '700' },
   closeEditButton: {
     justifyContent: 'center', paddingHorizontal: 13, borderRadius: t.radius.sm,
     borderWidth: 1, borderColor: t.colors.border,
@@ -310,21 +307,22 @@ const createStyles = (t) => StyleSheet.create({
     flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'flex-end', gap: 8, paddingHorizontal: 14, paddingVertical: 10,
     borderTopWidth: 1, borderTopColor: t.colors.border, backgroundColor: t.colors.surfaceAlt,
   },
-  totalExpense: { color: t.colors.expense, fontSize: 12, fontWeight: '800' },
-  totalIncome: { color: t.colors.income, fontSize: 12, fontWeight: '800' },
+  totalExpense: { color: t.colors.expense, fontSize: 12, fontWeight: '700' },
+  totalIncome: { color: t.colors.income, fontSize: 12, fontWeight: '700' },
   actions: { flexDirection: 'row', gap: 8, padding: 12, borderTopWidth: 1, borderTopColor: t.colors.border },
   confirmButton: {
-    flex: 1, minHeight: 42, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
-    backgroundColor: t.colors.brand, borderRadius: t.radius.md,
+    flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
+    minHeight: 44, backgroundColor: t.colors.brand, borderRadius: t.radius.md,
   },
-  confirmText: { color: t.colors.onBrand, fontSize: 13, fontWeight: '800' },
+  confirmText: { color: t.colors.onBrand, fontSize: 13, fontWeight: '700' },
   cancelButton: {
-    width: 42, alignItems: 'center', justifyContent: 'center', borderRadius: t.radius.md,
+    minHeight: 44, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 14, borderRadius: t.radius.md,
     borderWidth: 1.5, borderColor: t.colors.border, backgroundColor: t.colors.surfaceAlt,
   },
+  cancelText: { color: t.colors.textSecondary, fontSize: 14, fontWeight: '600' },
   resolvedBar: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
     padding: 12, borderTopWidth: 1, borderTopColor: t.colors.border, backgroundColor: t.colors.incomeSoft,
   },
-  resolvedText: { color: t.colors.income, fontSize: 12, fontWeight: '800' },
+  resolvedText: { color: t.colors.income, fontSize: 12, fontWeight: '700' },
 });

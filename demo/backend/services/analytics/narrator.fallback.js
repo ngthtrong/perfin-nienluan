@@ -1,6 +1,6 @@
-// Deterministic Vietnamese narration of analytics facts — used when no LLM provider
-// is configured. Keeps the insight feature fully functional offline (and gives the
-// LLM path something to degrade to). Numbers come straight from the facts object.
+// Vai trò: Diễn giải facts phân tích bằng mẫu tiếng Việt khi không dùng được LLM.
+// Luồng chính: đọc trực tiếp contract facts và tạo lời kể xác định, không phát minh số liệu.
+// Đây cũng là đường fallback để tính năng insight vẫn hoạt động offline.
 
 function fmtVND(n) {
   return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(Math.round(Number(n) || 0));

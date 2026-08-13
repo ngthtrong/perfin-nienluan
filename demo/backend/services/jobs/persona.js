@@ -1,3 +1,7 @@
+// Vai trò: Áp dụng persona cho thông báo chủ động mà vẫn có fallback an toàn.
+// Luồng chính: tải persona đang hoạt động, decorate message và giữ nguyên nội dung nếu lỗi.
+
+// Decorate best effort; lỗi persona không được làm job thông báo thất bại.
 async function decorateProactiveMessage(userId, content, personaService = null) {
   if (!content) return content;
   try {

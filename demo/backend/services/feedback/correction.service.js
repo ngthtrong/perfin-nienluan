@@ -1,3 +1,6 @@
+// Vai trò: Ghi nhận correction và tìm ví dụ gần để cải thiện phân loại lần sau.
+// Luồng chính: lọc feedback hữu ích, xếp hạng theo similarity/agreement và chỉ áp dụng cùng loại thu chi.
+
 const AiFeedbackModel = require('../../models/aiFeedback.model');
 const { normalizeForMatch, textSimilarity } = require('./textSimilarity');
 

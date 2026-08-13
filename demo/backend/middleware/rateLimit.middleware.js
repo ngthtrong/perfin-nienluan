@@ -1,3 +1,6 @@
+// Vai trò: Giới hạn tần suất gọi API theo cửa sổ thời gian bằng KV store.
+// Luồng chính: xác định người gọi, tăng bộ đếm có TTL và từ chối khi vượt ngưỡng.
+
 const KVStore = require('../services/store/kv.store');
 
 function rateLimit({ prefix = 'api', limit = 60, windowSeconds = 60 } = {}) {

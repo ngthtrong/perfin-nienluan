@@ -3,7 +3,7 @@
 
 \section{Mức độ hoàn thành mục tiêu}
 
-PERFIN đã hình thành một nguyên mẫu tách rõ dữ liệu, giải thuật và lớp LLM. Hệ thống có 18 bảng nghiệp vụ cùng bảng kỹ thuật \code{_migrations}, các module transaction, analytics, feedback, budget, goal và state, cùng bộ kiểm thử tự động. Đóng góp chính không phải là để LLM thay thế nghiệp vụ, mà là dùng mô hình như lớp chuyển đổi ngôn ngữ trong khi backend vẫn giữ toàn bộ quyền validation, tính toán và ghi dữ liệu.
+PERFIN đã hình thành một nguyên mẫu tách rõ dữ liệu, giải thuật và lớp LLM. Hệ thống có 18 bảng nghiệp vụ cùng bảng kỹ thuật \code{_migrations}, các module transaction, analytics, feedback, budget, goal và state, cùng chiến lược kiểm thử lai giữa tự động và thủ công. Đóng góp chính không phải là để LLM thay thế nghiệp vụ, mà là dùng mô hình như lớp chuyển đổi ngôn ngữ trong khi backend vẫn giữ toàn bộ quyền validation, tính toán và ghi dữ liệu.
 
 \begin{table}[H]
   \centering
@@ -17,12 +17,12 @@ PERFIN đã hình thành một nguyên mẫu tách rõ dữ liệu, giải thu�
     O2 & Text/media adapter, typed draft, clarification, preview và confirm. & Luồng đã chạy; accuracy OCR/STT chưa được đo. \\
     O3 & Trend, anomaly, runway, recurring, correlation, budget và goal planner. & Đã hiện thực và có unit test; ngưỡng cần hiệu chỉnh trên dữ liệu đại diện. \\
     O4 & Tool schema, service validation, facts--narrator flow và fallback. & Ranh giới đã hiện thực; numeric faithfulness toàn diện chưa được đo. \\
-    O5 & Có test plan tái lập, full suite backend 247 test, 21 ca regression tập trung và profile dữ liệu hiện tại; rerun benchmark còn chờ. & Ranh giới bằng chứng đã rõ; worker live, p95, UAT và benchmark hiện tại chưa đo. \\
+    O5 & Có kế hoạch kiểm thử lai; 46/46 tệp backend và 31/31 ca parser cục bộ đạt, cùng tám ca chức năng thủ công đã đặc tả. & Bằng chứng tự động đã đo; trạng thái thủ công còn là giả định dự thảo cần xác minh, còn UAT và dịch vụ live chưa đo. \\
     \bottomrule
   \end{tabularx}
 \end{table}
 
-Profile dữ liệu hiện tại báo 5.328 dòng nguồn, không có lỗi validation và SHA-256 \code{418a9439...fbaed7}. Các điểm classification, ablation và correction cũ dùng CSV khác nên đã superseded. Chỉ sau khi rerun sạch với joint type/category, cửa sổ correction 200 candidate theo thời gian và record đầy đủ theo mẫu mới đưa số vào kết luận.
+Profile dữ liệu hiện tại báo 5.328 dòng nguồn, không có lỗi validation và SHA-256 \code{418a9439...fbaed7}. Kết quả kiểm thử chỉ áp dụng cho snapshot, fixture và cấu hình được công bố trong Mục~\ref{sec:testing}.
 
 \begin{table}[H]
   \centering
@@ -32,18 +32,18 @@ Profile dữ liệu hiện tại báo 5.328 dòng nguồn, không có lỗi vali
     \toprule
     \textbf{RQ} & \textbf{Câu trả lời được prototype hỗ trợ} & \textbf{Giới hạn câu trả lời} \\
     \midrule
-    RQ1 & Typed draft, media cục bộ, validation, preview và confirm giữ dữ liệu suy ra ngoài ledger cho tới khi người dùng xem lại. & CER/WER và field accuracy OCR/STT cần ground truth 20 ảnh/20 audio. \\
-    RQ2 & OLS, tín hiệu anomaly bền vững, cashflow theo lịch, budget, goal và correlation có guard tạo facts giải thích được; đã có invariant test. & Hiệu chỉnh ngưỡng và đánh giá nhiều seed trên dữ liệu đại diện còn chờ. \\
-    RQ3 & Gemini chỉ hiểu ngôn ngữ/diễn giải; backend giữ validation, tính toán và quyền ghi. & Ablation hiện tại là lịch sử; cần rerun joint-label trước khi nói về lợi ích so sánh. \\
+    RQ1 & Typed draft, media cục bộ, validation, preview và confirm giữ dữ liệu suy ra ngoài ledger cho tới khi người dùng xem lại. & CER/WER và field accuracy OCR/STT cần một tập ground truth có kiểm soát. \\
+    RQ2 & OLS, tín hiệu anomaly bền vững, cashflow theo lịch, budget, goal và correlation có guard tạo facts giải thích được; đã có invariant test. & Các ngưỡng vẫn cần hiệu chỉnh trên dữ liệu đại diện. \\
+    RQ3 & Gemini chỉ hiểu ngôn ngữ/diễn giải; backend giữ validation, tính toán và quyền ghi. & Chưa đánh giá lợi ích so sánh giữa các provider; kết quả hiện chỉ hỗ trợ kết luận về ranh giới trách nhiệm. \\
     \bottomrule
   \end{tabularx}
 \end{table}
 
 \section{Kết quả và sản phẩm bàn giao}
 
-Sản phẩm gồm mã nguồn mobile/backend, migration PostgreSQL, cấu hình Redis/BullMQ, adapter Gemini cùng PaddleOCR/PhoWhisper cục bộ, bộ test, tập dữ liệu demo đã đối soát, protocol thí nghiệm và báo cáo LaTeX. Hệ thống hỗ trợ nhập text/media, xem trước và xác nhận; quản lý sổ cái; phân tích, ngân sách và mục tiêu; đồng thời trả facts cùng lời diễn giải có kiểm soát.
+Sản phẩm gồm mã nguồn mobile/backend, migration PostgreSQL, cấu hình Redis/BullMQ, adapter Gemini cùng PaddleOCR/PhoWhisper cục bộ, bộ test tự động, danh sách ca thủ công, tập dữ liệu demo đã đối soát và báo cáo LaTeX. Hệ thống hỗ trợ nhập text/media, xem trước và xác nhận; quản lý sổ cái; phân tích, ngân sách và mục tiêu; đồng thời trả facts cùng lời diễn giải có kiểm soát.
 
-Kiến trúc cho phép LLM hỗ trợ mà không có quyền trên ledger. Mọi claim so sánh được hoãn đến khi ablation trên snapshot hiện tại chạy lại; schema, validation, preview/confirm và facts grounding vẫn là hàng rào bắt buộc. Vì vậy PERFIN là hệ thống dữ liệu tài chính có lớp giao tiếp LLM, không phải chatbot tự tính toán hay tự quyết định thay người dùng.
+Kiến trúc cho phép LLM hỗ trợ mà không có quyền trên ledger; schema, validation, preview/confirm và facts grounding vẫn là hàng rào bắt buộc. Vì vậy PERFIN là hệ thống dữ liệu tài chính có lớp giao tiếp LLM, không phải chatbot tự tính toán hay tự quyết định thay người dùng.
 
 \section{Hạn chế}
 
@@ -52,13 +52,13 @@ Kiến trúc cho phép LLM hỗ trợ mà không có quyền trên ledger. Mọi
   \item Chưa có bộ media có kiểm soát và transcript tham chiếu; CER, WER và transaction-field accuracy hiện chưa đo.
   \item Redis worker, retry/idempotency live, p95 và UAT chưa được xác nhận trong môi trường khóa phiên bản.
   \item Các ngưỡng fuzzy, anomaly, recurring, correlation và cửa sổ thời gian là cấu hình khởi đầu, chưa tối ưu cho mọi người dùng.
-  \item Taxonomy lịch sử không nhất quán; artifact cũ dùng CSV đã superseded, còn runner correction cần nhiều seed và khoảng tin cậy.
+  \item Tám trạng thái kiểm thử thủ công trong bản dự thảo chưa phải bằng chứng hoàn tất cho tới khi tác giả chạy và xác minh từng ca.
   \item Numeric grounding checker mới là thiết kế đích; persona chưa được đánh giá tác động hành vi.
   \item Một số chức năng hỗ trợ còn thiếu: PDF thật, backup/restore hoàn chỉnh, push notification và luồng tạo ví đầy đủ trên fresh install.
 \end{enumerate}
 
 \section{Hướng phát triển}
 
-Ưu tiên tiếp theo là: (1) freeze clean commit và dataset hiện tại, chạy lại full suite cùng offline experiments; (2) tạo ground truth 20 ảnh/20 audio; (3) temporal replay correction với 200 candidate; (4) kiểm tra end-to-end confirm PostgreSQL và duplicate delivery Redis; (5) hiện thực numeric checker và đo p50/p95 ít nhất 30 lượt/luồng; (6) UAT counterbalanced với từ năm người dùng; (7) bổ sung authentication, authorization, audit và secret management trước triển khai thật.
+Ưu tiên tiếp theo là: (1) chạy và lưu bằng chứng cho tám ca thủ công; (2) kiểm tra end-to-end trên PostgreSQL và Redis live, gồm rollback và chống giao dịch trùng; (3) xây dựng ground truth media có kiểm soát; (4) hiện thực numeric checker và đo p50/p95 trong môi trường cố định; (5) thực hiện UAT với người dùng mục tiêu; (6) bổ sung authentication, authorization, audit và secret management trước triển khai thật.
 
 Các mở rộng như đồng bộ ngân hàng, shared wallet hoặc high availability chỉ nên thực hiện sau khi tính đúng dữ liệu và bằng chứng thực nghiệm ổn định. Cách phát triển này giữ đúng trọng tâm của niên luận cơ sở ngành: dữ liệu và giải thuật là lõi, còn LLM là thành phần hỗ trợ có thể thay thế và đo lường.

@@ -1,3 +1,6 @@
+// Vai trò: Quản lý theme, provider AI, persona và consent cá nhân hóa.
+// Luồng chính: tải cấu hình hiện tại, gửi từng thay đổi qua API và báo kết quả cho người dùng.
+
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Switch, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useTheme } from '../theme/ThemeContext';
@@ -24,6 +27,7 @@ const THEME_OPTIONS = [
   { value: 'system', label: 'Hệ thống' },
 ];
 
+// Đồng bộ cấu hình runtime từ backend với các control cài đặt trên giao diện.
 export default function SettingsScreen() {
   const { theme, scheme, setScheme } = useTheme();
   const c = theme.colors;
@@ -197,27 +201,18 @@ export default function SettingsScreen() {
           return (
             <TouchableOpacity
               key={persona.id}
+              accessibilityRole="radio"
+              accessibilityLabel={`${persona.name}. ${persona.description || 'Phong cách trợ lý tài chính cá nhân.'}`}
+              accessibilityState={{ checked: active, disabled: Boolean(savingPersonaId) }}
               onPress={() => selectPersona(persona)}
               disabled={Boolean(savingPersonaId)}
               activeOpacity={0.8}
               style={{
-                flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 11,
-                paddingHorizontal: 11, borderRadius: theme.radius.md,
-                borderWidth: 1.5, borderColor: active ? c.brand : c.border,
-                backgroundColor: active ? c.brandSoft : c.surfaceAlt,
-                marginBottom: index === personas.length - 1 ? 0 : 8,
+                flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 64,
+                paddingVertical: 10, borderBottomWidth: index === personas.length - 1 ? 0 : 1,
+                borderBottomColor: c.border,
               }}
             >
-              <View style={{
-                width: 36, height: 36, borderRadius: 12, alignItems: 'center', justifyContent: 'center',
-                backgroundColor: active ? c.brand : c.surface,
-              }}>
-                <AppIcon
-                  name={persona.key === 'strict' ? 'rule' : persona.key === 'friendly' ? 'sentiment-satisfied' : 'psychology'}
-                  size={18}
-                  color={active ? c.onBrand : c.brandText}
-                />
-              </View>
               <View style={{ flex: 1 }}>
                 <Text style={{ ...theme.typo.bodyStrong, color: active ? c.brandText : c.text }}>{persona.name}</Text>
                 <Text style={{ ...theme.typo.caption, color: c.textMuted, marginTop: 2 }} numberOfLines={2}>
@@ -234,8 +229,7 @@ export default function SettingsScreen() {
         )}
 
         {personaError && (
-          <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 6, marginTop: 10, padding: 9, borderRadius: theme.radius.sm, backgroundColor: c.warningSoft }}>
-            <AppIcon name="info-outline" size={15} color={c.warning} />
+          <View style={{ marginTop: 10, padding: 10, borderLeftWidth: 3, borderLeftColor: c.warning }}>
             <Text style={{ ...theme.typo.caption, color: c.warning, flex: 1 }}>{personaError}</Text>
           </View>
         )}
@@ -279,9 +273,8 @@ export default function SettingsScreen() {
                 <View
                   key={trait.trait_type}
                   style={{
-                    flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 10, paddingHorizontal: 11,
-                    borderRadius: theme.radius.md, borderWidth: 1, borderColor: c.border,
-                    backgroundColor: c.surfaceAlt, marginBottom: 8,
+                    flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 64,
+                    paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: c.border,
                   }}
                 >
                   <View style={{ flex: 1, minWidth: 0 }}>
@@ -315,9 +308,11 @@ export default function SettingsScreen() {
                   return (
                     <TouchableOpacity
                       key={item.type}
+                      accessibilityRole="button"
+                      accessibilityState={{ selected: active }}
                       onPress={() => setNewTraitType(item.type)}
                       style={{
-                        paddingHorizontal: 11, paddingVertical: 7, borderRadius: theme.radius.pill,
+                        minHeight: 44, justifyContent: 'center', paddingHorizontal: 11, paddingVertical: 7, borderRadius: theme.radius.pill,
                         borderWidth: 1.5, borderColor: active ? c.brand : c.border,
                         backgroundColor: active ? c.brandSoft : c.surfaceAlt,
                       }}
@@ -328,6 +323,7 @@ export default function SettingsScreen() {
                 })}
               </View>
               <TextInput
+                accessibilityLabel="Tên đặc điểm cá nhân"
                 style={{
                   borderWidth: 1.5, borderColor: c.border, borderRadius: theme.radius.md,
                   padding: 12, fontSize: 14, color: c.text, backgroundColor: c.surfaceAlt,
@@ -338,6 +334,7 @@ export default function SettingsScreen() {
                 placeholderTextColor={c.textMuted}
               />
               <TextInput
+                accessibilityLabel="Nội dung đặc điểm cá nhân"
                 style={{
                   borderWidth: 1.5, borderColor: c.border, borderRadius: theme.radius.md,
                   padding: 12, fontSize: 14, color: c.text, backgroundColor: c.surfaceAlt,
@@ -358,8 +355,7 @@ export default function SettingsScreen() {
         )}
 
         {profileError && (
-          <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 6, marginTop: 12, padding: 9, borderRadius: theme.radius.sm, backgroundColor: c.warningSoft }}>
-            <AppIcon name="info-outline" size={15} color={c.warning} />
+          <View style={{ marginTop: 12, padding: 10, borderLeftWidth: 3, borderLeftColor: c.warning }}>
             <Text style={{ ...theme.typo.caption, color: c.warning, flex: 1 }}>{profileError}</Text>
           </View>
         )}

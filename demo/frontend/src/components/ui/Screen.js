@@ -1,3 +1,6 @@
+// Vai trò: Chuẩn hóa safe area, nền và vùng cuộn cho các screen công cụ.
+// Luồng chính: chọn ScrollView hoặc View theo props và áp dụng padding/theme chung.
+
 import { View, ScrollView, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../../theme/ThemeContext';

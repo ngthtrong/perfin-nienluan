@@ -1,3 +1,6 @@
+// Vai trò: Xác thực payload tạo hoặc cập nhật danh mục ở lớp service dùng chung.
+// Luồng chính: từ chối field lạ, chuẩn hóa tên/icon và trả object an toàn cho model.
+
 function bad(message) {
   const error = new Error(message);
   error.status = 400;
@@ -30,6 +33,7 @@ function rejectUnknown(data, allowed) {
   if (unknown) throw bad(`Không thể cập nhật trường ${unknown}`);
 }
 
+// Trả payload category đã chuẩn hóa và không chứa field ngoài allowlist.
 function validateCategoryCreatePayload(data) {
   assertObject(data);
   const allowed = new Set(['name', 'type', 'icon', 'parent_id']);

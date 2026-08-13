@@ -1,11 +1,7 @@
-// Conversation / clarification state (Flows 12, 13, 15).
-//
-// Fixes the documented weakness "không có state lưu lại giữa các vòng": instead of
-// re-parsing every turn from scratch, we persist what the assistant is currently
-// waiting for (a missing amount, an ambiguous bill choice, ...) so the next user
-// message is merged into that context.
-//
-// Shape stored under `convo:{userId}`:
+// Vai trò: Lưu trạng thái clarification giữa nhiều lượt hội thoại có TTL.
+// Luồng chính: ghi điều trợ lý đang chờ, hợp nhất câu trả lời tiếp theo rồi xóa khi hoàn tất.
+// Nhờ đó dữ liệu thiếu hoặc lựa chọn mơ hồ không phải được parse lại từ đầu.
+// Shape lưu dưới khóa `convo:{userId}`:
 //   {
 //     intent,               // e.g. 'transaction' | 'recurring_pay' | 'recurring_pause'
 //     awaiting,             // e.g. 'amount' | 'bill_choice' | 'due_day'

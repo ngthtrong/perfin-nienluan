@@ -1,3 +1,6 @@
+// Vai trò: Tìm kiếm và quản lý toàn bộ giao dịch trong sổ cái.
+// Luồng chính: tải có filter/phân trang, mở form chỉnh sửa và hỗ trợ xóa mềm hoặc khôi phục.
+
 import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, FlatList,
@@ -5,7 +8,6 @@ import {
 } from 'react-native';
 import { api } from '../services/api.service';
 import { useTheme } from '../theme/ThemeContext';
-import { HIT_SLOP } from '../theme/tokens';
 import { formatMoneyValue, formatVND, parseMoneyInput, toDateInputValue } from '../utils/formatters';
 import { showAlert } from '../utils/alerts';
 import TransactionCard from '../components/TransactionCard';
@@ -92,6 +94,7 @@ const EMPTY_FORM = {
   note: '',
 };
 
+// Điều phối filter, phân trang và form thao tác trên sổ cái giao dịch.
 export default function TransactionScreen({ route, navigation }) {
   const { theme } = useTheme();
   const styles = useMemo(() => createStyles(theme), [theme]);
@@ -118,6 +121,7 @@ export default function TransactionScreen({ route, navigation }) {
   const [form, setForm] = useState(EMPTY_FORM);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
+  const [activeTransactionId, setActiveTransactionId] = useState(null);
   const listRef = useRef(null);
   const hasLoadedRef = useRef(false);
   const transactionRequestRef = useRef(0);
@@ -247,6 +251,7 @@ export default function TransactionScreen({ route, navigation }) {
       note: transaction.note || '',
     });
     setCategoryEditingId(null);
+    setActiveTransactionId(null);
     setShowForm(true);
     setTimeout(() => listRef.current?.scrollToOffset?.({ offset: 0, animated: true }), 0);
   }
@@ -293,6 +298,8 @@ export default function TransactionScreen({ route, navigation }) {
           try {
             await api.deleteTransaction(id);
             if (editingId === id) resetForm();
+            setActiveTransactionId(null);
+            setCategoryEditingId(null);
             await Promise.all([loadReferences(), loadTransactions()]);
             showAlert(
               'Đã xoá giao dịch',
@@ -466,15 +473,14 @@ export default function TransactionScreen({ route, navigation }) {
               setShowForm(true);
             }
           }}
-          style={{ flexGrow: 1 }}
+          style={{ flex: 1 }}
         />
         <Button
-          label="Quản lý danh mục"
-          icon="category"
-          variant="secondary"
+          label="Danh mục"
+          variant="ghost"
           fullWidth={false}
           onPress={() => navigation.navigate('Categories')}
-          style={{ flexGrow: 1 }}
+          style={{ flexShrink: 0 }}
         />
       </View>
 
@@ -489,25 +495,27 @@ export default function TransactionScreen({ route, navigation }) {
           </View>
 
           <View style={styles.segment}>
-            {[['expense', 'Chi tiêu', 'trending-down', c.expense], ['income', 'Thu nhập', 'trending-up', c.income]].map(([type, label, icon, color]) => {
+            {[['expense', 'Chi tiêu'], ['income', 'Thu nhập']].map(([type, label]) => {
               const active = form.type === type;
               return (
                 <TouchableOpacity
                   key={type}
-                  style={[styles.segmentButton, active && { backgroundColor: color, borderColor: color }]}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: active }}
+                  style={[styles.segmentButton, active && styles.segmentButtonActive]}
                   onPress={() => {
                     const defCat = categories.find((x) => x.type === type);
                     setForm((prev) => ({ ...prev, type, category_id: defCat?.id || null }));
                   }}
                 >
-                  <AppIcon name={icon} size={16} color={active ? c.onBrand : c.textMuted} />
-                  <Text style={[styles.segmentText, active && { color: c.onBrand }]}>{label}</Text>
+                  <Text style={[styles.segmentText, active && { color: c.brandText }]}>{label}</Text>
                 </TouchableOpacity>
               );
             })}
           </View>
 
           <TextInput
+            accessibilityLabel="Mô tả giao dịch"
             style={styles.input}
             placeholder="Mô tả giao dịch..."
             placeholderTextColor={c.textMuted}
@@ -557,10 +565,12 @@ export default function TransactionScreen({ route, navigation }) {
               return (
                 <TouchableOpacity
                   key={wallet.id}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Chọn ví ${wallet.name}`}
+                  accessibilityState={{ selected: active }}
                   style={[styles.walletChip, active && styles.walletChipActive]}
                   onPress={() => setForm((previous) => ({ ...previous, wallet_id: wallet.id }))}
                 >
-                  <AppIcon name="account-balance-wallet" size={14} color={active ? c.onBrand : c.textMuted} />
                   <View>
                     <Text style={[styles.walletChipName, active && styles.walletChipNameActive]}>{wallet.name}</Text>
                     <Text style={[styles.walletChipBalance, active && styles.walletChipBalanceActive]}>{formatVND(wallet.balance)}</Text>
@@ -585,6 +595,7 @@ export default function TransactionScreen({ route, navigation }) {
             <View style={styles.optionalColumn}>
               <Text style={styles.inputLabel}>Ghi chú</Text>
               <TextInput
+                accessibilityLabel="Ghi chú giao dịch"
                 style={styles.input}
                 placeholder="Không bắt buộc"
                 placeholderTextColor={c.textMuted}
@@ -611,7 +622,6 @@ export default function TransactionScreen({ route, navigation }) {
           style={styles.filterHeader}
           onPress={() => setFiltersOpen((value) => !value)}
         >
-          <View style={styles.filterIcon}><AppIcon name="tune" size={19} color={c.brand} /></View>
           <View style={{ flex: 1, minWidth: 0 }}>
             <Text style={styles.filterTitle}>Bộ lọc giao dịch</Text>
             <Text style={styles.filterSummary}>{activeFilterSummary}</Text>
@@ -741,7 +751,7 @@ export default function TransactionScreen({ route, navigation }) {
                 onSubmitEditing={applyFilters}
               />
               {searchDraft.length > 0 && (
-                <TouchableOpacity accessibilityRole="button" accessibilityLabel="Xoá từ khoá" onPress={() => setSearchDraft('')}>
+                <TouchableOpacity accessibilityRole="button" accessibilityLabel="Xoá từ khoá" onPress={() => setSearchDraft('')} style={styles.clearSearchButton}>
                   <AppIcon name="close" size={17} color={c.textMuted} />
                 </TouchableOpacity>
               )}
@@ -810,81 +820,88 @@ export default function TransactionScreen({ route, navigation }) {
       contentContainerStyle={styles.content}
       data={transactions}
       keyExtractor={(item) => String(item.id)}
-      renderItem={({ item }) => (
-        <View>
-          <TransactionCard
-            transaction={item}
-            onPress={() => setCategoryEditingId((current) => current === item.id ? null : item.id)}
-            onLongPress={() => deleteTransaction(item.id)}
-          />
-          <View style={styles.transactionActions}>
-            <TouchableOpacity
-              accessibilityRole="button"
-              accessibilityLabel={`Đổi danh mục giao dịch ${item.description}`}
-              style={styles.transactionAction}
-              onPress={() => setCategoryEditingId((current) => current === item.id ? null : item.id)}
-            >
-              <AppIcon name="category" size={14} color={c.brandText} />
-              <Text style={styles.transactionActionText}>Danh mục</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              accessibilityRole="button"
-              accessibilityLabel={`Chỉnh sửa giao dịch ${item.description}`}
-              style={styles.transactionAction}
-              onPress={() => beginEdit(item)}
-            >
-              <AppIcon name="edit" size={14} color={c.brandText} />
-              <Text style={styles.transactionActionText}>Chỉnh sửa</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              accessibilityRole="button"
-              accessibilityLabel={`Xoá giao dịch ${item.description}`}
-              style={[styles.transactionAction, styles.deleteAction]}
-              onPress={() => deleteTransaction(item.id)}
-            >
-              <AppIcon name="delete-outline" size={14} color={c.expense} />
-              <Text style={styles.deleteActionText}>Xoá</Text>
-            </TouchableOpacity>
-          </View>
-          {categoryEditingId === item.id && (
-            <View style={styles.categoryEditor}>
-              <View style={styles.categoryEditorHeader}>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.categoryEditorTitle}>Đổi danh mục</Text>
-                  <Text style={styles.categoryEditorHint}>
-                    {item.source === 'manual'
-                      ? 'Chọn danh mục phù hợp cho giao dịch.'
-                      : 'Lựa chọn này giúp PERFIN học cách phân loại của bạn.'}
-                  </Text>
-                </View>
+      renderItem={({ item }) => {
+        const actionsOpen = activeTransactionId === item.id;
+        return (
+          <View style={styles.transactionItem}>
+            <TransactionCard
+              transaction={item}
+              expanded={actionsOpen}
+              onPress={() => {
+                setActiveTransactionId(actionsOpen ? null : item.id);
+                setCategoryEditingId(null);
+              }}
+              onLongPress={() => deleteTransaction(item.id)}
+            />
+            {actionsOpen && (
+              <View style={styles.transactionActions}>
                 <TouchableOpacity
-                  onPress={() => setCategoryEditingId(null)}
-                  hitSlop={HIT_SLOP}
                   accessibilityRole="button"
-                  accessibilityLabel="Đóng bảng đổi danh mục"
+                  accessibilityLabel={`Đổi danh mục giao dịch ${item.description}`}
+                  style={styles.transactionAction}
+                  onPress={() => setCategoryEditingId((current) => current === item.id ? null : item.id)}
                 >
-                  <AppIcon name="close" size={18} color={c.textMuted} />
+                  <Text numberOfLines={1} style={styles.transactionActionText}>Đổi danh mục</Text>
+                </TouchableOpacity>
+                <View style={styles.transactionActionDivider} />
+                <TouchableOpacity
+                  accessibilityRole="button"
+                  accessibilityLabel={`Chỉnh sửa giao dịch ${item.description}`}
+                  style={styles.transactionAction}
+                  onPress={() => beginEdit(item)}
+                >
+                  <Text style={styles.transactionActionText}>Chỉnh sửa</Text>
+                </TouchableOpacity>
+                <View style={styles.transactionActionDivider} />
+                <TouchableOpacity
+                  accessibilityRole="button"
+                  accessibilityLabel={`Xoá giao dịch ${item.description}`}
+                  style={styles.transactionAction}
+                  onPress={() => deleteTransaction(item.id)}
+                >
+                  <Text style={styles.deleteActionText}>Xoá</Text>
                 </TouchableOpacity>
               </View>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoryEditorList}>
-                {categories.filter((category) => category.type === item.type).map((category) => (
-                  <Chip
-                    key={category.id}
-                    label={category.name}
-                    active={Number(item.category_id) === Number(category.id)}
-                    onPress={() => changeCategory(item, category.id)}
-                    style={{ marginRight: 7, opacity: categorySavingId === item.id ? 0.55 : 1 }}
-                  />
-                ))}
-              </ScrollView>
-            </View>
-          )}
-        </View>
-      )}
+            )}
+            {categoryEditingId === item.id && (
+              <View style={styles.categoryEditor}>
+                <View style={styles.categoryEditorHeader}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.categoryEditorTitle}>Đổi danh mục</Text>
+                    <Text style={styles.categoryEditorHint}>
+                      {item.source === 'manual'
+                        ? 'Chọn danh mục phù hợp cho giao dịch.'
+                        : 'Lựa chọn này giúp PERFIN học cách phân loại của bạn.'}
+                    </Text>
+                  </View>
+                  <TouchableOpacity
+                    onPress={() => setCategoryEditingId(null)}
+                    accessibilityRole="button"
+                    accessibilityLabel="Đóng bảng đổi danh mục"
+                    style={styles.closeEditorButton}
+                  >
+                    <AppIcon name="close" size={18} color={c.textMuted} />
+                  </TouchableOpacity>
+                </View>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoryEditorList}>
+                  {categories.filter((category) => category.type === item.type).map((category) => (
+                    <Chip
+                      key={category.id}
+                      label={category.name}
+                      active={Number(item.category_id) === Number(category.id)}
+                      onPress={() => changeCategory(item, category.id)}
+                      style={{ marginRight: 7, opacity: categorySavingId === item.id ? 0.55 : 1 }}
+                    />
+                  ))}
+                </ScrollView>
+              </View>
+            )}
+          </View>
+        );
+      }}
       ListHeaderComponent={ListHeader}
       ListEmptyComponent={filtering ? null : (
         <EmptyState
-          emoji="📭"
           title="Không tìm thấy giao dịch"
           message="Thử thay đổi bộ lọc hoặc thêm một giao dịch mới."
         />
@@ -931,23 +948,24 @@ export default function TransactionScreen({ route, navigation }) {
 const createStyles = (t) => StyleSheet.create({
   container: { flex: 1, backgroundColor: t.colors.bg },
   content: { width: '100%', maxWidth: 720, alignSelf: 'center', padding: 16, paddingBottom: 32 },
-  topActions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 12 },
+  topActions: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 },
 
   form: {
     backgroundColor: t.colors.surface, padding: 16, borderRadius: t.radius.lg,
-    borderWidth: 1, borderColor: t.colors.border, marginBottom: 14, ...t.shadows.sm,
+    borderWidth: 1, borderColor: t.colors.border, marginBottom: 14,
   },
   formHeader: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, marginBottom: 14 },
-  formTitle: { color: t.colors.text, fontSize: 16, fontWeight: '900' },
-  formHint: { color: t.colors.textMuted, fontSize: 11, lineHeight: 16, fontWeight: '600', marginTop: 2 },
+  formTitle: { color: t.colors.text, fontSize: 16, fontWeight: '700' },
+  formHint: { color: t.colors.textMuted, fontSize: 12, lineHeight: 16, fontWeight: '600', marginTop: 2 },
   editBadge: { backgroundColor: t.colors.brandSoft, borderRadius: t.radius.pill, paddingHorizontal: 9, paddingVertical: 5 },
-  editBadgeText: { color: t.colors.brandText, fontSize: 10, fontWeight: '800' },
+  editBadgeText: { color: t.colors.brandText, fontSize: 12, fontWeight: '700' },
   segment: { flexDirection: 'row', gap: 10, marginBottom: 14 },
   segmentButton: {
     flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
-    paddingVertical: 11, borderRadius: t.radius.md,
+    minHeight: 44, paddingVertical: 11, borderRadius: t.radius.md,
     backgroundColor: t.colors.surfaceAlt, borderWidth: 1.5, borderColor: t.colors.border,
   },
+  segmentButtonActive: { backgroundColor: t.colors.brandSoft, borderColor: t.colors.brand },
   segmentText: { fontSize: 14, fontWeight: '700', color: t.colors.textMuted },
 
   input: {
@@ -956,31 +974,27 @@ const createStyles = (t) => StyleSheet.create({
   },
   amountWrapper: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 10, marginBottom: 14 },
   amountPreviewPill: { backgroundColor: t.colors.brandSoft, paddingHorizontal: 10, paddingVertical: 6, borderRadius: t.radius.pill },
-  amountPreviewText: { color: t.colors.brandText, fontWeight: '800', fontSize: 13 },
+  amountPreviewText: { color: t.colors.brandText, fontWeight: '700', fontSize: 13 },
   inputLabel: { color: t.colors.textMuted, fontWeight: '700', marginBottom: 8, fontSize: 13 },
   walletList: { gap: 8, paddingBottom: 14 },
   walletChip: {
     minWidth: 138, flexDirection: 'row', alignItems: 'center', gap: 8,
-    paddingHorizontal: 11, paddingVertical: 9, borderRadius: t.radius.md,
+    minHeight: 44, paddingHorizontal: 11, paddingVertical: 9, borderRadius: t.radius.md,
     borderWidth: 1.5, borderColor: t.colors.border, backgroundColor: t.colors.surfaceAlt,
   },
-  walletChipActive: { backgroundColor: t.colors.brand, borderColor: t.colors.brand },
-  walletChipName: { color: t.colors.text, fontSize: 12, fontWeight: '800' },
-  walletChipNameActive: { color: t.colors.onBrand },
-  walletChipBalance: { color: t.colors.textMuted, fontSize: 9, fontWeight: '600', marginTop: 1 },
-  walletChipBalanceActive: { color: t.colors.onBrand },
+  walletChipActive: { backgroundColor: t.colors.brandSoft, borderColor: t.colors.brand },
+  walletChipName: { color: t.colors.text, fontSize: 12, fontWeight: '700' },
+  walletChipNameActive: { color: t.colors.brandText },
+  walletChipBalance: { color: t.colors.textMuted, fontSize: 12, fontWeight: '600', marginTop: 1 },
+  walletChipBalanceActive: { color: t.colors.brandText },
   optionalFields: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   optionalColumn: { flexGrow: 1, flexBasis: 220, minWidth: 0 },
 
   filterPanel: {
     backgroundColor: t.colors.surface, borderWidth: 1, borderColor: t.colors.border,
-    borderRadius: t.radius.lg, marginBottom: 12, overflow: 'hidden', ...t.shadows.sm,
+    borderRadius: t.radius.lg, marginBottom: 12, overflow: 'hidden',
   },
   filterHeader: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 14 },
-  filterIcon: {
-    width: 38, height: 38, borderRadius: 12, backgroundColor: t.colors.brandSoft,
-    alignItems: 'center', justifyContent: 'center',
-  },
   filterTitle: { ...t.typo.bodyStrong, color: t.colors.text },
   filterSummary: { ...t.typo.label, color: t.colors.textMuted, marginTop: 3 },
   filterBody: { borderTopWidth: 1, borderTopColor: t.colors.border, padding: 14 },
@@ -1002,6 +1016,7 @@ const createStyles = (t) => StyleSheet.create({
     borderRadius: t.radius.md, paddingHorizontal: 12, paddingVertical: 10, marginBottom: 14,
   },
   searchInput: { flex: 1, fontSize: 14, color: t.colors.text },
+  clearSearchButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', marginVertical: -10, marginRight: -12 },
   filterActions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   resultHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 10 },
   resultCount: { flex: 1, color: t.colors.textMuted, fontSize: 12, fontWeight: '700' },
@@ -1011,24 +1026,29 @@ const createStyles = (t) => StyleSheet.create({
   },
   paginationText: { ...t.typo.caption, color: t.colors.textMuted, textAlign: 'center', marginBottom: 10 },
   paginationActions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  transactionItem: { backgroundColor: t.colors.surface },
   transactionActions: {
-    flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'flex-end', gap: 6,
-    marginTop: -4, marginBottom: 10, paddingHorizontal: 2,
+    flexDirection: 'row', alignItems: 'stretch',
+    backgroundColor: t.colors.surface,
+    borderBottomWidth: 1, borderBottomColor: t.colors.border,
+    paddingHorizontal: 4, paddingBottom: 4,
   },
   transactionAction: {
-    flexDirection: 'row', alignItems: 'center', gap: 4,
-    paddingHorizontal: 9, paddingVertical: 6, borderRadius: t.radius.pill,
-    backgroundColor: t.colors.brandSoft,
+    flex: 1, minHeight: 44, alignItems: 'center', justifyContent: 'center',
+    paddingHorizontal: 6, paddingVertical: 8,
   },
-  transactionActionText: { color: t.colors.brandText, fontSize: 10, fontWeight: '800' },
-  deleteAction: { backgroundColor: t.colors.expenseSoft },
-  deleteActionText: { color: t.colors.expense, fontSize: 10, fontWeight: '800' },
+  transactionActionText: { color: t.colors.brandText, fontSize: 12, fontWeight: '700' },
+  deleteActionText: { color: t.colors.expense, fontSize: 12, fontWeight: '700' },
+  transactionActionDivider: { width: 1, marginVertical: 10, backgroundColor: t.colors.border },
   categoryEditor: {
-    backgroundColor: t.colors.surface, borderWidth: 1.5, borderColor: t.colors.brand,
-    borderRadius: t.radius.md, padding: 12, marginTop: -5, marginBottom: 10,
+    backgroundColor: t.colors.surfaceAlt,
+    borderLeftWidth: 3, borderLeftColor: t.colors.brand,
+    borderBottomWidth: 1, borderBottomColor: t.colors.border,
+    padding: 12,
   },
   categoryEditorHeader: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, marginBottom: 10 },
-  categoryEditorTitle: { color: t.colors.text, fontSize: 13, fontWeight: '900' },
-  categoryEditorHint: { color: t.colors.textMuted, fontSize: 10, lineHeight: 14, fontWeight: '600', marginTop: 2 },
+  closeEditorButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', marginTop: -10, marginRight: -10 },
+  categoryEditorTitle: { color: t.colors.text, fontSize: 13, fontWeight: '700' },
+  categoryEditorHint: { color: t.colors.textMuted, fontSize: 12, lineHeight: 14, fontWeight: '600', marginTop: 2 },
   categoryEditorList: { paddingRight: 4 },
 });

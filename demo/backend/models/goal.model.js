@@ -1,3 +1,6 @@
+// Vai trò: Lưu mục tiêu tài chính và trạng thái tiến độ sau khi người dùng xác nhận.
+// Luồng chính: CRUD mục tiêu theo người dùng, không tự thực hiện phép tính lập kế hoạch.
+
 const { query } = require('../config/database');
 
 const DEFAULT_USER = 'default_user';
@@ -16,6 +19,7 @@ const GoalModel = {
     return result.rows[0] || null;
   },
 
+  // Lưu đúng payload mục tiêu đã được service lập plan và route xác nhận.
   async create(data, userId = DEFAULT_USER) {
     const result = await query(
       `INSERT INTO financial_goals
@@ -38,6 +42,7 @@ const GoalModel = {
     return result.rows[0];
   },
 
+  // Cập nhật có scope và chỉ cho phép các field thuộc contract mục tiêu.
   async update(id, data, userId = DEFAULT_USER) {
     const columns = {
       name: 'name',

@@ -1,3 +1,6 @@
+// Vai trò: Đánh giá readiness của PostgreSQL, Redis và worker-related dependencies.
+// Luồng chính: đo từng check độc lập, phân biệt optional/required rồi tổng hợp trạng thái an toàn.
+
 const { pool } = require('../config/database');
 const RedisClient = require('./store/redis.client');
 
@@ -39,6 +42,7 @@ async function checkRedis(env = process.env) {
   });
 }
 
+// Tổng hợp check thành readiness; dependency optional không làm toàn API unavailable.
 async function getReadiness({ env = process.env } = {}) {
   const [database, redis] = await Promise.all([
     checkDatabase(),

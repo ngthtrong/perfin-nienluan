@@ -1,7 +1,6 @@
-// Short, deterministic advice derived only from facts already computed by the
-// analytics engine. This is deliberately separate from the persona narration:
-// the report can always show a grounded, multi-period action even when the LLM is
-// unavailable, and the frontend does not have to infer advice from prose.
+// Vai trò: Tạo lời khuyên hành động ngắn từ facts đã được Analytics Engine tính.
+// Luồng chính: ưu tiên tín hiệu có căn cứ và trả nội dung xác định, độc lập với persona/LLM.
+// Frontend vì thế không phải tự suy luận hành động từ một đoạn văn tự do.
 
 function cleanLabel(value) {
   return String(value || '').trim().slice(0, 80);

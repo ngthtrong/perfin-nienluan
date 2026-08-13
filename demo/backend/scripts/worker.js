@@ -1,4 +1,7 @@
 #!/usr/bin/env node
+// Vai trò: Entrypoint tiến trình worker chạy tách khỏi HTTP API.
+// Luồng chính: khởi động job runtime, đăng ký signal shutdown và đóng Redis/PostgreSQL an toàn.
+
 require('dotenv').config();
 
 const { startJobWorker } = require('../services/jobs');
@@ -13,6 +16,7 @@ async function closeSharedResources({ closeRedis = true } = {}) {
   await pool.end().catch(() => {});
 }
 
+// Khởi chạy worker và gắn shutdown handler để không bỏ dở job đang xử lý.
 async function main() {
   const runtime = await startJobWorker();
   if (!runtime.available) {

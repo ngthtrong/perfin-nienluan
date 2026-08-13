@@ -1,3 +1,6 @@
+// Vai trò: Công bố API tạo, tải, dọn export và quản lý cấu hình backup.
+// Luồng chính: xác thực định dạng/kỳ, gọi export service và bảo vệ đường dẫn tệp trả về.
+
 const express = require('express');
 const multer = require('multer');
 const fs = require('fs');

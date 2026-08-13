@@ -121,6 +121,12 @@
 % định nghĩa theo ngôn ngữ trong config/lang-<lang>.tex. Mỗi hàng dùng
 % \frtablerow để tạo lưới kín, kể cả khi longtable ngắt sang trang mới.
 \newcommand{\frtablerow}{\tabularnewline\hline}
+% Mỗi bước trong ba hàng luồng của bảng FR là một đoạn riêng. Bước con dùng
+% leftskip để cả các dòng tự ngắt đều thụt sâu hơn bước chính.
+\newcommand{\frstep}[2]{%
+  \par\noindent\textbf{#1} #2}
+\newcommand{\frsubstep}[2]{%
+  \par\begingroup\leftskip=1.5em\noindent\textbf{#1} #2\par\endgroup}
 \newcommand{\startappendixpages}{%
   \clearpage
   \pagenumbering{arabic}%
@@ -174,9 +180,10 @@
   \end{landscape}
   \clearpage}
 
-% Bộ sơ đồ vector đã render (pdf/png/svg) nằm trong latex/figures/rendered/;
-% ảnh rời (logo trường trên trang bìa) nằm trong latex/images/.
-\graphicspath{{figures/rendered/}{images/}}
+% Nguồn Draw.io và các bản PNG do người dùng xuất nằm cùng trong
+% latex/figures/drawio/; ảnh rời (logo trường trên trang bìa) nằm trong
+% latex/images/.
+\graphicspath{{figures/drawio/}{images/}}
 \urlstyle{same}
 
 % Viền trang bìa: hai nét bao quanh toàn trang — nét ngoài đậm, nét trong nhạt.

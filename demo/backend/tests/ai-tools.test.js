@@ -167,9 +167,14 @@ test('insight narration cannot relabel daily runway burn as monthly', () => {
 test('provider order follows the current selection instead of startup mode', async () => {
   const manager = new AIServiceManager();
   manager.gemini = {};
-  manager.getGeminiModels = async () => ['gemini-2.5-flash'];
+  manager.getGeminiModels = async () => ['gemini-3.5-flash-lite'];
 
-  await manager.setSelection({ provider: 'gemini', model: 'gemini-2.5-flash' });
+  assert.deepEqual(manager.getStatus().allowed_models, [
+    'gemini-3.5-flash-lite',
+    'gemini-3.1-flash-lite',
+  ]);
+
+  await manager.setSelection({ provider: 'gemini', model: 'gemini-3.5-flash-lite' });
   assert.deepEqual(manager.getProviderOrder(), ['gemini']);
 
   await manager.setSelection({ provider: 'local' });

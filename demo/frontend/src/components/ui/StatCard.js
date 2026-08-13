@@ -1,9 +1,12 @@
+// Vai trò: Hiển thị một metric gọn với nhãn và màu semantic dành cho giá trị.
+// Luồng chính: ánh xạ tone sang token rồi render label/value theo layout thống nhất.
+
 import { View, Text } from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '../../theme/ThemeContext';
 
-// Compact stat tile: icon chip + label + value. tone: brand | income | expense | warning | neutral.
-export default function StatCard({ label, value, icon, tone = 'neutral', style }) {
+// Compact, text-first metric. Tone is reserved for the value because the label
+// already carries the financial meaning.
+export default function StatCard({ label, value, tone = 'neutral', style }) {
   const { theme } = useTheme();
   const c = theme.colors;
 
@@ -22,34 +25,18 @@ export default function StatCard({ label, value, icon, tone = 'neutral', style }
           flex: 1,
           backgroundColor: c.surface,
           borderRadius: theme.radius.lg,
-          borderWidth: 1,
-          borderColor: c.border,
-          padding: 16,
+          paddingVertical: 12,
+          paddingHorizontal: 14,
         },
         style,
       ]}
     >
-      {icon && (
-        <View
-          style={{
-            width: 36,
-            height: 36,
-            borderRadius: 12,
-            backgroundColor: toneMap.soft,
-            alignItems: 'center',
-            justifyContent: 'center',
-            marginBottom: 10,
-          }}
-        >
-          <MaterialIcons name={icon} size={18} color={toneMap.fg} />
-        </View>
-      )}
-      <Text numberOfLines={1} style={{ ...theme.typo.caption, color: c.textMuted, marginBottom: 3 }}>{label}</Text>
+      <Text numberOfLines={1} style={{ ...theme.typo.label, color: c.textMuted, marginBottom: 4 }}>{label}</Text>
       <Text
         numberOfLines={1}
         adjustsFontSizeToFit
         minimumFontScale={0.68}
-        style={{ fontSize: 18, fontWeight: '900', color: tone === 'neutral' ? c.text : toneMap.fg }}
+        style={{ fontSize: 20, lineHeight: 28, fontWeight: '700', color: tone === 'neutral' ? c.text : toneMap.fg }}
       >
         {value}
       </Text>

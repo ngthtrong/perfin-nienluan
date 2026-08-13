@@ -1,3 +1,6 @@
+// Vai trò: Công bố API hồ sơ cá nhân hóa, consent và lựa chọn persona.
+// Luồng chính: đọc/cập nhật trait qua model mà không thay đổi dữ liệu sổ cái.
+
 const express = require('express');
 const PersonaModel = require('../models/persona.model');
 const UserTraitModel = require('../models/userTrait.model');

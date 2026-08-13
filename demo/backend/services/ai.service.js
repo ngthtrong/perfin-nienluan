@@ -1,3 +1,6 @@
+// Vai trò: Chọn provider và hợp nhất parser cục bộ với Gemini cho các tác vụ AI.
+// Luồng chính: ưu tiên intent an toàn, chuẩn hóa output rồi fallback mà không tự ghi dữ liệu.
+
 const crypto = require('crypto');
 const { GoogleGenAI, FunctionCallingConfigMode } = require('@google/genai');
 const { getSystemPrompt, getParsePrompt, getChatPrompt, getReceiptPrompt, getVoicePrompt, getInsightPrompt } = require('../prompts/transaction.prompt');
@@ -10,25 +13,19 @@ const { localDateKey } = require('./transactions/validation');
 
 // Danh sách model Gemini được phép sử dụng
 const ALLOWED_GEMINI_MODELS = [
-  'gemini-3.1-flash-lite',   // Mặc định — nhanh, tiết kiệm token
-  'gemini-2.5-flash',
-  'gemini-2.5-flash-lite',
-  'gemini-3-flash-preview',  // gemini-3 flash
-  'gemini-3.5-flash',        // gemini-3.5 flash
+  'gemini-3.5-flash-lite',
+  'gemini-3.1-flash-lite',
 ];
 
+const configuredGeminiModel = process.env.GEMINI_MODEL;
 const DEFAULT_MODELS = {
-  gemini: process.env.GEMINI_MODEL || 'gemini-3.1-flash-lite',
+  gemini: ALLOWED_GEMINI_MODELS.includes(configuredGeminiModel)
+    ? configuredGeminiModel
+    : 'gemini-3.1-flash-lite',
 };
 
 const FALLBACK_MODELS = {
-  gemini: [
-    'gemini-3.1-flash-lite',
-    'gemini-2.5-flash',
-    'gemini-2.5-flash-lite',
-    'gemini-3-flash-preview',
-    'gemini-3.5-flash',
-  ],
+  gemini: [...ALLOWED_GEMINI_MODELS],
 };
 const MODEL_LIST_TIMEOUT_MS = Number(process.env.AI_MODEL_LIST_TIMEOUT_MS || 5000);
 
@@ -147,6 +144,7 @@ class AIServiceManager {
     };
   }
 
+  // Parse giao dịch qua provider được chọn và tự fallback về parser cục bộ khi cần.
   async parseTransaction(text, categories, userPrompt) {
     // These intents are deterministic, high-confidence questions/answers rather
     // than transaction extraction. Resolve them before provider/cache lookup so
@@ -207,6 +205,7 @@ class AIServiceManager {
     };
   }
 
+  // Trả intent/lời đáp có cấu trúc; mọi side effect vẫn được chat route quyết định.
   async chat(text, context = {}) {
     const normalized = normalizeText(text);
     if (/(ban la ai|ban ten gi)/.test(normalized)) {
@@ -242,6 +241,7 @@ class AIServiceManager {
 
   // Narrate pre-computed analytics facts in the given persona voice. Falls back to a
   // deterministic template when no LLM is available, so insights always render.
+  // Chỉ diễn giải facts có sẵn và cưỡng chế đơn vị để tránh thay đổi ý nghĩa con số.
   async narrateInsights(facts, { stylePrompt = '', periodLabel = 'gần đây' } = {}) {
     const digest = crypto.createHash('sha256')
       .update(JSON.stringify({ version: 2, facts, stylePrompt, periodLabel }))

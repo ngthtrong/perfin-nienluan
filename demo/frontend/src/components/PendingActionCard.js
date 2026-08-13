@@ -1,3 +1,6 @@
+// Vai trò: Hiển thị các pending action không phải form giao dịch với nút xác nhận/hủy.
+// Luồng chính: ánh xạ kind từ backend sang nội dung trình bày và khóa nút khi đang xử lý.
+
 import { useMemo } from 'react';
 import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useTheme } from '../theme/ThemeContext';
@@ -88,6 +91,7 @@ function buildDetails(item) {
   }
 }
 
+// Render action theo kind nhưng luôn giữ cặp thao tác xác nhận/hủy rõ ràng.
 export default function PendingActionCard({ item, onConfirm, onCancel, busy = false }) {
   const { theme } = useTheme();
   const styles = useMemo(() => createStyles(theme), [theme]);
@@ -101,9 +105,6 @@ export default function PendingActionCard({ item, onConfirm, onCancel, busy = fa
     <View style={styles.wrapper}>
       <View style={styles.card}>
         <View style={styles.header}>
-          <View style={styles.headerIcon}>
-            <AppIcon name={meta.icon} size={18} color={c.brand} />
-          </View>
           <Text style={styles.heading}>{meta.title}</Text>
         </View>
 
@@ -160,17 +161,13 @@ const createStyles = (t) => StyleSheet.create({
   wrapper: { alignSelf: 'flex-start', width: '94%', marginBottom: 12 },
   card: {
     backgroundColor: t.colors.surface, borderRadius: t.radius.xl,
-    borderWidth: 1.5, borderColor: t.colors.border, overflow: 'hidden', ...t.shadows.md,
+    borderWidth: 1, borderColor: t.colors.border, overflow: 'hidden',
   },
   header: {
     flexDirection: 'row', alignItems: 'center', gap: 9, padding: 14,
-    backgroundColor: t.colors.surfaceAlt, borderBottomWidth: 1, borderBottomColor: t.colors.border,
+    borderBottomWidth: 1, borderBottomColor: t.colors.border,
   },
-  headerIcon: {
-    width: 34, height: 34, borderRadius: 11, backgroundColor: t.colors.brandSoft,
-    alignItems: 'center', justifyContent: 'center',
-  },
-  heading: { flex: 1, color: t.colors.text, fontSize: 14, fontWeight: '800' },
+  heading: { flex: 1, color: t.colors.text, fontSize: 14, fontWeight: '700' },
   body: { padding: 14, gap: 10 },
   message: { color: t.colors.text, fontSize: 14, lineHeight: 20 },
   detailBox: {
@@ -179,13 +176,13 @@ const createStyles = (t) => StyleSheet.create({
   },
   detailRow: { flexDirection: 'row', justifyContent: 'space-between', gap: 10, paddingVertical: 2 },
   detailLabel: { flex: 1, color: t.colors.textMuted, fontSize: 12, fontWeight: '600' },
-  detailValue: { color: t.colors.text, fontSize: 12, fontWeight: '800', maxWidth: '58%' },
+  detailValue: { color: t.colors.text, fontSize: 12, fontWeight: '700', maxWidth: '58%' },
   actions: { flexDirection: 'row', gap: 8, padding: 12, borderTopWidth: 1, borderTopColor: t.colors.border },
   confirmButton: {
-    flex: 1, minHeight: 42, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
+    flex: 1, minHeight: 44, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
     backgroundColor: t.colors.brand, borderRadius: t.radius.md,
   },
-  confirmText: { color: t.colors.onBrand, fontWeight: '800', fontSize: 13 },
+  confirmText: { color: t.colors.onBrand, fontWeight: '700', fontSize: 13 },
   cancelButton: {
     justifyContent: 'center', paddingHorizontal: 14, borderRadius: t.radius.md,
     borderWidth: 1.5, borderColor: t.colors.border, backgroundColor: t.colors.surfaceAlt,
@@ -195,5 +192,5 @@ const createStyles = (t) => StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
     padding: 12, borderTopWidth: 1, borderTopColor: t.colors.border, backgroundColor: t.colors.incomeSoft,
   },
-  resolvedText: { color: t.colors.income, fontSize: 12, fontWeight: '800' },
+  resolvedText: { color: t.colors.income, fontSize: 12, fontWeight: '700' },
 });

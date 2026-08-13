@@ -1,3 +1,6 @@
+// Vai trò: Quản lý danh mục thu chi và quan hệ của danh mục với giao dịch người dùng.
+// Luồng chính: validation, truy vấn có scope, cập nhật nguyên tử và vô hiệu cache phân tích.
+
 const { pool, query, rollbackAfterFailure } = require('../config/database');
 const KVStore = require('../services/store/kv.store');
 const {

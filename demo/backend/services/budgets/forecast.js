@@ -1,7 +1,11 @@
+// Vai trò: Dự báo chi tiêu cuối kỳ và thời điểm có thể vượt từng ngân sách.
+// Luồng chính: ngoại suy tốc độ chi theo số ngày đã qua và giữ các trường hợp biên xác định.
+
 function daysInMonth(year, month) {
   return new Date(Date.UTC(year, month, 0)).getUTCDate();
 }
 
+// Ngoại suy một ngân sách theo tốc độ chi đã quan sát và trả ngày vượt nếu còn trong kỳ.
 function forecastBudget(progress, { today = new Date(), month, year } = {}) {
   const targetMonth = Number(month || today.getMonth() + 1);
   const targetYear = Number(year || today.getFullYear());

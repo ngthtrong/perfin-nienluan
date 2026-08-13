@@ -1,3 +1,6 @@
+// Vai trò: Đồng bộ các lịch lặp BullMQ với định nghĩa cấu hình hiện tại.
+// Luồng chính: upsert scheduler đang bật và xóa scheduler cũ/đã tắt theo identifier cố định.
+
 const { getScheduleDefinitions } = require('./schedules');
 
 const SCHEDULED_JOB_OPTIONS = Object.freeze({
@@ -7,6 +10,7 @@ const SCHEDULED_JOB_OPTIONS = Object.freeze({
   removeOnFail: { count: 200 },
 });
 
+// Đồng bộ scheduler hiện tại theo ID cố định để restart worker không nhân đôi lịch.
 async function syncJobSchedulers(queue, definitions = getScheduleDefinitions()) {
   const results = [];
   for (const definition of definitions) {

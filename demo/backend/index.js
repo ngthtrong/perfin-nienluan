@@ -1,3 +1,6 @@
+// Vai trò: Khởi tạo HTTP API Express và lắp ghép các module nghiệp vụ của PERFIN.
+// Luồng chính: cấu hình middleware, đăng ký route, kiểm tra hạ tầng rồi mở cổng phục vụ.
+
 const express = require('express');
 const cors = require('cors');
 require('dotenv').config();
@@ -88,6 +91,7 @@ app.use((req, res) => {
 
 app.use(errorMiddleware);
 
+// Kiểm tra kết nối và dữ liệu nền bắt buộc trước khi nhận request thật.
 async function bootstrap() {
   try {
     await pool.query('SELECT 1');
@@ -99,6 +103,7 @@ async function bootstrap() {
   }
 }
 
+// Mở HTTP server sau bootstrap và đóng pool có kiểm soát khi tiến trình dừng.
 async function start() {
   await bootstrap();
   return app.listen(port, '0.0.0.0', () => {
