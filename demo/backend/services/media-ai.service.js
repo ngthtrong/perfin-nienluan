@@ -7,17 +7,29 @@ const defaultVenvPython = path.join(backendRoot, '.venv-ai', 'bin', 'python');
 const pythonBin = process.env.MEDIA_AI_PYTHON || (fs.existsSync(defaultVenvPython) ? defaultVenvPython : 'python3');
 const timeoutMs = Number(process.env.MEDIA_AI_TIMEOUT_MS || 300000);
 const cacheRoot = process.env.MEDIA_AI_CACHE_DIR || path.join(backendRoot, '.cache', 'media-ai');
+const warnedDeprecated = new Set();
 
 function isEnabled(value) {
   return ['1', 'true', 'yes', 'on'].includes(String(value || '').trim().toLowerCase());
 }
 
+function warnDeprecatedMediaEnv() {
+  for (const name of ['OCR_PROVIDER', 'SPEECH_PROVIDER', 'GOOGLE_APPLICATION_CREDENTIALS']) {
+    if (process.env[name] && !warnedDeprecated.has(name)) {
+      warnedDeprecated.add(name);
+      console.warn(`[media-ai] ${name} is deprecated and ignored; media inference is local-only.`);
+    }
+  }
+}
+
 function getOcrProvider() {
-  return (process.env.OCR_PROVIDER || 'google').trim().toLowerCase();
+  warnDeprecatedMediaEnv();
+  return 'paddleocr';
 }
 
 function getSpeechProvider() {
-  return (process.env.SPEECH_PROVIDER || 'google').trim().toLowerCase();
+  warnDeprecatedMediaEnv();
+  return 'phowhisper';
 }
 
 function getOfflineEnv() {
@@ -98,6 +110,7 @@ async function runPhoWhisper(filePath) {
 module.exports = {
   getOcrProvider,
   getSpeechProvider,
+  warnDeprecatedMediaEnv,
   runPaddleOcr,
   runPhoWhisper,
 };

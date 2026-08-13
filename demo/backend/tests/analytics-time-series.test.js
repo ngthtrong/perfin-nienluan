@@ -8,6 +8,7 @@ const {
   linearTrend,
   cashflowRunway,
   pearson,
+  pearsonDetailed,
 } = require('../services/analytics/algorithms');
 const {
   completeDailyTotals,
@@ -143,4 +144,20 @@ test('Pearson reports undefined for insufficient or zero-variance series', () =>
   assert.equal(pearson([4, 4, 4], [1, 2, 3]), null);
   assert.equal(pearson([1, 2, 3], [8, 8, 8]), null);
   assert.equal(pearson([1, 2, 3], [2, 4, 6]), 1);
+});
+
+test('correlation guard excludes joint-zero weeks and reports effective support', () => {
+  const detail = pearsonDetailed(
+    [0, 0, 10, 20, 30, 40],
+    [0, 0, 40, 30, 20, 10],
+    { excludeJointZeros: true },
+  );
+
+  assert.equal(detail.effective_pair_count, 4);
+  assert.equal(detail.excluded_joint_zero_count, 2);
+  assert.equal(detail.r, -1);
+  assert.equal(
+    pearsonDetailed([0, 0, 10], [0, 0, 20], { excludeJointZeros: true }).effective_pair_count,
+    1,
+  );
 });

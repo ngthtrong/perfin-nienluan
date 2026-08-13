@@ -53,8 +53,13 @@ DB_PORT=5432
 GEMINI_API_KEY=
 AI_PROVIDER=auto
 
-# Tuy chon cho Google Vision va Speech-to-Text.
-GOOGLE_APPLICATION_CREDENTIALS=/duong/dan/toi/service-account.json
+# Media AI local tren backend host. Khong co cloud OCR/STT fallback.
+MEDIA_AI_OFFLINE=true
+MEDIA_AI_TIMEOUT_MS=120000
+MEDIA_AI_CACHE_DIR=.cache/media-ai
+MEDIA_AI_PYTHON=.venv-ai/bin/python
+OCR_LANG=vi
+PHOWHISPER_MODEL=vinai/PhoWhisper-small
 ```
 
 Khong commit khoa API hoac file credential that vao git.
@@ -249,7 +254,7 @@ Tai chinh:
 ## 11. Cac phan chua hoan thien
 
 - Chua co dang nhap, dang ky, phan quyen hay multi-user that. Backend dang dung cung `default_user`.
-- OCR va Speech-to-Text la luong demo. Neu khong co Google Cloud credential, backend tra mock text.
+- OCR va Speech-to-Text chay tren backend host bang PaddleOCR va PhoWhisper. Neu runtime/model thieu, endpoint tra loi 503 va khong tao mock text.
 - Gemini la tuy chon. Neu khong co `GEMINI_API_KEY`, parser local chi xu ly cac mau tieng Viet don gian.
 - Chua co AI personalities, nhac nho chi phi dinh ky, recurring bills hay notification.
 - Chua co export/backup du lieu, offline mode, hay sync.

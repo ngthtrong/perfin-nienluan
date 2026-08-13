@@ -53,7 +53,9 @@ Pearson's coefficient \cite{pearson1895} measures linear co-movement:
 Correlation is interpreted only within the observed window and does not imply causation.
 The coefficient is undefined with fewer than three paired observations or when either
 series has zero variance; that case must be represented as a null value rather than
-being reported as $r=0$.
+being reported as $r=0$. PERFIN also removes calendar weeks in which both categories
+are zero and reports the effective paired support, preventing shared absence from
+being mistaken for co-movement.
 
 \subsection{Runway, Recurring Items, Budgets and Goals}
 
@@ -82,7 +84,7 @@ Runway extrapolates how long liquid balance in the reporting currency can suppor
 \subsection{OCR and Speech-to-Text}
 \label{subsec:ocr-stt}
 
-OCR generally includes image preprocessing, text-region detection, recognition and post-processing; Tesseract is a representative architecture \cite{smith2007}. STT converts audio to a transcript, and Whisper illustrates recognition learned from large-scale data \cite{radford2022}. In PERFIN, both services only return raw text and provider metadata. The result follows the same normalization, preview and confirmation pipeline as manual input.
+OCR generally includes image preprocessing, text-region detection, recognition and post-processing; PP-OCR is a representative compact OCR pipeline \cite{ppocr2020}. STT converts audio to a transcript; Whisper and Vietnamese PhoWhisper illustrate large-scale and language-adapted recognition \cite{radford2022,phowhisper2024}. PERFIN runs PaddleOCR and PhoWhisper locally on the backend host. Both services only return raw text and provider metadata; the result follows the same normalization, preview and confirmation pipeline as manual input. Extracted text may subsequently be sent to Gemini for language parsing only when that provider is configured.
 
 Quality requires ground truth. CER/WER measure text error, while transaction-field accuracy measures the effect on amount, date, category and line items. A smoke test on a few files establishes provider execution, not accuracy.
 
@@ -128,7 +130,7 @@ PERFIN uses provider-schema function calling \cite{geminifunctioncalling}. The L
   Redis \cite{redisexpire} & TTL for pending state, clarification, cache and queue data. & Never the system of record; memory fallback is development-only. \\
   BullMQ \cite{bullmq2026} & Scheduling, retry and job IDs for idempotent work. & Basic cron lacks equivalent queue and retry controls. \\
   Gemini + local parser & Combines language coverage with a testable fallback. & Provider adapters prevent business-logic lock-in. \\
-  Local or cloud OCR/STT & PaddleOCR/PhoWhisper favour privacy; cloud providers remain replaceable. & Every raw output still follows validation and preview. \\
+  PaddleOCR + PhoWhisper & Local execution keeps raw media on the backend host and makes the failure mode explicit. & The Python runtime/model must be installed; unavailable inference returns an error rather than fabricated text. \\
   \bottomrule
 \end{longtable}
 

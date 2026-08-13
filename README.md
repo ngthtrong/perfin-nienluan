@@ -52,8 +52,8 @@ graph TD
     Core <--> Queue[BullMQ + Redis]
     Queue --> Worker[Background Worker / Proactive Jobs]
     API --> Media[Media-AI Service]
-    Media --> OCR[OCR: PaddleOCR local / Google Vision]
-    Media --> STT[Speech: PhoWhisper local / Google Speech-to-Text]
+    Media --> OCR[OCR: PaddleOCR on backend host]
+    Media --> STT[Speech: PhoWhisper on backend host]
 ```
 
 ### 💻 Chi tiết Công nghệ
@@ -69,8 +69,9 @@ graph TD
 * **AI & Xử lý Dữ liệu:**
   * **Google Gemini API** (`@google/genai`, mặc định `gemini-3.1-flash-lite` với danh sách fallback): LLM cốt lõi dùng **function calling** làm intent router. Các tool đã khai báo: `record_transactions`, `manage_recurring_bill`, `create_financial_goal`, `query_financial_data`, `suggest_budget`, `export_financial_data`, `transfer_money`, `record_investment_pnl`.
   * **Local parser (fallback):** bộ luật tiếng Việt tự phân tích giao dịch/ý định khi không có `GEMINI_API_KEY` hoặc khi API lỗi, giúp demo luôn chạy được.
-  * **OCR:** **PaddleOCR** chạy local (Python) hoặc **Google Cloud Vision**, chọn qua biến `OCR_PROVIDER`.
-  * **Speech-to-Text:** **PhoWhisper** chạy local (Python) hoặc **Google Speech-to-Text**, chọn qua biến `SPEECH_PROVIDER`.
+  * **OCR:** **PaddleOCR** chạy trên backend host qua Python; không có cloud OCR fallback.
+  * **Speech-to-Text:** **PhoWhisper** chạy trên backend host qua Python; không có cloud STT fallback.
+  * Raw media được xử lý trên backend host. Văn bản OCR/transcript có thể được gửi cho Gemini để trích xuất giao dịch khi người dùng chọn Gemini.
 * **Tài liệu & Báo cáo:**
   * **LaTeX (XeLaTeX)**: báo cáo song ngữ Việt/Anh từ cùng một mã nguồn, chọn ngôn ngữ qua biến `\doclang`, biên dịch bằng `make vi` / `make en` / `make all`. Không cần `--shell-escape`, Python, minted hay BibTeX.
 
@@ -98,7 +99,7 @@ perfin-nienluan/
 │   │   ├── prompts/        # Prompt template cho Gemini
 │   │   ├── scripts/        # migrate, worker, seed-demo, import-finance-csv,
 │   │   │                   #   smoke-test, paddleocr_ocr.py, phowhisper_speech.py
-│   │   ├── tests/          # ~40 file test (node --test) + benchmark độ chính xác AI
+│   │   ├── tests/          # 46 file test (node --test) + protocol benchmark AI
 │   │   └── docs/           # Ghi chú kiến trúc (proactive-worker...)
 │   ├── frontend/           # Mobile App (React Native Expo)
 │   │   └── src/            # components, screens, navigation, context, services, theme
@@ -142,10 +143,10 @@ perfin-nienluan/
 * [X] Backend Express đầy đủ với 12 nhóm route (chat, giao dịch, danh mục, ngân sách, tài khoản, báo cáo, dòng tiền, export, chi phí định kỳ, persona, mục tiêu, AI)
 * [X] Cơ sở dữ liệu PostgreSQL theo migration đánh số (001–009) + seed danh mục/ví mặc định
 * [X] Tích hợp Gemini function-calling làm intent router (8 tool) + local parser fallback
-* [X] Luồng OCR (PaddleOCR/Google Vision) & Speech-to-Text (PhoWhisper/Google STT)
+* [X] Luồng OCR (PaddleOCR cục bộ) & Speech-to-Text (PhoWhisper cục bộ), fail-closed khi thiếu runtime/model
 * [X] Worker chạy nền (BullMQ + Redis) cho nhắc nhở & thông báo chủ động
 * [X] Frontend React Native Expo với đầy đủ màn hình (Dashboard, Chat, Giao dịch, Ngân sách, Báo cáo, Mục tiêu, Dòng tiền, Chi phí định kỳ, Xuất dữ liệu, Cài đặt)
-* [X] Bộ test tự động (~40 file `node --test`) + benchmark độ chính xác phân loại và ablation parser vs LLM
+* [X] Bộ test tự động (46 file, 247 test `node --test`) + protocol benchmark phân loại và ablation parser vs LLM
 * [ ] Xác thực/đăng nhập nhiều người dùng thật (hiện dùng chung `default_user`)
 * [ ] Triển khai production, logging tập trung, giám sát
 
@@ -183,10 +184,13 @@ perfin-nienluan/
    GEMINI_API_KEY=
    AI_PROVIDER=auto
 
-   # Tùy chọn cho OCR/Speech
-   OCR_PROVIDER=google          # google | paddle
-   SPEECH_PROVIDER=google       # google | phowhisper
-   GOOGLE_APPLICATION_CREDENTIALS=/đường/dẫn/service-account.json
+   # Media AI local trên backend host
+   MEDIA_AI_OFFLINE=true
+   MEDIA_AI_TIMEOUT_MS=120000
+   MEDIA_AI_CACHE_DIR=.cache/media-ai
+   MEDIA_AI_PYTHON=.venv-ai/bin/python
+   OCR_LANG=vi
+   PHOWHISPER_MODEL=vinai/PhoWhisper-small
    ```
 
    *Không commit khóa API hoặc file credential thật vào git.*

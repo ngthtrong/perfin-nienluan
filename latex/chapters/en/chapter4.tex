@@ -17,33 +17,48 @@ PERFIN now forms a prototype with a clear separation between data, algorithms an
     O2 & Text/media adapters, typed draft, clarification, preview and confirmation. & Flow executes; OCR/STT accuracy is unmeasured. \\
     O3 & Trend, anomaly, runway, recurring, correlation, budget and goal planner. & Implemented with unit tests; thresholds need representative calibration. \\
     O4 & Tool schema, service validation, facts--narrator flow and fallback. & Boundary implemented; complete numeric faithfulness is unmeasured. \\
-    O5 & 44/44 backend test files, 23/23 full smoke and experiments with coverage/group splitting. & Evidence supports the demo core, not live worker, p95, UAT or production. \\
+    O5 & A reproducible test plan, a 247-test backend suite, 21 focused regression cases and a current data profile are available; benchmark reruns are pending. & The evidence boundary is explicit; live worker, p95, UAT and current benchmark scores remain unmeasured. \\
     \bottomrule
   \end{tabularx}
 \end{table}
 
-On 5,265 transactions, the parser obtains 26.12\% accuracy and macro-F1 0.1559 under joint type/category labels; category-only 29.36\%/0.177 is auxiliary. In the 63-sentence ablation, full-set accuracy is 22.22\% for the parser and 39.68\% for Gemini, but Gemini returns a category for only 42/63 sentences; macro-F1 0.6068 is conditional on those 42. Conditional on a correct parser transaction type and excluding \textit{Other}, correction group splitting has zero overlap and raises accuracy from 34.46\% to 61.22\% on 2,612 evaluation rows (4,756 eligible; 76 wrong-type rows excluded), with 740 helped, 41 harmed, net $+26.76$ points and 891/2,612 coverage. This is evidence for the disclosed dataset/seed, not a production estimate.
+The current data profile reports 5,328 source rows, zero validation errors and SHA-256 \code{418a9439...fbaed7}. The older classification, ablation and correction scores used a different CSV and are therefore superseded. They will be replaced only after a clean rerun with joint type/category metrics, a 200-candidate chronological correction window and complete sample-level records.
+
+\begin{table}[H]
+  \centering
+  \caption{Research questions and answer status}
+  \label{tab:research-questions}
+  \begin{tabularx}{\textwidth}{@{}L{1.2cm}Y Y@{}}
+    \toprule
+    \textbf{RQ} & \textbf{Answer supported by the prototype} & \textbf{Boundary of the answer} \\
+    \midrule
+    RQ1 & Typed drafts, local media extraction, validation, preview and confirmation keep inferred values out of the ledger until review. & OCR/STT CER/WER and field accuracy require the planned 20-image/20-audio ground truth. \\
+    RQ2 & Deterministic OLS, robust anomaly signals, calendar-aware cashflow, budgets, goals and guarded correlation produce explainable facts; invariant tests are present. & Threshold calibration and representative multi-seed evaluation are pending. \\
+    RQ3 & Gemini is limited to language extraction/narration; backend services own validation, computation and writes. & The current ablation is historical; a joint-label rerun is required before claiming comparative benefit. \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
 
 \section{Deliverables}
 
-Deliverables include mobile/backend source, PostgreSQL migrations, Redis/BullMQ configuration, LLM/OCR/STT adapters, tests, a reconciled demo dataset, experiment artifacts and this LaTeX report. The prototype supports text/media entry with review, ledger management, analytics, budgets and goals, and returns facts with controlled narration.
+Deliverables include mobile/backend source, PostgreSQL migrations, Redis/BullMQ configuration, Gemini plus local PaddleOCR/PhoWhisper adapters, tests, a reconciled demo dataset, experiment protocols and this LaTeX report. The prototype supports text/media entry with review, ledger management, analytics, budgets and goals, and returns facts with controlled narration.
 
-On the small ablation sample, Gemini has higher full-set accuracy than the parser but abstains on one third of inputs and adds latency/provider dependence; full-sample macro-F1 cannot be recovered from the old artifact. This potential value is safe only behind four controls: schema, validation, preview/confirmation and fact grounding. PERFIN is therefore a financial-data system with an LLM interaction layer, not a chatbot that calculates or decides on the user's behalf.
+The architecture makes an LLM useful without granting it ledger authority. Any comparative claim is deliberately deferred until the current-snapshot ablation is rerun; schema, validation, preview/confirmation and fact grounding remain mandatory controls. PERFIN is therefore a financial-data system with an LLM interaction layer, not a chatbot that calculates or decides on the user's behalf.
 
 \section{Limitations}
 
 \begin{enumerate}
   \item The prototype uses \code{default_user} and lacks production authentication and authorization.
-  \item Smoke tests on two images and one audio file cannot establish CER, WER or transaction-field accuracy.
+  \item The controlled media set and reference transcripts have not yet been supplied; until then CER, WER and transaction-field accuracy are unmeasured.
   \item Live Redis worker behaviour, retry/idempotency, p95 and UAT were not confirmed in a version-locked environment.
   \item Fuzzy, anomaly, recurring and correlation thresholds and time windows are initial configurations rather than universal optima.
-  \item Historical taxonomy is inconsistent; the ablation lacks full prediction records, while correction has only one seed and no confidence interval.
+  \item Historical taxonomy is inconsistent; old artifacts use the superseded CSV, and the corrected runner still needs repeated seeds and confidence intervals.
   \item The numeric-grounding checker remains target design, and persona effects have not been evaluated.
   \item Remaining gaps include true PDF export, full backup/restore, push notification and complete fresh-install wallet creation.
 \end{enumerate}
 
 \section{Future Work}
 
-Next priorities are to lock taxonomy, create an independent evaluation set and run group splits over multiple seeds/confidence intervals; build image/audio ground truth for CER/WER and field accuracy; run the Redis worker with fault injection and duplicate-effect checks; implement numeric grounding and measure p50/p95 over at least 30 runs per flow; conduct UAT comparing chat and forms; and add authentication, authorization, audit and secret management before real deployment.
+Next priorities are to freeze a clean commit and current dataset, rerun the complete suite and offline experiments, create the 20-image/20-audio ground truth, run temporal correction replay with 200 candidates, exercise PostgreSQL confirmation and Redis duplicate delivery end-to-end, implement numeric grounding, measure p50/p95 over at least 30 runs per flow, conduct counterbalanced UAT with five or more users, and add authentication, authorization, audit and secret management before real deployment.
 
 Bank synchronization, shared wallets and high availability should follow only after data correctness and empirical evidence stabilize. This ordering preserves the basic-topic project's intended focus: data and algorithms are the core, while the LLM is a replaceable, measurable supporting component.

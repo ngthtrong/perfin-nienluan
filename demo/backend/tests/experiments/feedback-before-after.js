@@ -57,9 +57,18 @@ function buildLog(sample, parserPred, index) {
         type: sample.parserType,
       },
     },
+    source_row: Number(sample.sourceRow || 0),
     // Mốc tổng hợp cố định để thứ tự xếp hạng không phụ thuộc giờ chạy.
     created_at: new Date(Date.UTC(2026, 0, 1) - index * 1000).toISOString(),
   };
+}
+
+function latestCorrectionCandidates(logs, limit = 200) {
+  return logs
+    .slice()
+    .sort((left, right) => Number(right.source_row || 0) - Number(left.source_row || 0)
+      || new Date(right.created_at || 0) - new Date(left.created_at || 0))
+    .slice(0, limit);
 }
 
 function parserPredict(text) {
@@ -98,6 +107,7 @@ function run() {
   const outDir = parseOutDir(process.argv);
   const seedRatio = readFloatOption(process.argv, '--seed-ratio', 0.5);
   const splitSeed = 7;
+  const candidateLimit = 200;
   const dataset = loadLabeledSamples();
 
   // Bỏ nhãn catch-all "Khác": correction chỉ có ý nghĩa khi có danh mục nội dung
@@ -137,7 +147,7 @@ function run() {
   const holdout = split.evaluationItems.filter((sample) => sample.parserPred !== sample.goldCategory);
   const controlSample = split.evaluationItems.filter((sample) => sample.parserPred === sample.goldCategory);
 
-  const logs = seedSet.map((s, i) => buildLog(s, s.parserPred, i));
+  const seedLogs = seedSet.map((s, i) => buildLog(s, s.parserPred, i));
 
   // Evaluation chính gồm cả holdout parser-sai và nhóm chứng parser-đúng. Nhờ
   // vậy helped và harmed cùng đóng góp vào một net accuracy delta có ý nghĩa.
@@ -148,7 +158,14 @@ function run() {
   const evaluationRecords = [];
   const examples = [];
   for (const sample of evaluationSamples) {
-    const correction = lookupCategoryCorrection(logs, sample.text, { type: sample.parserType });
+    // Production reads the newest 200 logs. Replaying in source-row order
+    // prevents a correction from the future portion of this dataset leaking
+    // into an earlier evaluation record.
+    const pastLogs = latestCorrectionCandidates(
+      seedLogs.filter((log) => log.source_row < Number(sample.sourceRow || 0)),
+      candidateLimit,
+    );
+    const correction = lookupCategoryCorrection(pastLogs, sample.text, { type: sample.parserType });
     const afterPred = correction ? correction.category_name : sample.parserPred;
     const record = {
       sourceRow: sample.sourceRow,
@@ -164,6 +181,8 @@ function run() {
       matchKind: correction ? correction.match_kind : null,
       confidence: correction ? correction.confidence : null,
       correctionType: correction ? correction.type : null,
+      candidate_limit: candidateLimit,
+      candidate_count: pastLogs.length,
     };
     evaluationRecords.push(record);
     if (correction && examples.length < 25) {
@@ -239,7 +258,9 @@ function run() {
       lookup_type: 'parser-predicted transaction type, matching production',
       split_unit: 'parser transaction type + normalizeForMatch(original_text) group',
       evaluation: 'parser-wrong holdout + every eligible parser-correct control outside seed groups',
-      note: 'Loại nhãn "Khác" và các dòng parser đoán sai transaction type vì category correction không thể sửa type. Mọi dòng đủ điều kiện có cùng parser type và mô tả chuẩn hóa nằm hoàn toàn trong seed hoặc evaluation; exact match hợp lệ giữa hai phía vì vậy phải bằng 0. Kết quả chính đo category trên hợp của holdout parser-sai và nhóm chứng parser-đúng, đồng thời báo riêng exact/fuzzy, helped, harmed và net.',
+      replay_order: 'source_row ascending proxy (dataset does not expose a transaction timestamp to this runner)',
+      candidate_limit: candidateLimit,
+      note: 'Loại nhãn "Khác" và các dòng parser đoán sai transaction type vì category correction không thể sửa type. Mọi dòng đủ điều kiện có cùng parser type và mô tả chuẩn hóa nằm hoàn toàn trong seed hoặc evaluation; exact match hợp lệ giữa hai phía vì vậy phải bằng 0. Mỗi record chỉ nhìn correction thuộc phần quá khứ và tối đa 200 candidate mới nhất, tương ứng giới hạn production. Kết quả chính đo category trên hợp của holdout parser-sai và nhóm chứng parser-đúng, đồng thời báo riêng exact/fuzzy, helped, harmed và net.',
     },
     partition: {
       total_dataset_samples: dataset.samples.length,

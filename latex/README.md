@@ -34,6 +34,7 @@ Không cần `--shell-escape`, Python, `minted`, BibTeX hoặc Biber. Tài liệ
 - Tiểu mục: Arial 13 pt, đậm nghiêng.
 - Tiểu-tiểu mục: Arial 13 pt, nghiêng.
 - Mục lục gồm bốn cấp từ chương đến tiểu-tiểu mục.
+- Hình và bảng được đánh số theo chương (ví dụ `Hình 2.1`, `Bảng 2.1`); bảng quy ước ở phần đầu không đánh số.
 
 Nếu máy thiếu Times New Roman hoặc Arial, cấu hình tự dùng TeX Gyre Termes và TeX Gyre Heros để bản nháp vẫn biên dịch. Bản nộp chính thức nên cài đúng hai font yêu cầu.
 
@@ -54,6 +55,6 @@ Trang bìa tái sử dụng logo CTU tại `../archive/latex/images/ctu_logo.png
 
 ## Quy ước bằng chứng
 
-Các nhãn “đã hiện thực”, “đã đo”, “mục tiêu”, “thiết kế đích” và “chưa đo” không được dùng thay thế cho nhau. Kết quả hiện công bố là: backend 44/44 **tệp kiểm thử** đạt theo Node 24 (không gọi là 182 test case); local-parser quality gate lịch sử 31/31 strict; full smoke API--PostgreSQL--media lịch sử 23/23; mobile-web smoke 4/4 cổng tại viewport 390×844. PostgreSQL demo có 5.265 giao dịch đã đối soát. Benchmark chính dùng nhãn joint type/category; ablation báo coverage và metric toàn mẫu/có điều kiện riêng; correction dùng group split không overlap và báo helped/harmed/net. Báo cáo không tuyên bố Redis worker đã chạy live hoặc đã đo accuracy OCR/STT, numeric faithfulness, p95 hay UAT.
+Các nhãn “đã hiện thực”, “đã đo”, “mục tiêu”, “thiết kế đích” và “chưa đo” không được dùng thay thế cho nhau. Các số liệu kiểm thử phải được sinh lại từ snapshot cuối trước khi đưa vào báo cáo; artifact lịch sử trên dataset cũ chỉ giữ để đối chiếu và đánh dấu superseded. Báo cáo không tuyên bố accuracy OCR/STT, numeric faithfulness, p95, Redis worker live hoặc UAT nếu chưa có artifact tương ứng.
 
 Các PDF Draw.io được chèn trực tiếp bằng `graphicx` và đã được xuất lại ở chế độ crop/one-page để giữ trọn sơ đồ dưới dạng vector. Khi chỉnh sửa, cần tiếp tục xuất PDF với tùy chọn crop; không thay nguồn `.drawio` bằng ảnh raster.

@@ -2,8 +2,6 @@ const express = require('express');
 const multer = require('multer');
 const fs = require('fs');
 const path = require('path');
-const vision = require('@google-cloud/vision');
-const speech = require('@google-cloud/speech');
 const AIService = require('../services/ai.service');
 const MediaAI = require('../services/media-ai.service');
 const CategoryModel = require('../models/category.model');
@@ -41,8 +39,6 @@ const upload = multer({
   },
 });
 const userId = 'default_user';
-const visionClient = process.env.GOOGLE_APPLICATION_CREDENTIALS ? new vision.ImageAnnotatorClient() : null;
-const speechClient = process.env.GOOGLE_APPLICATION_CREDENTIALS ? new speech.SpeechClient() : null;
 
 function getExtension(fileName = '') {
   return (String(fileName).match(/\.[a-z0-9]+$/i)?.[0] || '').toLowerCase();
@@ -203,22 +199,13 @@ async function handleOcr(req, res, next) {
     }
     console.log(`[ocr] received ${req.file.originalname || req.file.filename} (${req.file.mimetype}, ${req.file.size} bytes)`);
     let text = '';
-    let provider = 'unavailable';
+    const provider = MediaAI.getOcrProvider();
     let providerError;
     try {
-      const ocrProvider = MediaAI.getOcrProvider();
-      if (ocrProvider === 'paddleocr') {
-        const result = await MediaAI.runPaddleOcr(req.file.path);
-        text = result.text;
-        provider = result.provider;
-      } else {
-        if (!visionClient) throw new Error('Vision client is not configured');
-        const [result] = await visionClient.textDetection(req.file.path);
-        text = result.textAnnotations?.[0]?.description || '';
-        provider = 'google_vision';
-      }
+      const result = await MediaAI.runPaddleOcr(req.file.path);
+      text = result.text;
     } catch (error) {
-      console.warn(`[ocr] provider failed: ${error.message}`);
+      console.warn(`[ocr] ${provider} failed: ${error.message}`);
       providerError = error.message;
     } finally {
       fs.unlink(req.file.path, () => {});
@@ -257,23 +244,13 @@ async function handleSpeech(req, res, next) {
     if (!req.file) return res.status(400).json({ success: false, error: 'Chưa có audio' });
     console.log(`[speech] received ${req.file.originalname || req.file.filename} (${req.file.mimetype}, ${req.file.size} bytes)`);
     let text = '';
-    let provider = 'unavailable';
+    const provider = MediaAI.getSpeechProvider();
     let providerError;
     try {
-      const speechProvider = MediaAI.getSpeechProvider();
-      if (speechProvider === 'phowhisper') {
-        const result = await MediaAI.runPhoWhisper(req.file.path);
-        text = result.text;
-        provider = result.provider;
-      } else {
-        if (!speechClient) throw new Error('Speech client is not configured');
-        const audio = { content: fs.readFileSync(req.file.path).toString('base64') };
-        const [response] = await speechClient.recognize({ audio, config: { languageCode: 'vi-VN' } });
-        text = response.results.map((r) => r.alternatives[0].transcript).join('\n');
-        provider = 'google_speech';
-      }
+      const result = await MediaAI.runPhoWhisper(req.file.path);
+      text = result.text;
     } catch (error) {
-      console.warn(`[speech] provider failed: ${error.message}`);
+      console.warn(`[speech] ${provider} failed: ${error.message}`);
       providerError = error.message;
     } finally {
       fs.unlink(req.file.path, () => {});

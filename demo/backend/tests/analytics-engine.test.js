@@ -83,7 +83,13 @@ test('analytics engine integrates fixed windows, wallet policy, correlation axis
   assert.equal(subscriptions.totalMonthly, 300_000);
 
   const correlation = await AnalyticsEngine.correlationFacts('u1');
-  assert.deepEqual(correlation, { a: 'Ăn uống', b: 'Di chuyển', r: 1 });
+  assert.deepEqual(correlation, {
+    a: 'Ăn uống',
+    b: 'Di chuyển',
+    r: 1,
+    effective_pair_count: 4,
+    excluded_joint_zero_count: 8,
+  });
 
   const facts = await AnalyticsEngine.buildInsightFacts('u1', { useCache: false });
   assert.equal(facts.schema_version, '1.0');

@@ -10,7 +10,7 @@
         <mxCell id="title" value="&lt;b&gt;PERFIN System Context and Scope&lt;/b&gt;" style="text;html=1;align=left;verticalAlign=middle;fontSize=18;fontColor=#22303F;" vertex="1" parent="1">
           <mxGeometry x="40" y="20" width="720" height="28" as="geometry" />
         </mxCell>
-        <mxCell id="subtitle" value="The deterministic core owns validation, calculations and data writes; external AI services only return intermediate results." style="text;html=1;align=left;verticalAlign=middle;fontSize=12;fontColor=#5A6A78;whiteSpace=wrap;" vertex="1" parent="1">
+        <mxCell id="subtitle" value="The deterministic core owns validation, calculations and data writes; AI adapters only return intermediate results." style="text;html=1;align=left;verticalAlign=middle;fontSize=12;fontColor=#5A6A78;whiteSpace=wrap;" vertex="1" parent="1">
           <mxGeometry x="40" y="52" width="1100" height="36" as="geometry" />
         </mxCell>
         <mxCell id="user" value="&lt;b&gt;User&lt;/b&gt;&#xa;enter data · review · confirm · view insights" style="rounded=1;arcSize=10;whiteSpace=wrap;html=1;spacing=6;align=center;verticalAlign=middle;fillColor=#EAEEF2;strokeColor=#6B7A89;fontColor=#2C3440;fontSize=14;strokeWidth=1.2;" vertex="1" parent="1">
@@ -31,7 +31,7 @@
         <mxCell id="redis" value="&lt;b&gt;Redis / memory KV&lt;/b&gt;&#xa;TTL state · cache · queue" style="shape=cylinder3;boundedLbl=1;whiteSpace=wrap;html=1;fillColor=#FBF3D9;strokeColor=#B08900;fontColor=#5A4700;fontSize=13;strokeWidth=1.2;" vertex="1" parent="perfin">
           <mxGeometry x="180" y="130" width="130" height="78" as="geometry" />
         </mxCell>
-        <mxCell id="providers" value="&lt;b&gt;External AI services&lt;/b&gt;&#xa;Gemini · OCR · STT&#xa;typed candidates / raw text only" style="rounded=1;arcSize=10;whiteSpace=wrap;html=1;spacing=6;align=center;verticalAlign=middle;fillColor=#F0EAF9;strokeColor=#7C5CBF;fontColor=#3A2A5F;fontSize=14;strokeWidth=1.2;dashed=1;" vertex="1" parent="1">
+        <mxCell id="providers" value="&lt;b&gt;AI adapters&lt;/b&gt;&#xa;Gemini (external) · PaddleOCR + PhoWhisper (local)&#xa;typed candidates / raw text only" style="rounded=1;arcSize=10;whiteSpace=wrap;html=1;spacing=6;align=center;verticalAlign=middle;fillColor=#F0EAF9;strokeColor=#7C5CBF;fontColor=#3A2A5F;fontSize=14;strokeWidth=1.2;dashed=1;" vertex="1" parent="1">
           <mxGeometry x="800" y="310" width="300" height="110" as="geometry" />
         </mxCell>
         <mxCell id="out" value="&lt;b&gt;Outside project scope&lt;/b&gt;&#xa;Open Banking · shared wallets · production authentication" style="rounded=1;arcSize=10;whiteSpace=wrap;html=1;spacing=6;align=center;verticalAlign=middle;fillColor=#FCEDED;strokeColor=#C97A7A;fontColor=#5A2A2A;fontSize=13;strokeWidth=1.2;dashed=1;" vertex="1" parent="1">

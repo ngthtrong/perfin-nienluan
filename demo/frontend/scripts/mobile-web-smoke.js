@@ -13,10 +13,17 @@ function option(name, fallback) {
 }
 
 const appUrl = option('--url', process.env.UI_SMOKE_URL || 'http://127.0.0.1:8081');
-const outputDir = path.resolve(option('--output-dir', process.env.UI_SMOKE_OUTPUT || path.join(os.tmpdir(), 'perfin-ui-smoke')));
-const fixturePath = path.resolve(option('--image', path.join(__dirname, '../../data/img/chuyen-khoan.jpg')));
+const outputDir = path.resolve(option('--output-dir', process.env.UI_SMOKE_OUTPUT || path.resolve(__dirname, '../../../latex/figures/screenshots')));
 const chromiumBin = option('--chromium', process.env.CHROMIUM_BIN || 'chromium');
-const viewport = { width: 390, height: 844, deviceScaleFactor: 1, mobile: true };
+const viewportSpec = option('--viewport', process.env.UI_SMOKE_VIEWPORT || '390x844');
+const viewportMatch = viewportSpec.match(/^(\d+)x(\d+)$/);
+if (!viewportMatch) throw new Error(`Viewport không hợp lệ: ${viewportSpec}; dùng dạng WIDTHxHEIGHT`);
+const viewport = {
+  width: Number(viewportMatch[1]),
+  height: Number(viewportMatch[2]),
+  deviceScaleFactor: 2,
+  mobile: true,
+};
 
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -105,7 +112,10 @@ class CdpClient {
       returnByValue: true,
       userGesture: true,
     });
-    if (response.exceptionDetails) throw new Error(response.exceptionDetails.text || 'Runtime.evaluate failed');
+    if (response.exceptionDetails) {
+      const detail = response.exceptionDetails;
+      throw new Error(detail.exception?.description || detail.text || 'Runtime.evaluate failed');
+    }
     return response.result?.value;
   }
 
@@ -142,6 +152,34 @@ function clickTextExpression(label) {
   })()`;
 }
 
+function clickAccessibilityExpression(label) {
+  return `(() => {
+    const target = document.querySelector('[aria-label="' + ${JSON.stringify(label)} + '"]');
+    if (!target) return false;
+    // Schedule the React event outside Runtime.evaluate so an asynchronous
+    // request rejection is captured by CDP and can be reported with the
+    // screen-level assertion instead of being surfaced as an opaque "Uncaught".
+    setTimeout(() => target.click(), 0);
+    return true;
+  })()`;
+}
+
+function fillPlaceholderExpression(placeholder, value) {
+  return `(() => {
+    const target = [...document.querySelectorAll('input, textarea')]
+      .find((node) => node.getAttribute('placeholder') === ${JSON.stringify(placeholder)});
+    if (!target) return false;
+    const prototype = target instanceof HTMLTextAreaElement ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype;
+    const setter = Object.getOwnPropertyDescriptor(prototype, 'value')?.set;
+    if (setter) setter.call(target, ${JSON.stringify(value)});
+    else target.value = ${JSON.stringify(value)};
+    target.dispatchEvent(new Event('input', { bubbles: true }));
+    target.dispatchEvent(new Event('change', { bubbles: true }));
+    target.focus();
+    return true;
+  })()`;
+}
+
 async function pageFacts(client) {
   return client.evaluate(`(() => {
     const body = document.body;
@@ -155,6 +193,8 @@ async function pageFacts(client) {
       scrollWidth,
       horizontalOverflow: scrollWidth > innerWidth + 1,
       text: body?.innerText || '',
+      loadingMarkers: ['Đang tải', 'Đang phân tích', 'Đang xử lý', 'Skeleton'].filter((marker) => (body?.innerText || '').includes(marker)),
+      busyCount: document.querySelectorAll('[aria-busy="true"]').length,
     };
   })()`);
 }
@@ -170,11 +210,26 @@ async function capture(client, name) {
   return filePath;
 }
 
+async function scrollTextIntoView(client, label) {
+  const scrolled = await client.evaluate(`(() => {
+    const wanted = ${JSON.stringify(label)};
+    const nodes = [...document.querySelectorAll('*')]
+      .filter((node) => node.children.length === 0 && node.textContent.trim() === wanted);
+    const target = nodes[nodes.length - 1];
+    if (!target) return false;
+    target.scrollIntoView({ block: 'center', inline: 'nearest' });
+    return true;
+  })()`);
+  assert.equal(scrolled, true, `Không tìm thấy nội dung để cuộn: ${label}`);
+}
+
 async function auditScreen(client, name, expectedText) {
   const expected = Array.isArray(expectedText) ? expectedText : [expectedText];
   const facts = await waitFor(async () => {
     const current = await pageFacts(client);
-    return expected.every((text) => current.text.includes(text)) ? current : null;
+    return expected.every((text) => current.text.includes(text))
+      && current.loadingMarkers.length === 0
+      && current.busyCount === 0 ? current : null;
   }, `${name} render`);
   assert.equal(facts.width, viewport.width, `${name}: viewport không đúng`);
   assert.equal(facts.horizontalOverflow, false, `${name}: tràn ngang ${facts.scrollWidth}px > ${facts.width}px`);
@@ -183,100 +238,37 @@ async function auditScreen(client, name, expectedText) {
   return facts;
 }
 
-async function selectImageFixture(client) {
-  assert.ok(fs.existsSync(fixturePath), `Thiếu fixture ${fixturePath}`);
-  // Expo ImagePicker dispatches a synthetic click on a temporary file input.
-  // Headless Chromium immediately cancels that picker unless the click is held
-  // for CDP to inject a fixture, so intercept only that synthetic file click.
-  await client.evaluate(`(() => {
-    if (window.__perfinFilePickerPatched) return true;
-    window.__perfinFilePickerPatched = true;
-    const original = HTMLInputElement.prototype.dispatchEvent;
-    HTMLInputElement.prototype.dispatchEvent = function(event) {
-      if (this.type === 'file' && event?.type === 'click') {
-        window.__perfinPendingFileInput = this;
-        return true;
-      }
-      return original.call(this, event);
-    };
-    return true;
-  })()`);
-  const opened = await client.evaluate(`(() => {
-    const target = document.querySelector('[aria-label="Thêm ảnh hóa đơn"]');
-    if (!target) return false;
-    target.click();
-    return true;
-  })()`);
-  if (!opened) {
-    console.log('SKIP chat-image: chưa tìm thấy nút có accessibilityLabel "Thêm ảnh hóa đơn"');
-    return { skipped: true };
-  }
-
-  const picked = await waitFor(
+async function captureChatPreview(client) {
+  const filled = await client.evaluate(fillPlaceholderExpression('Nhập giao dịch...', 'Chi 45 nghìn mua cà phê'));
+  assert.equal(filled, true, 'Không tìm thấy ô nhập giao dịch');
+  const draft = await waitFor(
     () => client.evaluate(`(() => {
-      const target = document.querySelector('[aria-label="Chọn ảnh hóa đơn từ thư viện"]');
-      if (!target) return false;
-      target.click();
-      return true;
-    })()`),
-    'image source options',
-    10000,
-  );
-  assert.equal(picked, true, 'Không mở được thư viện ảnh');
-
-  const nodeId = await waitFor(async () => {
-    const documentNode = await client.send('DOM.getDocument', { depth: 2, pierce: true });
-    const result = await client.send('DOM.querySelector', {
-      nodeId: documentNode.root.nodeId,
-      selector: 'input[type="file"]',
-    });
-    return result.nodeId || null;
-  }, 'file input', 10000);
-  await client.send('DOM.setFileInputFiles', { nodeId, files: [fixturePath] });
-
-  const sent = await waitFor(
-    () => client.evaluate(`(() => {
-      const pending = document.querySelector('[aria-label="Ảnh hóa đơn đang chờ gửi"]');
+      const input = [...document.querySelectorAll('input, textarea')]
+        .find((node) => node.value.includes('45 nghìn'));
       const send = document.querySelector('[aria-label="Gửi tin nhắn"]');
-      if (!pending || !send) return false;
-      send.click();
-      return true;
+      return input && send ? { value: input.value } : null;
     })()`),
-    'staged image composer',
+    'chat draft',
     10000,
   );
-  assert.equal(sent, true, 'Không gửi được ảnh đã chọn');
-
-  const preview = await waitFor(
-    () => client.evaluate(`(() => {
-      const root = [...document.querySelectorAll('[aria-label]')]
-        .find((node) => node.getAttribute('aria-label')?.includes('Ảnh hóa đơn'));
-      const image = root?.querySelector('img');
-      const background = root
-        ? [...root.querySelectorAll('div')].map((node) => getComputedStyle(node).backgroundImage)
-          .find((value) => value && value !== 'none') || ''
-        : '';
-      const hasLoadingOverlay = (document.body.innerText || '').includes('Đang tải ảnh...');
-      const hasReceiptBadge = [...document.querySelectorAll('*')]
-        .some((node) => node.children.length === 0 && node.textContent.trim() === 'Hóa đơn');
-      const receipt = root && image ? {
-        label: root.getAttribute('aria-label') || image.alt || '',
-        width: image.naturalWidth,
-        height: image.naturalHeight,
-        opacity: Number(getComputedStyle(root).opacity),
-        source: image.currentSrc || image.src || '',
-        background,
-      } : null;
-      return receipt && receipt.width > 0 && receipt.height > 0 && receipt.opacity > 0.9
-        && receipt.background.includes('blob:') && !hasLoadingOverlay && hasReceiptBadge ? receipt : null;
-    })()`),
-    'chat image preview',
-    30000,
-  );
-  assert.ok(preview.source.startsWith('blob:') || preview.source.startsWith('data:') || preview.source.startsWith('file:'), 'Preview không dùng dữ liệu ảnh thật');
-  const screenshot = await capture(client, 'chat-image');
-  console.log(`PASS chat-image: ${preview.width}x${preview.height} rendered -> ${screenshot}`);
-  return { skipped: false, preview, screenshot };
+  await delay(300);
+  const sent = await client.evaluate(clickAccessibilityExpression('Gửi tin nhắn'));
+  assert.equal(sent, true, 'Không gửi được bản nháp chat');
+  await waitFor(async () => {
+    const facts = await pageFacts(client);
+    const hasDraft = facts.text.includes('Chi 45 nghìn mua cà phê');
+    const hasPreview = facts.text.includes('Xác nhận giao dịch') || facts.text.includes('Xác nhận tất cả');
+    return hasDraft && hasPreview && facts.loadingMarkers.length === 0 ? facts : null;
+  }, 'chat transaction preview', 30000);
+  const previewLabel = await client.evaluate(`(() => {
+    const body = document.body?.innerText || '';
+    return body.includes('Xác nhận giao dịch') ? 'Xác nhận giao dịch' : 'Xác nhận tất cả';
+  })()`);
+  await scrollTextIntoView(client, previewLabel);
+  await delay(250);
+  const screenshot = await capture(client, '02-chat-preview');
+  console.log(`PASS chat preview: ${draft.value} -> ${screenshot}`);
+  return screenshot;
 }
 
 async function main() {
@@ -320,16 +312,34 @@ async function main() {
     await waitFor(async () => (await pageFacts(client)).readyState === 'complete', 'page load');
     await delay(1500);
 
-    await auditScreen(client, 'dashboard-mobile', 'Giao dịch gần đây');
+    await auditScreen(client, '01-dashboard', 'Giao dịch gần đây');
+    assert.equal(await client.evaluate(clickTextExpression('Ngân sách')), true, 'Không mở được màn hình Ngân sách');
+    await auditScreen(client, '03-budget', ['Ngân sách', 'đã dùng']);
     assert.equal(await client.evaluate(clickTextExpression('Báo cáo')), true, 'Không mở được tab Báo cáo');
-    await auditScreen(client, 'report-mobile', ['Xu hướng 12 tháng', 'Thu nhập', 'Chi tiêu']);
+    await auditScreen(client, '04-report', ['Xu hướng 12 tháng', 'Thu nhập', 'Chi tiêu']);
     assert.equal(await client.evaluate(clickTextExpression('Chat')), true, 'Không mở được tab Chat');
-    await auditScreen(client, 'chat-mobile', 'Trò chuyện & nhập liệu');
-    const imageResult = await selectImageFixture(client);
+    await auditScreen(client, '02-chat-screen', 'Trò chuyện & nhập liệu');
+    await captureChatPreview(client);
+    assert.equal(await client.evaluate(clickTextExpression('Khác')), true, 'Không mở được tab Khác');
+    assert.equal(await client.evaluate(clickTextExpression('Mục tiêu tài chính')), true, 'Không mở được Mục tiêu tài chính');
+    await waitFor(async () => {
+      const facts = await pageFacts(client);
+      return facts.text.includes('Mục tiêu của bạn') && facts.loadingMarkers.length === 0 ? facts : null;
+    }, 'goals render');
+    assert.equal(await client.evaluate(clickTextExpression('Tạo mục tiêu mới')), true, 'Không mở được biểu mẫu mục tiêu');
+    await waitFor(() => client.evaluate(`(() => document.body.innerText.includes('Mục tiêu mới'))()`), 'goal form');
+    assert.equal(await client.evaluate(fillPlaceholderExpression('Ví dụ: Quỹ dự phòng 6 tháng', 'Quỹ dự phòng')), true, 'Không điền được tên mục tiêu');
+    assert.equal(await client.evaluate(fillPlaceholderExpression('300,000,000', '30000000')), true, 'Không điền được số tiền mục tiêu');
+    await client.evaluate(clickTextExpression('Xem kế hoạch'));
+    await delay(800);
+    const goalFacts = await pageFacts(client);
+    assert.equal(goalFacts.loadingMarkers.length, 0, 'Goal plan vẫn đang loading');
+    const goalScreenshot = await capture(client, '05-goal-plan');
+    console.log(`PASS goal plan -> ${goalScreenshot}`);
 
     await delay(500);
     assert.deepEqual(client.exceptions, [], `Browser có runtime error: ${client.exceptions.join(' | ')}`);
-    console.log(`UI SMOKE PASS; screenshots=${outputDir}; image=${imageResult.skipped ? 'skipped' : 'rendered'}`);
+    console.log(`UI SMOKE PASS; screenshots=${outputDir}; viewport=${viewport.width}x${viewport.height}; dpr=${viewport.deviceScaleFactor}`);
   } catch (error) {
     if (browserStderr) console.error(browserStderr);
     throw error;

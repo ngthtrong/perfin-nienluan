@@ -17,33 +17,48 @@ PERFIN đã hình thành một nguyên mẫu tách rõ dữ liệu, giải thu�
     O2 & Text/media adapter, typed draft, clarification, preview và confirm. & Luồng đã chạy; accuracy OCR/STT chưa được đo. \\
     O3 & Trend, anomaly, runway, recurring, correlation, budget và goal planner. & Đã hiện thực và có unit test; ngưỡng cần hiệu chỉnh trên dữ liệu đại diện. \\
     O4 & Tool schema, service validation, facts--narrator flow và fallback. & Ranh giới đã hiện thực; numeric faithfulness toàn diện chưa được đo. \\
-    O5 & 44/44 tệp backend test, 23/23 full smoke và thí nghiệm có coverage/group split. & Có bằng chứng cho lõi demo; chưa đủ cho worker live, p95, UAT hoặc production. \\
+    O5 & Có test plan tái lập, full suite backend 247 test, 21 ca regression tập trung và profile dữ liệu hiện tại; rerun benchmark còn chờ. & Ranh giới bằng chứng đã rõ; worker live, p95, UAT và benchmark hiện tại chưa đo. \\
     \bottomrule
   \end{tabularx}
 \end{table}
 
-Trên 5.265 giao dịch, parser cục bộ đạt accuracy 26,12\% và macro-F1 0,1559 theo nhãn joint type/category; 29,36\%/0,177 category-only chỉ là đối chiếu phụ. Trong ablation 63 câu, accuracy toàn mẫu là 22,22\% cho parser và 39,68\% cho Gemini, nhưng Gemini chỉ có category ở 42/63 câu; macro-F1 0,6068 chỉ áp dụng có điều kiện cho 42 câu đó. Với điều kiện parser đoán đúng type và loại \textit{Khác}, correction group-split có overlap bằng 0 và tăng accuracy từ 34,46\% lên 61,22\% trên 2.612 mẫu đánh giá (4.756 mẫu đủ điều kiện; loại 76 dòng sai type), với 740 ca được giúp, 41 ca bị hại, net $+26,76$ điểm và coverage 891/2.612. Đây là bằng chứng trong dataset/seed đã công bố, không phải ước lượng production.
+Profile dữ liệu hiện tại báo 5.328 dòng nguồn, không có lỗi validation và SHA-256 \code{418a9439...fbaed7}. Các điểm classification, ablation và correction cũ dùng CSV khác nên đã superseded. Chỉ sau khi rerun sạch với joint type/category, cửa sổ correction 200 candidate theo thời gian và record đầy đủ theo mẫu mới đưa số vào kết luận.
+
+\begin{table}[H]
+  \centering
+  \caption{Câu hỏi nghiên cứu và trạng thái trả lời}
+  \label{tab:research-questions}
+  \begin{tabularx}{\textwidth}{@{}L{1.2cm}Y Y@{}}
+    \toprule
+    \textbf{RQ} & \textbf{Câu trả lời được prototype hỗ trợ} & \textbf{Giới hạn câu trả lời} \\
+    \midrule
+    RQ1 & Typed draft, media cục bộ, validation, preview và confirm giữ dữ liệu suy ra ngoài ledger cho tới khi người dùng xem lại. & CER/WER và field accuracy OCR/STT cần ground truth 20 ảnh/20 audio. \\
+    RQ2 & OLS, tín hiệu anomaly bền vững, cashflow theo lịch, budget, goal và correlation có guard tạo facts giải thích được; đã có invariant test. & Hiệu chỉnh ngưỡng và đánh giá nhiều seed trên dữ liệu đại diện còn chờ. \\
+    RQ3 & Gemini chỉ hiểu ngôn ngữ/diễn giải; backend giữ validation, tính toán và quyền ghi. & Ablation hiện tại là lịch sử; cần rerun joint-label trước khi nói về lợi ích so sánh. \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
 
 \section{Kết quả và sản phẩm bàn giao}
 
-Sản phẩm gồm mã nguồn mobile/backend, migration PostgreSQL, cấu hình Redis/BullMQ, adapter LLM/OCR/STT, bộ test, tập dữ liệu demo đã đối soát, artifact thí nghiệm và báo cáo LaTeX. Hệ thống hỗ trợ nhập text/media, xem trước và xác nhận; quản lý sổ cái; phân tích, ngân sách và mục tiêu; đồng thời trả facts cùng lời diễn giải có kiểm soát.
+Sản phẩm gồm mã nguồn mobile/backend, migration PostgreSQL, cấu hình Redis/BullMQ, adapter Gemini cùng PaddleOCR/PhoWhisper cục bộ, bộ test, tập dữ liệu demo đã đối soát, protocol thí nghiệm và báo cáo LaTeX. Hệ thống hỗ trợ nhập text/media, xem trước và xác nhận; quản lý sổ cái; phân tích, ngân sách và mục tiêu; đồng thời trả facts cùng lời diễn giải có kiểm soát.
 
-Trên mẫu ablation nhỏ, Gemini có accuracy toàn mẫu cao hơn parser nhưng abstain một phần ba câu, đồng thời phát sinh độ trễ và phụ thuộc provider; full-sample macro-F1 chưa thể khôi phục từ artifact cũ. Giá trị tiềm năng này chỉ an toàn khi giữ bốn hàng rào: schema, validation, preview/confirm và facts grounding. Do đó PERFIN được kết luận là hệ thống xử lý dữ liệu tài chính có lớp giao tiếp LLM, không phải chatbot tự tính toán hay tự quyết định thay người dùng.
+Kiến trúc cho phép LLM hỗ trợ mà không có quyền trên ledger. Mọi claim so sánh được hoãn đến khi ablation trên snapshot hiện tại chạy lại; schema, validation, preview/confirm và facts grounding vẫn là hàng rào bắt buộc. Vì vậy PERFIN là hệ thống dữ liệu tài chính có lớp giao tiếp LLM, không phải chatbot tự tính toán hay tự quyết định thay người dùng.
 
 \section{Hạn chế}
 
 \begin{enumerate}
   \item Nguyên mẫu dùng \code{default_user}; chưa có authentication và authorization production.
-  \item Smoke test 2 ảnh và 1 audio không đủ để suy ra CER, WER hoặc transaction-field accuracy.
+  \item Chưa có bộ media có kiểm soát và transcript tham chiếu; CER, WER và transaction-field accuracy hiện chưa đo.
   \item Redis worker, retry/idempotency live, p95 và UAT chưa được xác nhận trong môi trường khóa phiên bản.
   \item Các ngưỡng fuzzy, anomaly, recurring, correlation và cửa sổ thời gian là cấu hình khởi đầu, chưa tối ưu cho mọi người dùng.
-  \item Dataset lịch sử có taxonomy không nhất quán; ablation thiếu full prediction records, còn correction mới chỉ chạy một seed và chưa có khoảng tin cậy.
+  \item Taxonomy lịch sử không nhất quán; artifact cũ dùng CSV đã superseded, còn runner correction cần nhiều seed và khoảng tin cậy.
   \item Numeric grounding checker mới là thiết kế đích; persona chưa được đánh giá tác động hành vi.
   \item Một số chức năng hỗ trợ còn thiếu: PDF thật, backup/restore hoàn chỉnh, push notification và luồng tạo ví đầy đủ trên fresh install.
 \end{enumerate}
 
 \section{Hướng phát triển}
 
-Ưu tiên tiếp theo là: (1) khóa taxonomy, tạo tập đánh giá độc lập và chạy group split trên nhiều seed/khoảng tin cậy; (2) xây ground truth ảnh/audio để đo CER/WER và field accuracy; (3) chạy Redis worker live với fault injection và kiểm tra duplicate-effect; (4) hiện thực numeric checker và đo p50/p95 trên ít nhất 30 lượt mỗi luồng; (5) thực hiện UAT so chat với form; (6) bổ sung authentication, authorization, audit và quản lý secret trước triển khai thật.
+Ưu tiên tiếp theo là: (1) freeze clean commit và dataset hiện tại, chạy lại full suite cùng offline experiments; (2) tạo ground truth 20 ảnh/20 audio; (3) temporal replay correction với 200 candidate; (4) kiểm tra end-to-end confirm PostgreSQL và duplicate delivery Redis; (5) hiện thực numeric checker và đo p50/p95 ít nhất 30 lượt/luồng; (6) UAT counterbalanced với từ năm người dùng; (7) bổ sung authentication, authorization, audit và secret management trước triển khai thật.
 
 Các mở rộng như đồng bộ ngân hàng, shared wallet hoặc high availability chỉ nên thực hiện sau khi tính đúng dữ liệu và bằng chứng thực nghiệm ổn định. Cách phát triển này giữ đúng trọng tâm của niên luận cơ sở ngành: dữ liệu và giải thuật là lõi, còn LLM là thành phần hỗ trợ có thể thay thế và đo lường.

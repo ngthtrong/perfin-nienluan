@@ -58,6 +58,15 @@ For a phone on the same LAN, replace \code{127.0.0.1} with the backend host's LA
 
 The prototype has no login and uses \code{default_user}. Do not enter sensitive data or treat results as guaranteed investment advice.
 
+\begin{figure}[p]
+  \centering
+  \includegraphics[width=0.55\textwidth,height=0.70\textheight,keepaspectratio]{figures/screenshots/05-goal-plan.png}
+  \caption{Goal-plan form preview in the Expo web mobile viewport (synthetic data; plan is not saved).}
+  \label{fig:ui-goal-plan}
+\end{figure}
+
+\input{chapters/\doclang/appendix-fr-supplement}
+
 \chapter{Extended Algorithm Specifications}
 \label{app:algorithms}
 
@@ -81,11 +90,11 @@ This section documents the data sources used for tests and benchmark measurement
   \textbf{Source} & \textbf{Size/scope} & \textbf{Role and status} \\
   \midrule
   \endhead
-  Transaction CSV & 5,265 rows, 8 columns; 1 Jan 2022--15 Jul 2026; 4,845 expenses and 420 incomes. & \code{dataFinance.csv} is the main source for import, parser benchmarking and correction input. The importer accepted 5,265/5,265 rows. \\
-  Category mapping & Crosswalk from the historical taxonomy to PERFIN's 17 type/category labels. & \code{dataFinance.category-map.json} is checked against the CSV checksum and used to create post-import gold labels, not parser predictions. Only 13/17 labels have support in the benchmark. \\
-  Parser--Gemini ablation & At most five sentences per class, seed 42; 63 sentences in the measured run. & A stratified cohort sampled from the same CSV to measure coverage, accuracy and F1; it is not an independent text source. \\
-  Correction group split & 4,832 rows after removing \textit{Other}; 4,756 same-type eligible rows; 2,612 evaluation rows. & Seed/evaluation are split by whole transaction-type and normalized-description groups, seed 7, target ratio 0.5; key overlap is zero. \\
-  Media fixtures & Two images and one audio file. The images have expected amount/type/date values; the audio has no reference transcript. & \code{media-fixtures.json} is used only for media smoke. Without ground truth, the result is pipeline pass/fail, not OCR/STT accuracy. \\
+  Transaction CSV & 5,328 source rows, 8 columns; 1 Jan 2022--10 Aug 2026. & \code{dataFinance.csv} is the current import and benchmark source. Dry-run validation rejects zero rows; PostgreSQL apply and benchmark reruns are pending. SHA-256 is \code{418a9439...fbaed7}. \\
+  Category mapping & Crosswalk from the historical taxonomy to PERFIN's 17 type/category labels. & \code{dataFinance.category-map.json} is checked against the current CSV checksum; its SHA-256 is \code{8072dc3d...c6b573c}. It creates post-import gold labels, not parser predictions. \\
+  Parser--Gemini ablation & Protocol fixed; historical 63-sentence artifact is superseded. & The rerun must use joint labels, keep abstentions in the denominator and store every sample-level record. \\
+  Correction group split & Protocol fixed; historical evaluation artifact is superseded. & Split whole type/normalized-description groups, replay chronologically and expose the production candidate limit of 200. \\
+  Media fixtures & Public synthetic set pending; the existing two images contain PII and are unsafe to distribute. & \code{media-fixtures.json} remains private smoke material. The planned 20 images and 20 audio files will carry reference text/fields. \\
   Analytics/unit fixtures & Synthetic or anonymized series with known slope, outlier, cadence and correlation. & Used to check Analytics/Budget/Goal formulas, edge cases and invariants; not a real-user benchmark. \\
   \bottomrule
 \end{longtable}
@@ -117,7 +126,7 @@ The CSV must contain the following eight columns in this exact order. The
   \bottomrule
 \end{longtable}
 
-The importer does not silently remove duplicates: the source contains 23 exact-duplicate groups, 24 extra rows in total, but has no ID or timestamp sufficient to call them errors, so the default mode retains them. The mapping declares the CSV checksum \code{a9b7cf1b...}; the benchmark artifact stores the full checksum, and changing one CSV byte stops the import instead of applying an old mapping to new data.
+The importer does not silently remove duplicates: the current dry-run reports 23 exact-duplicate groups and 24 extra rows, but the source has no ID or timestamp sufficient to call them errors, so the default mode retains them. The current CSV checksum prefix is \code{418a...}; changing one byte stops the import instead of applying an old mapping to new data.
 
 \subsection{Size, distribution and data quality}
 
@@ -129,44 +138,18 @@ The importer does not silently remove duplicates: the source contains 23 exact-d
     \toprule
     \textbf{Attribute} & \textbf{Value} & \textbf{Interpretation} \\
     \midrule
-    Source rows / imported rows & 5,265 / 5,265 & No row was rejected in the reconciled import. \\
-    Transaction direction & 4,845 expense; 420 income & The data is strongly expense-heavy; joint metrics retain direction in the label. \\
-    Date range & 1 Jan 2022--15 Jul 2026 & Year counts are 540 (2022), 1,567 (2023), 1,525 (2024), 1,050 (2025) and 583 (2026). \\
-    Normalized descriptions & 374/5,265 rows & Unicode/whitespace normalization was applied before record creation and reused for group splitting. \\
-    Blank \code{Special} cells & 4,978/5,265 rows & Missing optional metadata, not a validation error. \\
-    Missing source label & One expense row & Explicitly mapped to \textit{Other}; opposite-direction category cells are blank by schema. \\
-    Amounts & min 1,000; median 25,000; max 48,000,000 VND & $Q1=14,000$, $Q3=44,000$, IQR threshold 89,000; 621 rows are flagged above the threshold but retained. \\
+    Source rows / validation rejects & 5,328 / 0 & Current dry-run profile; database apply remains a separate measured step. \\
+    Date range & 1 Jan 2022--10 Aug 2026 & The profile covers the current snapshot; per-year and direction counts will be regenerated with the benchmark. \\
+    Amount totals & Income 373,432,659 VND; expense 373,062,659 VND & Net cashflow in the source profile is 370,000 VND; no classification score is inferred from totals. \\
+    Amount outlier flag & 615 rows above the IQR threshold 91,500 VND & Outliers are retained because they can be legitimate tuition, lending or household payments. \\
     Exact duplicates & 23 groups / 24 extra rows & Retained by default to preserve the source; no duplicate error is asserted without a transaction identifier. \\
     \bottomrule
   \end{tabularx}
 \end{table}
 
-After mapping, \textit{expense/Ăn uống} is the largest class with 2,251/5,265 rows (42.75\%). Four valid labels have no support: \textit{expense/Tạp hóa}, \textit{expense/Điện tử}, \textit{expense/Làm đẹp} and \textit{income/Thưởng}. The parser macro-F1 is therefore reported over 13 supported classes, not interpreted as coverage of all 17 taxonomy labels.
-
-\begin{table}[H]
-  \centering
-  \caption{Distribution of the 13 supported joint labels in the parser benchmark}
-  \label{tab:app-dataset-labels}
-  \begin{tabularx}{0.9\textwidth}{@{}L{6.0cm}R{2.2cm}R{2.4cm}@{}}
-    \toprule
-    \textbf{Joint label} & \textbf{Rows} & \textbf{Share} \\
-    \midrule
-    \textit{expense/Ăn uống} & 2,251 & 42.75\% \\
-    \textit{expense/Giải trí} & 660 & 12.54\% \\
-    \textit{expense/Di chuyển} & 491 & 9.33\% \\
-    \textit{expense/Thể thao} & 394 & 7.48\% \\
-    \textit{expense/Hóa đơn \& Dịch vụ} & 356 & 6.76\% \\
-    \textit{income/Khác} & 350 & 6.65\% \\
-    \textit{expense/Giáo dục} & 342 & 6.50\% \\
-    \textit{expense/Nhà cửa} & 150 & 2.85\% \\
-    \textit{expense/Khác} & 83 & 1.58\% \\
-    \textit{expense/Sức khỏe} & 80 & 1.52\% \\
-    \textit{income/Lương} & 67 & 1.27\% \\
-    \textit{expense/Mua sắm} & 38 & 0.72\% \\
-    \textit{income/Đầu tư} & 3 & 0.06\% \\
-    \bottomrule
-  \end{tabularx}
-\end{table}
+The post-mapping class distribution and supported-label count are intentionally left
+pending until the current CSV is benchmarked. The previous 13-class table belonged to
+the superseded 5,265-row snapshot and must not be reused.
 
 \subsection{Cohorts, splits and reproducibility}
 
@@ -181,15 +164,15 @@ After mapping, \textit{expense/Ăn uống} is the largest class with 2,251/5,265
   \textbf{Measurement} & \textbf{Denominator} & \textbf{Rule and cross-check artifact} \\
   \midrule
   \endhead
-  Classification & 5,265/5,265 rows & Run the local parser over the full CSV with no provider calls; the primary label is joint type/category. Artifact \path{log/classification-benchmark_2026-08-02.json}. \\
-  Parser--Gemini ablation & 63 sentences & Stratified sample of at most five per class with seed 42; Gemini abstentions remain in the denominator. Historical artifact \path{log/ablation-parser-vs-llm_2026-07-24.json}. \\
-  Correction retrieval & 2,612 evaluation rows & From 4,756 same-type, non-\textit{Other} rows: seed has 1,714 parser-wrong rows plus 430 co-members; holdout has 1,712 parser-wrong rows and control has 900 parser-correct rows. Seed 7, group split, overlap 0. Artifact \path{log/feedback-before-after_2026-08-02.json}. \\
+  Classification & 5,328 rows (planned) & Run the local parser over the current CSV with no provider calls; the primary label is joint type/category. The old 5,265-row artifact is superseded. \\
+  Parser--Gemini ablation & Protocol pending rerun & Stratify from the current source, record joint labels and keep abstentions in the denominator; provider access/quota is required. \\
+  Correction retrieval & Protocol pending rerun & Use whole-group temporal replay, production candidate limit 200 and a confidence interval; no old aggregate is reused. \\
   \makecell[l]{Analytics/\\Budget/Goal unit} & Synthetic cases & There is no single transaction benchmark for these components; fixtures set known slope, zero-fill, outlier, cadence, correlation, budget caps and what-if outcomes. Tests are indexed in Table~\ref{tab:app-algorithm-tests}. \\
-  Media smoke & Two images + one audio & The images have expected amount/type/date values (one also has category); the audio has no ground truth. Used only to verify pipeline execution. \\
+  Media ground truth & 20 images + 20 audio (planned) & Store redacted synthetic files, reference transcript/fields and a manifest; compute CER/WER plus transaction-field accuracy. \\
   \bottomrule
 \end{longtable}
 
-The runners store data and mapping checksums, Node version, run time and involved source files under \path{log/}. The CSV represents one demo profile, is primarily Vietnamese and uses VND; raw content is not treated as anonymized material for public release. Both image fixtures are marked as containing PII and unsafe for distribution, while the audio transcript has not been reviewed. Because there is no external holdout, no confidence interval and insufficient media ground truth, the measurements describe the recorded dataset/artifacts only; they do not establish generalization or production OCR/STT accuracy.
+Runners must store data and mapping checksums, Node version, run time and involved source files under \path{log/}. The CSV represents one demo profile, is primarily Vietnamese and uses VND; raw content is not treated as anonymized material for public release. Existing media fixtures remain private because their manifest marks PII and unsafe distribution. Until the controlled media set, external holdout and confidence intervals exist, the report describes implementation and protocol rather than generalization or production OCR/STT accuracy.
 
 \section{Scope and data conventions}
 \label{app:algorithm-conventions}
@@ -467,7 +450,7 @@ The following table points to tests and artifacts rather than copying raw data. 
   \textbf{Group} & \textbf{Normal cases} & \textbf{Boundary cases/invariants} & \textbf{Evidence} \\
   \midrule
   \endhead
-  Matcher & exact name, exact alias and clear typo. & Ambiguous alias, empty input, below threshold, small margin, aliases must use word boundaries. & \code{feedback.test.js}; historical local-parser gate 31/31. \\
+  Matcher & exact name, exact alias and clear typo. & Ambiguous alias, empty input, below threshold, small margin, aliases must use word boundaries. & \code{feedback.test.js}; focused subset and 247-test backend suite pass. \\
   Correction & exact/fuzzy same-type corrections and nearest few-shot examples. & Conflicting exact labels, missing type, agreement below 0.8, name-only/id+name. & \code{feedback.test.js}; correction JSON/Markdown in \code{log/}. \\
   Calendar/runway & complete axis, liquid VND wallet and depletion date. & Zero balance, zero burn, USD/investment exclusion, day-31 payday. & \path{analytics-engine.test.js}, \path{analytics-time-series.test.js}, \path{wallet-policy.test.js}. \\
   Trend/anomaly & increasing series and upper-tail outlier. & Fewer than 3 positive periods, fewer than 4 positive days, constant series, zero IQR or variance. & \path{analytics-engine.test.js}, \path{analytics-time-series.test.js}. \\
@@ -478,7 +461,7 @@ The following table points to tests and artifacts rather than copying raw data. 
   \bottomrule
 \end{longtable}
 
-The classification and correction runners write structured records under \code{log/}; the 02/08/2026 measurements are described in Chapter~\ref{subsec:results}. OCR/STT accuracy, complete numeric grounding, p95, UAT and live Redis-worker execution remain targets or unmeasured; they cannot be inferred from pure unit tests.
+The classification and correction runners write structured records under \code{log/}; current-snapshot reruns are described in Chapter~\ref{subsec:results}. OCR/STT accuracy, complete numeric grounding, p95, UAT and live Redis-worker execution remain targets or unmeasured; they cannot be inferred from pure unit tests.
 
 \chapter{Reproduction Commands}
 
@@ -486,7 +469,13 @@ Run each command from the named component directory. Record commit, Node version
 
 \begin{verbatim}
 cd demo/backend
+export REDIS_ENABLED=false JOBS_ENABLED=false
+node --test tests/analytics-engine.test.js
+node --test tests/analytics-time-series.test.js
+node --test tests/property-invariants.test.js
+node --test tests/media-provider.test.js
 npm test
+node --experimental-test-coverage --test tests/*.test.js
 npm run test:ai
 npm run smoke:full
 node --test tests/experiment-metrics.test.js
@@ -498,7 +487,7 @@ npm run ui:smoke
 npx expo export --platform web --output-dir /tmp/perfin-web
 \end{verbatim}
 
-In the Node 24 artifact environment, \code{npm test} aggregates results by test file; 44/44 does not mean 44 or 182 individual test cases. The final test summary is stored at \path{log/backend-test-run_2026-08-02.json}. The final two runners are offline. Do not rerun the Gemini ablation without deliberately supplying provider access/quota; its historical measurement and reanalysis are under \code{log/}. Media smoke tests require a real provider and fixtures. Without ground truth, report availability pass/fail only. Integration tests need a separate test database and cleanup after each group.
+The four focused regression commands above are run with Redis and jobs disabled. Freeze the commit and CSV before running the full suite, API/DB smoke, parser benchmark, Gemini ablation or correction replay. The Gemini rerun requires provider access/quota; media accuracy requires the redacted fixture manifest. Integration tests need a separate test database and cleanup after each group.
 
 \chapter{Diagram Sources}
 

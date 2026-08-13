@@ -91,9 +91,9 @@
 \setlength{\cftbeforechapskip}{5pt}
 
 % Tên khối (Chương/Mục lục/Hình/Bảng...) được đặt trong config/lang-\doclang.
-% Đánh số Hình 1..13 và bảng liên tục theo yêu cầu guideline.
-\counterwithout{figure}{chapter}
-\counterwithout{table}{chapter}
+% Đánh số hình và bảng kế thừa số chương (ví dụ Hình/Bảng 2.1, 2.2).
+\counterwithin{figure}{chapter}
+\counterwithin{table}{chapter}
 
 \captionsetup{
   font=normalsize,
@@ -124,7 +124,11 @@
 \newcommand{\startappendixpages}{%
   \clearpage
   \pagenumbering{arabic}%
-  \renewcommand{\thepage}{\appendixpageprefix-\arabic{page}}%
+  % The guideline requires plain Arabic page numbers in the appendices.
+  % Keep the PDF destinations unique even though the visible counter restarts.
+  \renewcommand{\thepage}{\arabic{page}}%
+  \providecommand{\theHpage}{}%
+  \renewcommand{\theHpage}{appendix.\arabic{page}}%
 }
 
 \newenvironment{frtable}[2]{%

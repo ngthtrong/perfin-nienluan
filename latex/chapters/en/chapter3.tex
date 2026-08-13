@@ -19,7 +19,7 @@ PERFIN is a mobile prototype for entering, normalizing, managing and analysing p
     Environment & React Native/Expo on mobile or web, Express API and PostgreSQL; Redis and a worker are configuration-dependent. \\
     System of record & PostgreSQL stores business data; Redis stores only TTL-bound pending, clarification, cache and queue state. \\
     Constraints & The demo uses \code{default_user}, has no production authentication/authorization, defaults to VND and has no foreign-exchange conversion. \\
-    Dependencies & LLM/OCR/STT providers are replaceable; failure must produce a real error or fallback, never fabricated data. \\
+    Dependencies & Gemini is an external language provider; PaddleOCR and PhoWhisper run locally on the backend host. Local-media failure returns a real error, never fabricated data. \\
     Assumption & The user reviews previews; guidance does not replace professional financial advice. \\
     \bottomrule
   \end{tabularx}
@@ -34,7 +34,7 @@ PERFIN is a mobile prototype for entering, normalizing, managing and analysing p
     \textbf{Actor} & \textbf{Role} & \textbf{Concern or limitation} \\
     \midrule
     User & Enters, edits, confirms, manages and views reports. & Language/media-derived data must be reviewed before storage. \\
-    External AI service & Returns a typed draft, OCR text or transcript. & Cannot execute business operations or write the database. \\
+    External/local AI adapters & Gemini returns a typed draft or narration; local media runtimes return OCR text or a transcript. & No adapter executes business operations or writes the database; extracted text is still untrusted. \\
     Background worker & Runs reminders, analysis and file cleanup. & Jobs require user scope, retry and duplicate-effect protection. \\
     Developer administrator & Configures environment, migrations and providers. & Not a business actor of the application. \\
     \bottomrule
@@ -48,6 +48,32 @@ Shared rules are: business amounts must be finite and valid; transaction dates c
 \widereportfigure{14-usecase-overview.pdf}{Overall PERFIN use case diagram. Feature details are specified with flow tables instead of twelve separate diagrams.}{fig:usecase-overview}
 
 Figure~\ref{fig:usecase-overview} contains observable actor goals only. Parser, validation, transaction, TTL and retry behaviour belongs in the flow tables or the sequence/flow diagrams in Section~\ref{subsec:detailed-design}.
+
+\begin{longtable}{@{}L{1.5cm}L{5.0cm}L{3.0cm}L{4.5cm}@{}}
+  \caption{Functional-requirement catalogue and location of the full specification}
+  \label{tab:fr-catalogue}\\
+  \toprule
+  \textbf{ID} & \textbf{Capability} & \textbf{Priority} & \textbf{Full specification} \\
+  \midrule
+  \endfirsthead
+  \toprule
+  \textbf{ID} & \textbf{Capability} & \textbf{Priority} & \textbf{Full specification} \\
+  \midrule
+  \endhead
+  FR-01 & Natural-language transaction entry & Mandatory & Chapter 3, Table~\ref{tab:fr01} \\
+  FR-02 & Image and speech transaction entry & Desirable & Chapter 3, Table~\ref{tab:fr02} \\
+  FR-03 & Clarification and confirmation & Mandatory & Chapter 3, Table~\ref{tab:fr03} \\
+  FR-04 & Classification and correction retrieval & Mandatory & Chapter 3, Table~\ref{tab:fr04} \\
+  FR-05 & Financial-data management & Mandatory & Chapter 3, Table~\ref{tab:fr05} \\
+  FR-06 & Wallet transfer and special cash flows & Desirable & Appendix, Table~\ref{tab:app-fr06} \\
+  FR-07 & Deterministic financial analytics & Mandatory & Chapter 3, Table~\ref{tab:fr07} \\
+  FR-08 & Grounded insights and narration & Desirable & Chapter 3, Table~\ref{tab:fr08} \\
+  FR-09 & Budget management and forecasting & Mandatory & Chapter 3, Table~\ref{tab:fr09} \\
+  FR-10 & Goal planning and what-if scenarios & Mandatory & Chapter 3, Table~\ref{tab:fr10} \\
+  FR-11 & Recurring bills and proactive jobs & Desirable & Appendix, Table~\ref{tab:app-fr11} \\
+  FR-12 & Export and expired-file cleanup & Optional & Appendix, Table~\ref{tab:app-fr12} \\
+  \bottomrule
+\end{longtable}
 
 \begin{frtable}{FR-01 --- Enter Transactions from Text}{tab:fr01}
   \textbf{Feature name} & Enter transactions from natural-language text. \frtablerow
@@ -66,10 +92,10 @@ Figure~\ref{fig:usecase-overview} contains observable actor goals only. Parser, 
 \begin{frtable}{FR-02 --- Enter Transactions from Image or Speech}{tab:fr02}
   \textbf{Feature name} & Enter a transaction from a receipt image or speech. \frtablerow
   \textbf{ID} & FR-02. \frtablerow
-  \textbf{User} & User; External AI service. \frtablerow
+  \textbf{User} & User; local media runtime; optional external language adapter. \frtablerow
   \textbf{Necessity} & Desirable. \frtablerow
   \textbf{Classification} & Complex. \frtablerow
-  \textbf{Participants and concerns} & The user needs visible raw text; adapters report the provider and failures; the backend rejects invalid files. \frtablerow
+  \textbf{Participants and concerns} & The user needs visible raw text; local OCR/STT reports provider and failure; the backend rejects invalid files. \frtablerow
   \textbf{Summary} & Convert image/audio into reviewable text, then reuse FR-01. \frtablerow
   \textbf{Relationships} & Includes FR-01 and FR-03. \frtablerow
   \textbf{Normal flow} & \textbf{Step 1:} Select a valid file. \textbf{Step 2:} Backend invokes OCR or STT. \textbf{Step 3:} Display raw text and provider. \textbf{Sub 1:} User edits/confirms text. \textbf{Step 4:} Continue with FR-01. \frtablerow
@@ -117,20 +143,6 @@ Figure~\ref{fig:usecase-overview} contains observable actor goals only. Parser, 
   \textbf{Normal flow} & Select operation; validate payload and ownership; compute balance delta; update transaction and wallet atomically; return record and new balance. \frtablerow
   \textbf{Subflows} & Write the transaction, update the wallet, commit, then invalidate cache best-effort. \frtablerow
   \textbf{Alternate flows} & Out-of-scope IDs or invalid payloads are rejected. A negative balance remains valid. Any pre-commit failure rolls back. \frtablerow
-\end{frtable}
-
-\begin{frtable}{FR-06 --- Transfer Funds and Record Special Cash Flows}{tab:fr06}
-  \textbf{Feature name} & Wallet transfer and investment gain/loss. \frtablerow
-  \textbf{ID} & FR-06. \frtablerow
-  \textbf{User} & User. \frtablerow
-  \textbf{Necessity} & Desirable. \frtablerow
-  \textbf{Classification} & Complex. \frtablerow
-  \textbf{Participants and concerns} & One user action must update both wallets and history consistently. \frtablerow
-  \textbf{Summary} & Record internal transfers without changing total assets and classify investment cash flow correctly. \frtablerow
-  \textbf{Relationships} & Uses FR-05 wallet and transaction entities. \frtablerow
-  \textbf{Normal flow} & Enter source, target, amount and date; validate distinct wallets; lock in stable order; debit, credit and write history; commit. \frtablerow
-  \textbf{Subflows} & In one transaction, subtract source, add target and write \code{wallet_transfers}; net change equals zero. \frtablerow
-  \textbf{Alternate flows} & Same, missing or out-of-scope wallets, invalid amount/date, or different wallet currencies roll back. A future negative source balance alone is not rejected. \frtablerow
 \end{frtable}
 
 \begin{frtable}{FR-07 --- Analyse Financial Data}{tab:fr07}
@@ -189,34 +201,6 @@ Figure~\ref{fig:usecase-overview} contains observable actor goals only. Parser, 
   \textbf{Alternate flows} & Invalid inputs request correction. Payment less than or equal to first-month interest warns of negative amortization; zero payment and a 600-month horizon are reported explicitly. Cancel causes no write. \frtablerow
 \end{frtable}
 
-\begin{frtable}{FR-11 --- Manage Recurring Bills and Proactive Jobs}{tab:fr11}
-  \textbf{Feature name} & Recurring bills, payments and proactive messages. \frtablerow
-  \textbf{ID} & FR-11. \frtablerow
-  \textbf{User} & User; Background worker. \frtablerow
-  \textbf{Necessity} & Desirable. \frtablerow
-  \textbf{Classification} & Complex. \frtablerow
-  \textbf{Participants and concerns} & The user needs correct due dates; the worker needs retry and idempotency; PostgreSQL must prevent duplicate effects. \frtablerow
-  \textbf{Summary} & Manage schedules, record one payment per period and generate grounded reminders/alerts. \frtablerow
-  \textbf{Relationships} & Reads FR-05/FR-07; may call FR-08 for wording only. \frtablerow
-  \textbf{Normal flow} & Scheduler enqueues a user-scoped job; worker loads due data; computes deterministic facts; persists an event by unique key; advances schedule after success. \frtablerow
-  \textbf{Subflows} & Payment writes payment history, transaction and next due date atomically. \frtablerow
-  \textbf{Alternate flows} & Duplicate event/job returns the existing result. Transient failure retries with backoff. Redis failure stops the worker while the interactive API may continue. \frtablerow
-\end{frtable}
-
-\begin{frtable}{FR-12 --- Export Data and Remove Expired Files}{tab:fr12}
-  \textbf{Feature name} & Data export, export history and expired-file cleanup. \frtablerow
-  \textbf{ID} & FR-12. \frtablerow
-  \textbf{User} & User; Background worker. \frtablerow
-  \textbf{Necessity} & Optional. \frtablerow
-  \textbf{Classification} & Medium. \frtablerow
-  \textbf{Participants and concerns} & The user needs correct data; the exporter needs safe escaping; cleanup cannot remove valid files. \frtablerow
-  \textbf{Summary} & Generate filtered CSV, store history and delete files after TTL. \frtablerow
-  \textbf{Relationships} & Reads FR-05, may use FR-03 from chat, and delegates cleanup to the worker. \frtablerow
-  \textbf{Normal flow} & Select format/period; validate and query profile data; create a safe file; write \code{export_history}; return a download link. \frtablerow
-  \textbf{Subflows} & Escape formula-like cells, write UTF-8 BOM and row count, then assign TTL. \frtablerow
-  \textbf{Alternate flows} & Empty data returns a header-only file. The path once labelled PDF only creates HTML and is not claimed as a true PDF export. \frtablerow
-\end{frtable}
-
 \subsection{Non-functional Requirements}
 
 \begin{longtable}{@{}L{1.3cm}L{3.0cm}L{5.8cm}L{3.8cm}@{}}
@@ -231,7 +215,7 @@ Figure~\ref{fig:usecase-overview} contains observable actor goals only. Parser, 
   \endhead
   NFR-01 & Recovery & Provider/Redis failure fabricates no data; restore demo service and backup data within three hours after an incident. & Fault injection, restart and restore on a test database. \\
   NFR-02 & Integrity & No partial create, update, delete, restore, transfer or payment; credentials are never transmitted or logged in clear text. & Rollback tests and configuration/log scanning; TLS for network deployment. \\
-  NFR-03 & UI & Vietnamese blue--white interface, consistent navigation and no overflow at 390$\times$844. & UI smoke on Dashboard, Transaction and Chat. \\
+  NFR-03 & UI & Vietnamese warm terracotta--cream interface, consistent navigation and no overflow at mobile viewports. & Chromium Expo-web smoke on Dashboard, Budget, Report, Chat preview and Goal plan at measured 390$\times$844; runner supports 360$\times$800 and 412$\times$915 reruns. \\
   NFR-04 & Timing & Acknowledge within three seconds; target text p95 $\leq3$ s and media p95 $\leq8$ s in a disclosed environment. & At least 30 runs per flow with provider, hardware, cache and error rate. \\
   NFR-05 & Correctness & Algorithms match expected normal/boundary cases; negative balances are valid; narrator invents no number. & Unit tests, invariants and facts--response checker. \\
   NFR-06 & Privacy & Remove temporary media; use traits only with consent; ID queries include user scope. & Temporary-file, consent and cross-scope tests. \\
@@ -241,6 +225,41 @@ Figure~\ref{fig:usecase-overview} contains observable actor goals only. Parser, 
 \end{longtable}
 
 Recovery, latency, OCR/STT accuracy and complete numeric grounding remain acceptance targets; unmeasured targets are not presented as achieved results.
+
+\subsubsection{Mobile-web UI smoke evidence}
+
+The following captures are generated from the running Expo web build with synthetic
+demo data, viewport $390\times844$ CSS pixels and device scale factor 2. They verify
+layout and a review-before-write interaction; they are not native-device screenshots
+or UAT evidence.
+
+\begin{figure}[p]
+  \centering
+  \begin{minipage}[t]{0.47\textwidth}
+    \centering
+    \includegraphics[width=\linewidth,height=0.48\textheight,keepaspectratio]{figures/screenshots/01-dashboard.png}
+  \end{minipage}\hfill
+  \begin{minipage}[t]{0.47\textwidth}
+    \centering
+    \includegraphics[width=\linewidth,height=0.48\textheight,keepaspectratio]{figures/screenshots/03-budget.png}
+  \end{minipage}
+  \caption{Expo web mobile viewport: Dashboard and Budget smoke captures (synthetic data; not a physical device).}
+  \label{fig:ui-dashboard-budget}
+\end{figure}
+
+\begin{figure}[p]
+  \centering
+  \begin{minipage}[t]{0.47\textwidth}
+    \centering
+    \includegraphics[width=\linewidth,height=0.48\textheight,keepaspectratio]{figures/screenshots/02-chat-preview.png}
+  \end{minipage}\hfill
+  \begin{minipage}[t]{0.47\textwidth}
+    \centering
+    \includegraphics[width=\linewidth,height=0.48\textheight,keepaspectratio]{figures/screenshots/04-report.png}
+  \end{minipage}
+  \caption{Expo web mobile viewport: typed Chat preview before confirmation and loaded Report screen (synthetic data; not UAT).}
+  \label{fig:ui-chat-report}
+\end{figure}
 
 \section{Software Design}
 
@@ -465,17 +484,16 @@ The normal-case, boundary-case, invariant and test-file catalog is provided in A
   \textbf{Item} & \textbf{Result} & \textbf{Status} & \textbf{Permitted conclusion} \\
   \midrule
   \endhead
-  Backend \code{npm test} & 44/44 test files pass. & \statusmeasured & Node 24 reports file-level results; this is neither 182 test cases nor UAT/production evidence. \\
-  Local-parser gate & 31/31 strict pass. & \statusmeasured & Fixed set of 31 sentences; not an independent benchmark. \\
-  Full API/DB/media smoke & 23/23 checks pass. & \statusmeasured & Selected fixtures traverse HTTP--PostgreSQL/provider; Redis worker excluded. \\
-  Mobile-web UI smoke & 4/4 gates pass at 390$\times$844. & \statusmeasured & No overflow and images render; not UAT. \\
-  Data import & 5,265 rows, 0 rejects. & \statusmeasured & Provenance-aware importer reconciled on demo PostgreSQL. \\
-  Parser on 5,265 rows & Joint type/category: accuracy 26.12\%; macro-F1 0.1559. & \statusmeasured & Category-only 29.36\%/0.177 is an auxiliary comparison. \\
-  Parser vs Gemini & Full-set accuracy 22.22\% vs 39.68\%. & \statusmeasured & Gemini coverage is 42/63; macro-F1 0.6068 is conditional on those 42 answers. \\
-  Correction retrieval & Conditional on parser type correctness and excluding \textit{Other}: accuracy 34.46\% $\rightarrow$ 61.22\%; coverage 891/2,612; net $+26.76$ points. & \statusmeasured & 4,756 eligible rows; 76 wrong-type rows excluded; whole-group type+normalized-text split; zero seed/evaluation overlap. \\
-  OCR/STT accuracy & Not reported. & \statusmissing & Two images and one audio smoke fixture cannot establish CER/WER/field accuracy. \\
-  Live Redis worker & Not confirmed. & \statusmissing & Payment logic is tested, but live queue/worker was not measured. \\
-  Grounding, p95 and UAT & Not reported. & \statusmissing & Requires checker, at least 30 runs per flow and target users. \\
+  Targeted regression (21 cases) & 21/21 pass for analytics, invariants and media-provider boundary tests. & \statusmeasured & Command and fixture are reproducible; this is a focused subset, not the full suite. \\
+  Backend \code{npm test} & 247/247 tests pass with Redis and jobs disabled. & \statusmeasured & The backend suite passes in the current worktree; live Redis-worker behavior is not measured. \\
+  Node 24 test coverage & 68.12\% line, 72.77\% branch and 72.27\% function coverage over all loaded backend files. & \statusmeasured & Instrumentation is reproducible; the planned component thresholds (line/function $\geq85\%$, branch $\geq75\%$) are not yet demonstrated. \\
+  Local-parser gate and API smoke & Pending clean rerun on the current snapshot. & \statusmissing & Existing artifacts belong to an older worktree and are not current evidence. \\
+  Mobile-web UI smoke & 5/5 synthetic captures pass at 390$\times$844. & \statusmeasured & Dashboard, Budget, Report, Chat preview and Goal plan loaded without overflow; Expo web only, not native-device or UAT evidence. \\
+  Data profile & 5,328 source rows, 0 validation errors; SHA prefix \code{418a...}. & \statusmeasured & Dry-run profile covers 01 Jan 2022--10 Aug 2026; PostgreSQL apply is a separate step. \\
+  Current experiments & Rerun pending on the 5,328-row snapshot. & \statusmissing & Primary metric is joint type/category; correction must reproduce the production candidate limit of 200. \\
+  Parser versus Gemini ablation & Rerun pending with joint labels and complete sample-level records. & \statusmissing & Category-only scores may be auxiliary; abstentions remain in the denominator. \\
+  OCR/STT accuracy & Pending 20-image and 20-audio ground truth. & \statusmissing & CER/WER and transaction-field accuracy cannot be inferred from smoke execution. \\
+  Live Redis worker, grounding, p95 and UAT & Pending controlled environment and target participants. & \statusmissing & Requires duplicate-effect assertions, a checker, at least 30 timed runs per flow and five or more users. \\
   \bottomrule
 \end{longtable}
 
@@ -483,69 +501,43 @@ Smoke testing only establishes completion of selected scenarios. It is not OCR/S
 
 \subsubsection{Classification Experiments}
 
-The experiments use the 5,265-row \code{dataFinance.csv}. Classification and correction were rerun offline on 2 August 2026; the Gemini ablation is a historical measurement from 24 July with a 2 August reanalysis artifact. Code and JSON/Markdown artifacts reside under \path{demo/backend/tests/experiments/} and \path{log/}.
+The current source is \code{demo/data/dataFinance.csv}, profiled at 5,328 rows with SHA-256 prefix \code{418a9439...fbaed7}. The classification, Gemini ablation and correction artifacts that used the previous 5,265-row file are retained for audit but are superseded and are not reported as current measurements.
+
+The rerun protocol is fixed before new data is supplied:
 
 \begin{table}[H]
   \centering
-  \caption{Local-parser benchmark on 5,265 transactions}
+  \caption{Classification and correction rerun protocol}
   \label{tab:exp-classification}
-  \begin{tabularx}{0.9\textwidth}{@{}Y R{3.2cm}@{}}
+  \begin{tabularx}{\textwidth}{@{}L{3.0cm}Y Y@{}}
     \toprule
-    \textbf{Metric} & \textbf{Value} \\
+    \textbf{Experiment} & \textbf{Primary measurement} & \textbf{Required evidence} \\
     \midrule
-    Joint type/category accuracy & 26.12\% \\
-    Joint macro-F1 (13 represented classes) & 0.1559 \\
-    Joint weighted-F1 & 0.2913 \\
-    Incorrect joint predictions & 3,890/5,265 \\
-    Errors involving Other & 3,128 \\
-    Wrong income/expense type & 427 \\
-    Correct category name but wrong type & 171 \\
-    Category-only accuracy (auxiliary) & 29.36\% \\
-    Category-only macro/weighted-F1 (auxiliary) & 0.1770/0.3013 \\
+    Local parser & Joint type/category accuracy, macro-F1, weighted-F1 and per-class support; category-only is auxiliary. & Current CSV hash, complete record-level predictions and deterministic command. \\
+    Parser--Gemini ablation & Joint-label coverage, full-set accuracy/F1, answered metrics and latency; abstentions remain in the denominator. & Repeated sample-level records, model/configuration and provider error count. \\
+    Correction retrieval & Before/after joint label, coverage and helped/harmed/net under a chronological group split. & Candidate limit 200, no future rows in retrieval, seed/evaluation key overlap zero and confidence interval. \\
     \bottomrule
   \end{tabularx}
 \end{table}
 
-The primary label joins transaction type and category name, so \code{income/Other} and \code{expense/Other} are distinct. Most errors still involve Other because some historical labels describe funding source while the parser classifies content. The gap from category-only metrics also shows why a correct name with the wrong income/expense direction cannot count as correct.
+The correction runner now records the production-equivalent candidate limit of 200 and exposes the candidate count per row. Its current ordering uses source-row order as a documented chronological proxy; a future dataset with trustworthy timestamps should replace that proxy with an explicit temporal replay. The ablation runner now makes the joint type/category label primary and keeps category-only metrics only as an auxiliary view.
 
 \begin{table}[H]
   \centering
-  \caption{Local parser and Gemini ablation on the same 63 sentences}
+  \caption{Status of experiment artifacts on the current snapshot}
   \label{tab:exp-ablation}
-  \begin{tabularx}{\textwidth}{@{}L{2.4cm}R{2.0cm}R{2.1cm}R{2.2cm}R{2.4cm}R{1.6cm}@{}}
+  \begin{tabularx}{\textwidth}{@{}L{4.0cm}L{3.0cm}Y@{}}
     \toprule
-    \textbf{Branch} & \textbf{Coverage} & \textbf{Full accuracy} & \textbf{Answered accuracy} & \textbf{Answered macro-F1} & \textbf{p50} \\
+    \textbf{Artifact} & \textbf{Status} & \textbf{Reason for withholding a score} \\
     \midrule
-    Local parser & 63/63 & 22.22\% & 22.22\% & 0.2039 & 0 ms \\
-    Gemini & 42/63 & 39.68\% & 59.52\% & 0.6068 & 964 ms \\
+    Local classification & \statusmissing & The old artifact used a different CSV and must be regenerated. \\
+    Parser--Gemini ablation & \statusmissing & The old record lacks complete joint-label predictions; rerun requires provider access and quota. \\
+    Correction retrieval & \statusmissing & The old runner exposed all seed logs rather than the production 200-candidate window. \\
     \bottomrule
   \end{tabularx}
 \end{table}
 
-The historical runner removed 21 \code{null} categories before computing 59.52\% and macro-F1 0.6068, so both describe only the 42 answered samples. Counting abstentions as incorrect, Gemini gets 25/63 (39.68\%) on the full set. The old artifact lacks every sample-level prediction, so full-set macro-F1 cannot be reconstructed and remains unavailable. All 63 calls completed without a recorded provider error, but 21 outputs had no category. This small sample and 964-ms p50 support further LLM experiments, not universal superiority.
-
-\subsubsection{Correction-retrieval Experiment}
-
-After removing \textit{Other}, 4,832 samples are partitioned into whole normalized-text groups within each transaction type. Category correction is evaluated only when the parser transaction type equals the gold type: 4,756 rows are eligible and 76 wrong-type rows are excluded because category retrieval cannot repair the type. Group keys use \code{normalizeForMatch}. The selected seed side contains 1,714 parser-wrong records and 430 parser-correct co-members (2,144 rows across 636 groups); the greedy group selection targeted 1,713 parser-wrong records but cannot split a group. Evaluation retains 1,712 parser-wrong holdout records and 900 parser-correct controls outside all seed groups; those 430 co-members are excluded even though they do not become corrections. Seed/evaluation key overlap is zero, eliminating exact-match leakage.
-
-\begin{table}[H]
-  \centering
-  \caption{Correction retrieval on the 2,612-sample group-split evaluation}
-  \label{tab:exp-feedback}
-  \begin{tabularx}{0.9\textwidth}{@{}L{4.1cm}R{2.2cm}R{2.2cm}R{2.2cm}@{}}
-    \toprule
-    \textbf{Metric} & \textbf{Before} & \textbf{After} & \textbf{Difference} \\
-    \midrule
-    Accuracy & 34.46\% & 61.22\% & $+26.76$ points \\
-    Macro-F1 & 0.3080 & 0.5898 & $+0.2818$ \\
-    Weighted-F1 & 0.3990 & 0.7072 & $+0.3082$ \\
-    Correction coverage & 0\% & 34.11\% & 891/2,612 \\
-    Helped/harmed/net & -- & 740/41/699 & net $+26.76$ points \\
-    \bottomrule
-  \end{tabularx}
-\end{table}
-
-All 891 applications are fuzzy; exact applications are zero as required by the split. In the parser-wrong holdout cohort, accuracy rises from 0\% to 43.22\% (740 helped cases among 1,712; 796 corrections applied). Among 900 parser-correct controls, 95 corrections apply and 41 cause errors, leaving 95.44\% accuracy. One of the 41 flips is consistent with conflicting historical labels and 40 are genuine harmful flips. The net 699 cases over 2,612 equal the $+26.76$-point accuracy change. This controls leakage and measures both benefit and harm, but still uses one historical dataset, one seed and no confidence interval; it is not a production estimate.
+These statuses preserve traceability without treating a historical experiment as a claim about the current code or dataset. Once the user supplies controlled fixtures, the resulting JSON and Markdown artifacts can be inserted without changing the metric definitions.
 
 \subsection{Requirements-to-Evidence Traceability}
 
@@ -561,9 +553,9 @@ Table~\ref{tab:traceability} links observable requirements to design, tests and 
   \textbf{Req.} & \textbf{Design} & \textbf{Related test} & \textbf{Evidence and gap} \\
   \midrule
   \endhead
-  FR-01, FR-03--FR-06 & Typed draft, TTL preview, service and SQL transaction. & Parser gate, backend tests and API--DB smoke. & Selected fixtures and rollback invariants pass; no independent task-based user measurement. \\
+  FR-01, FR-03--FR-05 & Typed draft, TTL preview, service and SQL transaction. & Parser gate, backend tests and API--DB smoke. & Selected fixtures and rollback invariants pass; no independent task-based user measurement. FR-06 is specified in the appendix. \\
   FR-02 & Media adapter, raw-text review and shared FR-01 pipeline. & Upload/media smoke; planned CER/WER and field accuracy. & Sample provider flow executes; insufficient ground truth for OCR/STT accuracy. \\
-  FR-04 & Joint classifier, type-scoped corrections, conflict thresholds and group split. & Classification benchmark, ablation coverage and correction helped/harmed/net. & Record-level artifacts and zero overlap exist; historical labels, small sample and no confidence interval still limit conclusions. \\
+  FR-04 & Joint classifier, type-scoped corrections, conflict thresholds and group split. & Classification benchmark, ablation coverage and correction helped/harmed/net. & Rerun is pending on the current CSV and production candidate window; historical scores are superseded. \\
   FR-07--FR-10 & Analytics, facts contract, Budget/Goal service and grounded narrator. & Hand-expected unit tests, metadata contract and planned checker. & Formulas, calendar windows and metadata have tests; response-wide grounding and representative threshold calibration remain incomplete. \\
   FR-11 & Recurring service, BullMQ, event key and retry. & Payment/handler unit tests; planned live worker and fault injection. & Business logic is tested; no live queue/worker evidence in this evaluation. \\
   FR-12 & CSV exporter, history and TTL cleanup. & Escaping tests, API smoke and planned expiry check. & CSV has evidence; the former PDF-labelled path only generates HTML. \\

@@ -58,6 +58,15 @@ Nếu chạy trên điện thoại cùng LAN, thay \code{127.0.0.1} bằng IP LA
 
 Nguyên mẫu chưa có đăng nhập và dùng hồ sơ \code{default_user}. Không nhập dữ liệu nhạy cảm hoặc dùng kết quả như tư vấn đầu tư chắc chắn.
 
+\begin{figure}[p]
+  \centering
+  \includegraphics[width=0.55\textwidth,height=0.70\textheight,keepaspectratio]{figures/screenshots/05-goal-plan.png}
+  \caption{Preview biểu mẫu lập mục tiêu trên Expo web mobile (dữ liệu synthetic; chưa lưu kế hoạch).}
+  \label{fig:ui-goal-plan}
+\end{figure}
+
+\input{chapters/\doclang/appendix-fr-supplement}
+
 \chapter{Đặc tả mở rộng các thuật toán}
 \label{app:algorithms}
 
@@ -81,11 +90,11 @@ Mục này mô tả các nguồn dữ liệu được dùng để kiểm thử v
   \textbf{Nguồn} & \textbf{Quy mô/phạm vi} & \textbf{Vai trò và trạng thái} \\
   \midrule
   \endhead
-  CSV giao dịch & 5.265 dòng, 8 cột; ngày 01/01/2022--15/07/2026; 4.845 expense và 420 income. & Tập \code{dataFinance.csv} là nguồn chính cho import, benchmark parser và correction. Importer đọc 5.265/5.265 dòng, không reject. \\
-  Mapping category & Crosswalk taxonomy lịch sử sang 17 nhãn type/category của PERFIN. & File \code{dataFinance.category-map.json} được kiểm tra cùng checksum nguồn CSV; dùng để tạo nhãn gold sau import, không phải nhãn do parser dự đoán. Chỉ 13/17 nhãn có mẫu trong benchmark. \\
-  Ablation parser--Gemini & Tối đa 5 câu mỗi lớp, seed 42; kết quả thực tế 63 câu. & Cohort phân tầng rút từ cùng dataset CSV để đo coverage, accuracy và F1; không phải một nguồn văn bản độc lập. \\
-  Correction group split & 4.832 dòng sau khi loại \textit{Khác}; 4.756 dòng cùng type đủ điều kiện; evaluation 2.612 dòng. & Seed/evaluation được tách nguyên nhóm theo type và mô tả chuẩn hóa, seed 7, tỷ lệ mục tiêu 0,5; overlap khóa bằng 0. \\
-  Media fixtures & 2 ảnh và 1 audio. Hai ảnh có amount/type/date kỳ vọng; audio chưa có transcript chuẩn. & File \code{media-fixtures.json} chỉ dùng cho media smoke. Khi thiếu ground truth, chỉ báo pipeline pass/fail, không suy ra OCR/STT accuracy. \\
+  CSV giao dịch & 5.328 dòng nguồn, 8 cột; ngày 01/01/2022--10/08/2026. & \code{dataFinance.csv} là nguồn import và benchmark hiện tại. Dry-run reject 0 dòng; apply PostgreSQL và benchmark còn chờ. SHA-256 là \code{418a9439...fbaed7}. \\
+  Mapping category & Crosswalk taxonomy lịch sử sang 17 nhãn type/category của PERFIN. & \code{dataFinance.category-map.json} được kiểm tra theo checksum CSV hiện tại; SHA-256 là \code{8072dc3d...c6b573c}. File tạo gold sau import, không phải nhãn parser. \\
+  Ablation parser--Gemini & Protocol đã khóa; artifact 63 câu lịch sử đã superseded. & Rerun dùng joint label, giữ abstention trong mẫu số và lưu record đầy đủ theo mẫu. \\
+  Correction group split & Protocol đã khóa; artifact evaluation lịch sử đã superseded. & Tách nguyên nhóm type/mô tả chuẩn hóa, replay theo thời gian và công khai candidate limit production là 200. \\
+  Media fixtures & Bộ synthetic công khai còn chờ; hai ảnh hiện tại có PII và không an toàn để phát hành. & \code{media-fixtures.json} chỉ giữ cho smoke riêng tư. Bộ 20 ảnh và 20 audio dự kiến sẽ có text/trường tham chiếu. \\
   Fixture analytics/unit & Chuỗi tổng hợp hoặc ẩn danh có slope, outlier, cadence và correlation biết trước. & Dùng để kiểm tra công thức, ca biên và invariant của Analytics/Budget/Goal; không đại diện cho benchmark người dùng thật. \\
   \bottomrule
 \end{longtable}
@@ -117,7 +126,7 @@ CSV phải có đúng thứ tự tám cột dưới đây. Hàm
   \bottomrule
 \end{longtable}
 
-Importer không tự xóa bản sao: dữ liệu có 23 nhóm trùng hoàn toàn, tổng cộng 24 dòng dư, nhưng nguồn không có ID hoặc thời điểm đủ để kết luận đó là lỗi nên mặc định giữ nguyên. Mapping khai báo checksum CSV \code{a9b7cf1b...} và artifact benchmark lưu checksum đầy đủ; thay đổi một byte của CSV làm import dừng để tránh dùng nhãn cũ cho dữ liệu mới.
+Importer không tự xóa bản sao: dry-run hiện tại báo 23 nhóm trùng hoàn toàn và 24 dòng dư, nhưng nguồn không có ID hoặc thời điểm đủ để kết luận đó là lỗi nên mặc định giữ nguyên. Prefix checksum CSV hiện tại là \code{418a...}; đổi một byte sẽ làm import dừng để tránh dùng mapping cũ cho dữ liệu mới.
 
 \subsection{Quy mô, phân bố và chất lượng}
 
@@ -129,44 +138,16 @@ Importer không tự xóa bản sao: dữ liệu có 23 nhóm trùng hoàn toàn
     \toprule
     \textbf{Đặc trưng} & \textbf{Giá trị} & \textbf{Diễn giải} \\
     \midrule
-    Dòng nguồn / dòng import & 5.265 / 5.265 & Không có dòng bị reject trong lần import đã đối soát. \\
-    Chiều giao dịch & 4.845 expense; 420 income & Dữ liệu lệch mạnh về expense; metric joint giữ chiều thu/chi trong nhãn. \\
-    Khoảng ngày & 01/01/2022--15/07/2026 & Bao gồm năm 2022 (540), 2023 (1.567), 2024 (1.525), 2025 (1.050) và 2026 (583) dòng. \\
-    Mô tả được chuẩn hóa & 374/5.265 dòng & Chuẩn hóa Unicode/khoảng trắng trước khi tạo bản ghi và dùng lại cho group split. \\
-    Ô \code{Special} rỗng & 4.978/5.265 dòng & Thiếu metadata tùy chọn, không phải lỗi validation. \\
-    Nhãn nguồn bị thiếu & 1 dòng expense & Được ánh xạ rõ ràng sang \textit{Khác}; các ô category ở cột ngược loại giao dịch để trống theo schema. \\
-    Số tiền & min 1.000; median 25.000; max 48.000.000 VND & $Q1=14.000$, $Q3=44.000$, ngưỡng IQR 89.000; 621 dòng bị gắn cờ vượt ngưỡng nhưng không bị loại. \\
+    Dòng nguồn / lỗi validation & 5.328 / 0 & Profile dry-run hiện tại; apply database là bước đo riêng. \\
+    Khoảng ngày & 01/01/2022--10/08/2026 & Bao phủ snapshot hiện tại; số theo năm và chiều thu/chi sẽ sinh lại cùng benchmark. \\
+    Tổng tiền & Thu 373.432.659 VND; chi 373.062.659 VND & Dòng tiền ròng trong profile là 370.000 VND; không suy ra classification score từ tổng tiền. \\
+    Cờ outlier amount & 615 dòng vượt ngưỡng IQR 91.500 VND & Giữ lại vì có thể là học phí, cho vay hoặc khoản gia đình hợp lệ. \\
     Bản sao exact & 23 nhóm / 24 dòng dư & Giữ nguyên ở chế độ mặc định để bảo toàn nguồn; không gọi đây là lỗi dữ liệu nếu chưa có định danh giao dịch. \\
     \bottomrule
   \end{tabularx}
 \end{table}
 
-Phân bố nhãn sau ánh xạ cho thấy lớp \textit{expense/Ăn uống} chiếm 2.251/5.265 dòng (42,75\%). Bốn nhãn hợp lệ không có mẫu là \textit{expense/Tạp hóa}, \textit{expense/Điện tử}, \textit{expense/Làm đẹp} và \textit{income/Thưởng}; vì vậy macro-F1 của benchmark được ghi trên 13 lớp có support, không diễn giải như độ bao phủ toàn bộ taxonomy 17 lớp.
-
-\begin{table}[H]
-  \centering
-  \caption{Phân bố 13 nhãn joint có mẫu trong benchmark parser}
-  \label{tab:app-dataset-labels}
-  \begin{tabularx}{0.9\textwidth}{@{}L{6.0cm}R{2.2cm}R{2.4cm}@{}}
-    \toprule
-    \textbf{Nhãn joint} & \textbf{Số dòng} & \textbf{Tỷ lệ} \\
-    \midrule
-    \textit{expense/Ăn uống} & 2.251 & 42,75\% \\
-    \textit{expense/Giải trí} & 660 & 12,54\% \\
-    \textit{expense/Di chuyển} & 491 & 9,33\% \\
-    \textit{expense/Thể thao} & 394 & 7,48\% \\
-    \textit{expense/Hóa đơn \& Dịch vụ} & 356 & 6,76\% \\
-    \textit{income/Khác} & 350 & 6,65\% \\
-    \textit{expense/Giáo dục} & 342 & 6,50\% \\
-    \textit{expense/Nhà cửa} & 150 & 2,85\% \\
-    \textit{expense/Khác} & 83 & 1,58\% \\
-    \textit{expense/Sức khỏe} & 80 & 1,52\% \\
-    \textit{income/Lương} & 67 & 1,27\% \\
-    \textit{expense/Mua sắm} & 38 & 0,72\% \\
-    \textit{income/Đầu tư} & 3 & 0,06\% \\
-    \bottomrule
-  \end{tabularx}
-\end{table}
+Phân bố lớp sau mapping và số nhãn có support được để pending cho tới khi benchmark CSV hiện tại. Bảng 13 lớp trước đây thuộc snapshot 5.265 dòng đã superseded và không được dùng lại.
 
 \subsection{Cohort, split và khả năng tái lập}
 
@@ -181,15 +162,15 @@ Phân bố nhãn sau ánh xạ cho thấy lớp \textit{expense/Ăn uống} chi�
   \textbf{Phép đo} & \textbf{Mẫu số} & \textbf{Quy tắc và artifact đối chiếu} \\
   \midrule
   \endhead
-  Classification & 5.265/5.265 dòng & Chạy parser local trên toàn bộ CSV, không gọi provider; nhãn chính là joint type/category. Artifact \path{log/classification-benchmark_2026-08-02.json}. \\
-  Parser--Gemini ablation & 63 câu & Lấy phân tầng tối đa 5 câu/lớp bằng seed 42; mọi abstention của Gemini vẫn nằm trong mẫu số. Artifact lịch sử \path{log/ablation-parser-vs-llm_2026-07-24.json}. \\
-  Correction retrieval & 2.612 dòng evaluation & Từ 4.756 dòng cùng type và không phải \textit{Khác}; seed gồm 1.714 parser-wrong và 430 co-member, holdout 1.712 parser-wrong, control 900 parser-correct; seed 7, group split, overlap 0. Artifact \path{log/feedback-before-after_2026-08-02.json}. \\
+  Classification & 5.328 dòng (dự kiến) & Chạy parser local trên CSV hiện tại, không gọi provider; nhãn chính là joint type/category. Artifact 5.265 dòng cũ đã superseded. \\
+  Parser--Gemini ablation & Protocol chờ rerun & Lấy mẫu từ nguồn hiện tại, ghi joint label và giữ abstention trong mẫu số; cần provider/quota. \\
+  Correction retrieval & Protocol chờ rerun & Replay nguyên nhóm theo thời gian, candidate limit 200 và có khoảng tin cậy; không dùng aggregate cũ. \\
   \makecell[l]{Analytics/\\Budget/Goal unit} & Ca tổng hợp & Không có một tập giao dịch benchmark chung; fixture đặt slope, zero-fill, outlier, cadence, correlation, trần ngân sách và what-if biết trước. Test tương ứng được lập ở Bảng~\ref{tab:app-algorithm-tests}. \\
-  Media smoke & 2 ảnh + 1 audio & Hai ảnh có expected amount/type/date (một ảnh có category); audio không có ground truth. Chỉ dùng để kiểm tra khả năng đi qua pipeline. \\
+  Media ground truth & 20 ảnh + 20 audio (dự kiến) & Lưu file synthetic đã redact, transcript/trường tham chiếu và manifest; tính CER/WER cùng transaction-field accuracy. \\
   \bottomrule
 \end{longtable}
 
-Các runner lưu cả checksum dữ liệu, mapping, phiên bản Node, thời điểm chạy và mã nguồn liên quan trong \path{log/}. Tập CSV phản ánh một hồ sơ demo, chủ yếu tiếng Việt và VND; nội dung raw không được coi là dữ liệu đã ẩn danh để phát hành công khai. Hai ảnh fixture được đánh dấu có PII và không an toàn để phân phối; audio chưa được rà soát transcript. Vì không có tập external holdout, không có khoảng tin cậy và media ground truth chưa đủ, các số đo hiện tại mô tả đúng dataset/artifact đã ghi chứ chưa chứng minh khả năng tổng quát hoặc accuracy OCR/STT production.
+Runner phải lưu checksum dữ liệu/mapping, Node version, thời điểm và mã nguồn liên quan trong \path{log/}. CSV phản ánh một hồ sơ demo, chủ yếu tiếng Việt và VND; raw content không được coi là đã ẩn danh để phát hành. Fixture media hiện tại vẫn private vì manifest đánh dấu PII và unsafe distribution. Khi chưa có media set có kiểm soát, external holdout và confidence interval, báo cáo chỉ mô tả implementation/protocol, không suy ra generalization hay production OCR/STT accuracy.
 
 \section{Phạm vi và quy ước dữ liệu}
 \label{app:algorithm-conventions}
@@ -467,7 +448,7 @@ Bảng sau chỉ dẫn đến test và artifact, không sao chép dữ liệu th
   \textbf{Nhóm} & \textbf{Ca thường} & \textbf{Ca biên/invariant} & \textbf{Bằng chứng} \\
   \midrule
   \endhead
-  Matcher & exact name, alias exact, typo rõ ràng. & Alias mơ hồ, input rỗng, dưới ngưỡng, margin nhỏ, alias phải theo ranh giới từ. & \code{feedback.test.js}; local parser gate 31/31 lịch sử. \\
+  Matcher & exact name, alias exact, typo rõ ràng. & Alias mơ hồ, input rỗng, dưới ngưỡng, margin nhỏ, alias phải theo ranh giới từ. & \code{feedback.test.js}; tập trung và full suite 247 test đều đạt. \\
   Correction & exact và fuzzy cùng type, few-shot gần nhất. & Nhãn exact xung đột, thiếu type, agreement dưới 0,8, name-only/id+name. & \code{feedback.test.js}; JSON/Markdown correction trong \code{log/}. \\
   Calendar/runway & axis đủ ngày, ví thanh khoản VND, ngày cạn. & Ngày 0, burn 0, ví USD/đầu tư bị loại, payday ngày 31. & \path{analytics-engine.test.js}, \path{analytics-time-series.test.js}, \path{wallet-policy.test.js}. \\
   Trend/anomaly & chuỗi tăng, outlier phía tăng. & Dưới 3 kỳ dương, dưới 4 ngày dương, chuỗi hằng, IQR hoặc phương sai bằng 0. & \path{analytics-engine.test.js}, \path{analytics-time-series.test.js}. \\
@@ -478,7 +459,7 @@ Bảng sau chỉ dẫn đến test và artifact, không sao chép dữ liệu th
   \bottomrule
 \end{longtable}
 
-Các runner phân loại và correction ghi record có cấu trúc tại \code{log/}; phép đo ngày 02/08/2026 được mô tả ở Chương~\ref{subsec:results}. OCR/STT accuracy, numeric grounding đầy đủ, p95, UAT và Redis worker live vẫn là mục tiêu hoặc chưa đo; không được suy ra từ các unit test thuần.
+Runner classification/correction ghi record có cấu trúc tại \code{log/}; rerun trên snapshot hiện tại được mô tả ở Chương~\ref{subsec:results}. OCR/STT accuracy, numeric grounding đầy đủ, p95, UAT và Redis worker live vẫn là mục tiêu hoặc chưa đo; không được suy ra từ unit test thuần.
 
 \chapter{Lệnh tái lập kiểm thử}
 
@@ -486,7 +467,13 @@ Các lệnh sau chạy từ đúng thư mục thành phần. Người thực hi�
 
 \begin{verbatim}
 cd demo/backend
+export REDIS_ENABLED=false JOBS_ENABLED=false
+node --test tests/analytics-engine.test.js
+node --test tests/analytics-time-series.test.js
+node --test tests/property-invariants.test.js
+node --test tests/media-provider.test.js
 npm test
+node --experimental-test-coverage --test tests/*.test.js
 npm run test:ai
 npm run smoke:full
 node --test tests/experiment-metrics.test.js
@@ -498,7 +485,7 @@ npm run ui:smoke
 npx expo export --platform web --output-dir /tmp/perfin-web
 \end{verbatim}
 
-Trong Node 24 của artifact hiện tại, \code{npm test} tổng hợp kết quả theo tệp kiểm thử; 44/44 không có nghĩa là 44 hay 182 test case riêng lẻ. Tóm tắt lần chạy cuối nằm tại \path{log/backend-test-run_2026-08-02.json}. Hai runner cuối chạy offline. Không chạy lại ablation Gemini nếu chưa chủ động cấp provider/quota; phép đo lịch sử và bản tái phân tích nằm trong \code{log/}. Smoke media cần provider và fixture thật. Nếu không có ground truth thì chỉ được báo pass/fail khả dụng, không tính accuracy. Kiểm thử tích hợp phải dùng database test riêng và dọn dữ liệu sau mỗi nhóm ca.
+Bốn lệnh regression tập trung ở trên được chạy với Redis và jobs tắt. Freeze commit và CSV trước khi chạy full suite, API/DB smoke, parser benchmark, Gemini ablation hoặc correction replay. Rerun Gemini cần provider/quota; media accuracy cần manifest fixture đã redact. Integration test phải dùng database test riêng và dọn dữ liệu sau mỗi nhóm ca.
 
 \chapter{Nguồn sơ đồ}
 

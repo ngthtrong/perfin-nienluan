@@ -34,6 +34,21 @@ paddleocr/
 inference_results/
 uploads/
 
+# Evaluation inputs/results that may contain user-provided media or UAT data.
+demo/evaluation/media-private/raw/
+demo/evaluation/media-private/manifest.csv
+demo/evaluation/media-private/*.jpg
+demo/evaluation/media-private/*.jpeg
+demo/evaluation/media-private/*.png
+demo/evaluation/media-private/*.wav
+demo/evaluation/media-private/*.mp3
+demo/evaluation/media-private/*.m4a
+demo/evaluation/media-private/*.mp4
+demo/evaluation/media-private/*.aac
+demo/evaluation/media-private/*.jsonl
+demo/evaluation/uat/results.csv
+demo/evaluation/uat/*.json
+
 # IDEs
 .idea/
 .vscode/

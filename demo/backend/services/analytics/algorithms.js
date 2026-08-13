@@ -198,26 +198,51 @@ function cashflowRunway(balance, dailySpends, { today = new Date(), payday = nul
 }
 
 // ── Pearson correlation between two equal-length series ──────────────────────────
-function pearson(a, b) {
-  const n = Math.min(a.length, b.length);
+// `excludeJointZeros` is used by category co-occurrence analysis so a shared
+// absence is not treated as evidence of association. The plain `pearson`
+// wrapper remains available for callers that intentionally need the complete
+// calendar series.
+function pearsonDetailed(a, b, { excludeJointZeros = false } = {}) {
+  const limit = Math.min(a.length, b.length);
+  const pairs = [];
+  let excludedJointZeroCount = 0;
+  for (let i = 0; i < limit; i += 1) {
+    const left = Number(a[i]);
+    const right = Number(b[i]);
+    if (!Number.isFinite(left) || !Number.isFinite(right)) continue;
+    if (excludeJointZeros && left === 0 && right === 0) {
+      excludedJointZeroCount += 1;
+      continue;
+    }
+    pairs.push([left, right]);
+  }
+  const n = pairs.length;
   // Correlation is undefined with fewer than three paired observations, or
   // when either series has zero variance. Returning null keeps "undefined"
   // distinct from a genuine coefficient of zero (no linear relationship).
-  if (n < 3) return null;
-  const ma = mean(a.slice(0, n));
-  const mb = mean(b.slice(0, n));
+  if (n < 3) return { r: null, effective_pair_count: n, excluded_joint_zero_count: excludedJointZeroCount };
+  const ma = mean(pairs.map(([left]) => left));
+  const mb = mean(pairs.map(([, right]) => right));
   let num = 0;
   let da = 0;
   let db = 0;
   for (let i = 0; i < n; i += 1) {
-    const xa = a[i] - ma;
-    const xb = b[i] - mb;
+    const xa = pairs[i][0] - ma;
+    const xb = pairs[i][1] - mb;
     num += xa * xb;
     da += xa * xa;
     db += xb * xb;
   }
   const den = Math.sqrt(da * db);
-  return den === 0 ? null : Number((num / den).toFixed(3));
+  return {
+    r: den === 0 ? null : Number((num / den).toFixed(3)),
+    effective_pair_count: n,
+    excluded_joint_zero_count: excludedJointZeroCount,
+  };
+}
+
+function pearson(a, b) {
+  return pearsonDetailed(a, b).r;
 }
 
 module.exports = {
@@ -229,4 +254,5 @@ module.exports = {
   detectAnomalies,
   cashflowRunway,
   pearson,
+  pearsonDetailed,
 };

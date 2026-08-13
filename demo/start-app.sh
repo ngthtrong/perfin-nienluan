@@ -385,15 +385,6 @@ download_ai_models() {
     return
   fi
 
-  # Kiểm tra SPEECH_PROVIDER
-  local speech_provider
-  speech_provider="$(grep -E '^SPEECH_PROVIDER=' "$BACKEND_DIR/.env" 2>/dev/null | cut -d= -f2 | tr -d '[:space:]')"
-
-  if [[ "$speech_provider" != "phowhisper" ]]; then
-    log "SPEECH_PROVIDER=$speech_provider — không cần download PhoWhisper model."
-    return
-  fi
-
   # Kiểm tra cache
   local model_cached=0
   if [[ -d "$cache_dir" ]] && find "$cache_dir" -name "*.bin" -o -name "*.safetensors" 2>/dev/null | grep -q .; then
@@ -427,8 +418,8 @@ print('Model đã tải xong!')
     log_ok "PhoWhisper model đã sẵn sàng."
     report_status "AI Models" "ok" "PhoWhisper đã tải"
   } || {
-    log_warn "Tải model thất bại — voice sẽ dùng Google Speech hoặc mock fallback."
-    report_status "AI Models" "warn" "Tải PhoWhisper thất bại — dùng fallback"
+    log_warn "Tải model thất bại — voice sẽ trả SPEECH_UNAVAILABLE cho đến khi model sẵn sàng."
+    report_status "AI Models" "warn" "Tải PhoWhisper thất bại"
   }
 }
 
@@ -637,12 +628,10 @@ start_backend_tunnel() {
 check_ai_providers() {
   log_step "AI Providers"
 
-  local ai_provider gemini_key ocr_provider speech_provider
+  local ai_provider gemini_key
 
   ai_provider="$(grep -E '^AI_PROVIDER=' "$BACKEND_DIR/.env" 2>/dev/null | cut -d= -f2 | tr -d '[:space:]' || echo '')"
   gemini_key="$(grep -E '^GEMINI_API_KEY=' "$BACKEND_DIR/.env" 2>/dev/null | cut -d= -f2 | tr -d '[:space:]' || echo '')"
-  ocr_provider="$(grep -E '^OCR_PROVIDER=' "$BACKEND_DIR/.env" 2>/dev/null | cut -d= -f2 | tr -d '[:space:]' || echo '')"
-  speech_provider="$(grep -E '^SPEECH_PROVIDER=' "$BACKEND_DIR/.env" 2>/dev/null | cut -d= -f2 | tr -d '[:space:]' || echo '')"
 
   # Gemini
   if [[ -n "$gemini_key" && "$gemini_key" != "your-key-here" ]]; then
@@ -653,50 +642,23 @@ check_ai_providers() {
     report_status "Gemini API" "warn" "Không có API key — dùng local parser"
   fi
 
-  # OCR
-  if [[ "$ocr_provider" == "paddleocr" ]]; then
-    if [[ -x "$BACKEND_DIR/.venv-ai/bin/python" ]]; then
-      log_ok "OCR: PaddleOCR (Python venv sẵn sàng)"
-      report_status "OCR Provider" "ok" "PaddleOCR — venv sẵn sàng"
-    else
-      log_warn "OCR: PaddleOCR cấu hình nhưng Python venv chưa sẵn sàng"
-      report_status "OCR Provider" "warn" "PaddleOCR — venv chưa sẵn sàng"
-    fi
-  elif [[ "$ocr_provider" == "google" ]]; then
-    log_ok "OCR: Google Vision"
-    report_status "OCR Provider" "ok" "Google Vision"
+  # Media engines are fixed to local implementations. Missing runtime/model
+  # remains visible and the API fails closed with a 503.
+  if [[ -x "$BACKEND_DIR/.venv-ai/bin/python" ]]; then
+    log_ok "Media AI Python: venv sẵn sàng (PaddleOCR + PhoWhisper)"
+    report_status "Python AI" "ok" "Local media runtime sẵn sàng"
   else
-    log "OCR: $ocr_provider"
-    report_status "OCR Provider" "ok" "$ocr_provider"
+    log_warn "Media AI Python: venv chưa sẵn sàng — OCR/STT sẽ trả lỗi unavailable."
+    report_status "Python AI" "warn" "Local media runtime chưa sẵn sàng"
   fi
 
-  # Speech
-  if [[ "$speech_provider" == "phowhisper" ]]; then
-    if [[ -x "$BACKEND_DIR/.venv-ai/bin/python" ]]; then
-      log_ok "Speech: PhoWhisper (Python venv sẵn sàng)"
-      report_status "Speech Provider" "ok" "PhoWhisper — venv sẵn sàng"
-    else
-      log_warn "Speech: PhoWhisper cấu hình nhưng Python venv chưa sẵn sàng"
-      report_status "Speech Provider" "warn" "PhoWhisper — venv chưa sẵn sàng"
-    fi
-  elif [[ "$speech_provider" == "google" ]]; then
-    log_ok "Speech: Google Speech-to-Text"
-    report_status "Speech Provider" "ok" "Google Speech-to-Text"
+  if command -v ffmpeg >/dev/null 2>&1; then
+    log_ok "ffmpeg: OK ($(ffmpeg -version 2>&1 | head -1 | cut -d' ' -f3))"
+    report_status "ffmpeg" "ok" "$(ffmpeg -version 2>&1 | head -1 | cut -d' ' -f3)"
   else
-    log "Speech: $speech_provider"
-    report_status "Speech Provider" "ok" "$speech_provider"
-  fi
-
-  # ffmpeg check (cần cho PhoWhisper)
-  if [[ "$speech_provider" == "phowhisper" ]]; then
-    if command -v ffmpeg >/dev/null 2>&1; then
-      log_ok "ffmpeg: OK ($(ffmpeg -version 2>&1 | head -1 | cut -d' ' -f3))"
-      report_status "ffmpeg" "ok" "$(ffmpeg -version 2>&1 | head -1 | cut -d' ' -f3)"
-    else
-      log_warn "ffmpeg chưa được cài — tính năng voice có thể không hoạt động."
-      log "      Cài đặt: sudo apt install ffmpeg"
-      report_status "ffmpeg" "warn" "Chưa cài — sudo apt install ffmpeg"
-    fi
+    log_warn "ffmpeg chưa được cài — speech sẽ trả SPEECH_UNAVAILABLE."
+    log "      Cài đặt: sudo apt install ffmpeg"
+    report_status "ffmpeg" "warn" "Chưa cài — sudo apt install ffmpeg"
   fi
 }
 
@@ -770,7 +732,7 @@ print_status_report() {
 
   if [[ "$has_issue" -eq 1 ]]; then
     printf "${YELLOW}${BOLD}  ⚠ Một số thành phần không hoạt động đầy đủ.${NC}\n" >&2
-    printf "${DIM}  Xem chi tiết ở trên. API cốt lõi vẫn hoạt động nhờ fallback.${NC}\n" >&2
+    printf "${DIM}  Xem chi tiết ở trên. Media endpoint sẽ fail closed nếu local runtime thiếu.${NC}\n" >&2
   else
     printf "${GREEN}${BOLD}  ✓ Tất cả thành phần hoạt động bình thường.${NC}\n" >&2
   fi

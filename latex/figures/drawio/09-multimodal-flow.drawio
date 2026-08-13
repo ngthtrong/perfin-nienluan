@@ -22,10 +22,10 @@
         <mxCell id="type" value="Input type?" style="rhombus;whiteSpace=wrap;html=1;spacing=5;align=center;verticalAlign=middle;fillColor=#FBF3D9;strokeColor=#B08900;fontColor=#5A4700;fontSize=13;strokeWidth=1.2;" vertex="1" parent="1">
           <mxGeometry x="570" y="105" width="150" height="105" as="geometry" />
         </mxCell>
-        <mxCell id="ocr" value="OCR provider&#xa;Google Vision / PaddleOCR" style="rounded=1;arcSize=10;whiteSpace=wrap;html=1;spacing=6;align=center;verticalAlign=middle;fillColor=#F0EAF9;strokeColor=#7C5CBF;fontColor=#3A2A5F;fontSize=13;strokeWidth=1.2;dashed=1;" vertex="1" parent="1">
+        <mxCell id="ocr" value="Local OCR runtime&#xa;PaddleOCR" style="rounded=1;arcSize=10;whiteSpace=wrap;html=1;spacing=6;align=center;verticalAlign=middle;fillColor=#F0EAF9;strokeColor=#7C5CBF;fontColor=#3A2A5F;fontSize=13;strokeWidth=1.2;" vertex="1" parent="1">
           <mxGeometry x="760" y="70" width="230" height="76" as="geometry" />
         </mxCell>
-        <mxCell id="stt" value="STT provider&#xa;Google Speech / PhoWhisper" style="rounded=1;arcSize=10;whiteSpace=wrap;html=1;spacing=6;align=center;verticalAlign=middle;fillColor=#F0EAF9;strokeColor=#7C5CBF;fontColor=#3A2A5F;fontSize=13;strokeWidth=1.2;dashed=1;" vertex="1" parent="1">
+        <mxCell id="stt" value="Local STT runtime&#xa;PhoWhisper" style="rounded=1;arcSize=10;whiteSpace=wrap;html=1;spacing=6;align=center;verticalAlign=middle;fillColor=#F0EAF9;strokeColor=#7C5CBF;fontColor=#3A2A5F;fontSize=13;strokeWidth=1.2;" vertex="1" parent="1">
           <mxGeometry x="760" y="180" width="230" height="76" as="geometry" />
         </mxCell>
         <mxCell id="text" value="Valid raw text?" style="rhombus;whiteSpace=wrap;html=1;spacing=5;align=center;verticalAlign=middle;fillColor=#FBF3D9;strokeColor=#B08900;fontColor=#5A4700;fontSize=13;strokeWidth=1.2;" vertex="1" parent="1">
@@ -156,7 +156,7 @@
         <mxCell id="lg-s1" value="" style="rounded=0;html=1;fillColor=#F0EAF9;strokeColor=#7C5CBF;strokeWidth=1.2;" vertex="1" parent="1">
           <mxGeometry x="49" y="317" width="26" height="14" as="geometry" />
         </mxCell>
-        <mxCell id="lg-t1" value="External AI: OCR, STT and LLM parser" style="text;html=1;align=left;verticalAlign=middle;fontSize=11;fontColor=#3D4B5A;whiteSpace=wrap;" vertex="1" parent="1">
+        <mxCell id="lg-t1" value="AI adapters: local OCR/STT and external LLM parser" style="text;html=1;align=left;verticalAlign=middle;fontSize=11;fontColor=#3D4B5A;whiteSpace=wrap;" vertex="1" parent="1">
           <mxGeometry x="82" y="313" width="404" height="23" as="geometry" />
         </mxCell>
         <mxCell id="lg-s2" value="" style="rounded=0;html=1;fillColor=#FBF3D9;strokeColor=#B08900;strokeWidth=1.2;" vertex="1" parent="1">

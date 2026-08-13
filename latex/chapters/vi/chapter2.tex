@@ -55,7 +55,8 @@ Hệ số Pearson \cite{pearson1895} đo mức đồng biến tuyến tính củ
 Tương quan chỉ được diễn giải trong cửa sổ quan sát, không hàm ý quan hệ nhân quả.
 Hệ số không xác định khi có dưới ba cặp quan sát hoặc một trong hai chuỗi không có
 phương sai; trường hợp đó phải được biểu diễn bằng giá trị rỗng, không được thay
-bằng $r=0$.
+bằng $r=0$. PERFIN còn loại các tuần mà cả hai danh mục cùng bằng zero và báo số
+cặp hữu hiệu, tránh diễn giải sự vắng mặt đồng thời thành đồng biến.
 
 \subsection{Runway, khoản định kỳ, ngân sách và mục tiêu}
 
@@ -84,7 +85,7 @@ Runway là ngoại suy số ngày số dư thanh khoản trong đồng tiền b�
 \subsection{OCR và Speech-to-Text}
 \label{subsec:ocr-stt}
 
-OCR thường gồm tiền xử lý ảnh, phát hiện vùng chữ, nhận dạng và hậu xử lý; Tesseract là một kiến trúc OCR điển hình được mô tả trong \cite{smith2007}. STT chuyển tín hiệu âm thanh thành transcript; Whisper minh họa hướng nhận dạng giọng nói học từ dữ liệu quy mô lớn \cite{radford2022}. Trong PERFIN, cả OCR và STT chỉ tạo raw text kèm tên provider. Raw text tiếp tục qua pipeline chuẩn hóa, xem trước và xác nhận như dữ liệu nhập tay.
+OCR thường gồm tiền xử lý ảnh, phát hiện vùng chữ, nhận dạng và hậu xử lý; PP-OCR là một pipeline OCR gọn được mô tả trong \cite{ppocr2020}. STT chuyển tín hiệu âm thanh thành transcript; Whisper và PhoWhisper minh họa lần lượt nhận dạng quy mô lớn và thích nghi tiếng Việt \cite{radford2022,phowhisper2024}. PERFIN chạy PaddleOCR và PhoWhisper cục bộ trên backend. Cả hai chỉ tạo raw text kèm tên provider; raw text tiếp tục qua pipeline chuẩn hóa, xem trước và xác nhận như dữ liệu nhập tay. Khi được cấu hình, chỉ phần text trích xuất mới có thể gửi Gemini để phân tích ngôn ngữ.
 
 Chất lượng OCR/STT phải được đo bằng ground truth. CER/WER đo sai số văn bản, còn transaction-field accuracy đo tác động lên số tiền, ngày, danh mục hoặc dòng hàng. Một smoke test với vài tệp chỉ chứng minh provider có thể chạy, không phải phép đo accuracy.
 
@@ -130,7 +131,7 @@ PERFIN dùng function calling theo schema của nhà cung cấp \cite{geminifunc
   Redis \cite{redisexpire} & TTL cho pending/clarification, cache và dữ liệu queue. & Không làm nguồn dữ liệu chuẩn; memory fallback chỉ dùng phát triển. \\
   BullMQ \cite{bullmq2026} & Lịch chạy, retry và job ID cho tác vụ idempotent. & Cron đơn giản không có cùng cơ chế queue/retry. \\
   Gemini + local parser & Kết hợp độ bao phủ ngôn ngữ với fallback kiểm thử được. & Provider nằm sau adapter để không khóa logic nghiệp vụ. \\
-  OCR/STT cục bộ hoặc cloud & PaddleOCR/PhoWhisper ưu tiên riêng tư; Google Cloud tăng khả năng thay thế provider. & Mọi raw output vẫn phải qua cùng validation/preview. \\
+  PaddleOCR + PhoWhisper & Chạy cục bộ giữ raw media trên backend và làm rõ chế độ lỗi. & Cần cài runtime/model Python; khi inference không khả dụng endpoint báo lỗi thay vì tạo text giả. \\
   \bottomrule
 \end{longtable}
 

@@ -21,7 +21,7 @@ require('dotenv').config({ path: require('path').resolve(__dirname, '../../.env'
 
 const { parseLocalTransaction } = require('../../services/parser.service');
 const { loadLabeledSamples, stratifiedSample, DEFAULT_CATEGORIES } = require('./lib/dataset');
-const { predictionCoverageReport } = require('./lib/metrics');
+const { jointCategoryLabel, predictionCoverageReport } = require('./lib/metrics');
 const { writeArtifact, runMeta, parseOutDir } = require('./lib/report');
 
 function readIntOption(argv, name, fallback) {
@@ -56,6 +56,11 @@ function median(values) {
 
 function summarizeArm(records) {
   const evaluation = predictionCoverageReport(records);
+  const categoryOnly = predictionCoverageReport(records.map((record) => ({
+    ...record,
+    gold: record.goldCategory,
+    pred: record.predCategory,
+  })));
   const clarifications = records.filter((r) => r.needsClarification).length;
   const latencies = records.map((r) => r.latencyMs).filter((v) => v != null);
   return {
@@ -72,6 +77,14 @@ function summarizeArm(records) {
       accuracy: evaluation.conditional.accuracy,
       macroF1: evaluation.conditional.macroF1,
       weightedF1: evaluation.conditional.weightedF1,
+    },
+    category_only_metrics: {
+      accuracy: categoryOnly.full.accuracy,
+      macroF1: categoryOnly.full.macroF1,
+      weightedF1: categoryOnly.full.weightedF1,
+      coverage: categoryOnly.coverage,
+      conditional_accuracy: categoryOnly.conditional.accuracy,
+      conditional_macroF1: categoryOnly.conditional.macroF1,
     },
     clarification_rate: records.length ? Number((clarifications / records.length).toFixed(4)) : 0,
     latency_ms_median: median(latencies),
@@ -108,9 +121,11 @@ async function run() {
       sampleIndex,
       sourceRow: s.sourceRow,
       text: s.text,
-      gold: s.goldCategory,
+      gold: jointCategoryLabel(s.type, s.goldCategory),
+      goldCategory: s.goldCategory,
       goldType: s.type,
-      pred: tx ? tx.category_name : null,
+      pred: tx ? jointCategoryLabel(tx.type || s.type, tx.category_name) : null,
+      predCategory: tx ? tx.category_name : null,
       predType: tx ? tx.type : null,
       needsClarification: Boolean(result && result.needs_clarification),
       latencyMs: Date.now() - start,
@@ -127,7 +142,7 @@ async function run() {
 
   const result = {
     experiment: 'ablation-parser-vs-llm',
-    description: 'So sánh local parser và LLM trên cùng tập câu gán nhãn (phân loại danh mục).',
+    description: 'So sánh local parser và Gemini trên cùng tập câu gán nhãn; joint type/category là metric chính và category-only là metric phụ.',
     meta: runMeta(),
     dataset: { ...dataset.source, sampled: sample.length, per_class: perClass, seed: 42 },
     llm_status: llm.status,
@@ -212,9 +227,11 @@ async function runLlmArm(sample) {
         sampleIndex: i,
         sourceRow: s.sourceRow,
         text: s.text,
-        gold: s.goldCategory,
+        gold: jointCategoryLabel(s.type, s.goldCategory),
+        goldCategory: s.goldCategory,
         goldType: s.type,
-        pred: tx ? tx.category_name : null,
+        pred: tx ? jointCategoryLabel(tx.type || s.type, tx.category_name) : null,
+        predCategory: tx ? tx.category_name : null,
         predType: tx ? tx.type : null,
         needsClarification: Boolean(parsed && parsed.needs_clarification) || !tx,
         latencyMs: Date.now() - start,
@@ -229,9 +246,11 @@ async function runLlmArm(sample) {
         sampleIndex: i,
         sourceRow: s.sourceRow,
         text: s.text,
-        gold: s.goldCategory,
+        gold: jointCategoryLabel(s.type, s.goldCategory),
+        goldCategory: s.goldCategory,
         goldType: s.type,
         pred: null,
+        predCategory: null,
         predType: null,
         needsClarification: true,
         latencyMs: Date.now() - start,
@@ -255,9 +274,11 @@ async function runLlmArm(sample) {
             sampleIndex: j,
             sourceRow: pending.sourceRow,
             text: pending.text,
-            gold: pending.goldCategory,
+            gold: jointCategoryLabel(pending.type, pending.goldCategory),
+            goldCategory: pending.goldCategory,
             goldType: pending.type,
             pred: null,
+            predCategory: null,
             predType: null,
             needsClarification: true,
             latencyMs: null,
@@ -316,7 +337,7 @@ function printSummary(result) {
   console.log(`Dataset   : ${result.dataset.file} — mẫu phân tầng ${result.dataset.sampled} câu`);
   console.log(`LLM status: ${result.llm_status} — ${result.llm_note}`);
   console.log('');
-  const header = 'Arm'.padEnd(16) + 'Acc(all)'.padStart(10) + 'Coverage'.padStart(10) + 'Acc(ans)'.padStart(10) + 'MacroF1'.padStart(10) + 'p50 ms'.padStart(9) + 'API'.padStart(7);
+  const header = 'Arm'.padEnd(16) + 'Acc(joint)'.padStart(12) + 'Coverage'.padStart(10) + 'Acc(ans)'.padStart(10) + 'MacroF1'.padStart(10) + 'Cat-only'.padStart(10) + 'p50 ms'.padStart(9) + 'API'.padStart(7);
   console.log(header);
   console.log('-'.repeat(header.length));
   printArm('local parser', local);
@@ -331,6 +352,7 @@ function printArm(name, arm) {
     `${(arm.coverage * 100).toFixed(1)}%`.padStart(10) +
     `${(arm.conditional_metrics.accuracy * 100).toFixed(1)}%`.padStart(10) +
     arm.macroF1.toFixed(3).padStart(10) +
+    `${(arm.category_only_metrics.accuracy * 100).toFixed(1)}%`.padStart(10) +
     String(arm.latency_ms_median ?? '-').padStart(9) +
     String(arm.api_calls).padStart(7)
   );
@@ -349,10 +371,10 @@ function buildMarkdown(result) {
   lines.push('');
   lines.push('## So sánh hai nhánh');
   lines.push('');
-  lines.push('Accuracy/Macro-F1 chính dùng toàn bộ mẫu; mọi null/abstention được tính sai. Các chỉ số "đã trả lời" chỉ là metric có điều kiện và luôn đi kèm coverage.');
+  lines.push('Joint type/category Accuracy/Macro-F1 trên toàn bộ mẫu là metric chính; mọi null/abstention được tính sai. Category-only là metric phụ. Các chỉ số "đã trả lời" chỉ là metric có điều kiện và luôn đi kèm coverage.');
   lines.push('');
-  lines.push('| Nhánh | N | Coverage | Accuracy (toàn mẫu) | Macro-F1 (toàn mẫu) | Accuracy (đã trả lời) | Macro-F1 (đã trả lời) | Clarification rate | p50 latency (ms) | Số gọi API |');
-  lines.push('|---|---|---|---|---|---|---|---|---|---|');
+  lines.push('| Nhánh | N | Coverage | Joint accuracy | Joint Macro-F1 | Joint accuracy (answered) | Joint Macro-F1 (answered) | Category-only accuracy | Clarification rate | p50 latency (ms) | Số gọi API |');
+  lines.push('|---|---|---|---|---|---|---|---|---|---|---|');
   lines.push(armRow('Local parser', local));
   if (llm) lines.push(armRow('LLM (Gemini)', llm));
   else lines.push('| LLM (Gemini) | — | — | — | — | — | — | — | — | — (design-only) |');
@@ -374,7 +396,7 @@ function buildMarkdown(result) {
 }
 
 function armRow(name, arm) {
-  return `| ${name} | ${arm.n} | ${(arm.coverage * 100).toFixed(1)}% (${arm.answered}/${arm.n}) | ${(arm.accuracy * 100).toFixed(1)}% | ${arm.macroF1.toFixed(3)} | ${(arm.conditional_metrics.accuracy * 100).toFixed(1)}% | ${arm.conditional_metrics.macroF1.toFixed(3)} | ${(arm.clarification_rate * 100).toFixed(1)}% | ${arm.latency_ms_median ?? '-'} | ${arm.api_calls} |`;
+  return `| ${name} | ${arm.n} | ${(arm.coverage * 100).toFixed(1)}% (${arm.answered}/${arm.n}) | ${(arm.accuracy * 100).toFixed(1)}% | ${arm.macroF1.toFixed(3)} | ${(arm.conditional_metrics.accuracy * 100).toFixed(1)}% | ${arm.conditional_metrics.macroF1.toFixed(3)} | ${(arm.category_only_metrics.accuracy * 100).toFixed(1)}% | ${(arm.clarification_rate * 100).toFixed(1)}% | ${arm.latency_ms_median ?? '-'} | ${arm.api_calls} |`;
 }
 
 function escapePipe(text) {

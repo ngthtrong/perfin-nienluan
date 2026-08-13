@@ -68,6 +68,7 @@ const ANALYTICS_PARAMETERS = Object.freeze({
   }),
   correlation: Object.freeze({
     minimum_paired_observations: 3,
+    minimum_effective_pairs: 4,
     minimum_observed_periods_per_category: 4,
     minimum_r: 0.6,
     direction: 'positive',
@@ -289,7 +290,7 @@ async function correlationAnalysis(userId, weeks = ANALYTICS_WINDOWS.correlation
     window: { ...COMPONENT_CONTRACTS.correlation.window, size: weeks },
     sample_count: completed.axis.length,
     category_count: names.length,
-    warnings: ['association_not_causation'],
+    warnings: ['association_not_causation', 'joint_zero_pairs_excluded'],
   };
   if (names.length < 2) return { value: null, metadata };
 
@@ -301,13 +302,21 @@ async function correlationAnalysis(userId, weeks = ANALYTICS_WINDOWS.correlation
   let best = null;
   for (let i = 0; i < names.length; i += 1) {
     for (let j = i + 1; j < names.length; j += 1) {
-      const r = algo.pearson(series[names[i]], series[names[j]]);
+      const detail = algo.pearsonDetailed(series[names[i]], series[names[j]], { excludeJointZeros: true });
+      const r = detail.r;
       if (
         typeof r === 'number'
+        && detail.effective_pair_count >= ANALYTICS_PARAMETERS.correlation.minimum_effective_pairs
         && r >= ANALYTICS_PARAMETERS.correlation.minimum_r
         && (!best || r > best.r)
       ) {
-        best = { a: names[i], b: names[j], r };
+        best = {
+          a: names[i],
+          b: names[j],
+          r,
+          effective_pair_count: detail.effective_pair_count,
+          excluded_joint_zero_count: detail.excluded_joint_zero_count,
+        };
       }
     }
   }

@@ -1,0 +1,49 @@
+\section{Các yêu cầu chức năng bổ sung}
+\label{app:supplementary-fr}
+
+Ba bảng dưới đây giữ nguyên mã, nhãn và đầy đủ các trường của mẫu đặc tả.
+Chúng được đưa vào phụ lục để Chương~\ref{chap:results} tập trung vào chín FR
+cốt lõi (FR-01--05 và FR-07--10); bảng tổng hợp và ma trận truy vết vẫn liệt kê
+đủ cả mười hai FR.
+
+\begin{frtable}{Đặc tả FR-06 --- Chuyển ví và dòng tiền đặc biệt}{tab:app-fr06}
+  \textbf{Tên chức năng} & Chuyển ví và ghi lãi/lỗ đầu tư. \frtablerow
+  \textbf{ID} & FR-06. \frtablerow
+  \textbf{Người sử dụng} & Người dùng. \frtablerow
+  \textbf{Mức độ cần thiết} & Mong muốn. \frtablerow
+  \textbf{Phân loại} & Phức tạp. \frtablerow
+  \textbf{Các thành phần tham gia và mối quan tâm} & Người dùng cần một thao tác; hai ví và lịch sử phải được cập nhật nhất quán. \frtablerow
+  \textbf{Mô tả tóm tắt} & Ghi chuyển nội bộ không làm đổi tổng tài sản và ghi dòng tiền đầu tư đúng loại. \frtablerow
+  \textbf{Các mối quan hệ} & Dùng thực thể ví/giao dịch của FR-05. \frtablerow
+  \textbf{Luồng xử lý bình thường của sự kiện} & \textbf{Bước 1:} Nhập ví nguồn, ví đích, amount và ngày. \textbf{Bước 2:} Validation hai ví khác nhau. \textbf{Bước 3:} Khóa theo thứ tự. \textbf{Sub 1:} Debit, credit và ghi lịch sử. \textbf{Bước 4:} Commit và trả kết quả. \frtablerow
+  \textbf{Các luồng sự kiện con (Subflows)} & \textbf{Sub 1 --- Transaction:} (1) Trừ nguồn; (2) cộng đích; (3) ghi \code{wallet_transfers}; tổng biến thiên bằng 0. \frtablerow
+  \textbf{Luồng luân phiên/đặc biệt} & Ví trùng/thiếu, amount/date sai, ví ngoài hồ sơ hoặc hai ví khác tiền tệ làm rollback. Không từ chối chỉ vì ví nguồn sẽ âm. \frtablerow
+\end{frtable}
+
+\begin{frtable}{Đặc tả FR-11 --- Khoản định kỳ và tác vụ nền}{tab:app-fr11}
+  \textbf{Tên chức năng} & Quản lý recurring bill, thanh toán và tác vụ chủ động. \frtablerow
+  \textbf{ID} & FR-11. \frtablerow
+  \textbf{Người sử dụng} & Người dùng; Worker nền. \frtablerow
+  \textbf{Mức độ cần thiết} & Mong muốn. \frtablerow
+  \textbf{Phân loại} & Phức tạp. \frtablerow
+  \textbf{Các thành phần tham gia và mối quan tâm} & Người dùng cần lịch/nhắc; worker cần retry; database cần một hiệu ứng cho mỗi kỳ. \frtablerow
+  \textbf{Mô tả tóm tắt} & Quản lý lịch chi lặp, ghi thanh toán nguyên tử và sinh thông báo nội bộ không trùng. \frtablerow
+  \textbf{Các mối quan hệ} & Dùng FR-05 khi ghi payment; dùng facts FR-07. \frtablerow
+  \textbf{Luồng xử lý bình thường của sự kiện} & \textbf{Bước 1:} Tạo lịch hợp lệ. \textbf{Bước 2:} Scheduler đưa job vào queue. \textbf{Bước 3:} Worker resolve user/kỳ. \textbf{Sub 1:} Gọi handler idempotent. \textbf{Bước 4:} Lưu payment/message và cập nhật kỳ kế tiếp. \frtablerow
+  \textbf{Các luồng sự kiện con (Subflows)} & \textbf{Sub 1 --- Retry:} (1) Giữ cùng fingerprint/event key; (2) kết quả duplicate được xem là hoàn tất an toàn. \frtablerow
+  \textbf{Luồng luân phiên/đặc biệt} & Kỳ cũ/thiếu hoặc payload sai làm rollback. Redis lỗi khiến worker dừng an toàn; không được tuyên bố worker live nếu chưa đo. \frtablerow
+\end{frtable}
+
+\begin{frtable}{Đặc tả FR-12 --- Xuất và dọn dữ liệu}{tab:app-fr12}
+  \textbf{Tên chức năng} & Xuất dữ liệu, lưu lịch sử và dọn tệp hết hạn. \frtablerow
+  \textbf{ID} & FR-12. \frtablerow
+  \textbf{Người sử dụng} & Người dùng; Worker nền. \frtablerow
+  \textbf{Mức độ cần thiết} & Tùy chọn. \frtablerow
+  \textbf{Phân loại} & Trung bình. \frtablerow
+  \textbf{Các thành phần tham gia và mối quan tâm} & Người dùng cần tải đúng dữ liệu; exporter cần escaping; worker không được xóa tệp còn hiệu lực. \frtablerow
+  \textbf{Mô tả tóm tắt} & Tạo CSV theo bộ lọc, ghi lịch sử và dọn tệp sau TTL. \frtablerow
+  \textbf{Các mối quan hệ} & Đọc FR-05; dùng FR-03 nếu được khởi tạo từ chat; worker xử lý cleanup. \frtablerow
+  \textbf{Luồng xử lý bình thường của sự kiện} & \textbf{Bước 1:} Chọn định dạng/kỳ. \textbf{Bước 2:} Validation và truy vấn theo hồ sơ. \textbf{Sub 1:} Tạo tệp an toàn. \textbf{Bước 3:} Ghi \code{export_history}. \textbf{Bước 4:} Trả liên kết tải. \frtablerow
+  \textbf{Các luồng sự kiện con (Subflows)} & \textbf{Sub 1 --- CSV:} (1) Escape ô có công thức; (2) ghi BOM UTF-8 và số dòng; (3) đặt TTL. \frtablerow
+  \textbf{Luồng luân phiên/đặc biệt} & Không có dữ liệu vẫn trả tệp có header. Luồng từng mang nhãn PDF hiện chỉ tạo HTML nên không được công bố là PDF thật. \frtablerow
+\end{frtable}

@@ -1033,8 +1033,8 @@ def diagram_03() -> str:
         subtitle(
             "st",
             "Node ghi đầy đủ stereotype UML; mọi communication path đều ghi "
-            "giao thức và cổng. Dịch vụ AI đám mây nằm ngoài biên triển khai "
-            "và chỉ trả dữ liệu trung gian.",
+            "giao thức và cổng. Chỉ provider ngôn ngữ bên ngoài nằm ngoài biên "
+            "triển khai; media inference chạy cục bộ.",
             40,
             46,
             1180,
@@ -1049,7 +1049,7 @@ def diagram_03() -> str:
         ),
         lane(
             "cloud",
-            "Ngoài biên triển khai · dịch vụ AI đám mây",
+            "Ngoài biên triển khai · external language provider",
             1200, 150, 300, 600, "purple", dashed=True,
         ),
         uml_node(
@@ -1086,11 +1086,6 @@ def diagram_03() -> str:
             "gemini", "device", "Gemini API",
             ["function calling · narration"],
             35, 70, 230, 104, "purple", dashed=True, parent="cloud",
-        ),
-        uml_node(
-            "google", "device", "Google Vision / Speech",
-            ["OCR · STT đám mây"],
-            35, 300, 230, 104, "purple", dashed=True, parent="cloud",
         ),
         icon("mobile-react", "react", 52, 346, 30, 30),
         icon("mobile-expo", "expo", 88, 346, 30, 30),
@@ -1157,11 +1152,6 @@ def diagram_03() -> str:
             "e9", "api", "gemini", "HTTPS/REST", color="purple", dashed=True,
             exit_xy=(0.55, 0), entry_xy=(0, 0.5),
             points=[(466, 100), (1210, 100), (1210, 272)], font_size=10,
-        ),
-        edge(
-            "e10", "api", "google", "HTTPS/REST", color="purple", dashed=True,
-            exit_xy=(0.7, 0), entry_xy=(0, 0.5),
-            points=[(501, 126), (1190, 126), (1190, 502)], font_size=10,
         ),
         edge(
             "dep1", "fs", "exports", "«deploy»", color="yellow", dashed=True,
@@ -1569,7 +1559,7 @@ def diagram_06() -> str:
             [
                 ("blue", "Dữ liệu và trạng thái trung gian"),
                 ("green", "Lõi xác định: kiểm tra, tính toán, ghi dữ liệu"),
-                ("purple", "Thành phần LLM (viền nét đứt)"),
+                ("purple", "AI adapter (nét đứt: external)"),
                 ("yellow", "Điểm quyết định của luồng"),
                 ("red", "Nhánh từ chối, hỏi lại và ràng buộc an toàn"),
             ],
@@ -1745,8 +1735,8 @@ def diagram_09() -> str:
         terminal("start", "Người dùng chọn ảnh hoặc ghi âm", 40, 130, 210, 62, "orange"),
         box("upload", "Upload base64 / multipart\nkiểm tra loại · giới hạn 10 MB", 290, 120, 240, 76, "orange"),
         decision("type", "Loại đầu vào?", 570, 105, 150, 105),
-        box("ocr", "OCR provider\nGoogle Vision / PaddleOCR", 760, 70, 230, 76, "purple", dashed=True),
-        box("stt", "STT provider\nGoogle Speech / PhoWhisper", 760, 180, 230, 76, "purple", dashed=True),
+        box("ocr", "Local OCR runtime\nPaddleOCR", 760, 70, 230, 76, "purple"),
+        box("stt", "Local STT runtime\nPhoWhisper", 760, 180, 230, 76, "purple"),
         decision("text", "Có văn bản thật?", 1030, 105, 160, 110),
         box("fail", "HTTP 503\nkhông tạo dữ liệu giả", 1220, 80, 180, 70, "red"),
         terminal("failed", "Kết thúc lỗi\nkhông ghi dữ liệu", 1220, 190, 180, 62, "red"),
