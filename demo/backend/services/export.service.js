@@ -5,6 +5,7 @@ const { pool, query, rollbackAfterFailure } = require('../config/database');
 const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
+const { validateTransactionPayload } = require('./transactions/validation');
 
 const DEFAULT_USER = 'default_user';
 const EXPORTS_DIR = path.join(__dirname, '..', 'exports');
@@ -43,6 +44,29 @@ function escapeHTML(value) {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
+}
+
+// Validate transaction amounts before restore starts changing the current
+// user's data. Investment P&L is intentionally excluded: it has signed values
+// by design and is restored through its own table below.
+function validateBackupTransactions(transactions) {
+  if (!Array.isArray(transactions)) {
+    const error = new Error('Dữ liệu backup transactions không hợp lệ');
+    error.status = 400;
+    error.code = 'VALIDATION_ERROR';
+    throw error;
+  }
+  transactions.forEach((transaction, index) => {
+    try {
+      validateTransactionPayload(
+        { amount: transaction?.amount },
+        { partial: true, rejectUnknown: true }
+      );
+    } catch (error) {
+      error.message = `Giao dịch backup thứ ${index + 1}: ${error.message}`;
+      throw error;
+    }
+  });
 }
 
 // ─── Export History Model ──────────────────────────────────────────────────────
@@ -538,6 +562,9 @@ async function restoreBackup(userId = DEFAULT_USER, filePath) {
     throw new Error('Dữ liệu backup bị lỗi (checksum không khớp)');
   }
 
+  const data = backupData.data;
+  validateBackupTransactions(data?.transactions || []);
+
   const client = await pool.connect();
   let transactionClosed = false;
   try {
@@ -551,7 +578,6 @@ async function restoreBackup(userId = DEFAULT_USER, filePath) {
     // Note: we don't delete categories/wallets to avoid FK issues; we merge
 
     // Restore transactions (simplified: re-insert with new IDs)
-    const data = backupData.data;
     const referencedWalletIds = [...new Set([
       ...(data.transactions || []).filter((tx) => !tx.deleted_at).map((tx) => tx.wallet_id),
       ...(data.wallet_transfers || []).flatMap((transfer) => [transfer.from_wallet_id, transfer.to_wallet_id]),
@@ -656,6 +682,7 @@ module.exports = {
   exportPDF,
   createBackup,
   restoreBackup,
+  validateBackupTransactions,
   EXPORTS_DIR,
   EXPENSE_BREAKDOWN_SQL,
   buildLabel,

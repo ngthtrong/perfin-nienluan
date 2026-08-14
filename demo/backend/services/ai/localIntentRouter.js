@@ -363,7 +363,18 @@ function routeLocalIntent(text, categories) {
   const clauses = splitTransactionClauses(text);
   if (clauses.length > 1) {
     const transactions = clauses.map((part) => parseLocalTransaction(part, categories)).filter((item) => item.transaction).map((item) => item.transaction);
-    if (transactions.length > 1) return { intent: 'transactions', transactions, transaction: transactions[0], needs_clarification: false };
+    if (transactions.length > 1) {
+      const needsClarification = transactions.some((transaction) => !(Number(transaction.amount) > 0));
+      return {
+        intent: 'transactions',
+        transactions,
+        transaction: transactions[0],
+        needs_clarification: needsClarification,
+        clarification_message: needsClarification
+          ? 'Mỗi số tiền giao dịch phải lớn hơn 0. Bạn nhập lại giúp mình nhé.'
+          : null,
+      };
+    }
   }
   // A question that reached this point is asking about data we could not classify.
   // Answering it as prose is always safer than drafting a transaction from it.

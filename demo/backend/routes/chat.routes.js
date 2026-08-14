@@ -226,11 +226,19 @@ function validatePendingTransactionDates(item, today = new Date()) {
   if (!['transaction', 'transactions', 'recurring_payment'].includes(item.kind)) return;
   const drafts = item.kind === 'transactions' ? item.data : [item.data];
   for (const draft of drafts || []) {
-    if (!draft || !hasOwn(draft, 'transaction_date')) continue;
+    // Validate the amount before the pending item is atomically claimed. A bad
+    // draft must remain available for /edit instead of being consumed and then
+    // failing later in TransactionModel.create/createMany.
     validateTransactionPayload(
-      { transaction_date: draft.transaction_date },
+      { amount: draft?.amount },
       { partial: true, rejectUnknown: true, today }
     );
+    if (draft && hasOwn(draft, 'transaction_date')) {
+      validateTransactionPayload(
+        { transaction_date: draft.transaction_date },
+        { partial: true, rejectUnknown: true, today }
+      );
+    }
   }
 }
 
@@ -1326,7 +1334,9 @@ router.post('/message', async (req, res) => {
     data = await handleInvestmentPreview(parsed);
   } else if (parsed.intent === 'budget_suggest') {
     data = await handleBudgetSuggestion(parsed);
-  } else if (parsed.intent === 'transactions' && parsed.transactions?.length) {
+  } else if (parsed.intent === 'transactions'
+      && parsed.transactions?.length
+      && parsed.transactions.every((transaction) => Number.isFinite(Number(transaction?.amount)) && Number(transaction.amount) > 0)) {
     const wallet = await AccountModel.ensureDefault(userId);
     const transactions = parsed.transactions.map((transaction) => ({
       ...transaction,
@@ -1341,7 +1351,9 @@ router.post('/message', async (req, res) => {
       transactions,
       pending_id: pendingId,
     };
-  } else if (parsed.intent === 'transaction' && parsed.transaction?.amount) {
+  } else if (parsed.intent === 'transaction'
+      && Number.isFinite(Number(parsed.transaction?.amount))
+      && Number(parsed.transaction.amount) > 0) {
     const wallet = await AccountModel.ensureDefault(userId);
     const tx = { ...parsed.transaction, wallet_id: wallet.id, source: 'ai_chat', original_text: parsed.original_text || text };
     const pendingId = await pending.set(userId, tx, 'transaction', { follow_up: parsed.follow_up || [] });

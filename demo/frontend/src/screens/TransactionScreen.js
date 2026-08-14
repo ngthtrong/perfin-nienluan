@@ -8,7 +8,7 @@ import {
 } from 'react-native';
 import { api } from '../services/api.service';
 import { useTheme } from '../theme/ThemeContext';
-import { formatMoneyValue, formatVND, parseMoneyInput, toDateInputValue } from '../utils/formatters';
+import { formatMoneyValue, formatVND, parseMoneyInput, positiveMoneyError, toDateInputValue } from '../utils/formatters';
 import { showAlert } from '../utils/alerts';
 import TransactionCard from '../components/TransactionCard';
 import AppIcon from '../components/AppIcon';
@@ -243,7 +243,7 @@ export default function TransactionScreen({ route, navigation }) {
     setEditingId(transaction.id);
     setForm({
       description: transaction.description || '',
-      amount: formatMoneyValue(transaction.amount),
+      amount: formatMoneyValue(transaction.amount, { allowNegative: true }),
       type: transaction.type || 'expense',
       category_id: transaction.category_id || null,
       wallet_id: transaction.wallet_id || null,
@@ -258,7 +258,8 @@ export default function TransactionScreen({ route, navigation }) {
 
   async function saveTransaction() {
     const amount = parseMoneyInput(form.amount);
-    if (!form.description.trim() || !(amount > 0) || !Number.isFinite(amount) || !form.category_id || !form.wallet_id) {
+    const amountError = positiveMoneyError(form.amount);
+    if (!form.description.trim() || amountError || !form.category_id || !form.wallet_id) {
       showAlert('Thiếu thông tin', 'Vui lòng nhập mô tả, số tiền dương, danh mục và ví.');
       return;
     }
@@ -529,13 +530,17 @@ export default function TransactionScreen({ route, navigation }) {
               placeholderTextColor={c.textMuted}
               value={form.amount}
               onChangeText={(v) => setForm((p) => ({ ...p, amount: v }))}
+              allowNegative
             />
-            {form.amount.length > 0 && (
+            {form.amount.length > 0 && Number.isFinite(parseMoneyInput(form.amount)) && (
               <View style={styles.amountPreviewPill}>
                 <Text style={styles.amountPreviewText}>{formatVND(parseMoneyInput(form.amount))}</Text>
               </View>
             )}
           </View>
+          {form.amount.length > 0 && positiveMoneyError(form.amount) && (
+            <Text style={styles.amountError}>{positiveMoneyError(form.amount)}</Text>
+          )}
 
           <Text style={styles.inputLabel}>Danh mục</Text>
           <FlatList
@@ -610,6 +615,7 @@ export default function TransactionScreen({ route, navigation }) {
             icon={editingId ? 'save' : 'check-circle'}
             onPress={saveTransaction}
             loading={saving}
+            disabled={form.amount.length > 0 && Boolean(positiveMoneyError(form.amount))}
           />
         </View>
       )}
@@ -975,6 +981,7 @@ const createStyles = (t) => StyleSheet.create({
   amountWrapper: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 10, marginBottom: 14 },
   amountPreviewPill: { backgroundColor: t.colors.brandSoft, paddingHorizontal: 10, paddingVertical: 6, borderRadius: t.radius.pill },
   amountPreviewText: { color: t.colors.brandText, fontWeight: '700', fontSize: 13 },
+  amountError: { color: t.colors.expense, fontSize: 12, fontWeight: '700', marginTop: -8, marginBottom: 12 },
   inputLabel: { color: t.colors.textMuted, fontWeight: '700', marginBottom: 8, fontSize: 13 },
   walletList: { gap: 8, paddingBottom: 14 },
   walletChip: {

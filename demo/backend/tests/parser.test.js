@@ -30,6 +30,13 @@ test('recognizes clothing and eating phrases with deterministic aliases', () => 
   assert.equal(eating.transaction.category_name, 'Ăn uống');
 });
 
+test('keeps explicitly negative natural-language amounts invalid instead of flipping their sign', () => {
+  const parsed = parseLocalTransaction('ăn phở -50k', categories);
+  assert.equal(parsed.transaction.amount, -50_000);
+  assert.equal(parsed.needs_clarification, true);
+  assert.match(parsed.clarification_message, /lớn hơn 0/);
+});
+
 test('uses the local calendar day instead of the previous UTC day', () => {
   const localAfterMidnight = new Date(2026, 6, 16, 0, 30, 0, 0);
   assert.equal(inferDate('hôm nay', localAfterMidnight), '2026-07-16');

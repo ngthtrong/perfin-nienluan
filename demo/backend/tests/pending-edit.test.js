@@ -73,6 +73,18 @@ test('pending confirmation preflight rejects a future date before the preview is
   }, new Date(2026, 6, 18, 23, 59)), /Ngày ghi nhận lãi\/lỗ không được nằm trong tương lai/);
 });
 
+test('pending confirmation preflight rejects non-positive transaction amounts before claim', () => {
+  assert.throws(() => validatePendingTransactionDates({
+    kind: 'transaction',
+    data: { ...current, amount: -50_000 },
+  }), /lớn hơn 0/);
+
+  assert.throws(() => validatePendingTransactionDates({
+    kind: 'transactions',
+    data: [{ ...current, amount: 50_000 }, { ...current, amount: 0 }],
+  }), /lớn hơn 0/);
+});
+
 test('pending metadata tracks category corrections but not date edits and removes reverted corrections', () => {
   const corrected = { category_id: 3, category_name: 'Di chuyển', category_icon: '🚗' };
   const metadata = updateClassificationCorrectionMetadata(

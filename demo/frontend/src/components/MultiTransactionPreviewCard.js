@@ -4,7 +4,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useTheme } from '../theme/ThemeContext';
-import { formatDate, formatMoneyValue, formatVND, parseMoneyInput, toDateInputValue } from '../utils/formatters';
+import { formatDate, formatMoneyValue, formatVND, parseMoneyInput, positiveMoneyError, toDateInputValue } from '../utils/formatters';
 import AppIcon from './AppIcon';
 import { Chip, DatePickerField, MoneyInput } from './ui';
 
@@ -24,6 +24,7 @@ export default function MultiTransactionPreviewCard({
   const [editingIndex, setEditingIndex] = useState(null);
   const [draft, setDraft] = useState(null);
   const [saving, setSaving] = useState(false);
+  const hasInvalidAmount = transactions.some((item) => positiveMoneyError(item?.amount));
 
   useEffect(() => {
     if (editingIndex === null) return;
@@ -35,7 +36,7 @@ export default function MultiTransactionPreviewCard({
     }
     setDraft({
       description: item.description || '',
-      amount: formatMoneyValue(item.amount),
+      amount: formatMoneyValue(item.amount, { allowNegative: true }),
       type: item.type === 'income' ? 'income' : 'expense',
       category_id: item.category_id || null,
       transaction_date: toDateInputValue(item.transaction_date),
@@ -47,7 +48,7 @@ export default function MultiTransactionPreviewCard({
     setEditingIndex(index);
     setDraft({
       description: item.description || '',
-      amount: formatMoneyValue(item.amount),
+      amount: formatMoneyValue(item.amount, { allowNegative: true }),
       type: item.type === 'income' ? 'income' : 'expense',
       category_id: item.category_id || null,
       transaction_date: toDateInputValue(item.transaction_date),
@@ -57,7 +58,7 @@ export default function MultiTransactionPreviewCard({
   // Chỉ cập nhật dòng đang sửa; backend validation lại toàn bộ field thay đổi.
   async function saveEdit() {
     const amount = parseMoneyInput(draft?.amount);
-    if (!draft?.description.trim() || !(amount > 0) || !draft.category_id || !draft.transaction_date) return;
+    if (!draft?.description.trim() || positiveMoneyError(draft?.amount) || !draft.category_id || !draft.transaction_date) return;
     setSaving(true);
     try {
       const updated = await onEdit?.(editingIndex, {
@@ -119,7 +120,9 @@ export default function MultiTransactionPreviewCard({
                       onChangeText={(amount) => setDraft((prev) => ({ ...prev, amount }))}
                       placeholder="Số tiền"
                       placeholderTextColor={c.textMuted}
+                      allowNegative
                     />
+                    {positiveMoneyError(draft.amount) && <Text style={styles.amountError}>{positiveMoneyError(draft.amount)}</Text>}
                     <View style={styles.typeRow}>
                       {[
                         { value: 'expense', label: 'Chi tiêu' },
@@ -167,7 +170,7 @@ export default function MultiTransactionPreviewCard({
                         ))}
                     </ScrollView>
                     <View style={styles.editActions}>
-                      <TouchableOpacity style={styles.saveButton} onPress={saveEdit} disabled={saving}>
+                      <TouchableOpacity style={styles.saveButton} onPress={saveEdit} disabled={saving || Boolean(positiveMoneyError(draft?.amount))}>
                         {saving
                           ? <ActivityIndicator size="small" color={c.onBrand} />
                           : <AppIcon name="check" size={16} color={c.onBrand} />}
@@ -218,6 +221,9 @@ export default function MultiTransactionPreviewCard({
           {expenseTotal > 0 && <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.72} style={styles.totalExpense}>Chi {formatVND(expenseTotal)}</Text>}
           {incomeTotal > 0 && <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.72} style={styles.totalIncome}>Thu {formatVND(incomeTotal)}</Text>}
         </View>
+        {hasInvalidAmount && (
+          <Text style={styles.amountError}>Số tiền giao dịch phải lớn hơn 0.</Text>
+        )}
 
         {resolved ? (
           <View style={styles.resolvedBar}>
@@ -226,7 +232,7 @@ export default function MultiTransactionPreviewCard({
           </View>
         ) : (
           <View style={styles.actions}>
-            <TouchableOpacity style={styles.confirmButton} onPress={onConfirm} disabled={busy || editingIndex !== null}>
+            <TouchableOpacity style={styles.confirmButton} onPress={onConfirm} disabled={busy || editingIndex !== null || hasInvalidAmount}>
               {busy
                 ? <ActivityIndicator size="small" color={c.onBrand} />
                 : <AppIcon name="done-all" size={17} color={c.onBrand} />}
@@ -282,6 +288,7 @@ const createStyles = (t) => StyleSheet.create({
     paddingHorizontal: 11, paddingVertical: 9, marginBottom: 9,
     color: t.colors.text, backgroundColor: t.colors.surfaceAlt, fontSize: 13,
   },
+  amountError: { color: t.colors.expense, fontSize: 12, fontWeight: '700', marginTop: -5, marginBottom: 9 },
   fieldControl: { marginBottom: 9 },
   categoryList: { gap: 7, paddingBottom: 10 },
   typeRow: { flexDirection: 'row', gap: 7, marginBottom: 10 },

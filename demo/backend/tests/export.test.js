@@ -5,7 +5,14 @@ const {
   EXPENSE_BREAKDOWN_SQL,
   buildReportHTML,
   escapeHTML,
+  validateBackupTransactions,
 } = require('../services/export.service');
+
+test('backup restore preflight rejects non-positive ledger amounts but accepts signed P&L separately', () => {
+  assert.throws(() => validateBackupTransactions([{ amount: -50_000 }]), /Giao dịch backup thứ 1.*lớn hơn 0/);
+  assert.throws(() => validateBackupTransactions([{ amount: 0 }]), /Giao dịch backup thứ 1.*lớn hơn 0/);
+  assert.doesNotThrow(() => validateBackupTransactions([{ amount: 50_000 }]));
+});
 
 test('expense percentages use the same date window as the category rows', () => {
   assert.match(EXPENSE_BREAKDOWN_SQL, /total_tx\.transaction_date >= \$2::date/);

@@ -233,7 +233,13 @@ function validateParsedTransaction(data) {
 }
 
 function parseLocalTransaction(text, categories) {
-  const amount = normalizeAmount(text);
+  const parsedAmount = normalizeAmount(text);
+  // Keep an explicitly signed amount negative so validation can explain the
+  // invalid transaction. Do not silently turn "-50k" into a 50k expense.
+  const explicitlyNegative = /(?:^|[^\d])[-−]\s*(?=\d)/u.test(String(text));
+  const amount = explicitlyNegative && parsedAmount !== null
+    ? -Math.abs(parsedAmount)
+    : parsedAmount;
   const type = inferType(text);
   const inferredCategory = inferCategoryWithMeta(text, type);
   const categoryName = inferredCategory.categoryName;
@@ -244,12 +250,12 @@ function parseLocalTransaction(text, categories) {
     .replace(/\b(hôm nay|hôm qua|hôm kia)\b/gi, '')
     .trim() || (category ? category.name : 'Giao dịch');
 
-  if (!amount) {
+  if (!(amount > 0)) {
     return {
       intent: 'unclear',
       transaction: {
         description,
-        amount: null,
+        amount,
         type,
         category_id: category ? category.id : null,
         category_name: category ? category.name : categoryName,
@@ -260,7 +266,9 @@ function parseLocalTransaction(text, categories) {
         category_match_kind: inferredCategory.matchKind,
       },
       needs_clarification: true,
-      clarification_message: 'Bạn muốn ghi nhận bao nhiêu tiền?',
+      clarification_message: amount < 0
+        ? 'Số tiền giao dịch phải lớn hơn 0. Bạn nhập lại giúp mình nhé.'
+        : 'Bạn muốn ghi nhận bao nhiêu tiền?',
     };
   }
 

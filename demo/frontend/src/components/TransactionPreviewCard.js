@@ -6,7 +6,7 @@ import { ActivityIndicator, ScrollView, View, Text, TextInput, TouchableOpacity,
 import BalanceDisplay from './BalanceDisplay';
 import AppIcon from './AppIcon';
 import { useTheme } from '../theme/ThemeContext';
-import { formatDate, formatMoneyValue, parseMoneyInput, toDateInputValue } from '../utils/formatters';
+import { formatDate, formatMoneyValue, parseMoneyInput, positiveMoneyError, toDateInputValue } from '../utils/formatters';
 import { Chip, DatePickerField, MoneyInput } from './ui';
 
 // Giữ draft cục bộ của một giao dịch và liên kết nó với pending ID từ backend.
@@ -30,7 +30,7 @@ export default function TransactionPreviewCard({
   const [categoryId, setCategoryId] = useState(transaction.category_id || null);
 
   useEffect(() => {
-    setAmount(formatMoneyValue(transaction.amount));
+    setAmount(formatMoneyValue(transaction.amount, { allowNegative: true }));
     setDescription(transaction.description || '');
     setTransactionDate(toDateInputValue(transaction.transaction_date));
     setCategoryId(transaction.category_id || null);
@@ -39,7 +39,7 @@ export default function TransactionPreviewCard({
   // Chuyển form sang payload chuẩn trước khi gọi endpoint edit pending.
   async function saveEdit() {
     const parsedAmount = parseMoneyInput(amount);
-    if (!description.trim() || !(parsedAmount > 0) || !categoryId || !transactionDate) return;
+    if (!description.trim() || positiveMoneyError(amount) || !categoryId || !transactionDate) return;
     const updated = await onEdit?.({
       description: description.trim(),
       amount: parsedAmount,
@@ -51,6 +51,7 @@ export default function TransactionPreviewCard({
 
   const signed = transaction.type === 'income' ? Number(transaction.amount) : -Number(transaction.amount);
   const isIncome = transaction.type === 'income';
+  const amountError = positiveMoneyError(transaction.amount);
 
   return (
     <View style={styles.wrapper}>
@@ -81,7 +82,9 @@ export default function TransactionPreviewCard({
               onChangeText={setAmount}
               placeholder="Nhập số tiền"
               placeholderTextColor={c.textMuted}
+              allowNegative
             />
+            {positiveMoneyError(amount) && <Text style={styles.amountError}>{positiveMoneyError(amount)}</Text>}
             <Text style={styles.fieldLabel}>Ngày giao dịch</Text>
             <DatePickerField
               accessibilityLabel="Chọn ngày giao dịch"
@@ -111,7 +114,7 @@ export default function TransactionPreviewCard({
             <TouchableOpacity
               style={styles.saveBtn}
               onPress={saveEdit}
-              disabled={busy}
+              disabled={busy || Boolean(positiveMoneyError(amount))}
             >
               {busy
                 ? <ActivityIndicator size="small" color={c.onBrand} />
@@ -123,6 +126,7 @@ export default function TransactionPreviewCard({
           <View style={styles.detailSection}>
             <Text style={styles.desc}>{transaction.description}</Text>
             <BalanceDisplay amount={signed} showSign size={26} style={{ marginBottom: 10 }} />
+            {amountError && <Text style={styles.amountError}>{amountError}</Text>}
             <View style={styles.metaRow}>
               <View style={styles.metaChip}>
                 <Text style={styles.metaChipText}>{transaction.category_name}</Text>
@@ -134,7 +138,7 @@ export default function TransactionPreviewCard({
 
         {!editing && !resolved && (
           <View style={styles.actions}>
-            <TouchableOpacity accessibilityRole="button" accessibilityState={{ disabled: busy }} style={styles.confirmBtn} onPress={onConfirm} disabled={busy}>
+            <TouchableOpacity accessibilityRole="button" accessibilityState={{ disabled: busy || Boolean(amountError) }} style={styles.confirmBtn} onPress={onConfirm} disabled={busy || Boolean(amountError)}>
               {busy
                 ? <ActivityIndicator size="small" color={c.onBrand} />
                 : <AppIcon name="check" size={16} color={c.onBrand} />}
@@ -200,6 +204,7 @@ const createStyles = (t) => StyleSheet.create({
     borderWidth: 1.5, borderColor: t.colors.border, borderRadius: t.radius.md,
     padding: 12, marginBottom: 12, fontSize: 15, color: t.colors.text, backgroundColor: t.colors.surfaceAlt,
   },
+  amountError: { color: t.colors.expense, fontSize: 12, fontWeight: '700', marginTop: -7, marginBottom: 12 },
   fieldControl: { marginBottom: 12 },
   categoryList: { gap: 7, paddingBottom: 12 },
   saveBtn: {

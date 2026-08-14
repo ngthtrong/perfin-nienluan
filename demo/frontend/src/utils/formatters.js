@@ -33,6 +33,15 @@ export function parseMoneyInput(value) {
   return Number(normalized);
 }
 
+// Giao dịch thu/chi dùng amount dương; giữ nguyên dấu ở input để người dùng
+// thấy và sửa lỗi thay vì âm thầm biến -50.000 thành 50.000.
+export function positiveMoneyError(value) {
+  const amount = parseMoneyInput(value);
+  return Number.isFinite(amount) && amount > 0
+    ? null
+    : 'Số tiền phải lớn hơn 0.';
+}
+
 export function toDateInputValue(value) {
   if (!value) return '';
   if (typeof value === 'string') {
