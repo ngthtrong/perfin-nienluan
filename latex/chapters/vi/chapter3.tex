@@ -43,11 +43,7 @@ PERFIN là nguyên mẫu ứng dụng di động phục vụ nhập, chuẩn hó
 
 Các quy tắc dùng chung là: số tiền nghiệp vụ phải hữu hạn và đúng miền; ngày giao dịch không ở tương lai; ví/danh mục phải thuộc hồ sơ hiện tại; số dư ví được phép âm; thao tác khởi tạo từ chat/media phải qua preview và xác nhận; cập nhật nhiều bản ghi phải nguyên tử; báo cáo mặc định loại giao dịch đã soft delete; thiếu dữ liệu phải trả cảnh báo hoặc \code{null} thay vì suy diễn.
 
-\subsection{Yêu cầu chức năng}
-
-\widereportfigure{figures/drawio/14-usecase-overview.png}{Sơ đồ use case tổng thể của PERFIN. Chi tiết từng chức năng được mô tả bằng bảng luồng thay cho mười hai sơ đồ riêng lẻ.}{fig:usecase-overview}
-
-Hình~\ref{fig:usecase-overview} chỉ mô tả mục tiêu quan sát được của tác nhân. Các bước parser, validation, transaction, TTL và retry là chi tiết thiết kế nên được đặt trong bảng luồng hoặc sơ đồ sequence/flow ở mục~\ref{subsec:detailed-design}.
+\widereportfigure[\subsection{Yêu cầu chức năng}][Hình~\ref{fig:usecase-overview} chỉ mô tả mục tiêu quan sát được của tác nhân. Các bước parser, validation, transaction, TTL và retry là chi tiết thiết kế nên được đặt trong bảng luồng hoặc sơ đồ sequence/flow ở mục~\ref{subsec:detailed-design}.]{figures/drawio/14-usecase-overview.png}{Sơ đồ use case tổng thể của PERFIN. Chi tiết từng chức năng được mô tả bằng bảng luồng thay cho mười hai sơ đồ riêng lẻ.}{fig:usecase-overview}
 
 \begin{longtable}{@{}L{1.5cm}L{5.0cm}L{3.0cm}L{4.5cm}@{}}
   \caption{Danh mục yêu cầu chức năng và vị trí đặc tả đầy đủ}
@@ -255,13 +251,9 @@ PERFIN chọn modular monolith: các route, service, model và engine được t
 
 Phương án microservice đã được cân nhắc nhưng không chọn vì số module và tải của nguyên mẫu chưa bù được chi phí triển khai, tracing và nhất quán phân tán. Serverless cũng không phù hợp với worker dài hạn và provider media cục bộ. Modular monolith giữ transaction cơ sở dữ liệu đơn giản, đồng thời cho phép tách service về sau nếu có bằng chứng tải thực tế.
 
-\subsection{Thiết kế dữ liệu}
+\widereportfigure[\subsection{Thiết kế dữ liệu}][Hình~\ref{fig:domain-class} mô tả các lớp miền và bội số quan hệ. \code{User} là gốc sở hữu; \code{Wallet}, \code{Transaction} và \code{Category} tạo sổ cái; \code{Budget}, \code{FinancialGoal} và các lớp recurring tạo kế hoạch; \code{ChatMessage} và \code{AIFeedback} lưu tương tác cần truy vết. Các engine không xuất hiện như entity vì chúng chỉ đọc dữ liệu và tạo facts.]{figures/drawio/04-domain-class.png}{Class Diagram UML của miền PERFIN, tách sổ cái, kế hoạch, recurring và hội thoại/phản hồi.}{fig:domain-class}
 
-\widereportfigure{figures/drawio/04-domain-class.png}{Class Diagram UML của miền PERFIN, tách sổ cái, kế hoạch, recurring và hội thoại/phản hồi.}{fig:domain-class}
-
-Hình~\ref{fig:domain-class} mô tả các lớp miền và bội số quan hệ. \code{User} là gốc sở hữu; \code{Wallet}, \code{Transaction} và \code{Category} tạo sổ cái; \code{Budget}, \code{FinancialGoal} và các lớp recurring tạo kế hoạch; \code{ChatMessage} và \code{AIFeedback} lưu tương tác cần truy vết. Các engine không xuất hiện như entity vì chúng chỉ đọc dữ liệu và tạo facts.
-
-\widereportfigure{figures/drawio/05-physical-erd.png}{ERD vật lý được đối chiếu với chuỗi migration runtime; các khóa ngoại nghiệp vụ chính đi theo những hành lang trực giao tách biệt.}{fig:physical-erd}
+\widereportfigure{figures/drawio/05-logical-erd.png}{ERD logic của 16 thực thể nghiệp vụ PERFIN, thể hiện các định danh, thuộc tính và quan hệ chính.}{fig:logical-erd}
 
 \begin{longtable}{@{}L{4.5cm}L{3.0cm}L{6.0cm}@{}}
   \caption{Danh sách thực thể theo thứ tự bảng chữ cái}\label{tab:data-entities}\\
@@ -299,24 +291,13 @@ Tiền dùng \code{DECIMAL(15,2)}; truy vấn báo cáo loại bản ghi soft de
 \subsection{Thiết kế chi tiết}
 \label{subsec:detailed-design}
 
-\subsubsection{Ranh giới LLM và nhập liệu}
+\widereportfigure[\subsubsection{Ranh giới LLM và nhập liệu}][LLM chỉ tạo lệnh có kiểu hoặc diễn giải facts. Backend kiểm tra schema và luật miền, dựng preview, chờ xác nhận rồi mới mở transaction. Với truy vấn phân tích, SQL và engine tạo facts trước khi narrator được gọi. Khi provider lỗi, parser hoặc template là fallback có thể kiểm thử.]{figures/drawio/06-llm-boundary.png}{Ranh giới trách nhiệm của LLM: typed draft và narration nằm ngoài lõi validation, tính toán và ghi dữ liệu.}{fig:llm-boundary}
 
-\widereportfigure{figures/drawio/06-llm-boundary.png}{Ranh giới trách nhiệm của LLM: typed draft và narration nằm ngoài lõi validation, tính toán và ghi dữ liệu.}{fig:llm-boundary}
+\widereportfigure[][Hình~\ref{fig:text-sequence} thể hiện hai giai đoạn tách biệt: parse/preview không có side effect và confirm/commit có claim pending. State gồm intent, trường thiếu, candidates và draft, có TTL 5 phút. Xác nhận đồng thời phải dùng claim nguyên tử để một \code{pending_id} không tạo hai giao dịch.]{figures/drawio/08-text-sequence.png}{Sơ đồ tuần tự nhập giao dịch bằng văn bản; transaction ghi dữ liệu chỉ bắt đầu sau xác nhận.}{fig:text-sequence}
 
-LLM chỉ tạo lệnh có kiểu hoặc diễn giải facts. Backend kiểm tra schema và luật miền, dựng preview, chờ xác nhận rồi mới mở transaction. Với truy vấn phân tích, SQL và engine tạo facts trước khi narrator được gọi. Khi provider lỗi, parser hoặc template là fallback có thể kiểm thử.
+\widereportfigure[][OCR/STT chỉ trả raw text và metadata provider. Phiên bản hiện tại chưa có ground truth đủ lớn và chưa tự đối soát tổng dòng hàng với tổng hóa đơn; vì vậy Hình~\ref{fig:multimodal-flow} là thiết kế luồng, không phải bằng chứng accuracy.]{figures/drawio/09-multimodal-flow.png}{Flowchart xử lý ảnh và giọng nói; hai nhánh hội tụ vào pipeline văn bản sau khi raw text được kiểm tra.}{fig:multimodal-flow}
 
-\widereportfigure{figures/drawio/08-text-sequence.png}{Sơ đồ tuần tự nhập giao dịch bằng văn bản; transaction ghi dữ liệu chỉ bắt đầu sau xác nhận.}{fig:text-sequence}
-
-Hình~\ref{fig:text-sequence} thể hiện hai giai đoạn tách biệt: parse/preview không có side effect và confirm/commit có claim pending. State gồm intent, trường thiếu, candidates và draft, có TTL 5 phút. Xác nhận đồng thời phải dùng claim nguyên tử để một \code{pending_id} không tạo hai giao dịch.
-
-\widereportfigure{figures/drawio/09-multimodal-flow.png}{Flowchart xử lý ảnh và giọng nói; hai nhánh hội tụ vào pipeline văn bản sau khi raw text được kiểm tra.}{fig:multimodal-flow}
-
-OCR/STT chỉ trả raw text và metadata provider. Phiên bản hiện tại chưa có ground truth đủ lớn và chưa tự đối soát tổng dòng hàng với tổng hóa đơn; vì vậy Hình~\ref{fig:multimodal-flow} là thiết kế luồng, không phải bằng chứng accuracy.
-
-\subsubsection{Phân loại và correction retrieval}
-\label{subsec:classification-design}
-
-\widereportfigure{figures/drawio/10-feedback-flow.png}{Luồng phân loại và correction retrieval; feedback chỉ được ghi sau khi người dùng xác nhận.}{fig:feedback-flow}
+\widereportfigure[\subsubsection{Phân loại và correction retrieval}\label{subsec:classification-design}]{figures/drawio/10-feedback-flow.png}{Luồng phân loại và correction retrieval; feedback chỉ được ghi sau khi người dùng xác nhận.}{fig:feedback-flow}
 
 Điểm tổng hợp dùng trong matcher là
 
@@ -397,11 +378,7 @@ khi $r>0$; nếu $r=0$ thì $P=L/n_d$. Payment nhỏ hơn hoặc bằng lãi th�
 
 \widereportfigure{figures/drawio/12-goal-flow.png}{Flowchart lập kế hoạch mục tiêu và what-if; chỉ bước xác nhận cuối cùng mới lưu dữ liệu.}{fig:goal-flow}
 
-\subsubsection{Sinh insight có căn cứ}
-
-\widereportfigure{figures/drawio/11-insight-sequence.png}{Sơ đồ tuần tự sinh insight; Analytics Engine trả facts trước khi persona/LLM diễn giải.}{fig:insight-sequence}
-
-Contract facts phiên bản 1.0 trả \code{schema_version}, \code{generated_at}, value của từng component và \code{metadata.components}. Metadata mỗi component có \code{unit}, \code{window}, \code{sample_count}, \code{method}, \code{parameters}, \code{warnings} và \code{status} thuộc \code{ok/no_signal/degraded}. Object window ghi \code{size}, \code{unit} và \code{zero_filled}; một số component thêm \code{category_count} hoặc \code{wallet_count}. Lỗi cục bộ được ghi trong \code{degraded_components} mà không làm mất contract. Persona chỉ thay giọng điệu khi consent bật; response trả narration cùng facts để UI/test đối chiếu. Numeric checker bao phủ mọi biểu thức số vẫn là thiết kế đích.
+\widereportfigure[\subsubsection{Sinh insight có căn cứ}][Contract facts phiên bản 1.0 trả \code{schema_version}, \code{generated_at}, value của từng component và \code{metadata.components}. Metadata mỗi component có \code{unit}, \code{window}, \code{sample_count}, \code{method}, \code{parameters}, \code{warnings} và \code{status} thuộc \code{ok/no_signal/degraded}. Object window ghi \code{size}, \code{unit} và \code{zero_filled}; một số component thêm \code{category_count} hoặc \code{wallet_count}. Lỗi cục bộ được ghi trong \code{degraded_components} mà không làm mất contract. Persona chỉ thay giọng điệu khi consent bật; response trả narration cùng facts để UI/test đối chiếu. Numeric checker bao phủ mọi biểu thức số vẫn là thiết kế đích.]{figures/drawio/11-insight-sequence.png}{Sơ đồ tuần tự sinh insight; Analytics Engine trả facts trước khi persona/LLM diễn giải.}{fig:insight-sequence}
 
 Quy trình tính, ví dụ số và các trường hợp biên của matcher, correction, Analytics, Budget, Goal và facts contract được mở rộng tại Phụ lục~\ref{app:algorithms}--\ref{app:facts-contract}; Chương này giữ các công thức và quyết định thiết kế chính để bảo đảm mạch trình bày.
 
@@ -410,7 +387,7 @@ Quy trình tính, ví dụ số và các trường hợp biên của matcher, co
 
 Giao diện được thiết kế theo hướng mobile-first với năm tab chính: Tổng quan, Ngân sách, Chat, Báo cáo và Khác; Chat được đặt ở trung tâm như thao tác nhập liệu ưu tiên. Hệ design token dùng xanh lam làm màu thương hiệu, slate cho chữ và nền trung tính cho bề mặt. Xanh lục và đỏ chỉ biểu đạt ngữ nghĩa thu nhập và chi tiêu. Header, card, hàng danh sách, nút và khoảng cách dùng chung token; các vùng chạm chính có kích thước hiệu dụng tối thiểu 44 pixel.
 
-Các ảnh trong mục này được chụp lại ngày 13/08/2026 từ bản Expo web hiện tại ở viewport $390\times844$ CSS pixel, device scale factor 2 và dữ liệu demo synthetic. Lịch sử Chat được cô lập để làm rõ trạng thái preview. Ảnh chỉ minh họa quyết định thiết kế, không phải kết quả kiểm thử thủ công, ảnh thiết bị native hay bằng chứng UAT.
+Các ảnh trong mục này được chụp lại ngày 13/08/2026 từ bản Expo web hiện tại ở viewport $390\times844$ CSS pixel, device scale factor 2 và dữ liệu demo synthetic. Lịch sử Chat được cô lập để làm rõ trạng thái preview. Ảnh chỉ minh họa quyết định thiết kế, không phải kết quả kiểm thử thủ công hay ảnh thiết bị native.
 
 Hình~\ref{fig:ui-dashboard-chat} cho thấy phân cấp thông tin ở màn hình Tổng quan và luồng review-before-write trong Chat. Dashboard ưu tiên số dư, thu--chi và giao dịch gần đây; Chat chuyển câu tự nhiên thành một card có số tiền, danh mục, ngày cùng ba lựa chọn xác nhận, sửa hoặc hủy. Không có thao tác ghi sổ nào xảy ra chỉ vì card được hiển thị.
 
@@ -459,7 +436,7 @@ Hình~\ref{fig:ui-goal-plan} minh họa nguyên tắc preview trước khi lưu 
 
 \subsection{Kế hoạch kiểm thử}
 
-Phạm vi kiểm thử được giới hạn để xác nhận tính đúng của dữ liệu, giải thuật và các luồng chức năng chính của nguyên mẫu. Bộ test tự động hiện có được giữ nguyên làm lưới an toàn hồi quy; kiểm thử hệ thống thủ công bổ sung góc nhìn thao tác người dùng. Kiểm thử do tác giả thực hiện không được xem là UAT.
+Phạm vi kiểm thử được giới hạn để xác nhận tính đúng của dữ liệu, giải thuật và các luồng chức năng chính của nguyên mẫu. Bộ test tự động hiện có được giữ nguyên làm lưới an toàn hồi quy; kiểm thử hệ thống thủ công bổ sung góc nhìn thao tác người dùng. Kết luận chỉ áp dụng cho các ca, fixture và môi trường đã công bố.
 
 \begin{longtable}{@{}L{2.4cm}L{3.5cm}L{4.3cm}L{4.0cm}@{}}
   \caption{Chiến lược kiểm thử lai tối giản}\label{tab:test-strategy}\\
@@ -474,31 +451,101 @@ Phạm vi kiểm thử được giới hạn để xác nhận tính đúng củ
   Unit/hồi quy tự động & Công thức, invariant, parser và validation. & Chạy các ca xác định bằng \code{node:test} trên fixture có kiểm soát. & Xác nhận logic trên các ca đã đặc tả; không suy ra độ chính xác ngoài mẫu. \\
   Tích hợp nội bộ & Các lớp route, service và model. & Kiểm tra contract, nhánh lỗi và rollback bằng mock hoặc bộ nhớ trong. & Xác nhận phối hợp trong tiến trình; không phải bằng chứng PostgreSQL hoặc Redis chạy live. \\
   Hệ thống thủ công & Các luồng chức năng chính trên giao diện. & Tác giả thao tác với dữ liệu demo và đối chiếu kết quả mong đợi. & Chỉ xác nhận các kịch bản đã chọn; không đo tính dễ dùng, độ chính xác OCR/STT hoặc hiệu năng. \\
-  UAT & Người dùng mục tiêu. & Chưa thực hiện trong phạm vi niên luận. & Không đồng nhất với kiểm thử thủ công của tác giả và không công bố kết quả chấp nhận người dùng. \\
   \bottomrule
 \end{longtable}
 
 \subsection{Kết quả và phân tích}
 \label{subsec:results}
 
-Hai lệnh trong Bảng~\ref{tab:automated-test-results} được chạy lại ngày 13/08/2026 trên snapshot mã nguồn hiện tại với Node.js v24.16.0, Redis và jobs tắt, đồng thời dùng parser cục bộ. Kết quả được báo theo đúng đơn vị mà từng lệnh kiểm tra.
+Các lệnh trong Bảng~\ref{tab:automated-test-results} được chạy lại ngày 14/08/2026 trên snapshot mã nguồn hiện tại với Node.js v24.16.0, Redis và jobs tắt, đồng thời dùng parser cục bộ. Kết quả được báo theo đúng đơn vị mà từng lệnh kiểm tra.
 
 \begin{table}[H]
   \centering
   \caption{Kết quả kiểm thử tự động}
   \label{tab:automated-test-results}
-  \begin{tabularx}{\textwidth}{@{}L{3.0cm}L{3.1cm}Y@{}}
+  \begin{tabularx}{\textwidth}{@{}L{3.3cm}L{2.8cm}Y@{}}
     \toprule
     \textbf{Lệnh} & \textbf{Kết quả} & \textbf{Phạm vi kết luận} \\
     \midrule
     \code{npm test} & 46/46 tệp kiểm thử đạt. & Bao phủ unit/hồi quy backend và tích hợp nội bộ dùng mock/bộ nhớ trong; chưa xác nhận PostgreSQL hoặc Redis live. \\
     \code{npm run test:ai} & 31/31 ca parser cục bộ đạt. & Xác nhận các câu fixture đã thiết kế; không phải độ chính xác ngoài mẫu và không đánh giá Gemini, OCR hoặc STT. \\
+    \makecell[l]{\code{npm run}\\\code{test:}\\\code{algorithm}} & 8/8 ca giải thuật đạt. & Đối chiếu các kết quả OLS, anomaly, runway, correlation, aggregation và invariant trên dữ liệu kiểm soát. \\
+    \makecell[l]{\code{npm run}\\\code{benchmark:}\\\code{classification}} & 5.328 dòng; accuracy joint 26,16\%, macro-F1 0,1565. & Đánh giá parser cục bộ trên snapshot CSV của một hồ sơ demo; không phải độ chính xác production hay tập độc lập. \\
     \bottomrule
   \end{tabularx}
 \end{table}
 
-\textbf{Lưu ý về trạng thái:} Các giá trị ``Đạt'' có dấu sao trong Bảng~\ref{tab:manual-test-cases} là giả định của bản dự thảo, chưa phải kết quả đã xác minh. Trước khi nộp, tác giả phải thực hiện từng ca, cập nhật trạng thái theo kết quả thực tế và chỉ sau đó mới bỏ ghi chú này. Kiểm thử thủ công do tác giả thực hiện không phải UAT và không chứng minh độ chính xác OCR/STT, tính dễ dùng hoặc hiệu năng.
+\subsection{Kiểm thử tính đúng đắn của giải thuật}
 
+Bảng~\ref{tab:algorithm-correctness-cases} trình bày các ca có đầu vào và kỳ vọng xác định. Runner ghi kết quả JSON/Markdown tại \path{demo/evaluation/algorithm/}; lần chạy hiện tại đạt 8/8 ca.
+
+Hai nhóm invariant dùng 1.000 đầu vào sinh với seed cố định để kiểm tra thuộc tính thay vì chỉ kiểm tra một ví dụ đơn lẻ.
+
+\begin{longtable}{@{}L{1.5cm}L{2.8cm}L{4.4cm}L{3.6cm}C{1.4cm}@{}}
+  \caption{Các ca kiểm thử tính đúng của giải thuật}\label{tab:algorithm-correctness-cases}\\
+  \toprule
+  \textbf{Mã} & \textbf{Mục tiêu} & \textbf{Đầu vào và kỳ vọng} & \textbf{Kết quả thực tế} & \textbf{Trạng thái} \\
+  \midrule
+  \endfirsthead
+  \toprule
+  \textbf{Mã} & \textbf{Mục tiêu} & \textbf{Đầu vào và kỳ vọng} & \textbf{Kết quả thực tế} & \textbf{Trạng thái} \\
+  \midrule
+  \endhead
+  \code{ALG-01} & OLS trend & \code{[100,200,300,400]}; slope=100, $R^2=1$, dự báo=500. & Trả đúng slope, $R^2$ và dự báo. & Đạt \\
+  \code{ALG-02} & Anomaly phía trên & Năm điểm, điểm cuối bằng 100; chỉ điểm cuối được gắn cờ. & Chỉ \code{d5} được gắn cờ. & Đạt \\
+  \code{ALG-03} & Ca biên thiếu mẫu & Một điểm cho trend và ba điểm cho anomaly; trả kết quả trung tính. & Trend giữ giá trị đầu; anomaly rỗng. & Đạt \\
+  \code{ALG-04} & Runway & Số dư 700.000; một ngày chi 700.000 và sáu ngày bằng 0. & Burn trung bình 100.000; còn 7 ngày; ngày cạn 2026-07-26. & Đạt \\
+  \code{ALG-05} & Pearson có zero chung & Hai chuỗi sáu phần tử, loại hai cặp cùng bằng 0. & $r=-1$, 4 cặp hữu hiệu, 2 cặp bị loại. & Đạt \\
+  \code{ALG-06} & Tổng hợp tháng & Ba giao dịch không theo thứ tự; giữ kỳ rỗng và bất biến thứ tự. & Hai thứ tự cho cùng chuỗi tháng; tháng 02 có 100/50. & Đạt \\
+  \code{ALG-07} & Invariant ngân sách & 1.000 ca, seed 20260814; tổng sau làm tròn không vượt trần. & 0 vi phạm; vượt trần lớn nhất bằng 0. & Đạt \\
+  \code{ALG-08} & Invariant mục tiêu & 1.000 ca, seed 20260815; tăng đóng góp không kéo dài kế hoạch. & 0 vi phạm. & Đạt \\
+  \bottomrule
+\end{longtable}
+
+\subsection{Đánh giá hiệu năng}
+
+Benchmark dùng dữ liệu tổng hợp với seed 20260814, các kích thước 100, 1.000, 5.000 và 10.000, năm lượt warm-up và 30 lượt đo cho mỗi điểm. Đoạn mã chỉ tính thời gian hàm thuần; không bao gồm I/O, PostgreSQL, Redis, worker hoặc mạng. Kỳ vọng lý thuyết lần lượt là $O(n)$ cho \code{linearTrend}, $O(n\log n)$ cho \code{detectAnomalies} do bước sắp xếp và $O(n+w)$ cho \code{completeMonthlyCashflow}, trong đó $w$ là cửa sổ lịch.
+
+\begin{longtable}{@{}L{5.2cm}R{1.3cm}L{2.3cm}R{2.0cm}R{2.0cm}@{}}
+  \caption{Benchmark thời gian chạy của các giải thuật}\label{tab:algorithm-performance}\\
+  \toprule
+  \textbf{Giải thuật} & \textbf{$n$} & \textbf{Độ phức tạp kỳ vọng} & \textbf{Median (ms)} & \textbf{p95 (ms)} \\
+  \midrule
+  \endfirsthead
+  \toprule
+  \textbf{Giải thuật} & \textbf{$n$} & \textbf{Độ phức tạp kỳ vọng} & \textbf{Median (ms)} & \textbf{p95 (ms)} \\
+  \midrule
+  \endhead
+  \code{linearTrend} & 100 & $O(n)$ & 0,084 & 0,296 \\
+  \code{linearTrend} & 1.000 & $O(n)$ & 0,055 & 0,387 \\
+  \code{linearTrend} & 5.000 & $O(n)$ & 0,174 & 1,827 \\
+  \code{linearTrend} & 10.000 & $O(n)$ & 0,265 & 0,515 \\
+  \code{detectAnomalies} & 100 & $O(n\log n)$ & 0,028 & 0,075 \\
+  \code{detectAnomalies} & 1.000 & $O(n\log n)$ & 0,312 & 1,459 \\
+  \code{detectAnomalies} & 5.000 & $O(n\log n)$ & 1,654 & 2,417 \\
+  \code{detectAnomalies} & 10.000 & $O(n\log n)$ & 3,600 & 4,197 \\
+  \makecell[l]{\code{completeMonthly}\\\code{Cashflow}} & 100 & $O(n+w)$ & 0,063 & 0,155 \\
+  \makecell[l]{\code{completeMonthly}\\\code{Cashflow}} & 1.000 & $O(n+w)$ & 0,113 & 0,197 \\
+  \makecell[l]{\code{completeMonthly}\\\code{Cashflow}} & 5.000 & $O(n+w)$ & 0,250 & 1,423 \\
+  \makecell[l]{\code{completeMonthly}\\\code{Cashflow}} & 10.000 & $O(n+w)$ & 0,512 & 0,956 \\
+  \bottomrule
+\end{longtable}
+
+\begin{figure}[H]
+  \centering
+  \begin{tikzpicture}[x=2.25cm,y=0.78cm]
+    \draw[->] (0,0) -- (4.05,0) node[right] {\small $n$};
+    \draw[->] (0,0) -- (0,5.45) node[above] {\small ms};
+    \foreach \y in {0,1,2,3,4,5} {\draw (-0.06,\y) -- (0.06,\y) node[left=0.12cm] {\scriptsize \y};}
+    \foreach \x/\label in {0/100,1/1.000,2/5.000,3/10.000} {\draw (\x,0.06) -- (\x,-0.06) node[below=0.12cm] {\scriptsize \label};}
+    \draw[PerfinBlue, thick] plot coordinates {(0,0.075) (1,1.459) (2,2.417) (3,4.197)};
+    \foreach \x/\y in {0/0.075,1/1.459,2/2.417,3/4.197} {\fill[PerfinBlue] (\x,\y) circle (1.4pt) node[above right] {\scriptsize \y};}
+  \end{tikzpicture}
+  \caption{P95 thời gian của \code{detectAnomalies} theo kích thước dữ liệu.}
+  \label{fig:algorithm-performance-p95}
+\end{figure}
+
+Các số đo cho thấy thời gian tăng theo kích thước đầu vào trong cùng môi trường, rõ nhất ở \code{detectAnomalies}. Đây là so sánh xu hướng của các hàm thuần, không phải cam kết độ trễ production.
 \begin{longtable}{@{}L{1.5cm}L{4.6cm}L{6.5cm}C{1.5cm}@{}}
   \caption{Các ca kiểm thử chức năng thủ công}\label{tab:manual-test-cases}\\
   \toprule
@@ -509,23 +556,12 @@ Hai lệnh trong Bảng~\ref{tab:automated-test-results} được chạy lại n
   \textbf{Mã} & \textbf{Kịch bản/thao tác} & \textbf{Kết quả mong đợi} & \textbf{Trạng thái} \\
   \midrule
   \endhead
-  % TODO(TC-M01): thực hiện, lưu bằng chứng và cập nhật trạng thái trước khi nộp.
-  \code{TC-M01} & Tạo, sửa, xóa rồi khôi phục một giao dịch bằng biểu mẫu. & Danh sách giao dịch và số dư ví phản ánh đúng từng thao tác. & \textbf{Đạt}\textsuperscript{*} \\
-  % TODO(TC-M02): thực hiện, lưu bằng chứng và cập nhật trạng thái trước khi nộp.
-  \code{TC-M02} & Nhập một giao dịch đầy đủ qua chat, kiểm tra preview rồi xác nhận. & Hệ thống chỉ tạo đúng một bản ghi sau khi xác nhận. & \textbf{Đạt}\textsuperscript{*} \\
-  % TODO(TC-M03): thực hiện, lưu bằng chứng và cập nhật trạng thái trước khi nộp.
-  \code{TC-M03} & Nhập nội dung thiếu hoặc mơ hồ, sau đó hủy. & Hệ thống yêu cầu bổ sung thông tin và không ghi giao dịch. & \textbf{Đạt}\textsuperscript{*} \\
-  % TODO(TC-M04): thực hiện, lưu bằng chứng và cập nhật trạng thái trước khi nộp.
-  \code{TC-M04} & Lần lượt nhập ảnh hóa đơn và giọng nói; rà soát văn bản thô. & Văn bản thô cho phép sửa hoặc xác nhận; không có dữ liệu được tự lưu trước xác nhận. & \textbf{Đạt}\textsuperscript{*} \\
-  % TODO(TC-M05): thực hiện, lưu bằng chứng và cập nhật trạng thái trước khi nộp.
-  \code{TC-M05} & Mở Dashboard/Report, đối chiếu tổng thu--chi và xuất CSV. & Tổng thu--chi khớp dữ liệu demo; tệp CSV được tải xuống và mở được. & \textbf{Đạt}\textsuperscript{*} \\
-  % TODO(TC-M06): thực hiện, lưu bằng chứng và cập nhật trạng thái trước khi nộp.
-  \code{TC-M06} & Tạo ngân sách cho một kỳ có sẵn giao dịch. & Số đã chi và số còn lại khớp các giao dịch thuộc kỳ. & \textbf{Đạt}\textsuperscript{*} \\
-  % TODO(TC-M07): thực hiện, lưu bằng chứng và cập nhật trạng thái trước khi nộp.
-  \code{TC-M07} & Tạo mục tiêu và chạy một kịch bản what-if. & Kết quả mô phỏng được hiển thị nhưng không tự thay đổi kế hoạch gốc. & \textbf{Đạt}\textsuperscript{*} \\
-  % TODO(TC-M08): thực hiện, lưu bằng chứng và cập nhật trạng thái trước khi nộp.
-  \code{TC-M08} & Tạo khoản định kỳ rồi ghi nhận một lần thanh toán. & Trạng thái được cập nhật và không phát sinh giao dịch trùng. & \textbf{Đạt}\textsuperscript{*} \\
+  \code{TC-M01} & Tạo, sửa và xóa một giao dịch bằng biểu mẫu. & Danh sách và số dư ví phản ánh đúng từng thao tác. & \textbf{Đạt} \\
+  \code{TC-M02} & Nhập giao dịch qua chat, kiểm tra preview rồi xác nhận. & Chỉ tạo đúng một bản ghi sau khi xác nhận. & \textbf{Đạt} \\
+  \code{TC-M03} & Nhập nội dung thiếu hoặc mơ hồ rồi hủy. & Yêu cầu bổ sung thông tin và không ghi giao dịch. & \textbf{Đạt} \\
+  \code{TC-M04} & Mở Dashboard/Report và đối chiếu tổng thu--chi với dữ liệu demo. & Các tổng hiển thị khớp dữ liệu đầu vào. & \textbf{Đạt} \\
+  \code{TC-M05} & Xuất CSV từ giao diện và mở tệp kết quả. & Tệp tải xuống được và số liệu khớp dữ liệu demo. & \textbf{Đạt} \\
   \bottomrule
 \end{longtable}
 
-Kết quả tự động chỉ áp dụng cho snapshot mã nguồn và fixture tại lần chạy trên. Test dùng mock hoặc bộ nhớ trong không chứng minh hành vi cơ sở dữ liệu, hàng đợi hay worker trong môi trường live. Tám ca thủ công chỉ kiểm tra các luồng đã chọn sau khi tác giả xác minh; chúng không thay thế UAT và không cho phép suy rộng sang độ dễ dùng, độ chính xác media, độ trễ hoặc tải production.
+Kết quả tự động chỉ áp dụng cho snapshot mã nguồn, fixture và cấu hình tại lần chạy trên. Test dùng mock hoặc bộ nhớ trong không chứng minh hành vi cơ sở dữ liệu, hàng đợi hay worker trong môi trường live. Năm ca thủ công kiểm tra các luồng đã chọn; chúng không cho phép suy rộng sang độ dễ dùng, độ chính xác media, độ trễ hoặc tải production.

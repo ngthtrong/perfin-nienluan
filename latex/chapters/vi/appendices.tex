@@ -404,16 +404,19 @@ Luồng bảo vệ số liệu là: SQL/Model truy vấn dữ liệu chuẩn, An
 
 \chapter{Lệnh tái lập kiểm thử}
 
-Hai lệnh kiểm thử tự động được chạy từ thư mục backend với Redis/jobs tắt và parser cục bộ. Người thực hiện cần ghi commit, Node version và thời điểm chạy; không ghi secret vào artifact.
+Các lệnh đánh giá được chạy từ thư mục backend với Redis/jobs tắt và parser cục bộ. Người thực hiện cần ghi commit, Node version, môi trường và thời điểm chạy; không ghi secret vào artifact.
 
 \begin{verbatim}
 cd demo/backend
 export REDIS_ENABLED=false JOBS_ENABLED=false AI_PROVIDER=local
 npm test
 npm run test:ai
+npm run test:algorithm
+npm run benchmark:algorithms
+npm run benchmark:classification
 \end{verbatim}
 
-Kết quả hiện tại được tóm tắt tại Mục~\ref{sec:testing}. Các lệnh này không gọi PostgreSQL/Redis live, Gemini, OCR hoặc STT nên không được dùng làm bằng chứng cho các dịch vụ đó.
+Kết quả hiện tại được tóm tắt tại Mục~\ref{sec:testing} và lưu tại \path{demo/evaluation/algorithm/}. Các runner này không gọi PostgreSQL/Redis live, Gemini, OCR hoặc STT nên không được dùng làm bằng chứng cho các dịch vụ đó.
 
 \chapter{Nguồn sơ đồ}
 
@@ -432,7 +435,7 @@ Báo cáo giữ 14 nguồn Draw.io, trong đó chỉ một use case tổng thể
   2 & Kiến trúc vận hành & \path{02-runtime-architecture} \\
   3 & Triển khai nguyên mẫu & \path{03-deployment} \\
   4 & Class Diagram miền & \path{04-domain-class} \\
-  5 & ERD vật lý & \path{05-physical-erd} \\
+  5 & ERD logic & \path{05-logical-erd} \\
   6 & Ranh giới LLM & \path{06-llm-boundary} \\
   7 & Trạng thái hội thoại & \path{07-conversation-state} \\
   8 & Nhập giao dịch text & \path{08-text-sequence} \\

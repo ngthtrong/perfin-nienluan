@@ -15,9 +15,7 @@ PERFIN giải quyết bài toán theo nguyên tắc: PostgreSQL và các hàm x�
   \item LLM nên tham gia ở đâu để tăng tính tự nhiên mà không chiếm quyền tính toán hoặc tự ý thay đổi dữ liệu?
 \end{enumerate}
 
-\widereportfigure{figures/drawio/01-system-context.png}{Ngữ cảnh và phạm vi của PERFIN; các dịch vụ LLM, OCR và STT nằm ngoài biên tin cậy dữ liệu.}{fig:system-context}
-
-Hình~\ref{fig:system-context} cho thấy phạm vi niên luận là thu nhận, tổ chức và phân tích dữ liệu tài chính cá nhân. Kết nối ngân hàng, ví dùng chung, xác thực production và hạ tầng sẵn sàng cao không thuộc phạm vi thực hiện.
+\widereportfigure[][Hình~\ref{fig:system-context} cho thấy phạm vi niên luận là thu nhận, tổ chức và phân tích dữ liệu tài chính cá nhân. Kết nối ngân hàng, ví dùng chung, xác thực production và hạ tầng sẵn sàng cao không thuộc phạm vi thực hiện.]{figures/drawio/01-system-context.png}{Ngữ cảnh và phạm vi của PERFIN; các dịch vụ LLM, OCR và STT nằm ngoài biên tin cậy dữ liệu.}{fig:system-context}
 
 \section{Mục tiêu}
 
@@ -35,7 +33,7 @@ Mục tiêu tổng quát là hoàn thành trong 13 tuần một nguyên mẫu qu
     O2 & Xây dựng pipeline trích xuất văn bản, ảnh và giọng nói có hỏi lại, xem trước và xác nhận. & Không ghi cơ sở dữ liệu khi thiếu trường; lưu được nguồn và dữ liệu trung gian. & Tuần 8 \\
     O3 & Hiện thực các giải thuật trend, anomaly, runway, recurring, correlation, ngân sách và mục tiêu. & Ca thường, ca biên và bất biến được đối chiếu với kết quả tính tay. & Tuần 9 \\
     O4 & Giới hạn LLM ở hiểu ý định, gọi công cụ và diễn giải facts. & Tool schema, validation, fallback và bước xác nhận tách khỏi quyền ghi dữ liệu. & Tuần 10 \\
-    O5 & Đánh giá nguyên mẫu bằng chiến lược kiểm thử lai tối giản. & Dùng test tự động cho lõi dữ liệu--giải thuật và ca chức năng thủ công cho luồng chính; nêu rõ ranh giới mock/live và UAT. & Tuần 13 \\
+    O5 & Đánh giá nguyên mẫu bằng chiến lược kiểm thử lai tối giản. & Dùng test tự động cho lõi dữ liệu--giải thuật và ca chức năng thủ công cho luồng chính; nêu rõ ranh giới mock/live. & Tuần 13 \\
     \bottomrule
   \end{tabularx}
 \end{table}
@@ -50,7 +48,7 @@ Các tiêu chí trong Bảng~\ref{tab:objectives} là điều kiện nghiệm th
   \item \textbf{Nghiên cứu tài liệu:} tổng hợp lý thuyết về dữ liệu quan hệ, độ tương đồng văn bản, thống kê giải thích được, OCR, STT và function calling; từ đó xác định ranh giới phù hợp cho LLM.
   \item \textbf{Phân tích yêu cầu và hệ thống:} khảo sát quy trình nhập--xác nhận--phân tích, mô hình hóa tác nhân, dữ liệu, ràng buộc và các tình huống lỗi có thể làm sai sổ cái.
   \item \textbf{Thiết kế và tạo nguyên mẫu:} phát triển theo vòng lặp ngắn; mỗi module được tách route--service--model, còn công thức được hiện thực bằng hàm xác định để có thể kiểm thử độc lập.
-  \item \textbf{Kiểm thử:} dùng unit/hồi quy trên fixture có kiểm soát, kiểm tra tích hợp nội bộ bằng mock hoặc bộ nhớ trong, và các kịch bản chức năng thủ công do tác giả thực hiện. Kết quả được giới hạn đúng phạm vi, không đồng nhất kiểm thử thủ công với UAT hay độ chính xác OCR/STT.
+  \item \textbf{Kiểm thử:} dùng unit/hồi quy trên fixture có kiểm soát, kiểm tra tích hợp nội bộ bằng mock hoặc bộ nhớ trong, và các kịch bản chức năng thủ công do tác giả thực hiện. Kết quả được giới hạn đúng phạm vi, không suy rộng kiểm thử thủ công thành tính dễ dùng hoặc độ chính xác OCR/STT.
 \end{enumerate}
 
 \section{Kế hoạch thực hiện}

@@ -66,7 +66,7 @@ Write a concise summary (150–200 words) that includes:
 #### 2.4 List of Tables and List of Figures
 
 - Include a **List of Tables** and a **List of Figures**.
--  (`số theo chương (Hình 1.1, Hình 3.1…`)).
+- (`số theo chương (Hình 1.1, Hình 3.1…`)).
 
 #### 2.5 List of Abbreviations
 
@@ -175,7 +175,7 @@ Giải thích cách thức miền thông tin của hệ thống được chuyể
 
 Liệt kê theo thứ tự bảng chữ cái các thực thể hoặc dữ liệu chính của hệ thống, cùng với kiểu và phần mô tả.
 
-Nên sử dụng một sơ đồ **Class Diagram** đúng chuẩn UML để trình bày phần này.
+Nên sử dụng một sơ đồ **Class Diagram** đúng chuẩn UML để trình bày phần này có thể định kèm .
 
 ###### 3.2.3 Detailed Design
 
@@ -191,7 +191,7 @@ Explain how you ensured the project works as intended.
 
 ###### 3.3.1 Test Plan
 
-- Detail the testing strategy, including test types (unit, integration, system, and user acceptance testing, manual,..), tools used for testing (if any), and test cases.
+- Detail the testing strategy, including automated unit/regression, integration, system and manual test types, tools used for testing (if any), and test cases.
 
 ###### 3.3.2 Results and Analysis
 

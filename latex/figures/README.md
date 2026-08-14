@@ -16,7 +16,8 @@ Hướng dẫn tự render PDF, PNG, SVG và biên dịch lại hai phiên bản
 | `02-runtime-architecture` | Kiến trúc runtime dạng modular monolith | Hệ thống |
 | `03-deployment` | Triển khai demo/thực nghiệm | Hệ thống |
 | `04-domain-class` | Lớp miền nghiệp vụ | Thiết kế |
-| `05-physical-erd` | 18 bảng vật lý từ migrations 001--009 | Dữ liệu |
+| `05-logical-erd` | ERD logic đầy đủ theo schema, dùng trong bản tiếng Việt | Dữ liệu |
+| `05-conceptual-erd` | 12 thực thể cốt lõi và cardinality ở mức khái niệm | Dữ liệu |
 | `06-llm-boundary` | Ranh giới LLM, giải thuật và side effect | Thiết kế trọng tâm |
 | `07-conversation-state` | Trạng thái clarification/preview/confirm/TTL | Luồng |
 | `08-text-sequence` | Nhập giao dịch bằng văn bản | Tuần tự |

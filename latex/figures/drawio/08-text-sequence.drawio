@@ -1,119 +1,124 @@
-<?xml version='1.0' encoding='utf-8'?>
-<mxfile>
-  <diagram id="seqlayout" name="Text Transaction Entry">
-    <mxGraphModel dx="2136" dy="1632" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="2670" pageHeight="2040" math="0" shadow="0" reportStyled="1">
-      <root>
-        <mxCell id="0" />
-        <mxCell id="1" parent="0" />
-        <mxCell id="report-title" value="Text Transaction Entry Sequence" style="text;html=1;align=left;verticalAlign=middle;fontSize=24;fontStyle=1;fontColor=#22303F;" vertex="1" parent="1"><mxGeometry x="68" y="24.5" width="2516" height="49" as="geometry" /></mxCell><mxCell id="report-subtitle" value="The LLM only proposes a typed candidate; the database transaction starts after user confirmation." style="text;html=1;align=left;verticalAlign=middle;fontSize=24;fontColor=#5A6A78;whiteSpace=wrap;" vertex="1" parent="1"><mxGeometry x="68" y="77" width="2516" height="52.5" as="geometry" /></mxCell><mxCell id="user" value="&lt;b&gt;User&lt;/b&gt;" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;participant=umlActor;verticalAlign=bottom;spacingBottom=-14;labelBackgroundColor=#ffffff;fillColor=#EEF2F7;strokeColor=#5B7290;fontColor=#22303F;fontSize=24;strokeWidth=1.2;size=48;" vertex="1" parent="1">
-          <mxGeometry x="68" y="166.25" width="170" height="1666" as="geometry" />
-        </mxCell>
-        <mxCell id="app" value="&lt;b&gt;Mobile App&lt;/b&gt;" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;fillColor=#EEF2F7;strokeColor=#5B7290;fontColor=#22303F;fontSize=24;strokeWidth=1.2;size=48;" vertex="1" parent="1">
-          <mxGeometry x="459" y="166.25" width="170" height="1666" as="geometry" />
-        </mxCell>
-        <mxCell id="route" value="&lt;b&gt;Chat Route&lt;/b&gt;" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;fillColor=#EEF2F7;strokeColor=#5B7290;fontColor=#22303F;fontSize=24;strokeWidth=1.2;size=48;" vertex="1" parent="1">
-          <mxGeometry x="850" y="166.25" width="170" height="1666" as="geometry" />
-        </mxCell>
-        <mxCell id="ai" value="&lt;b&gt;AI Orchestrator&lt;/b&gt;" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;fillColor=#F0EAF9;strokeColor=#7C5CBF;fontColor=#3A2A5F;fontSize=24;strokeWidth=1.2;size=48;" vertex="1" parent="1">
-          <mxGeometry x="1241" y="166.25" width="231.2" height="1666" as="geometry" />
-        </mxCell>
-        <mxCell id="provider" value="&lt;b&gt;Gemini / Local Parser&lt;/b&gt;" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;fillColor=#F0EAF9;strokeColor=#7C5CBF;fontColor=#3A2A5F;fontSize=24;strokeWidth=1.2;size=48;dashed=1;" vertex="1" parent="1">
-          <mxGeometry x="1632" y="166.25" width="306.08" height="1666" as="geometry" />
-        </mxCell>
-        <mxCell id="pending" value="&lt;b&gt;Pending KV Store&lt;/b&gt;" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;fillColor=#FBF3D9;strokeColor=#B08900;fontColor=#5A4700;fontSize=24;strokeWidth=1.2;size=48;" vertex="1" parent="1">
-          <mxGeometry x="2023" y="166.25" width="243.68" height="1666" as="geometry" />
-        </mxCell>
-        <mxCell id="db" value="&lt;b&gt;PostgreSQL&lt;/b&gt;" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;fillColor=#E6F4EA;strokeColor=#2E7D46;fontColor=#1B4429;fontSize=24;strokeWidth=1.2;size=48;" vertex="1" parent="1">
-          <mxGeometry x="2414" y="166.25" width="170" height="1666" as="geometry" />
-        </mxCell>
-        <mxCell id="act0" value="" style="html=1;points=[];perimeter=orthogonalPerimeter;outlineConnect=0;fillColor=#ffffff;" vertex="1" parent="db">
-          <mxGeometry x="76.5" y="266" width="17" height="70" as="geometry" />
-        </mxCell>
-        <mxCell id="act1" value="" style="html=1;points=[];perimeter=orthogonalPerimeter;outlineConnect=0;fillColor=#ffffff;" vertex="1" parent="provider">
-          <mxGeometry x="76.5" y="476" width="17" height="154" as="geometry" />
-        </mxCell>
-        <mxCell id="act2" value="" style="html=1;points=[];perimeter=orthogonalPerimeter;outlineConnect=0;fillColor=#ffffff;" vertex="1" parent="ai">
-          <mxGeometry x="76.5" y="406" width="17" height="294" as="geometry" />
-        </mxCell>
-        <mxCell id="act3" value="" style="html=1;points=[];perimeter=orthogonalPerimeter;outlineConnect=0;fillColor=#ffffff;" vertex="1" parent="pending">
-          <mxGeometry x="76.5" y="770" width="17" height="70" as="geometry" />
-        </mxCell>
-        <mxCell id="act4" value="" style="html=1;points=[];perimeter=orthogonalPerimeter;outlineConnect=0;fillColor=#ffffff;" vertex="1" parent="route">
-          <mxGeometry x="76.5" y="196" width="17" height="714" as="geometry" />
-        </mxCell>
-        <mxCell id="act5" value="" style="html=1;points=[];perimeter=orthogonalPerimeter;outlineConnect=0;fillColor=#ffffff;" vertex="1" parent="pending">
-          <mxGeometry x="76.5" y="1120" width="17" height="70" as="geometry" />
-        </mxCell>
-        <mxCell id="act6" value="" style="html=1;points=[];perimeter=orthogonalPerimeter;outlineConnect=0;fillColor=#ffffff;" vertex="1" parent="db">
-          <mxGeometry x="76.5" y="1260" width="17" height="70" as="geometry" />
-        </mxCell>
-        <mxCell id="act7" value="" style="html=1;points=[];perimeter=orthogonalPerimeter;outlineConnect=0;fillColor=#ffffff;" vertex="1" parent="route">
-          <mxGeometry x="76.5" y="1050" width="17" height="420" as="geometry" />
-        </mxCell>
-        <mxCell id="m0" value="Enter: breakfast 50k" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;exitX=0.5;exitY=0.0756;entryX=0.5;entryY=0.0756;fontSize=18;labelBackgroundColor=#FFFFFF;fontColor=#3D4B5A;strokeWidth=1.15;strokeColor=#5B7290;" edge="1" parent="1" source="user" target="app">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="m1" value="POST /api/chat/message" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;exitX=0.5;exitY=0.1176;entryX=0;entryY=0.0;fontSize=18;labelBackgroundColor=#FFFFFF;fontColor=#3D4B5A;strokeWidth=1.15;strokeColor=#5B7290;" edge="1" parent="1" source="app" target="act4">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="m2" value="Load categories and feedback" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;exitX=1;exitY=0.098;entryX=0;entryY=0.0;fontSize=18;labelBackgroundColor=#FFFFFF;fontColor=#3D4B5A;strokeWidth=1.15;strokeColor=#5B7290;" edge="1" parent="1" source="act4" target="act0">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="m3" value="Categories and corrections" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;curved=0;rounded=0;exitX=0;exitY=1.0;entryX=1;entryY=0.1961;fontSize=18;labelBackgroundColor=#FFFFFF;fontColor=#6B7A89;strokeWidth=1.15;strokeColor=#9AA7B4;" edge="1" parent="1" source="act0" target="act4">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="m4" value="parseTransaction(text, context)" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;exitX=1;exitY=0.2941;entryX=0;entryY=0.0;fontSize=18;labelBackgroundColor=#FFFFFF;fontColor=#3D4B5A;strokeWidth=1.15;strokeColor=#5B7290;" edge="1" parent="1" source="act4" target="act2">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="m5" value="Function calling or local rules" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;exitX=1;exitY=0.2381;entryX=0;entryY=0.0;fontSize=18;labelBackgroundColor=#FFFFFF;fontColor=#3D4B5A;strokeWidth=1.15;strokeColor=#5B7290;" edge="1" parent="1" source="act2" target="act1">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="note6" value="The LLM only proposes a typed command; no data is written" style="shape=note;whiteSpace=wrap;html=1;size=14;fillColor=#FBF3D9;strokeColor=#B08900;fontColor=#5A4700;fontSize=24;strokeWidth=1.1;" vertex="1" parent="1">
-          <mxGeometry x="1751" y="1860" width="620" height="94.5" as="geometry" />
-        </mxCell>
-        <mxCell id="m7" value="Typed candidate and confidence" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;curved=0;rounded=0;exitX=0;exitY=1.0;entryX=1;entryY=0.7619;fontSize=18;labelBackgroundColor=#FFFFFF;fontColor=#6B7A89;strokeWidth=1.15;strokeColor=#9AA7B4;" edge="1" parent="1" source="act1" target="act2">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="m8" value="Normalized result" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;curved=0;rounded=0;exitX=0;exitY=1.0;entryX=1;entryY=0.7059;fontSize=18;labelBackgroundColor=#FFFFFF;fontColor=#6B7A89;strokeWidth=1.15;strokeColor=#9AA7B4;" edge="1" parent="1" source="act2" target="act4">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="m9" value="Store draft with TTL" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;exitX=1;exitY=0.8039;entryX=0;entryY=0.0;fontSize=18;labelBackgroundColor=#FFFFFF;fontColor=#3D4B5A;strokeWidth=1.15;strokeColor=#5B7290;" edge="1" parent="1" source="act4" target="act3">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="m10" value="pending_id" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;curved=0;rounded=0;exitX=0;exitY=1.0;entryX=1;entryY=0.902;fontSize=18;labelBackgroundColor=#FFFFFF;fontColor=#6B7A89;strokeWidth=1.15;strokeColor=#9AA7B4;" edge="1" parent="1" source="act3" target="act4">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="m11" value="Transaction preview" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;curved=0;rounded=0;exitX=0;exitY=1.0;entryX=0.5;entryY=0.5462;fontSize=18;labelBackgroundColor=#FFFFFF;fontColor=#6B7A89;strokeWidth=1.15;strokeColor=#9AA7B4;" edge="1" parent="1" source="act4" target="app">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="m12" value="Edit or confirm" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;exitX=0.5;exitY=0.5882;entryX=0.5;entryY=0.5882;fontSize=18;labelBackgroundColor=#FFFFFF;fontColor=#3D4B5A;strokeWidth=1.15;strokeColor=#5B7290;" edge="1" parent="1" source="user" target="app">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="m13" value="POST /api/chat/confirm" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;exitX=0.5;exitY=0.6303;entryX=0;entryY=0.0;fontSize=18;labelBackgroundColor=#FFFFFF;fontColor=#3D4B5A;strokeWidth=1.15;strokeColor=#5B7290;" edge="1" parent="1" source="app" target="act7">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="m14" value="Read and claim draft" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;exitX=1;exitY=0.1667;entryX=0;entryY=0.0;fontSize=18;labelBackgroundColor=#FFFFFF;fontColor=#3D4B5A;strokeWidth=1.15;strokeColor=#5B7290;" edge="1" parent="1" source="act7" target="act5">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="m15" value="Validated draft" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;curved=0;rounded=0;exitX=0;exitY=1.0;entryX=1;entryY=0.3333;fontSize=18;labelBackgroundColor=#FFFFFF;fontColor=#6B7A89;strokeWidth=1.15;strokeColor=#9AA7B4;" edge="1" parent="1" source="act5" target="act7">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="m16" value="BEGIN · INSERT transaction · update wallet · COMMIT" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;exitX=1;exitY=0.5;entryX=0;entryY=0.0;fontSize=18;labelBackgroundColor=#FFFFFF;fontColor=#3D4B5A;strokeWidth=1.15;strokeColor=#5B7290;" edge="1" parent="1" source="act7" target="act6">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="m17" value="Saved transaction" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;curved=0;rounded=0;exitX=0;exitY=1.0;entryX=1;entryY=0.6667;fontSize=18;labelBackgroundColor=#FFFFFF;fontColor=#6B7A89;strokeWidth=1.15;strokeColor=#9AA7B4;" edge="1" parent="1" source="act6" target="act7">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="m18" value="Delete pending and invalidate cache" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;exitX=1;exitY=0.8333;entryX=0.5;entryY=0.8403;fontSize=18;labelBackgroundColor=#FFFFFF;fontColor=#3D4B5A;strokeWidth=1.15;strokeColor=#5B7290;" edge="1" parent="1" source="act7" target="pending">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="m19" value="Confirmation result" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;curved=0;rounded=0;exitX=0;exitY=1.0;entryX=0.5;entryY=0.8824;fontSize=18;labelBackgroundColor=#FFFFFF;fontColor=#6B7A89;strokeWidth=1.15;strokeColor=#9AA7B4;" edge="1" parent="1" source="act7" target="app">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="m20" value="Success message" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;curved=0;rounded=0;exitX=0.5;exitY=0.9244;entryX=0.5;entryY=0.9244;fontSize=18;labelBackgroundColor=#FFFFFF;fontColor=#6B7A89;strokeWidth=1.15;strokeColor=#9AA7B4;" edge="1" parent="1" source="app" target="user">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-      </root>
-    </mxGraphModel>
-  </diagram>
+<mxfile host="65bd71144e">
+    <diagram id="seqlayout" name="Text Transaction Entry">
+        <mxGraphModel dx="3215" dy="2088" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="2670" pageHeight="2040" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="report-title" value="Text Transaction Entry Sequence" style="text;html=1;align=center;verticalAlign=middle;fontSize=70;fontStyle=1;fontColor=#22303F;strokeWidth=4;" parent="1" vertex="1">
+                    <mxGeometry x="68" y="24.5" width="2516" height="49" as="geometry"/>
+                </mxCell>
+                <mxCell id="user" value="&lt;span&gt;&lt;font style=&quot;font-size: 28px;&quot;&gt;User&lt;/font&gt;&lt;/span&gt;" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;participant=umlActor;verticalAlign=bottom;spacingBottom=-14;labelBackgroundColor=#ffffff;fillColor=#EEF2F7;strokeColor=#5B7290;fontColor=#22303F;fontSize=32;strokeWidth=4;size=104;fontStyle=1" parent="1" vertex="1">
+                    <mxGeometry x="68" y="166.25" width="170" height="1666" as="geometry"/>
+                </mxCell>
+                <mxCell id="app" value="&lt;span&gt;Mobile App&lt;/span&gt;" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;fillColor=#EEF2F7;strokeColor=#5B7290;fontColor=#22303F;fontSize=32;strokeWidth=4;size=74;fontStyle=1" parent="1" vertex="1">
+                    <mxGeometry x="459" y="166.25" width="170" height="1666" as="geometry"/>
+                </mxCell>
+                <mxCell id="route" value="&lt;span&gt;Chat Route&lt;/span&gt;" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;fillColor=#EEF2F7;strokeColor=#5B7290;fontColor=#22303F;fontSize=32;strokeWidth=4;size=94;fontStyle=1" parent="1" vertex="1">
+                    <mxGeometry x="850" y="166.25" width="170" height="1666" as="geometry"/>
+                </mxCell>
+                <mxCell id="act4" value="" style="html=1;points=[];perimeter=orthogonalPerimeter;outlineConnect=0;fillColor=#ffffff;fontSize=32;strokeWidth=4;fontStyle=1" parent="route" vertex="1">
+                    <mxGeometry x="76.5" y="196" width="17" height="714" as="geometry"/>
+                </mxCell>
+                <mxCell id="act7" value="" style="html=1;points=[];perimeter=orthogonalPerimeter;outlineConnect=0;fillColor=#ffffff;fontSize=32;strokeWidth=4;fontStyle=1" parent="route" vertex="1">
+                    <mxGeometry x="76.5" y="1050" width="17" height="420" as="geometry"/>
+                </mxCell>
+                <mxCell id="ai" value="&lt;span&gt;AI Orchestrator&lt;/span&gt;" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;fillColor=#F0EAF9;strokeColor=#7C5CBF;fontColor=#3A2A5F;fontSize=32;strokeWidth=4;size=94;fontStyle=1" parent="1" vertex="1">
+                    <mxGeometry x="1241" y="166.25" width="231.2" height="1666" as="geometry"/>
+                </mxCell>
+                <mxCell id="act2" value="" style="html=1;points=[];perimeter=orthogonalPerimeter;outlineConnect=0;fillColor=#ffffff;fontSize=32;strokeWidth=4;fontStyle=1" parent="ai" vertex="1">
+                    <mxGeometry x="107.1" y="406" width="17" height="294" as="geometry"/>
+                </mxCell>
+                <mxCell id="provider" value="&lt;span&gt;Gemini / Local Parser&lt;/span&gt;" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;fillColor=#F0EAF9;strokeColor=#7C5CBF;fontColor=#3A2A5F;fontSize=32;strokeWidth=4;size=94;dashed=1;fontStyle=1" parent="1" vertex="1">
+                    <mxGeometry x="1632" y="166.25" width="306.08" height="1666" as="geometry"/>
+                </mxCell>
+                <mxCell id="act1" value="" style="html=1;points=[];perimeter=orthogonalPerimeter;outlineConnect=0;fillColor=#ffffff;fontSize=32;strokeWidth=4;fontStyle=1" parent="provider" vertex="1">
+                    <mxGeometry x="144.54000000000002" y="483.75" width="17" height="154" as="geometry"/>
+                </mxCell>
+                <mxCell id="pending" value="&lt;span&gt;Pending KV Store&lt;/span&gt;" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;fillColor=#FBF3D9;strokeColor=#B08900;fontColor=#5A4700;fontSize=32;strokeWidth=4;size=94;fontStyle=1" parent="1" vertex="1">
+                    <mxGeometry x="2023" y="166.25" width="243.68" height="1666" as="geometry"/>
+                </mxCell>
+                <mxCell id="act3" value="" style="html=1;points=[];perimeter=orthogonalPerimeter;outlineConnect=0;fillColor=#ffffff;fontSize=32;strokeWidth=4;fontStyle=1" parent="pending" vertex="1">
+                    <mxGeometry x="113.34" y="770" width="17" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="act5" value="" style="html=1;points=[];perimeter=orthogonalPerimeter;outlineConnect=0;fillColor=#ffffff;fontSize=32;strokeWidth=4;fontStyle=1" parent="pending" vertex="1">
+                    <mxGeometry x="113.34" y="1120" width="17" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="db" value="&lt;span&gt;PostgreSQL&lt;/span&gt;" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;fillColor=#E6F4EA;strokeColor=#2E7D46;fontColor=#1B4429;fontSize=32;strokeWidth=4;size=94;fontStyle=1" parent="1" vertex="1">
+                    <mxGeometry x="2414" y="166.25" width="170" height="1666" as="geometry"/>
+                </mxCell>
+                <mxCell id="act0" value="" style="html=1;points=[];perimeter=orthogonalPerimeter;outlineConnect=0;fillColor=#ffffff;fontSize=32;strokeWidth=4;fontStyle=1" parent="db" vertex="1">
+                    <mxGeometry x="76.5" y="266" width="17" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="act6" value="" style="html=1;points=[];perimeter=orthogonalPerimeter;outlineConnect=0;fillColor=#ffffff;fontSize=32;strokeWidth=4;fontStyle=1" parent="db" vertex="1">
+                    <mxGeometry x="76.5" y="1260" width="17" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="m0" value="Enter: breakfast 50k" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;exitX=0.5;exitY=0.0756;entryX=0.5;entryY=0.0756;fontSize=32;labelBackgroundColor=#FFFFFF;fontColor=#3D4B5A;strokeWidth=4;strokeColor=#5B7290;fontStyle=1" parent="1" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="154.23076923076928" y="321.19960000000015" as="sourcePoint"/>
+                        <mxPoint x="545.2307692307693" y="321.19960000000015" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="m1" value="POST /api/chat/message" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;exitX=0.5;exitY=0.1176;entryX=0;entryY=0.0;fontSize=32;labelBackgroundColor=#FFFFFF;fontColor=#3D4B5A;strokeWidth=4;strokeColor=#5B7290;fontStyle=1" parent="1" source="app" target="act4" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="m2" value="Load categories and feedback" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;exitX=1;exitY=0.098;entryX=0;entryY=0.0;fontSize=32;labelBackgroundColor=#FFFFFF;fontColor=#3D4B5A;strokeWidth=4;strokeColor=#5B7290;fontStyle=1" parent="1" source="act4" target="act0" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="m3" value="Categories and corrections" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;curved=0;rounded=0;exitX=0;exitY=1.0;entryX=1;entryY=0.1961;fontSize=32;labelBackgroundColor=#FFFFFF;fontColor=#6B7A89;strokeWidth=4;strokeColor=#9AA7B4;fontStyle=1" parent="1" source="act0" target="act4" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="m4" value="parseTransaction(text, context)" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;exitX=1;exitY=0.2941;entryX=0;entryY=0.0;fontSize=32;labelBackgroundColor=#FFFFFF;fontColor=#3D4B5A;strokeWidth=4;strokeColor=#5B7290;fontStyle=1" parent="1" source="act4" target="act2" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="m5" value="Function calling or local rules" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;exitX=1;exitY=0.2381;entryX=0;entryY=0.0;fontSize=32;labelBackgroundColor=#FFFFFF;fontColor=#3D4B5A;strokeWidth=4;strokeColor=#5B7290;fontStyle=1" parent="1" source="act2" target="act1" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="note6" value="The LLM only proposes a typed command; no data is written" style="shape=note;whiteSpace=wrap;html=1;size=14;fillColor=#FBF3D9;strokeColor=#B08900;fontColor=#5A4700;fontSize=32;strokeWidth=4;fontStyle=1" parent="1" vertex="1">
+                    <mxGeometry x="1751" y="1860" width="620" height="94.5" as="geometry"/>
+                </mxCell>
+                <mxCell id="m7" value="Typed candidate and confidence" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;curved=0;rounded=0;exitX=0;exitY=1.0;entryX=1;entryY=0.7619;fontSize=32;labelBackgroundColor=#FFFFFF;fontColor=#6B7A89;strokeWidth=4;strokeColor=#9AA7B4;fontStyle=1" parent="1" source="act1" target="act2" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="m8" value="Normalized result" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;curved=0;rounded=0;exitX=0;exitY=1.0;entryX=1;entryY=0.7059;fontSize=32;labelBackgroundColor=#FFFFFF;fontColor=#6B7A89;strokeWidth=4;strokeColor=#9AA7B4;fontStyle=1" parent="1" source="act2" target="act4" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="m9" value="Store draft with TTL" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;exitX=1;exitY=0.8039;entryX=0;entryY=0.0;fontSize=32;labelBackgroundColor=#FFFFFF;fontColor=#3D4B5A;strokeWidth=4;strokeColor=#5B7290;fontStyle=1" parent="1" source="act4" target="act3" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="m10" value="pending_id" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;curved=0;rounded=0;exitX=0;exitY=1.0;entryX=1;entryY=0.902;fontSize=32;labelBackgroundColor=#FFFFFF;fontColor=#6B7A89;strokeWidth=4;strokeColor=#9AA7B4;fontStyle=1" parent="1" source="act3" target="act4" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="m11" value="Transaction preview" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;curved=0;rounded=0;exitX=0;exitY=1.0;entryX=0.5;entryY=0.5462;fontSize=32;labelBackgroundColor=#FFFFFF;fontColor=#6B7A89;strokeWidth=4;strokeColor=#9AA7B4;fontStyle=1" parent="1" source="act4" target="app" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="m12" value="Edit or confirm" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;exitX=0.5;exitY=0.5882;entryX=0.5;entryY=0.5882;fontSize=32;labelBackgroundColor=#FFFFFF;fontColor=#3D4B5A;strokeWidth=4;strokeColor=#5B7290;fontStyle=1" parent="1" source="user" target="app" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="m13" value="POST /api/chat/confirm" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;exitX=0.5;exitY=0.6303;entryX=0;entryY=0.0;fontSize=32;labelBackgroundColor=#FFFFFF;fontColor=#3D4B5A;strokeWidth=4;strokeColor=#5B7290;fontStyle=1" parent="1" source="app" target="act7" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="m14" value="Read and claim draft" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;exitX=1;exitY=0.1667;entryX=0;entryY=0.0;fontSize=32;labelBackgroundColor=#FFFFFF;fontColor=#3D4B5A;strokeWidth=4;strokeColor=#5B7290;fontStyle=1" parent="1" source="act7" target="act5" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="m15" value="Validated draft" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;curved=0;rounded=0;exitX=0;exitY=1.0;entryX=1;entryY=0.3333;fontSize=32;labelBackgroundColor=#FFFFFF;fontColor=#6B7A89;strokeWidth=4;strokeColor=#9AA7B4;fontStyle=1" parent="1" source="act5" target="act7" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="m16" value="BEGIN · INSERT transaction · update wallet · COMMIT" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;exitX=1;exitY=0.5;entryX=0;entryY=0.0;fontSize=32;labelBackgroundColor=#FFFFFF;fontColor=#3D4B5A;strokeWidth=4;strokeColor=#5B7290;fontStyle=1" parent="1" source="act7" target="act6" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="m17" value="Saved transaction" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;curved=0;rounded=0;exitX=0;exitY=1.0;entryX=1;entryY=0.6667;fontSize=32;labelBackgroundColor=#FFFFFF;fontColor=#6B7A89;strokeWidth=4;strokeColor=#9AA7B4;fontStyle=1" parent="1" source="act6" target="act7" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="m18" value="Delete pending and invalidate cache" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;exitX=1;exitY=0.8333;entryX=0.5;entryY=0.8403;fontSize=32;labelBackgroundColor=#FFFFFF;fontColor=#3D4B5A;strokeWidth=4;strokeColor=#5B7290;fontStyle=1" parent="1" source="act7" target="pending" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="m19" value="Confirmation result" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;curved=0;rounded=0;exitX=0;exitY=1.0;entryX=0.5;entryY=0.8824;fontSize=32;labelBackgroundColor=#FFFFFF;fontColor=#6B7A89;strokeWidth=4;strokeColor=#9AA7B4;fontStyle=1" parent="1" source="act7" target="app" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="m20" value="Success message" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;curved=0;rounded=0;exitX=0.5;exitY=0.9244;entryX=0.5;entryY=0.9244;fontSize=32;labelBackgroundColor=#FFFFFF;fontColor=#6B7A89;strokeWidth=4;strokeColor=#9AA7B4;fontStyle=1" parent="1" source="app" target="user" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
 </mxfile>

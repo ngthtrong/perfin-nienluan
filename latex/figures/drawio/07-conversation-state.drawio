@@ -1,157 +1,198 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<mxfile host="drawio" version="30.4.1">
-  <diagram id="07-conversation-state" name="Conversation state">
-    <mxGraphModel dx="2400" dy="1552" grid="1" gridSize="10" guides="1"
-      tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1"
-      pageWidth="3000" pageHeight="1940" math="0" shadow="0">
-      <root>
-        <mxCell id="0" />
-        <mxCell id="1" parent="0" />
-        <mxCell id="t" value="&lt;b&gt;Conversation and Pending Transaction State Machine&lt;/b&gt;" style="text;html=1;align=left;verticalAlign=middle;fontSize=24;fontColor=#22303F;" vertex="1" parent="1">
-          <mxGeometry x="74" y="29.6" width="1942.5" height="51.8" as="geometry" />
-        </mxCell>
-        <mxCell id="st" value="Clarification and pending states have TTLs; only confirmation can atomically claim a draft and create a side effect." style="text;html=1;align=left;verticalAlign=middle;fontSize=24;fontColor=#5A6A78;whiteSpace=wrap;" vertex="1" parent="1">
-          <mxGeometry x="74" y="85.1" width="2072" height="66.6" as="geometry" />
-        </mxCell>
-        <mxCell id="init" value="" style="ellipse;html=1;fillColor=#2C3440;strokeColor=#2C3440;strokeWidth=1.4;" vertex="1" parent="1">
-          <mxGeometry x="114.7" y="527.25" width="55.5" height="55.5" as="geometry" />
-        </mxCell>
-        <mxCell id="idle" value="&lt;b&gt;idle&lt;/b&gt;&#xa;entry / clear old context" style="rounded=1;arcSize=22;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;spacing=6;fillColor=#EEF2F7;strokeColor=#5B7290;fontColor=#22303F;fontSize=24;strokeWidth=1.4;" vertex="1" parent="1">
-          <mxGeometry x="222" y="484.7" width="346" height="140.6" as="geometry" />
-        </mxCell>
-        <mxCell id="parse" value="&lt;b&gt;parse&lt;/b&gt;&#xa;do / extract intent and slots&#xa;from text · OCR · STT" style="rounded=1;arcSize=22;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;spacing=6;fillColor=#EEF2F7;strokeColor=#5B7290;fontColor=#22303F;fontSize=24;strokeWidth=1.4;" vertex="1" parent="1">
-          <mxGeometry x="869.5" y="462.5" width="395.92" height="185" as="geometry" />
-        </mxCell>
-        <mxCell id="collecting" value="&lt;b&gt;collecting&lt;/b&gt;&#xa;do / ask for missing slots&#xa;keep candidates (Redis TTL)" style="rounded=1;arcSize=22;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;spacing=6;fillColor=#FBF3D9;strokeColor=#B08900;fontColor=#5A4700;fontSize=24;strokeWidth=1.4;" vertex="1" parent="1">
-          <mxGeometry x="1591" y="462.5" width="434.75" height="185" as="geometry" />
-        </mxCell>
-        <mxCell id="preview" value="&lt;b&gt;preview&lt;/b&gt;&#xa;entry / build preview&#xa;no side effect" style="rounded=1;arcSize=22;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;spacing=6;fillColor=#FBF3D9;strokeColor=#B08900;fontColor=#5A4700;fontSize=24;strokeWidth=1.4;" vertex="1" parent="1">
-          <mxGeometry x="2368" y="462.5" width="434.75" height="185" as="geometry" />
-        </mxCell>
-        <mxCell id="confirmed" value="&lt;b&gt;confirmed&lt;/b&gt;&#xa;entry / atomic claim&#xa;do / COMMIT transaction" style="rounded=1;arcSize=22;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;spacing=6;fillColor=#E6F4EA;strokeColor=#2E7D46;fontColor=#1B4429;fontSize=24;strokeWidth=1.4;" vertex="1" parent="1">
-          <mxGeometry x="2368" y="962" width="434.75" height="177.6" as="geometry" />
-        </mxCell>
-        <mxCell id="cancelled" value="&lt;b&gt;cancelled&lt;/b&gt;&#xa;entry / discard pending, no DB write" style="rounded=1;arcSize=22;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;spacing=6;fillColor=#FCEDED;strokeColor=#C97A7A;fontColor=#5A2A2A;fontSize=24;strokeWidth=1.4;" vertex="1" parent="1">
-          <mxGeometry x="1591" y="962" width="483.28" height="159.1" as="geometry" />
-        </mxCell>
-        <mxCell id="expired" value="&lt;b&gt;expired&lt;/b&gt;&#xa;entry / delete Redis state" style="rounded=1;arcSize=22;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;spacing=6;fillColor=#FCEDED;strokeColor=#C97A7A;fontColor=#5A2A2A;fontSize=24;strokeWidth=1.4;" vertex="1" parent="1">
-          <mxGeometry x="795.5" y="962" width="462.5" height="159.1" as="geometry" />
-        </mxCell>
-        <mxCell id="final" value="" style="ellipse;shape=endState;html=1;fillColor=#2C3440;strokeColor=#2C3440;strokeWidth=1.6;" vertex="1" parent="1">
-          <mxGeometry x="1776" y="1480" width="66.6" height="66.6" as="geometry" />
-        </mxCell>
-        <mxCell id="t0" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;curved=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#5B7290;fontColor=#22303F;fontSize=18;labelBackgroundColor=#FFFFFF;strokeWidth=1.2;endArrow=blockThin;endFill=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="init" target="idle">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="t1" value="user message&#xa;/ open session" style="edgeStyle=orthogonalEdgeStyle;rounded=0;curved=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#5B7290;fontColor=#22303F;fontSize=18;labelBackgroundColor=#FFFFFF;strokeWidth=1.2;endArrow=blockThin;endFill=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="idle" target="parse">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="t2" value="parsed [required slot missing]&#xa;/ ask for next slot" style="edgeStyle=orthogonalEdgeStyle;rounded=0;curved=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#B08900;fontColor=#5A4700;fontSize=18;labelBackgroundColor=#FFFFFF;strokeWidth=1.2;endArrow=blockThin;endFill=1;exitX=1;exitY=0.35;exitDx=0;exitDy=0;entryX=0;entryY=0.35;entryDx=0;entryDy=0;" edge="1" parent="1" source="parse" target="collecting">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="t3" value="parsed [complete] / build preview" style="edgeStyle=orthogonalEdgeStyle;rounded=0;curved=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#B08900;fontColor=#5A4700;fontSize=18;labelBackgroundColor=#FFFFFF;strokeWidth=1.2;endArrow=blockThin;endFill=1;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="parse" target="preview">
-          <mxGeometry relative="1" as="geometry">
-            <Array as="points"><mxPoint x="1058.2" y="259" /><mxPoint x="2584.45" y="259" /></Array>
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="t4" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;curved=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#B08900;fontColor=#5A4700;fontSize=18;labelBackgroundColor=#FFFFFF;strokeWidth=1.2;endArrow=blockThin;endFill=1;exitX=0.3;exitY=0;exitDx=0;exitDy=0;entryX=0.7;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="collecting" target="collecting">
-          <mxGeometry relative="1" as="geometry">
-            <Array as="points"><mxPoint x="1720.5" y="399.6" /><mxPoint x="1894.4" y="399.6" /></Array>
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="t4-ml" value="reply [slots still missing]&#xa;/ update slots" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];labelBackgroundColor=#FFFFFF;fontSize=18;fontColor=#5A4700;" vertex="1" connectable="0" parent="t4">
-          <mxGeometry x="0.0" relative="1" as="geometry">
-            <mxPoint x="0" y="-20" as="offset" />
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="t5" value="reply [complete]&#xa;/ build preview" style="edgeStyle=orthogonalEdgeStyle;rounded=0;curved=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#B08900;fontColor=#5A4700;fontSize=18;labelBackgroundColor=#FFFFFF;strokeWidth=1.2;endArrow=blockThin;endFill=1;exitX=1;exitY=0.35;exitDx=0;exitDy=0;entryX=0;entryY=0.35;entryDx=0;entryDy=0;" edge="1" parent="1" source="collecting" target="preview">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="t6" value="edit slot&#xa;/ resume collection" style="edgeStyle=orthogonalEdgeStyle;rounded=0;curved=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#5B7290;fontColor=#22303F;fontSize=18;labelBackgroundColor=#FFFFFF;strokeWidth=1.2;endArrow=blockThin;endFill=1;exitX=0;exitY=0.8;exitDx=0;exitDy=0;entryX=1;entryY=0.8;entryDx=0;entryDy=0;" edge="1" parent="1" source="preview" target="collecting">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="t7" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;curved=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#2E7D46;fontColor=#1B4429;fontSize=18;labelBackgroundColor=#FFFFFF;strokeWidth=1.2;endArrow=blockThin;endFill=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="preview" target="confirmed">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="t7-ml" value="confirm&#xa;/ claim then COMMIT" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];labelBackgroundColor=#FFFFFF;fontSize=18;fontColor=#1B4429;" vertex="1" connectable="0" parent="t7">
-          <mxGeometry x="0.0" relative="1" as="geometry">
-            <mxPoint x="-92" y="0" as="offset" />
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="t8" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;curved=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#C97A7A;fontColor=#5A2A2A;fontSize=18;labelBackgroundColor=#FFFFFF;strokeWidth=1.2;endArrow=blockThin;endFill=1;exitX=0.05;exitY=1;exitDx=0;exitDy=0;entryX=0.85;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="preview" target="cancelled">
-          <mxGeometry relative="1" as="geometry">
-            <Array as="points"><mxPoint x="2390.2" y="869.5" /><mxPoint x="1961" y="869.5" /></Array>
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="t8-ml" value="cancel / delete pending" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];labelBackgroundColor=#FFFFFF;fontSize=18;fontColor=#5A2A2A;" vertex="1" connectable="0" parent="t8">
-          <mxGeometry x="0.0" relative="1" as="geometry">
-            <mxPoint x="0" y="-14" as="offset" />
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="t9" value="after(TTL)&#xa;/ clear context" style="edgeStyle=orthogonalEdgeStyle;rounded=0;curved=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#C97A7A;fontColor=#5A2A2A;fontSize=18;labelBackgroundColor=#FFFFFF;strokeWidth=1.2;endArrow=blockThin;endFill=1;exitX=0.25;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="collecting" target="expired">
-          <mxGeometry relative="1" as="geometry">
-            <Array as="points"><mxPoint x="1698.3" y="814" /><mxPoint x="1026.75" y="814" /></Array>
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="t10" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;curved=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#C97A7A;fontColor=#5A2A2A;fontSize=18;labelBackgroundColor=#FFFFFF;strokeWidth=1.2;endArrow=blockThin;endFill=1;exitX=0.6;exitY=1;exitDx=0;exitDy=0;entryX=0.6;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="collecting" target="cancelled">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="t10-ml" value="cancel&#xa;/ stop collection" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];labelBackgroundColor=#FFFFFF;fontSize=18;fontColor=#5A2A2A;" vertex="1" connectable="0" parent="t10">
-          <mxGeometry x="0.0" relative="1" as="geometry">
-            <mxPoint x="74" y="0" as="offset" />
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="t11" value="[COMMIT failed]&#xa;/ ROLLBACK" style="edgeStyle=orthogonalEdgeStyle;rounded=0;curved=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#C97A7A;fontColor=#5A2A2A;fontSize=18;labelBackgroundColor=#FFFFFF;strokeWidth=1.2;endArrow=blockThin;endFill=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" source="confirmed" target="cancelled">
-          <mxGeometry relative="1" as="geometry">
-            <Array as="points"><mxPoint x="2584.45" y="1276.5" /><mxPoint x="1807.45" y="1276.5" /></Array>
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="t12" value="committed" style="edgeStyle=orthogonalEdgeStyle;rounded=0;curved=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#2E7D46;fontColor=#1B4429;fontSize=18;labelBackgroundColor=#FFFFFF;strokeWidth=1.2;endArrow=blockThin;endFill=1;exitX=0.9;exitY=1;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="confirmed" target="final">
-          <mxGeometry relative="1" as="geometry">
-            <Array as="points"><mxPoint x="2758.35" y="1513.3" /></Array>
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="t13" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;curved=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#C97A7A;fontColor=#5A2A2A;fontSize=18;labelBackgroundColor=#FFFFFF;strokeWidth=1.2;endArrow=blockThin;endFill=1;exitX=0.25;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="cancelled" target="final">
-          <mxGeometry relative="1" as="geometry">
-            <Array as="points"><mxPoint x="1698.3" y="1406" /><mxPoint x="1809.3" y="1406" /></Array>
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="t14" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;curved=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#C97A7A;fontColor=#5A2A2A;fontSize=18;labelBackgroundColor=#FFFFFF;strokeWidth=1.2;endArrow=blockThin;endFill=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="expired" target="final">
-          <mxGeometry relative="1" as="geometry">
-            <Array as="points"><mxPoint x="1026.75" y="1513.3" /></Array>
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="syntax" value="Transition syntax: trigger [guard] / effect. after(TTL) is a Redis expiration trigger. The filled dot is the initial pseudostate and the ring ends the session; a new request starts another idle session." style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingTop=6;spacingLeft=8;spacingRight=6;fillColor=#EAEEF2;strokeColor=#6B7A89;fontColor=#2C3440;fontSize=24;strokeWidth=1;dashed=1;" vertex="1" parent="1">
-          <mxGeometry x="2300" y="1600" width="620" height="240.5" as="geometry" />
-        </mxCell>
-        <mxCell id="lg" value="Color Legend" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingTop=6;spacingLeft=9;fillColor=#FFFFFF;strokeColor=#9AA7B4;fontColor=#3D4B5A;fontSize=24;fontStyle=1;strokeWidth=1;dashed=0;" vertex="1" parent="1">
-          <mxGeometry x="74" y="777" width="610.5" height="372.1" as="geometry" />
-        </mxCell>
-        <mxCell id="lg-s0" value="" style="rounded=0;html=1;fillColor=#EEF2F7;strokeColor=#5B7290;strokeWidth=1.2;" vertex="1" parent="1">
-          <mxGeometry x="90.65" y="860.05" width="48.1" height="25.9" as="geometry" />
-        </mxCell>
-        <mxCell id="lg-t0" value="Read-only state with no pending data" style="text;html=1;align=left;verticalAlign=middle;fontSize=24;fontColor=#3D4B5A;whiteSpace=wrap;" vertex="1" parent="1">
-          <mxGeometry x="151.7" y="851" width="506.9" height="44" as="geometry" />
-        </mxCell>
-        <mxCell id="lg-s1" value="" style="rounded=0;html=1;fillColor=#FBF3D9;strokeColor=#B08900;strokeWidth=1.2;" vertex="1" parent="1">
-          <mxGeometry x="90.65" y="926.25" width="48.1" height="25.9" as="geometry" />
-        </mxCell>
-        <mxCell id="lg-t1" value="Temporary Redis state with TTL" style="text;html=1;align=left;verticalAlign=middle;fontSize=24;fontColor=#3D4B5A;whiteSpace=wrap;" vertex="1" parent="1">
-          <mxGeometry x="151.7" y="917.2" width="506.9" height="44" as="geometry" />
-        </mxCell>
-        <mxCell id="lg-s2" value="" style="rounded=0;html=1;fillColor=#E6F4EA;strokeColor=#2E7D46;strokeWidth=1.2;" vertex="1" parent="1">
-          <mxGeometry x="90.65" y="992.45" width="48.1" height="25.9" as="geometry" />
-        </mxCell>
-        <mxCell id="lg-t2" value="Only state allowed to write data" style="text;html=1;align=left;verticalAlign=middle;fontSize=24;fontColor=#3D4B5A;whiteSpace=wrap;" vertex="1" parent="1">
-          <mxGeometry x="151.7" y="983.4" width="506.9" height="44" as="geometry" />
-        </mxCell>
-        <mxCell id="lg-s3" value="" style="rounded=0;html=1;fillColor=#FCEDED;strokeColor=#C97A7A;strokeWidth=1.2;" vertex="1" parent="1">
-          <mxGeometry x="90.65" y="1058.65" width="48.1" height="25.9" as="geometry" />
-        </mxCell>
-        <mxCell id="lg-t3" value="Terminal state with no side effect" style="text;html=1;align=left;verticalAlign=middle;fontSize=24;fontColor=#3D4B5A;whiteSpace=wrap;" vertex="1" parent="1">
-          <mxGeometry x="151.7" y="1049.6" width="506.9" height="44" as="geometry" />
-        </mxCell>
-      </root>
-    </mxGraphModel>
-  </diagram>
+<mxfile host="65bd71144e">
+    <diagram id="07-conversation-state" name="Conversation state">
+        <mxGraphModel dx="3543" dy="2783" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="3000" pageHeight="1040" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="t" value="&lt;b&gt;&lt;font style=&quot;font-size: 72px;&quot;&gt;Conversation and Pending Transaction State Machine&lt;/font&gt;&lt;/b&gt;" style="text;html=1;align=left;verticalAlign=middle;fontSize=36;fontColor=#22303F;" parent="1" vertex="1">
+                    <mxGeometry x="74" y="29.6" width="1942.5" height="51.8" as="geometry"/>
+                </mxCell>
+                <mxCell id="st" value="Clarification and pending states have TTLs; only confirmation can atomically claim a draft and create a side effect." style="text;html=1;align=left;verticalAlign=middle;fontSize=28;fontColor=#5A6A78;whiteSpace=wrap;" parent="1" vertex="1">
+                    <mxGeometry x="74" y="120" width="2072" height="66.6" as="geometry"/>
+                </mxCell>
+                <mxCell id="init" value="" style="ellipse;html=1;fillColor=#2C3440;strokeColor=#2C3440;strokeWidth=1.4;fontSize=28;" parent="1" vertex="1">
+                    <mxGeometry x="114.7" y="322.55" width="55.5" height="55.5" as="geometry"/>
+                </mxCell>
+                <mxCell id="idle" value="&lt;b&gt;idle&lt;/b&gt;&#xa;entry / clear old context" style="rounded=1;arcSize=22;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;spacing=6;fillColor=#EEF2F7;strokeColor=#5B7290;fontColor=#22303F;fontSize=36;strokeWidth=1.4;" parent="1" vertex="1">
+                    <mxGeometry x="232.15000000000003" y="280" width="346" height="140.6" as="geometry"/>
+                </mxCell>
+                <mxCell id="parse" value="&lt;b&gt;parse&lt;/b&gt;&#xa;do / extract intent and slots&#xa;from text · OCR · STT" style="rounded=1;arcSize=22;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;spacing=6;fillColor=#EEF2F7;strokeColor=#5B7290;fontColor=#22303F;fontSize=36;strokeWidth=1.4;" parent="1" vertex="1">
+                    <mxGeometry x="847.29" y="257.8" width="395.92" height="185" as="geometry"/>
+                </mxCell>
+                <mxCell id="collecting" value="&lt;b&gt;collecting&lt;/b&gt;&#xa;do / ask for missing slots&#xa;keep candidates (Redis TTL)" style="rounded=1;arcSize=22;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;spacing=6;fillColor=#FBF3D9;strokeColor=#B08900;fontColor=#5A4700;fontSize=36;strokeWidth=1.4;" parent="1" vertex="1">
+                    <mxGeometry x="1730" y="257.8" width="434.75" height="185" as="geometry"/>
+                </mxCell>
+                <mxCell id="preview" value="&lt;b&gt;preview&lt;/b&gt;&#xa;entry / build preview&#xa;no side effect" style="rounded=1;arcSize=22;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;spacing=6;fillColor=#FBF3D9;strokeColor=#B08900;fontColor=#5A4700;fontSize=36;strokeWidth=1.4;" parent="1" vertex="1">
+                    <mxGeometry x="2530" y="257.8" width="434.75" height="185" as="geometry"/>
+                </mxCell>
+                <mxCell id="confirmed" value="&lt;b&gt;confirmed&lt;/b&gt;&#xa;entry / atomic claim&#xa;do / COMMIT transaction" style="rounded=1;arcSize=22;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;spacing=6;fillColor=#E6F4EA;strokeColor=#2E7D46;fontColor=#1B4429;fontSize=36;strokeWidth=1.4;" parent="1" vertex="1">
+                    <mxGeometry x="2530" y="610" width="434.75" height="177.6" as="geometry"/>
+                </mxCell>
+                <mxCell id="cancelled" value="&lt;b&gt;cancelled&lt;/b&gt;&#xa;entry / discard pending, no DB write" style="rounded=1;arcSize=22;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;spacing=6;fillColor=#FCEDED;strokeColor=#C97A7A;fontColor=#5A2A2A;fontSize=36;strokeWidth=1.4;" parent="1" vertex="1">
+                    <mxGeometry x="1810" y="640" width="483.28" height="159.1" as="geometry"/>
+                </mxCell>
+                <mxCell id="expired" value="&lt;b&gt;expired&lt;/b&gt;&#xa;entry / delete Redis state" style="rounded=1;arcSize=22;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;spacing=6;fillColor=#FCEDED;strokeColor=#C97A7A;fontColor=#5A2A2A;fontSize=36;strokeWidth=1.4;" parent="1" vertex="1">
+                    <mxGeometry x="1120" y="680" width="462.5" height="159.1" as="geometry"/>
+                </mxCell>
+                <mxCell id="final" value="" style="ellipse;shape=endState;html=1;fillColor=#2C3440;strokeColor=#2C3440;strokeWidth=1.6;fontSize=28;" parent="1" vertex="1">
+                    <mxGeometry x="1910" y="937" width="66.6" height="66.6" as="geometry"/>
+                </mxCell>
+                <mxCell id="t0" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;curved=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#5B7290;fontColor=#22303F;fontSize=28;labelBackgroundColor=#FFFFFF;strokeWidth=4;endArrow=blockThin;endFill=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" parent="1" source="init" target="idle" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="t1" value="user message&#xa;/ open session" style="edgeStyle=orthogonalEdgeStyle;rounded=0;curved=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#5B7290;fontColor=#22303F;fontSize=28;labelBackgroundColor=#FFFFFF;strokeWidth=4;endArrow=blockThin;endFill=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" parent="1" source="idle" target="parse" edge="1">
+                    <mxGeometry x="0.0013" relative="1" as="geometry">
+                        <mxPoint as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="t2" value="parsed [required slot missing]&#xa;/ ask for next slot" style="edgeStyle=orthogonalEdgeStyle;rounded=0;curved=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#B08900;fontColor=#5A4700;fontSize=28;labelBackgroundColor=#FFFFFF;strokeWidth=4;endArrow=blockThin;endFill=1;exitX=1;exitY=0.35;exitDx=0;exitDy=0;entryX=0;entryY=0.35;entryDx=0;entryDy=0;" parent="1" source="parse" target="collecting" edge="1">
+                    <mxGeometry x="0.0139" y="43" relative="1" as="geometry">
+                        <mxPoint as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="t3" value="parsed [complete] / build preview" style="edgeStyle=orthogonalEdgeStyle;rounded=0;curved=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#B08900;fontColor=#5A4700;fontSize=28;labelBackgroundColor=#FFFFFF;strokeWidth=4;endArrow=blockThin;endFill=1;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.485;entryY=0.005;entryDx=0;entryDy=0;entryPerimeter=0;" parent="1" target="preview" edge="1">
+                    <mxGeometry x="-0.018" y="30" relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="1120" y="190"/>
+                            <mxPoint x="2740" y="190"/>
+                            <mxPoint x="2740" y="259"/>
+                        </Array>
+                        <mxPoint x="1120" y="257.79999999999995" as="sourcePoint"/>
+                        <mxPoint x="2607.375" y="290" as="targetPoint"/>
+                        <mxPoint x="-1" as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="t4" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;curved=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#B08900;fontColor=#5A4700;fontSize=28;labelBackgroundColor=#FFFFFF;strokeWidth=4;endArrow=blockThin;endFill=1;entryX=0.669;entryY=0.997;entryDx=0;entryDy=0;entryPerimeter=0;" parent="1" target="collecting" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="1860" y="442"/>
+                            <mxPoint x="1860" y="510"/>
+                            <mxPoint x="2021" y="510"/>
+                        </Array>
+                        <mxPoint x="1860" y="442" as="sourcePoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="t4-ml" value="&lt;font style=&quot;font-size: 24px;&quot;&gt;reply [slots still missing]&lt;br&gt;/ update slots&lt;/font&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];labelBackgroundColor=#FFFFFF;fontSize=28;fontColor=#5A4700;" parent="t4" vertex="1" connectable="0">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint y="40" as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="t5" value="reply [complete]&#xa;/ build preview" style="edgeStyle=orthogonalEdgeStyle;rounded=0;curved=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#B08900;fontColor=#5A4700;fontSize=28;labelBackgroundColor=#FFFFFF;strokeWidth=4;endArrow=blockThin;endFill=1;exitX=1;exitY=0.35;exitDx=0;exitDy=0;entryX=0;entryY=0.35;entryDx=0;entryDy=0;" parent="1" source="collecting" target="preview" edge="1">
+                    <mxGeometry x="0.0144" y="43" relative="1" as="geometry">
+                        <mxPoint as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="t6" value="edit slot&#xa;/ resume collection" style="edgeStyle=orthogonalEdgeStyle;rounded=0;curved=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#5B7290;fontColor=#22303F;fontSize=28;labelBackgroundColor=#FFFFFF;strokeWidth=4;endArrow=blockThin;endFill=1;exitX=0;exitY=0.8;exitDx=0;exitDy=0;entryX=1;entryY=0.8;entryDx=0;entryDy=0;" parent="1" source="preview" target="collecting" edge="1">
+                    <mxGeometry x="-0.0144" y="-36" relative="1" as="geometry">
+                        <mxPoint as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="t7" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;curved=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#2E7D46;fontColor=#1B4429;fontSize=28;labelBackgroundColor=#FFFFFF;strokeWidth=4;endArrow=blockThin;endFill=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="1" source="preview" target="confirmed" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="t7-ml" value="confirm&#xa;/ claim then COMMIT" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];labelBackgroundColor=#FFFFFF;fontSize=28;fontColor=#1B4429;" parent="t7" vertex="1" connectable="0">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="-92" as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="t8" value="" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#C97A7A;fontColor=#5A2A2A;fontSize=28;labelBackgroundColor=#FFFFFF;strokeWidth=4;endArrow=blockThin;endFill=1;exitX=0.05;exitY=1;exitDx=0;exitDy=0;entryX=1;entryY=0.75;entryDx=0;entryDy=0;" parent="1" source="preview" target="cancelled" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="t8-ml" value="cancel /&lt;div&gt;&amp;nbsp;delete pending&lt;/div&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];labelBackgroundColor=#FFFFFF;fontSize=28;fontColor=#5A2A2A;" parent="t8" vertex="1" connectable="0">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="-13" y="29" as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="t9" value="after(TTL)&#xa;/ clear context" style="edgeStyle=orthogonalEdgeStyle;rounded=0;curved=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#C97A7A;fontColor=#5A2A2A;fontSize=28;labelBackgroundColor=#FFFFFF;strokeWidth=4;endArrow=blockThin;endFill=1;exitX=0;exitY=0.75;exitDx=0;exitDy=0;entryX=0.756;entryY=0;entryDx=0;entryDy=0;entryPerimeter=0;" parent="1" source="collecting" target="expired" edge="1">
+                    <mxGeometry x="0.5573" y="110" relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="1470" y="397"/>
+                            <mxPoint x="1470" y="680"/>
+                        </Array>
+                        <mxPoint x="1470" y="680" as="targetPoint"/>
+                        <mxPoint as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="t10" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;curved=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#C97A7A;fontColor=#5A2A2A;fontSize=28;labelBackgroundColor=#FFFFFF;strokeWidth=4;endArrow=blockThin;endFill=1;exitX=0.899;exitY=1.011;exitDx=0;exitDy=0;exitPerimeter=0;" parent="1" source="collecting" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="2230" y="480" as="sourcePoint"/>
+                        <mxPoint x="2121" y="640" as="targetPoint"/>
+                        <Array as="points">
+                            <mxPoint x="2121" y="640"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="t10-ml" value="cancel&#xa;/ stop collection" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];labelBackgroundColor=#FFFFFF;fontSize=28;fontColor=#5A2A2A;" parent="t10" vertex="1" connectable="0">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="114" y="-12" as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="t11" value="[COMMIT failed]&#xa;/ ROLLBACK" style="edgeStyle=orthogonalEdgeStyle;rounded=0;curved=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#C97A7A;fontColor=#5A2A2A;fontSize=28;labelBackgroundColor=#FFFFFF;strokeWidth=4;endArrow=blockThin;endFill=1;exitX=0.25;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" parent="1" source="confirmed" target="cancelled" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="2639" y="880"/>
+                            <mxPoint x="2052" y="880"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="t12" value="committed" style="edgeStyle=orthogonalEdgeStyle;rounded=0;curved=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#2E7D46;fontColor=#1B4429;fontSize=28;labelBackgroundColor=#FFFFFF;strokeWidth=4;endArrow=blockThin;endFill=1;exitX=0.9;exitY=1;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" parent="1" source="confirmed" target="final" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="2921" y="970"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="t13" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;curved=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#C97A7A;fontColor=#5A2A2A;fontSize=28;labelBackgroundColor=#FFFFFF;strokeWidth=4;endArrow=blockThin;endFill=1;exitX=0.269;exitY=1;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.449;entryY=0.003;entryDx=0;entryDy=0;entryPerimeter=0;" parent="1" source="cancelled" target="final" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="1940" y="937"/>
+                        </Array>
+                        <mxPoint x="1940" y="937" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="t14" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;curved=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#C97A7A;fontColor=#5A2A2A;fontSize=28;labelBackgroundColor=#FFFFFF;strokeWidth=4;endArrow=blockThin;endFill=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" parent="1" target="final" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="1340" y="839"/>
+                            <mxPoint x="1340" y="1513"/>
+                        </Array>
+                        <mxPoint x="1340" y="840" as="sourcePoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="syntax" value="Transition syntax: trigger [guard] / effect. after(TTL) is a Redis expiration trigger. The filled dot is the initial pseudostate and the ring ends the session; a new request starts another idle session." style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingTop=6;spacingLeft=8;spacingRight=6;fillColor=#EAEEF2;strokeColor=#6B7A89;fontColor=#2C3440;fontSize=28;strokeWidth=1;dashed=1;" parent="1" vertex="1">
+                    <mxGeometry x="660" y="491.25" width="430" height="240.5" as="geometry"/>
+                </mxCell>
+                <mxCell id="4" value="" style="group" vertex="1" connectable="0" parent="1">
+                    <mxGeometry x="30" y="440" width="580" height="343" as="geometry"/>
+                </mxCell>
+                <mxCell id="lg" value="Color Legend" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingTop=6;spacingLeft=9;fillColor=#FFFFFF;strokeColor=#9AA7B4;fontColor=#3D4B5A;fontSize=28;fontStyle=1;strokeWidth=1;dashed=0;" parent="4" vertex="1">
+                    <mxGeometry width="580" height="343" as="geometry"/>
+                </mxCell>
+                <mxCell id="lg-s0" value="" style="rounded=0;html=1;fillColor=#EEF2F7;strokeColor=#5B7290;strokeWidth=1.2;fontSize=28;" parent="4" vertex="1">
+                    <mxGeometry x="16.649999999999977" y="83.04999999999995" width="48.1" height="25.9" as="geometry"/>
+                </mxCell>
+                <mxCell id="lg-t0" value="Read-only state with no pending data" style="text;html=1;align=left;verticalAlign=middle;fontSize=28;fontColor=#3D4B5A;whiteSpace=wrap;" parent="4" vertex="1">
+                    <mxGeometry x="77.69999999999999" y="74" width="472.3" height="44" as="geometry"/>
+                </mxCell>
+                <mxCell id="lg-s1" value="" style="rounded=0;html=1;fillColor=#FBF3D9;strokeColor=#B08900;strokeWidth=1.2;fontSize=28;" parent="4" vertex="1">
+                    <mxGeometry x="16.649999999999977" y="149.25" width="48.1" height="25.9" as="geometry"/>
+                </mxCell>
+                <mxCell id="lg-t1" value="Temporary Redis state with TTL" style="text;html=1;align=left;verticalAlign=middle;fontSize=28;fontColor=#3D4B5A;whiteSpace=wrap;" parent="4" vertex="1">
+                    <mxGeometry x="77.69999999999999" y="140.19999999999993" width="452.3" height="44" as="geometry"/>
+                </mxCell>
+                <mxCell id="lg-s2" value="" style="rounded=0;html=1;fillColor=#E6F4EA;strokeColor=#2E7D46;strokeWidth=1.2;fontSize=28;" parent="4" vertex="1">
+                    <mxGeometry x="16.649999999999977" y="215.45000000000005" width="48.1" height="25.9" as="geometry"/>
+                </mxCell>
+                <mxCell id="lg-t2" value="Only state allowed to write data" style="text;html=1;align=left;verticalAlign=middle;fontSize=28;fontColor=#3D4B5A;whiteSpace=wrap;" parent="4" vertex="1">
+                    <mxGeometry x="77.69999999999999" y="206.39999999999998" width="432.3" height="44" as="geometry"/>
+                </mxCell>
+                <mxCell id="lg-s3" value="" style="rounded=0;html=1;fillColor=#FCEDED;strokeColor=#C97A7A;strokeWidth=1.2;fontSize=28;" parent="4" vertex="1">
+                    <mxGeometry x="16.649999999999977" y="281.6500000000001" width="48.1" height="25.9" as="geometry"/>
+                </mxCell>
+                <mxCell id="lg-t3" value="Terminal state with no side effect" style="text;html=1;align=left;verticalAlign=middle;fontSize=28;fontColor=#3D4B5A;whiteSpace=wrap;" parent="4" vertex="1">
+                    <mxGeometry x="77.69999999999999" y="272.6" width="452.3" height="44" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
 </mxfile>

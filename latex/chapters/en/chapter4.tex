@@ -17,7 +17,7 @@ PERFIN now forms a prototype with a clear separation between data, algorithms an
     O2 & Text/media adapters, typed draft, clarification, preview and confirmation. & Flow executes; OCR/STT accuracy is unmeasured. \\
     O3 & Trend, anomaly, runway, recurring, correlation, budget and goal planner. & Implemented with unit tests; thresholds need representative calibration. \\
     O4 & Tool schema, service validation, facts--narrator flow and fallback. & Boundary implemented; complete numeric faithfulness is unmeasured. \\
-    O5 & The hybrid plan includes 46/46 passing backend test files, 31/31 passing local-parser cases and eight specified manual functional cases. & Automated evidence is measured; manual statuses are draft assumptions awaiting verification, while UAT and live services remain unmeasured. \\
+    O5 & The hybrid plan includes 46/46 passing backend test files, 31/31 passing local-parser cases, 8/8 algorithm cases, 12 benchmark points and five passing manual functional cases. & Automated evidence is measured; the five manual cases are recorded as passing, while live services remain unmeasured. \\
     \bottomrule
   \end{tabularx}
 \end{table}
@@ -50,15 +50,15 @@ The architecture makes an LLM useful without granting it ledger authority; schem
 \begin{enumerate}
   \item The prototype uses \code{default_user} and lacks production authentication and authorization.
   \item The controlled media set and reference transcripts have not yet been supplied; until then CER, WER and transaction-field accuracy are unmeasured.
-  \item Live Redis worker behaviour, retry/idempotency, p95 and UAT were not confirmed in a version-locked environment.
+  \item Live Redis worker behaviour, retry/idempotency and production p95 were not confirmed in a version-locked environment; the benchmark currently covers pure functions only.
   \item Fuzzy, anomaly, recurring and correlation thresholds and time windows are initial configurations rather than universal optima.
-  \item The eight manual-test statuses in the draft are not completion evidence until the author runs and verifies every case.
+  \item The five manual cases cover selected flows only and do not replace usability or production-load evaluation.
   \item The numeric-grounding checker remains target design, and persona effects have not been evaluated.
   \item Remaining gaps include true PDF export, full backup/restore, push notification and complete fresh-install wallet creation.
 \end{enumerate}
 
 \section{Future Work}
 
-Next priorities are to run and retain evidence for the eight manual cases; exercise rollback and duplicate prevention end-to-end with live PostgreSQL and Redis; build controlled media ground truth; implement numeric grounding and measure p50/p95 in a fixed environment; conduct UAT with target users; and add authentication, authorization, audit and secret management before real deployment.
+Next priorities are to exercise rollback and duplicate prevention end-to-end with live PostgreSQL and Redis; build controlled media ground truth; implement numeric grounding and measure p50/p95 in a fixed environment; and add authentication, authorization, audit and secret management before real deployment.
 
 Bank synchronization, shared wallets and high availability should follow only after data correctness and empirical evidence stabilize. This ordering preserves the basic-topic project's intended focus: data and algorithms are the core, while the LLM is a replaceable, measurable supporting component.

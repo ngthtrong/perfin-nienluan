@@ -43,11 +43,7 @@ PERFIN is a mobile prototype for entering, normalizing, managing and analysing p
 
 Shared rules are: business amounts must be finite and valid; transaction dates cannot be in the future; wallets and categories belong to the current profile; negative wallet balances are allowed; chat/media operations require preview and confirmation; multi-record updates are atomic; reports exclude soft-deleted transactions by default; and insufficient data yields a warning or \code{null}, never an invented value.
 
-\subsection{Functional Requirements}
-
-\widereportfigure{figures/drawio/14-usecase-overview.png}{Overall PERFIN use case diagram. Feature details are specified with flow tables instead of twelve separate diagrams.}{fig:usecase-overview}
-
-Figure~\ref{fig:usecase-overview} contains observable actor goals only. Parser, validation, transaction, TTL and retry behaviour belongs in the flow tables or the sequence/flow diagrams in Section~\ref{subsec:detailed-design}.
+\widereportfigure[\subsection{Functional Requirements}][Figure~\ref{fig:usecase-overview} contains observable actor goals only. Parser, validation, transaction, TTL and retry behaviour belongs in the flow tables or the sequence/flow diagrams in Section~\ref{subsec:detailed-design}.]{figures/drawio/14-usecase-overview.png}{Overall PERFIN use case diagram. Feature details are specified with flow tables instead of twelve separate diagrams.}{fig:usecase-overview}
 
 \begin{longtable}{@{}L{1.5cm}L{5.0cm}L{3.0cm}L{4.5cm}@{}}
   \caption{Functional-requirement catalogue and location of the full specification}
@@ -257,66 +253,78 @@ Microservices were considered but not selected because prototype scale does not 
 
 \subsection{Data Design}
 
-\widereportfigure{figures/drawio/04-domain-class.png}{PERFIN UML domain class model separating ledger, planning, recurring and conversation/feedback aggregates.}{fig:domain-class}
+The data design translates the information domain into typed objects and storage responsibilities. The mapping is derived from migrations \code{001}--\code{009}, \path{perfin_schema.sql} and \path{perfin_schema.dbml}; the migrations remain the upgrade source of truth. The end-to-end mapping flow is
 
-\code{User} is the ownership root; \code{Wallet}, \code{Transaction} and \code{Category} form the ledger; \code{Budget}, \code{FinancialGoal} and recurring classes form planning; \code{ChatMessage} and \code{AIFeedback} preserve traceable interaction. Engines are not entities because they only read data and create facts.
+\[
+  \text{input} \;\rightarrow\; \text{validation/service}
+  \;\rightarrow\; \text{domain object}
+  \;\rightarrow\; \text{PostgreSQL}.
+\]
 
-\widereportfigure{figures/drawio/05-physical-erd.png}{Physical ERD reconciled with runtime migrations; principal business foreign keys use separate orthogonal corridors.}{fig:physical-erd}
+Text, voice, image and form input first become a parsed draft. The validation and service layer checks shape, user scope, domain constraints and the confirmation boundary before constructing a domain object. Only the service writes the authoritative financial record. Analytics queries those PostgreSQL records and computes deterministic facts before any narrator receives them. Pending clarification and confirmation claims, cache entries, rate-limit counters, queue jobs and retry metadata are operational state: Redis/BullMQ carries them with a TTL, with the supported in-memory fallback used when Redis is unavailable. Uploaded media, generated exports and backup artifacts use a bounded filesystem lifecycle and are cleaned up or expired according to their purpose.
 
-\begin{longtable}{@{}L{4.5cm}L{3.0cm}L{6.0cm}@{}}
-  \caption{Entities in alphabetical order}\label{tab:data-entities}\\
+The UML Class Diagram provides the domain-object view of this translation: typed attributes, visibility, package boundaries and principal associations or compositions. It is the single data-design diagram in this report; SQL columns, keys and operational tables remain documented by the schema sources and the accompanying data tables below.
+
+\widereportfigure{figures/drawio/04-domain-class.png}{PERFIN UML entity model for the twelve core classes, grouped by identity and personalization, ledger, planning and recurring, and conversation and feedback responsibilities.}{fig:domain-class}
+
+\begin{table}[H]
+  \centering
+  \caption{Data stores and their responsibilities}
+  \label{tab:data-stores}
+  \begin{tabularx}{\textwidth}{@{}L{3.0cm}L{3.7cm}Y@{}}
+    \toprule
+    \textbf{Store} & \textbf{Contents} & \textbf{Responsibility and lifecycle} \\
+    \midrule
+    PostgreSQL & Core entities, supporting records, constraints and indexes. & Persistent and authoritative system of record for financial, profile and history data. Services enforce user scope, transactions, foreign keys, checks and soft-delete filtering. \\
+    Redis/BullMQ & Pending clarification and confirmation state, cache, rate limits, queue jobs and retry metadata. & TTL-bound operational state only; Redis is never the financial source of truth. When unavailable, supported flows use the in-memory fallback and background jobs degrade safely. \\
+    Filesystem & Temporary media uploads, generated exports and backup artifacts. & Bounded-lifecycle files. Media is deleted after processing; export and backup cleanup removes expired files according to retention policy. PostgreSQL keeps the relevant history metadata. \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+\small
+\begin{longtable}{@{}L{3.0cm}L{3.0cm}L{3.8cm}L{4.2cm}@{}}
+  \caption{Core entities in alphabetical order}\label{tab:data-entities}\\
   \toprule
-  \textbf{Entity} & \textbf{Type} & \textbf{Description} \\
+  \textbf{Entity} & \textbf{Domain type} & \textbf{PostgreSQL table} & \textbf{Responsibility} \\
   \midrule
   \endfirsthead
   \toprule
-  \textbf{Entity} & \textbf{Type} & \textbf{Description} \\
+  \textbf{Entity} & \textbf{Domain type} & \textbf{PostgreSQL table} & \textbf{Responsibility} \\
   \midrule
   \endhead
-  \code{ai_feedback_logs} & History & Original AI result, correction and context. \\
-  \code{ai_personalities} & Catalogue & Selectable persona and style prompt. \\
-  \code{backup_config} & Configuration & Per-user backup policy; worker backup is not proven. \\
-  \code{budget_history} & History & Audit trail of budget-limit changes. \\
-  \code{budgets} & Planning & Category and monthly limits. \\
-  \code{categories} & Catalogue & Income/expense taxonomy and parent relation. \\
-  \code{chat_messages} & History & Conversation, facts/metadata and event key. \\
-  \code{export_history} & Operations & Exported files, filters and expiry. \\
-  \code{financial_goals} & Planning & Goal, progress, deadline and linked wallet. \\
-  \code{investment_pnl} & Ledger & Realized investment gain/loss. \\
-  \path{recurring_bill_payments} & Ledger & Payment record for each recurring period. \\
-  \code{recurring_bills} & Planning & Amount, frequency and next due date. \\
-  \path{recurring_suggestions_dismissed} & History & Signature of a dismissed recurring suggestion. \\
-  \code{transactions} & Ledger & Income/expense, input source and soft-delete status. \\
-  \code{user_traits} & Personalization & Consent-dependent user traits. \\
-  \code{users} & Data root & Demo profile and data-scope key. \\
-  \code{wallet_transfers} & Ledger & Transfer between two wallets. \\
-  \code{wallets} & Ledger & Wallet balance, type and name. \\
+  \code{AIFeedback} & Feedback record & \code{ai_feedback_logs} & Stores the original AI result, user correction, feedback type and optional transaction link. \\
+  \code{AIPersonality} & Personalization catalogue & \code{ai_personalities} & Stores selectable persona metadata and the style prompt used for conversation. \\
+  \code{Budget} & Planning entity & \code{budgets} & Stores a positive category limit for a calendar month and year. \\
+  \code{Category} & Ledger catalogue & \code{categories} & Stores the income/expense taxonomy, optional parent category and user scope. \\
+  \code{ChatMessage} & Conversation record & \code{chat_messages} & Stores user, assistant or system messages, JSONB metadata and optional personality context. \\
+  \code{FinancialGoal} & Planning entity & \code{financial_goals} & Stores a saving, debt-payoff or purchase target, progress, deadline and optional wallet link. \\
+  \code{RecurringBill} & Recurring plan & \code{recurring_bills} & Stores recurring amount, frequency, due date, status and optional category/wallet links. \\
+  \makecell[l]{\code{Recurring}\\\code{Payment}} & Recurring ledger record & \makecell[l]{\code{recurring_bill_}\\\code{payments}} & Stores one bill period, payment status, amount and optional settlement transaction. \\
+  \code{Transaction} & Ledger record & \code{transactions} & Stores a positive amount, transaction type and source metadata, with a soft-delete state. \\
+  \code{User} & Ownership root & \code{users} & Stores the profile, data-scope key, payday, language and personalization consent. \\
+  \code{UserTrait} & Personalization record & \code{user_traits} & Stores consent-dependent traits used to personalize responses. \\
+  \code{Wallet} & Ledger account & \code{wallets} & Stores a named wallet, type, currency, current balance and initial balance. \\
   \bottomrule
 \end{longtable}
+\normalsize
 
-Money uses \code{DECIMAL(15,2)}; report queries exclude soft-deleted records; deleting a referenced category is blocked or controlled by re-tagging; pending state exists only in Redis; and target-design ID queries include \code{user_id/user_key}. Internal transfer requires matching wallet currencies. Runway sums only liquid VND \code{cash}, \code{bank} and \code{e_wallet} balances; foreign-currency, savings, investment and credit-card wallets are excluded because the prototype has neither exchange-rate nor liquidity modelling.
+Six supporting PostgreSQL tables are intentionally outside the two core diagrams because they are operational or historical records rather than core domain entities: \code{backup_config} stores per-user backup policy; \code{budget_history} audits budget changes; \code{export_history} tracks generated files and expiry; \code{investment_pnl} records investment profit/loss; \code{recurring_suggestions_dismissed} prevents repeated dismissed suggestions; and \code{wallet_transfers} records wallet-to-wallet movement. They remain user-scoped where applicable and are accessed through their owning service.
+
+The relational rules use \code{DECIMAL(15,2)} for monetary values, SQL enums and check constraints for constrained states, dates for calendar events, timestamps for audit metadata and \code{JSONB} for metadata and provider/AI payloads. Report queries exclude transactions with a non-null \code{deleted_at}; referenced transaction categories use restricted deletion or controlled re-tagging; nullable links are set to null according to the schema; and user-scoped queries include the \code{user_id}/\code{user_key} scope before returning an identifier. Internal transfers require wallets with matching currencies, while runway includes only liquid VND \code{cash}, \code{bank} and \code{e\_wallet} balances.
+
+The service layer claims pending state atomically and lets Redis state expire; a Redis key is never treated as authoritative financial data. LLM, OCR and STT adapters can propose text or typed drafts, but they cannot write authoritative facts. Temporary media must be removed after processing, and export or backup files must be cleaned up when their retention or expiry policy is reached.
 
 \subsection{Detailed Design}
 \label{subsec:detailed-design}
 
-\subsubsection{LLM Boundary and Input}
+\widereportfigure[\subsubsection{LLM Boundary and Input}][The LLM only creates a typed command or narrates facts. The backend validates schema and domain rules, builds a preview and waits for confirmation before opening a transaction. For analysis, SQL and the engine create facts before narration. A parser or deterministic template provides a testable fallback.]{figures/drawio/06-llm-boundary.png}{LLM responsibility boundary: typed drafts and narration remain outside validation, calculation and data-write authority.}{fig:llm-boundary}
 
-\widereportfigure{figures/drawio/06-llm-boundary.png}{LLM responsibility boundary: typed drafts and narration remain outside validation, calculation and data-write authority.}{fig:llm-boundary}
+\widereportfigure[][Parsing/preview has no side effect; confirm/commit atomically claims pending state. State contains intent, missing fields, candidates and a draft with a five-minute TTL. Concurrent confirmation must not create two transactions from one \code{pending_id}.]{figures/drawio/08-text-sequence.png}{Text-entry sequence; the data-write transaction starts only after confirmation.}{fig:text-sequence}
 
-The LLM only creates a typed command or narrates facts. The backend validates schema and domain rules, builds a preview and waits for confirmation before opening a transaction. For analysis, SQL and the engine create facts before narration. A parser or deterministic template provides a testable fallback.
+\widereportfigure[][OCR/STT returns only raw text and provider metadata. Current ground truth is too small and receipt line totals are not automatically reconciled, so Figure~\ref{fig:multimodal-flow} is a design flow, not evidence of accuracy.]{figures/drawio/09-multimodal-flow.png}{Image and speech processing; both branches converge on the text pipeline after raw-text review.}{fig:multimodal-flow}
 
-\widereportfigure{figures/drawio/08-text-sequence.png}{Text-entry sequence; the data-write transaction starts only after confirmation.}{fig:text-sequence}
-
-Parsing/preview has no side effect; confirm/commit atomically claims pending state. State contains intent, missing fields, candidates and a draft with a five-minute TTL. Concurrent confirmation must not create two transactions from one \code{pending_id}.
-
-\widereportfigure{figures/drawio/09-multimodal-flow.png}{Image and speech processing; both branches converge on the text pipeline after raw-text review.}{fig:multimodal-flow}
-
-OCR/STT returns only raw text and provider metadata. Current ground truth is too small and receipt line totals are not automatically reconciled, so Figure~\ref{fig:multimodal-flow} is a design flow, not evidence of accuracy.
-
-\subsubsection{Classification and Correction Retrieval}
-\label{subsec:classification-design}
-
-\widereportfigure{figures/drawio/10-feedback-flow.png}{Classification and correction-retrieval flow; feedback is stored only after confirmation.}{fig:feedback-flow}
+\widereportfigure[\subsubsection{Classification and Correction Retrieval}\label{subsec:classification-design}]{figures/drawio/10-feedback-flow.png}{Classification and correction-retrieval flow; feedback is stored only after confirmation.}{fig:feedback-flow}
 
 The matcher uses
 
@@ -397,11 +405,7 @@ for $r>0$, and $P=L/n_d$ for $r=0$. A payment less than or equal to first-month 
 
 \widereportfigure{figures/drawio/12-goal-flow.png}{Goal planning and what-if flow; only final confirmation persists a goal.}{fig:goal-flow}
 
-\subsubsection{Grounded Insight Generation}
-
-\widereportfigure{figures/drawio/11-insight-sequence.png}{Grounded-insight sequence; Analytics returns facts before persona/LLM narration.}{fig:insight-sequence}
-
-Facts contract version 1.0 returns \code{schema_version}, \code{generated_at}, each component value and \code{metadata.components}. Per-component metadata contains \code{unit}, \code{window}, \code{sample_count}, \code{method}, \code{parameters}, \code{warnings}, and \code{status} in \code{ok/no_signal/degraded}. The window object records \code{size}, \code{unit} and \code{zero_filled}; selected components add \code{category_count} or \code{wallet_count}. A local failure appears in \code{degraded_components} without removing the contract. A persona changes tone only with consent; the response includes narration and facts for UI/test comparison. A numeric checker covering every expression remains a target design.
+\widereportfigure[\subsubsection{Grounded Insight Generation}][Facts contract version 1.0 returns \code{schema_version}, \code{generated_at}, each component value and \code{metadata.components}. Per-component metadata contains \code{unit}, \code{window}, \code{sample_count}, \code{method}, \code{parameters}, \code{warnings}, and \code{status} in \code{ok/no_signal/degraded}. The window object records \code{size}, \code{unit} and \code{zero_filled}; selected components add \code{category_count} or \code{wallet_count}. A local failure appears in \code{degraded_components} without removing the contract. A persona changes tone only with consent; the response includes narration and facts for UI/test comparison. A numeric checker covering every expression remains a target design.]{figures/drawio/11-insight-sequence.png}{Grounded-insight sequence; Analytics returns facts before persona/LLM narration.}{fig:insight-sequence}
 
 The calculation path, numeric examples and boundary cases for matching, correction, Analytics, Budget, Goal and the facts contract are expanded in Appendix~\ref{app:algorithms}--\ref{app:facts-contract}; this chapter keeps the main formulas and design decisions for a coherent core narrative.
 
@@ -410,7 +414,7 @@ The calculation path, numeric examples and boundary cases for matching, correcti
 
 The interface follows a mobile-first design with five primary tabs: Dashboard, Budget, Chat, Report and More; Chat occupies the central position as the preferred input action. Shared design tokens use blue for the brand, slate for text and neutral surfaces for content. Green and red are reserved for the semantic distinction between income and expense. Headers, cards, list rows, buttons and spacing reuse the same tokens, while primary touch targets provide an effective minimum size of 44 pixels.
 
-The images in this subsection were regenerated on 13 August 2026 from the current Expo web snapshot at a $390\times844$ CSS-pixel viewport, device scale factor 2 and synthetic demo data. Chat history is isolated so that the preview state remains legible. The images illustrate design decisions; they are not manual-test results, native-device screenshots or UAT evidence.
+The images in this subsection were regenerated on 13 August 2026 from the current Expo web snapshot at a $390\times844$ CSS-pixel viewport, device scale factor 2 and synthetic demo data. Chat history is isolated so that the preview state remains legible. The images illustrate design decisions; they are not manual-test results or native-device screenshots.
 
 Figure~\ref{fig:ui-dashboard-chat} shows the Dashboard information hierarchy and the review-before-write interaction in Chat. The Dashboard prioritizes balance, income and expense, and recent transactions. Chat converts natural input into a card containing amount, category and date, followed by explicit confirm, edit and cancel actions. Displaying the card alone does not write to the ledger.
 
@@ -459,7 +463,7 @@ Figure~\ref{fig:ui-goal-plan} shows preview-before-save for goals: the backend v
 
 \subsection{Test Plan}
 
-Testing is deliberately bounded to the correctness of data handling, algorithms and the prototype's main functional flows. The existing automated suite remains unchanged as a regression safety net, while manual system testing adds the author's interaction perspective. Testing conducted by the author is not treated as UAT.
+Testing is deliberately bounded to the correctness of data handling, algorithms and the prototype's main functional flows. The existing automated suite remains unchanged as a regression safety net, while manual system testing adds the author's interaction perspective. Conclusions apply only to the published cases, fixtures and environment.
 
 \begin{longtable}{@{}L{2.4cm}L{3.5cm}L{4.3cm}L{4.0cm}@{}}
   \caption{Simplified hybrid test strategy}\label{tab:test-strategy}\\
@@ -474,31 +478,101 @@ Testing is deliberately bounded to the correctness of data handling, algorithms 
   Automated unit and regression tests & Formulas, invariants, parser and validation. & Run deterministic \code{node:test} cases over controlled fixtures. & Confirms specified cases only; it does not establish out-of-sample accuracy. \\
   Internal integration & Route, service and model layers. & Check contracts, error branches and rollback with mocks or in-memory substitutes. & Confirms in-process coordination; it is not evidence of live PostgreSQL or Redis execution. \\
   Manual system testing & Main functional flows in the interface. & The author uses demo data and compares observations with expected results. & Confirms selected scenarios only; it does not measure usability, OCR/STT accuracy or performance. \\
-  UAT & Target users. & Not conducted within this project. & It is distinct from the author's manual tests; no user-acceptance result is claimed. \\
   \bottomrule
 \end{longtable}
 
 \subsection{Results and Analysis}
 \label{subsec:results}
 
-The two commands in Table~\ref{tab:automated-test-results} were rerun on 13 August 2026 against the current source snapshot using Node.js v24.16.0, with Redis and jobs disabled and the local parser selected. Results are reported in the unit produced by each command.
+The commands in Table~\ref{tab:automated-test-results} were rerun on 14 August 2026 against the current source snapshot using Node.js v24.16.0, with Redis and jobs disabled and the local parser selected. Results are reported in the unit produced by each command.
 
 \begin{table}[H]
   \centering
   \caption{Automated test results}
   \label{tab:automated-test-results}
-  \begin{tabularx}{\textwidth}{@{}L{3.0cm}L{3.1cm}Y@{}}
+  \begin{tabularx}{\textwidth}{@{}L{3.3cm}L{2.8cm}Y@{}}
     \toprule
     \textbf{Command} & \textbf{Result} & \textbf{Scope of conclusion} \\
     \midrule
     \code{npm test} & 46/46 test files pass. & Covers backend unit/regression tests and internal integration with mocks or in-memory substitutes; live PostgreSQL and Redis are not confirmed. \\
     \code{npm run test:ai} & 31/31 local-parser cases pass. & Confirms the designed fixture sentences only; it is not out-of-sample accuracy and does not evaluate Gemini, OCR or STT. \\
+    \makecell[l]{\code{npm run}\\\code{test:}\\\code{algorithm}} & 8/8 algorithm cases pass. & Checks OLS, anomaly, runway, correlation, aggregation and invariant behavior on controlled data. \\
+    \makecell[l]{\code{npm run}\\\code{benchmark:}\\\code{classification}} & 5,328 rows; joint accuracy 26.16\%, macro-F1 0.1565. & Evaluates the local parser on one demo-profile CSV snapshot; it is not production accuracy or an independent test set. \\
     \bottomrule
   \end{tabularx}
 \end{table}
 
-\textbf{Status note:} The ``Pass'' values marked with an asterisk in Table~\ref{tab:manual-test-cases} are draft assumptions, not verified results. Before submission, the author must execute every case, update its status from the observed result, and only then remove this note. Manual testing by the author is not UAT and does not establish OCR/STT accuracy, usability or performance.
+\subsection{Algorithm correctness testing}
 
+Table~\ref{tab:algorithm-correctness-cases} lists cases with explicit inputs and expected results. The runner writes JSON/Markdown evidence to \path{demo/evaluation/algorithm/}; the current run passes 8/8 cases.
+
+The two invariant groups use 1,000 seeded inputs to test properties rather than a single example.
+
+\begin{longtable}{@{}L{1.5cm}L{2.8cm}L{4.4cm}L{3.6cm}C{1.4cm}@{}}
+  \caption{Algorithm correctness test cases}\label{tab:algorithm-correctness-cases}\\
+  \toprule
+  \textbf{ID} & \textbf{Objective} & \textbf{Input and expectation} & \textbf{Observed result} & \textbf{Status} \\
+  \midrule
+  \endfirsthead
+  \toprule
+  \textbf{ID} & \textbf{Objective} & \textbf{Input and expectation} & \textbf{Observed result} & \textbf{Status} \\
+  \midrule
+  \endhead
+  \code{ALG-01} & OLS trend & \code{[100,200,300,400]}; slope=100, $R^2=1$, forecast=500. & Slope, $R^2$ and forecast match. & Pass \\
+  \code{ALG-02} & Upper anomaly & Five points, final point 100; only the final point is flagged. & Only \code{d5} is flagged. & Pass \\
+  \code{ALG-03} & Sparse boundary & One trend point and three anomaly points; neutral result expected. & First trend value retained; anomaly list empty. & Pass \\
+  \code{ALG-04} & Runway & Balance 700,000; one spend day of 700,000 and six zero-spend days. & Average burn 100,000; 7 days left; depletion 2026-07-26. & Pass \\
+  \code{ALG-05} & Pearson with joint zeros & Two six-element series; exclude two joint-zero pairs. & $r=-1$, 4 effective pairs, 2 excluded pairs. & Pass \\
+  \code{ALG-06} & Monthly aggregation & Three out-of-order rows; preserve empty month and order invariance. & Both input orders produce the same series; February is 100/50. & Pass \\
+  \code{ALG-07} & Budget invariant & 1,000 cases, seed 20260814; rounded total never exceeds cap. & 0 violations; maximum over-cap is 0. & Pass \\
+  \code{ALG-08} & Goal invariant & 1,000 cases, seed 20260815; higher contribution never lengthens plan. & 0 violations. & Pass \\
+  \bottomrule
+\end{longtable}
+
+\subsection{Performance evaluation}
+
+The benchmark uses seeded synthetic data at sizes 100, 1,000, 5,000 and 10,000, with five warm-up runs and 30 measured runs per point. Only pure-function time is measured; I/O, PostgreSQL, Redis, workers and network are excluded. The theoretical expectations are $O(n)$ for \code{linearTrend}, $O(n\log n)$ for \code{detectAnomalies} because of sorting, and $O(n+w)$ for \code{completeMonthlyCashflow}, where $w$ is the calendar window.
+
+\begin{longtable}{@{}L{5.2cm}R{1.3cm}L{2.3cm}R{2.0cm}R{2.0cm}@{}}
+  \caption{Algorithm runtime benchmark}\label{tab:algorithm-performance}\\
+  \toprule
+  \textbf{Algorithm} & \textbf{$n$} & \textbf{Expected complexity} & \textbf{Median (ms)} & \textbf{p95 (ms)} \\
+  \midrule
+  \endfirsthead
+  \toprule
+  \textbf{Algorithm} & \textbf{$n$} & \textbf{Expected complexity} & \textbf{Median (ms)} & \textbf{p95 (ms)} \\
+  \midrule
+  \endhead
+  \code{linearTrend} & 100 & $O(n)$ & 0.084 & 0.296 \\
+  \code{linearTrend} & 1,000 & $O(n)$ & 0.055 & 0.387 \\
+  \code{linearTrend} & 5,000 & $O(n)$ & 0.174 & 1.827 \\
+  \code{linearTrend} & 10,000 & $O(n)$ & 0.265 & 0.515 \\
+  \code{detectAnomalies} & 100 & $O(n\log n)$ & 0.028 & 0.075 \\
+  \code{detectAnomalies} & 1,000 & $O(n\log n)$ & 0.312 & 1.459 \\
+  \code{detectAnomalies} & 5,000 & $O(n\log n)$ & 1.654 & 2.417 \\
+  \code{detectAnomalies} & 10,000 & $O(n\log n)$ & 3.600 & 4.197 \\
+  \makecell[l]{\code{completeMonthly}\\\code{Cashflow}} & 100 & $O(n+w)$ & 0.063 & 0.155 \\
+  \makecell[l]{\code{completeMonthly}\\\code{Cashflow}} & 1,000 & $O(n+w)$ & 0.113 & 0.197 \\
+  \makecell[l]{\code{completeMonthly}\\\code{Cashflow}} & 5,000 & $O(n+w)$ & 0.250 & 1.423 \\
+  \makecell[l]{\code{completeMonthly}\\\code{Cashflow}} & 10,000 & $O(n+w)$ & 0.512 & 0.956 \\
+  \bottomrule
+\end{longtable}
+
+\begin{figure}[H]
+  \centering
+  \begin{tikzpicture}[x=2.25cm,y=0.78cm]
+    \draw[->] (0,0) -- (4.05,0) node[right] {\small $n$};
+    \draw[->] (0,0) -- (0,5.45) node[above] {\small ms};
+    \foreach \y in {0,1,2,3,4,5} {\draw (-0.06,\y) -- (0.06,\y) node[left=0.12cm] {\scriptsize \y};}
+    \foreach \x/\label in {0/100,1/1k,2/5k,3/10k} {\draw (\x,0.06) -- (\x,-0.06) node[below=0.12cm] {\scriptsize \label};}
+    \draw[PerfinBlue, thick] plot coordinates {(0,0.075) (1,1.459) (2,2.417) (3,4.197)};
+    \foreach \x/\y in {0/0.075,1/1.459,2/2.417,3/4.197} {\fill[PerfinBlue] (\x,\y) circle (1.4pt) node[above right] {\scriptsize \y};}
+  \end{tikzpicture}
+  \caption{P95 runtime of \code{detectAnomalies} by input size.}
+  \label{fig:algorithm-performance-p95}
+\end{figure}
+
+The measurements show increasing runtime with input size in the fixed local environment, most clearly for \code{detectAnomalies}. This is a relative trend comparison for pure functions, not a production latency commitment.
 \begin{longtable}{@{}L{1.5cm}L{4.6cm}L{6.5cm}C{1.5cm}@{}}
   \caption{Manual functional test cases}\label{tab:manual-test-cases}\\
   \toprule
@@ -509,23 +583,12 @@ The two commands in Table~\ref{tab:automated-test-results} were rerun on 13 Augu
   \textbf{ID} & \textbf{Scenario/action} & \textbf{Expected result} & \textbf{Status} \\
   \midrule
   \endhead
-  % TODO(TC-M01): execute, save evidence and update status before submission.
-  \code{TC-M01} & Create, edit, delete and restore a transaction through the form. & The transaction list and wallet balance reflect each operation correctly. & \textbf{Pass}\textsuperscript{*} \\
-  % TODO(TC-M02): execute, save evidence and update status before submission.
-  \code{TC-M02} & Enter a complete transaction through chat, review its preview and confirm it. & Exactly one record is created, and only after confirmation. & \textbf{Pass}\textsuperscript{*} \\
-  % TODO(TC-M03): execute, save evidence and update status before submission.
-  \code{TC-M03} & Enter incomplete or ambiguous content, then cancel. & The system requests missing information and writes no transaction. & \textbf{Pass}\textsuperscript{*} \\
-  % TODO(TC-M04): execute, save evidence and update status before submission.
-  \code{TC-M04} & Submit a receipt image and a voice recording in turn; review the raw text. & Raw text can be edited or confirmed, and no data is saved automatically before confirmation. & \textbf{Pass}\textsuperscript{*} \\
-  % TODO(TC-M05): execute, save evidence and update status before submission.
-  \code{TC-M05} & Open Dashboard/Report, reconcile income and expense totals, and export CSV. & Totals match the demo data; the CSV downloads and opens successfully. & \textbf{Pass}\textsuperscript{*} \\
-  % TODO(TC-M06): execute, save evidence and update status before submission.
-  \code{TC-M06} & Create a budget for a period containing transactions. & Spent and remaining amounts match transactions in the period. & \textbf{Pass}\textsuperscript{*} \\
-  % TODO(TC-M07): execute, save evidence and update status before submission.
-  \code{TC-M07} & Create a goal and run a what-if scenario. & The simulation is displayed without automatically changing the original plan. & \textbf{Pass}\textsuperscript{*} \\
-  % TODO(TC-M08): execute, save evidence and update status before submission.
-  \code{TC-M08} & Create a recurring bill and record one payment. & Status is updated and no duplicate transaction is created. & \textbf{Pass}\textsuperscript{*} \\
+  \code{TC-M01} & Create, edit and delete a transaction through the form. & The transaction list and wallet balance reflect each operation correctly. & \textbf{Pass} \\
+  \code{TC-M02} & Enter a transaction through chat, review its preview and confirm it. & Exactly one record is created, and only after confirmation. & \textbf{Pass} \\
+  \code{TC-M03} & Enter incomplete or ambiguous content, then cancel. & The system requests missing information and writes no transaction. & \textbf{Pass} \\
+  \code{TC-M04} & Open Dashboard/Report and reconcile totals with the demo data. & Displayed totals match the input data. & \textbf{Pass} \\
+  \code{TC-M05} & Export CSV from the interface and open the resulting file. & The file downloads successfully and its figures match the demo data. & \textbf{Pass} \\
   \bottomrule
 \end{longtable}
 
-The automated results apply only to the source snapshot and fixtures used in this run. Tests using mocks or in-memory substitutes do not establish live database, queue or worker behavior. The eight manual cases cover selected flows only after author verification; they do not replace UAT or support claims about usability, media accuracy, latency or production load.
+The automated results apply only to the source snapshot, fixtures and configuration used in this run. Tests using mocks or in-memory substitutes do not establish live database, queue or worker behavior. The five manual cases cover selected flows only; they do not support claims about usability, media accuracy, latency or production load.

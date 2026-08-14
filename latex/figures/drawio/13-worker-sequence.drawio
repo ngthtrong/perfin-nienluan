@@ -1,112 +1,120 @@
-<?xml version='1.0' encoding='utf-8'?>
-<mxfile>
-  <diagram id="seqlayout" name="Proactive Jobs and Deduplication">
-    <mxGraphModel dx="2160" dy="1464" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="2700" pageHeight="1830" math="0" shadow="0" reportStyled="1">
-      <root>
-        <mxCell id="0" />
-        <mxCell id="1" parent="0" />
-        <mxCell id="report-title" value="Proactive Job and Deduplication Sequence" style="text;html=1;align=left;verticalAlign=middle;fontSize=24;fontStyle=1;fontColor=#22303F;" vertex="1" parent="1"><mxGeometry x="68" y="24.5" width="2550" height="49" as="geometry" /></mxCell><mxCell id="report-subtitle" value="The queue coordinates retries; a unique event key makes message persistence idempotent." style="text;html=1;align=left;verticalAlign=middle;fontSize=24;fontColor=#5A6A78;whiteSpace=wrap;" vertex="1" parent="1"><mxGeometry x="68" y="77" width="2550" height="52.5" as="geometry" /></mxCell><mxCell id="scheduler" value="&lt;b&gt;BullMQ Scheduler&lt;/b&gt;" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;fillColor=#FBF3D9;strokeColor=#B08900;fontColor=#5A4700;fontSize=24;strokeWidth=1.2;size=48;" vertex="1" parent="1">
-          <mxGeometry x="68" y="166.25" width="243.68" height="1414" as="geometry" />
-        </mxCell>
-        <mxCell id="redis" value="&lt;b&gt;Redis Queue&lt;/b&gt;" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;fillColor=#FBF3D9;strokeColor=#B08900;fontColor=#5A4700;fontSize=24;strokeWidth=1.2;size=48;" vertex="1" parent="1">
-          <mxGeometry x="408" y="166.25" width="181.28" height="1414" as="geometry" />
-        </mxCell>
-        <mxCell id="worker" value="&lt;b&gt;Worker Process&lt;/b&gt;" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;fillColor=#EEF2F7;strokeColor=#5B7290;fontColor=#22303F;fontSize=24;strokeWidth=1.2;size=48;" vertex="1" parent="1">
-          <mxGeometry x="748" y="166.25" width="218.72" height="1414" as="geometry" />
-        </mxCell>
-        <mxCell id="db" value="&lt;b&gt;PostgreSQL&lt;/b&gt;" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;fillColor=#E6F4EA;strokeColor=#2E7D46;fontColor=#1B4429;fontSize=24;strokeWidth=1.2;size=48;" vertex="1" parent="1">
-          <mxGeometry x="1088" y="166.25" width="170" height="1414" as="geometry" />
-        </mxCell>
-        <mxCell id="analytics" value="&lt;b&gt;Core Services&lt;/b&gt;" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;fillColor=#E6F4EA;strokeColor=#2E7D46;fontColor=#1B4429;fontSize=24;strokeWidth=1.2;size=48;" vertex="1" parent="1">
-          <mxGeometry x="1428" y="166.25" width="206.24" height="1414" as="geometry" />
-        </mxCell>
-        <mxCell id="narrator" value="&lt;b&gt;Persona / LLM&lt;/b&gt;" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;fillColor=#F0EAF9;strokeColor=#7C5CBF;fontColor=#3A2A5F;fontSize=24;strokeWidth=1.2;size=48;dashed=1;" vertex="1" parent="1">
-          <mxGeometry x="1768" y="166.25" width="206.24" height="1414" as="geometry" />
-        </mxCell>
-        <mxCell id="chat" value="&lt;b&gt;Internal Message&lt;/b&gt;" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;fillColor=#EEF2F7;strokeColor=#5B7290;fontColor=#22303F;fontSize=24;strokeWidth=1.2;size=48;" vertex="1" parent="1">
-          <mxGeometry x="2108" y="166.25" width="243.68" height="1414" as="geometry" />
-        </mxCell>
-        <mxCell id="app" value="&lt;b&gt;Mobile App&lt;/b&gt;" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;fillColor=#EEF2F7;strokeColor=#5B7290;fontColor=#22303F;fontSize=24;strokeWidth=1.2;size=48;" vertex="1" parent="1">
-          <mxGeometry x="2448" y="166.25" width="170" height="1414" as="geometry" />
-        </mxCell>
-        <mxCell id="act0" value="" style="html=1;points=[];perimeter=orthogonalPerimeter;outlineConnect=0;fillColor=#ffffff;" vertex="1" parent="db">
-          <mxGeometry x="76.5" y="266" width="17" height="70" as="geometry" />
-        </mxCell>
-        <mxCell id="act1" value="" style="html=1;points=[];perimeter=orthogonalPerimeter;outlineConnect=0;fillColor=#ffffff;" vertex="1" parent="analytics">
-          <mxGeometry x="76.5" y="406" width="17" height="168" as="geometry" />
-        </mxCell>
-        <mxCell id="act2" value="" style="html=1;points=[];perimeter=orthogonalPerimeter;outlineConnect=0;fillColor=#ffffff;" vertex="1" parent="narrator">
-          <mxGeometry x="76.5" y="644" width="17" height="70" as="geometry" />
-        </mxCell>
-        <mxCell id="act3" value="" style="html=1;points=[];perimeter=orthogonalPerimeter;outlineConnect=0;fillColor=#ffffff;" vertex="1" parent="db">
-          <mxGeometry x="76.5" y="854" width="17" height="70" as="geometry" />
-        </mxCell>
-        <mxCell id="act4" value="" style="html=1;points=[];perimeter=orthogonalPerimeter;outlineConnect=0;fillColor=#ffffff;" vertex="1" parent="chat">
-          <mxGeometry x="76.5" y="784" width="17" height="210" as="geometry" />
-        </mxCell>
-        <mxCell id="act5" value="" style="html=1;points=[];perimeter=orthogonalPerimeter;outlineConnect=0;fillColor=#ffffff;" vertex="1" parent="worker">
-          <mxGeometry x="76.5" y="196" width="17" height="868" as="geometry" />
-        </mxCell>
-        <mxCell id="act6" value="" style="html=1;points=[];perimeter=orthogonalPerimeter;outlineConnect=0;fillColor=#ffffff;" vertex="1" parent="db">
-          <mxGeometry x="76.5" y="1134" width="17" height="70" as="geometry" />
-        </mxCell>
-        <mxCell id="act7" value="" style="html=1;points=[];perimeter=orthogonalPerimeter;outlineConnect=0;fillColor=#ffffff;" vertex="1" parent="redis">
-          <mxGeometry x="76.5" y="126" width="17" height="1232" as="geometry" />
-        </mxCell>
-        <mxCell id="m0" value="Upsert recurring schedules" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;exitX=0.5;exitY=0.0891;entryX=0;entryY=0.0;fontSize=18;labelBackgroundColor=#FFFFFF;fontColor=#3D4B5A;strokeWidth=1.15;strokeColor=#5B7290;" edge="1" parent="1" source="scheduler" target="act7">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="m1" value="Job + attempts + exponential backoff" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;exitX=1;exitY=0.0568;entryX=0;entryY=0.0;fontSize=18;labelBackgroundColor=#FFFFFF;fontColor=#3D4B5A;strokeWidth=1.15;strokeColor=#5B7290;" edge="1" parent="1" source="act7" target="act5">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="m2" value="Resolve user scope and due data" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;exitX=1;exitY=0.0806;entryX=0;entryY=0.0;fontSize=18;labelBackgroundColor=#FFFFFF;fontColor=#3D4B5A;strokeWidth=1.15;strokeColor=#5B7290;" edge="1" parent="1" source="act5" target="act0">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="m3" value="Bills · balances · transactions" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;curved=0;rounded=0;exitX=0;exitY=1.0;entryX=1;entryY=0.1613;fontSize=18;labelBackgroundColor=#FFFFFF;fontColor=#6B7A89;strokeWidth=1.15;strokeColor=#9AA7B4;" edge="1" parent="1" source="act0" target="act5">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="m4" value="Run reminder, runway, subscription or month-end" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;exitX=1;exitY=0.2419;entryX=0;entryY=0.0;fontSize=18;labelBackgroundColor=#FFFFFF;fontColor=#3D4B5A;strokeWidth=1.15;strokeColor=#5B7290;" edge="1" parent="1" source="act5" target="act1">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="m5" value="Compute facts and alert thresholds" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;exitX=1;exitY=0.4167;entryX=1;entryY=0.6667;fontSize=18;labelBackgroundColor=#FFFFFF;fontColor=#3D4B5A;strokeWidth=1.15;strokeColor=#5B7290;" edge="1" parent="1" source="act1" target="act1">
-          <mxGeometry relative="1" as="geometry">
-            <Array as="points"><mxPoint x="1615" y="642.25" /><mxPoint x="1615" y="684.25" /></Array>
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="m6" value="Structured facts" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;curved=0;rounded=0;exitX=0;exitY=1.0;entryX=1;entryY=0.4355;fontSize=18;labelBackgroundColor=#FFFFFF;fontColor=#6B7A89;strokeWidth=1.15;strokeColor=#9AA7B4;" edge="1" parent="1" source="act1" target="act5">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="m7" value="Apply persona to grounded narration" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;exitX=1;exitY=0.5161;entryX=0;entryY=0.0;fontSize=18;labelBackgroundColor=#FFFFFF;fontColor=#3D4B5A;strokeWidth=1.15;strokeColor=#5B7290;" edge="1" parent="1" source="act5" target="act2">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="m8" value="Message or deterministic fallback" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;curved=0;rounded=0;exitX=0;exitY=1.0;entryX=1;entryY=0.5968;fontSize=18;labelBackgroundColor=#FFFFFF;fontColor=#6B7A89;strokeWidth=1.15;strokeColor=#9AA7B4;" edge="1" parent="1" source="act2" target="act5">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="m9" value="persist(event_key, dedupeHours)" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;exitX=1;exitY=0.6774;entryX=0;entryY=0.0;fontSize=18;labelBackgroundColor=#FFFFFF;fontColor=#3D4B5A;strokeWidth=1.15;strokeColor=#5B7290;" edge="1" parent="1" source="act5" target="act4">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="m10" value="INSERT chat_messages with unique event_key" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;exitX=0;exitY=0.3333;entryX=1;entryY=0.0;fontSize=18;labelBackgroundColor=#FFFFFF;fontColor=#3D4B5A;strokeWidth=1.15;strokeColor=#5B7290;" edge="1" parent="1" source="act4" target="act3">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="m11" value="Created or duplicate" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;curved=0;rounded=0;exitX=1;exitY=1.0;entryX=0;entryY=0.6667;fontSize=18;labelBackgroundColor=#FFFFFF;fontColor=#6B7A89;strokeWidth=1.15;strokeColor=#9AA7B4;" edge="1" parent="1" source="act3" target="act4">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="m12" value="Idempotent result" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;curved=0;rounded=0;exitX=0;exitY=1.0;entryX=1;entryY=0.9194;fontSize=18;labelBackgroundColor=#FFFFFF;fontColor=#6B7A89;strokeWidth=1.15;strokeColor=#9AA7B4;" edge="1" parent="1" source="act4" target="act5">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="m13" value="Complete or retry on failure" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;curved=0;rounded=0;exitX=0;exitY=1.0;entryX=1;entryY=0.7614;fontSize=18;labelBackgroundColor=#FFFFFF;fontColor=#6B7A89;strokeWidth=1.15;strokeColor=#9AA7B4;" edge="1" parent="1" source="act5" target="act7">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="m14" value="GET /api/chat/messages" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;exitX=0.5;exitY=0.802;entryX=1;entryY=0.0;fontSize=18;labelBackgroundColor=#FFFFFF;fontColor=#3D4B5A;strokeWidth=1.15;strokeColor=#5B7290;" edge="1" parent="1" source="app" target="act6">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="m15" value="Stored proactive message" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;curved=0;rounded=0;exitX=1;exitY=1.0;entryX=0.5;entryY=0.8515;fontSize=18;labelBackgroundColor=#FFFFFF;fontColor=#6B7A89;strokeWidth=1.15;strokeColor=#9AA7B4;" edge="1" parent="1" source="act6" target="app">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="note16" value="If Redis fails, the worker stops safely while the interactive API continues" style="shape=note;whiteSpace=wrap;html=1;size=14;fillColor=#FBF3D9;strokeColor=#B08900;fontColor=#5A4700;fontSize=24;strokeWidth=1.1;" vertex="1" parent="1">
-          <mxGeometry x="527" y="1620" width="620" height="126" as="geometry" />
-        </mxCell>
-      </root>
-    </mxGraphModel>
-  </diagram>
+<mxfile host="65bd71144e">
+    <diagram id="seqlayout" name="Proactive Jobs and Deduplication">
+        <mxGraphModel dx="3984" dy="3308" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="2700" pageHeight="1830" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="report-title" value="&lt;font style=&quot;font-size: 52px;&quot;&gt;Proactive Job and Deduplication Sequence&lt;/font&gt;" style="text;html=1;align=center;verticalAlign=middle;fontSize=30;fontStyle=1;fontColor=#22303F;strokeWidth=4;" parent="1" vertex="1">
+                    <mxGeometry x="68" y="24.5" width="2602.0000000000005" height="43.13650885855357" as="geometry"/>
+                </mxCell>
+                <mxCell id="scheduler" value="&lt;b&gt;BullMQ Scheduler&lt;/b&gt;" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;fillColor=#FBF3D9;strokeColor=#B08900;fontColor=#5A4700;fontSize=30;strokeWidth=4;size=71;" parent="1" vertex="1">
+                    <mxGeometry x="68" y="149.28775776938713" width="248.64916078431366" height="1244.796398489689" as="geometry"/>
+                </mxCell>
+                <mxCell id="redis" value="&lt;b&gt;Redis Queue&lt;/b&gt;" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;fillColor=#FBF3D9;strokeColor=#B08900;fontColor=#5A4700;fontSize=30;strokeWidth=4;size=71;" parent="1" vertex="1">
+                    <mxGeometry x="414.93333333333317" y="149.28775776938713" width="184.97669019607835" height="1244.796398489689" as="geometry"/>
+                </mxCell>
+                <mxCell id="act7" value="" style="html=1;points=[];perimeter=orthogonalPerimeter;outlineConnect=0;fillColor=#ffffff;fontSize=30;strokeWidth=4;" parent="redis" vertex="1">
+                    <mxGeometry x="83.81999999999995" y="110.92245135056635" width="17.346666666666653" height="1084.5750798722042" as="geometry"/>
+                </mxCell>
+                <mxCell id="worker" value="&lt;b&gt;Worker Process&lt;/b&gt;" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;fillColor=#EEF2F7;strokeColor=#5B7290;fontColor=#22303F;fontSize=30;strokeWidth=4;size=71;" parent="1" vertex="1">
+                    <mxGeometry x="761.8666666666663" y="149.28775776938713" width="223.18017254901957" height="1244.796398489689" as="geometry"/>
+                </mxCell>
+                <mxCell id="act5" value="" style="html=1;points=[];perimeter=orthogonalPerimeter;outlineConnect=0;fillColor=#ffffff;fontSize=28;fontStyle=1;strokeWidth=4;" parent="worker" vertex="1">
+                    <mxGeometry x="102.91999999999994" y="172.54603543421433" width="17.34666666666666" height="764.1324426372348" as="geometry"/>
+                </mxCell>
+                <mxCell id="db" value="&lt;b&gt;PostgreSQL&lt;/b&gt;" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;fillColor=#E6F4EA;strokeColor=#2E7D46;fontColor=#1B4429;fontSize=30;strokeWidth=4;size=71;" parent="1" vertex="1">
+                    <mxGeometry x="1108.7999999999997" y="149.28775776938713" width="173.46666666666658" height="1244.796398489689" as="geometry"/>
+                </mxCell>
+                <mxCell id="act0" value="" style="html=1;points=[];perimeter=orthogonalPerimeter;outlineConnect=0;fillColor=#ffffff;fontSize=28;fontStyle=1;strokeWidth=4;" parent="db" vertex="1">
+                    <mxGeometry x="78.06" y="210" width="17.35" height="85.79" as="geometry"/>
+                </mxCell>
+                <mxCell id="act3" value="" style="html=1;points=[];perimeter=orthogonalPerimeter;outlineConnect=0;fillColor=#ffffff;fontSize=28;fontStyle=1;strokeWidth=4;" parent="db" vertex="1">
+                    <mxGeometry x="78.05999999999999" y="751.8077258205051" width="17.34666666666666" height="61.62358408364797" as="geometry"/>
+                </mxCell>
+                <mxCell id="act6" value="" style="html=1;points=[];perimeter=orthogonalPerimeter;outlineConnect=0;fillColor=#ffffff;fontSize=28;fontStyle=1;strokeWidth=4;" parent="db" vertex="1">
+                    <mxGeometry x="78.05999999999999" y="998.3020621550971" width="17.34666666666666" height="61.62358408364797" as="geometry"/>
+                </mxCell>
+                <mxCell id="analytics" value="&lt;b&gt;Core Services&lt;/b&gt;" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;fillColor=#E6F4EA;strokeColor=#2E7D46;fontColor=#1B4429;fontSize=30;strokeWidth=4;size=71;" parent="1" vertex="1">
+                    <mxGeometry x="1455.7333333333327" y="149.28775776938713" width="210.44567843137253" height="1244.796398489689" as="geometry"/>
+                </mxCell>
+                <mxCell id="act1" value="" style="html=1;points=[];perimeter=orthogonalPerimeter;outlineConnect=0;fillColor=#ffffff;fontSize=28;fontStyle=1;strokeWidth=4;" parent="analytics" vertex="1">
+                    <mxGeometry x="96.54999999999998" y="357.41678768515817" width="17.34666666666666" height="147.89660180075515" as="geometry"/>
+                </mxCell>
+                <mxCell id="narrator" value="&lt;b&gt;Persona / LLM&lt;/b&gt;" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;fillColor=#F0EAF9;strokeColor=#7C5CBF;fontColor=#3A2A5F;fontSize=30;strokeWidth=4;size=71;dashed=1;" parent="1" vertex="1">
+                    <mxGeometry x="1802.666666666666" y="149.28775776938713" width="210.44567843137253" height="1244.796398489689" as="geometry"/>
+                </mxCell>
+                <mxCell id="act2" value="" style="html=1;points=[];perimeter=orthogonalPerimeter;outlineConnect=0;fillColor=#ffffff;fontSize=28;fontStyle=1;strokeWidth=4;" parent="narrator" vertex="1">
+                    <mxGeometry x="96.54999999999998" y="566.9369735695614" width="17.34666666666666" height="61.62358408364797" as="geometry"/>
+                </mxCell>
+                <mxCell id="chat" value="&lt;b&gt;Internal Message&lt;/b&gt;" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;fillColor=#EEF2F7;strokeColor=#5B7290;fontColor=#22303F;fontSize=30;strokeWidth=4;size=71;" parent="1" vertex="1">
+                    <mxGeometry x="2149.5999999999995" y="149.28775776938713" width="248.64916078431366" height="1244.796398489689" as="geometry"/>
+                </mxCell>
+                <mxCell id="act4" value="" style="html=1;points=[];perimeter=orthogonalPerimeter;outlineConnect=0;fillColor=#ffffff;fontSize=28;fontStyle=1;strokeWidth=4;" parent="chat" vertex="1">
+                    <mxGeometry x="115.64999999999995" y="690.1841417368573" width="17.34666666666666" height="184.87075225094384" as="geometry"/>
+                </mxCell>
+                <mxCell id="app" value="&lt;b&gt;Mobile App&lt;/b&gt;" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;fillColor=#EEF2F7;strokeColor=#5B7290;fontColor=#22303F;fontSize=30;strokeWidth=4;size=71;" parent="1" vertex="1">
+                    <mxGeometry x="2496.533333333332" y="149.28775776938713" width="173.46666666666658" height="1244.796398489689" as="geometry"/>
+                </mxCell>
+                <mxCell id="m0" value="Upsert recurring&amp;nbsp;&lt;div&gt;schedules&lt;/div&gt;" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;exitX=0.5;exitY=0.0891;entryX=0;entryY=0.0;fontSize=28;labelBackgroundColor=#FFFFFF;fontColor=#3D4B5A;strokeWidth=4;strokeColor=#5B7290;fontStyle=1" parent="1" source="scheduler" target="act7" edge="1">
+                    <mxGeometry x="-0.0165" y="-80" relative="1" as="geometry">
+                        <mxPoint as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="m1" value="Job + attempts +&amp;nbsp;&lt;div&gt;exponential backoff&lt;/div&gt;" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;exitX=1;exitY=0.0568;entryX=0;entryY=0.0;fontSize=28;labelBackgroundColor=#FFFFFF;fontColor=#3D4B5A;strokeWidth=4;strokeColor=#5B7290;fontStyle=1" parent="1" source="act7" target="act5" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="m2" value="Resolve user scope&amp;nbsp;&lt;div&gt;and due data&lt;/div&gt;" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;entryX=0;entryY=0.0;fontSize=28;labelBackgroundColor=#FFFFFF;fontColor=#3D4B5A;strokeWidth=4;strokeColor=#5B7290;fontStyle=1" parent="1" source="act5" target="act0" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="m3" value="&lt;font style=&quot;font-size: 22px;&quot;&gt;Bills · balances ·&amp;nbsp;&lt;/font&gt;&lt;div&gt;&lt;font style=&quot;font-size: 22px;&quot;&gt;transactions&lt;/font&gt;&lt;/div&gt;" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;curved=0;rounded=0;exitX=0;exitY=1.0;entryX=1;entryY=0.1613;fontSize=28;labelBackgroundColor=#FFFFFF;fontColor=#6B7A89;strokeWidth=4;strokeColor=#9AA7B4;fontStyle=1" parent="1" source="act0" target="act5" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="m4" value="&lt;font style=&quot;font-size: 22px;&quot;&gt;Run reminder, runway, subscription or month-end&lt;/font&gt;" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;exitX=1;exitY=0.2419;entryX=0;entryY=0.0;fontSize=28;labelBackgroundColor=#FFFFFF;fontColor=#3D4B5A;strokeWidth=4;strokeColor=#5B7290;fontStyle=1" parent="1" source="act5" target="act1" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="m5" value="&lt;font style=&quot;font-size: 22px;&quot;&gt;Compute facts and&amp;nbsp;&lt;/font&gt;&lt;div&gt;&lt;font style=&quot;font-size: 22px;&quot;&gt;alert thresholds&lt;/font&gt;&lt;/div&gt;" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;entryX=1;entryY=0.6667;fontSize=28;labelBackgroundColor=#FFFFFF;fontColor=#3D4B5A;strokeWidth=4;strokeColor=#5B7290;fontStyle=1" parent="1" source="act1" target="act1" edge="1">
+                    <mxGeometry x="0.1938" y="114" relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="1646.546666666666" y="568.3281295381933"/>
+                            <mxPoint x="1646.546666666666" y="605.3022799883821"/>
+                        </Array>
+                        <mxPoint x="113" y="-109" as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="m6" value="Structured facts" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;curved=0;rounded=0;exitX=0;exitY=1.0;entryX=1;entryY=0.4355;fontSize=28;labelBackgroundColor=#FFFFFF;fontColor=#6B7A89;strokeWidth=4;strokeColor=#9AA7B4;fontStyle=1" parent="1" source="act1" target="act5" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="m7" value="Apply persona to grounded narration" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;exitX=1;exitY=0.5161;entryX=0;entryY=0.0;fontSize=28;labelBackgroundColor=#FFFFFF;fontColor=#3D4B5A;strokeWidth=4;strokeColor=#5B7290;fontStyle=1" parent="1" source="act5" target="act2" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="m8" value="Message or deterministic fallback" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;curved=0;rounded=0;exitX=0;exitY=1.0;entryX=1;entryY=0.5968;fontSize=28;labelBackgroundColor=#FFFFFF;fontColor=#6B7A89;strokeWidth=4;strokeColor=#9AA7B4;fontStyle=1" parent="1" source="act2" target="act5" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="m9" value="persist(event_key, dedupeHours)" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;exitX=1;exitY=0.6774;entryX=0;entryY=0.0;fontSize=28;labelBackgroundColor=#FFFFFF;fontColor=#3D4B5A;strokeWidth=4;strokeColor=#5B7290;fontStyle=1" parent="1" source="act5" target="act4" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="m10" value="INSERT chat_messages with unique event_key" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;exitX=0;exitY=0.3333;entryX=1;entryY=0.0;fontSize=28;labelBackgroundColor=#FFFFFF;fontColor=#3D4B5A;strokeWidth=4;strokeColor=#5B7290;fontStyle=1" parent="1" source="act4" target="act3" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="m11" value="Created or duplicate" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;curved=0;rounded=0;exitX=1;exitY=1.0;entryX=0;entryY=0.6667;fontSize=28;labelBackgroundColor=#FFFFFF;fontColor=#6B7A89;strokeWidth=4;strokeColor=#9AA7B4;fontStyle=1" parent="1" source="act3" target="act4" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="m12" value="Idempotent result" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;curved=0;rounded=0;exitX=0;exitY=1.0;entryX=1;entryY=0.9194;fontSize=28;labelBackgroundColor=#FFFFFF;fontColor=#6B7A89;strokeWidth=4;strokeColor=#9AA7B4;fontStyle=1" parent="1" source="act4" target="act5" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="m13" value="Complete or&amp;nbsp;&lt;div&gt;retry on failure&lt;/div&gt;" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;curved=0;rounded=0;exitX=0;exitY=1.0;entryX=1;entryY=0.7614;fontSize=28;labelBackgroundColor=#FFFFFF;fontColor=#6B7A89;strokeWidth=4;strokeColor=#9AA7B4;fontStyle=1" parent="1" source="act5" target="act7" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="m14" value="&lt;b&gt;&lt;font style=&quot;font-size: 26px;&quot;&gt;GET /api/chat/messages&lt;/font&gt;&lt;/b&gt;" style="html=1;verticalAlign=bottom;endArrow=block;curved=0;rounded=0;exitX=0.5;exitY=0.802;entryX=1;entryY=0.0;fontSize=30;labelBackgroundColor=#FFFFFF;fontColor=#3D4B5A;strokeWidth=4;strokeColor=#5B7290;" parent="1" source="app" target="act6" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="m15" value="&lt;b&gt;&lt;font style=&quot;font-size: 28px;&quot;&gt;Stored proactive message&lt;/font&gt;&lt;/b&gt;" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;curved=0;rounded=0;exitX=1;exitY=1.0;entryX=0.5;entryY=0.8515;fontSize=30;labelBackgroundColor=#FFFFFF;fontColor=#6B7A89;strokeWidth=4;strokeColor=#9AA7B4;" parent="1" source="act6" target="app" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="note16" value="If Redis fails, the worker stops safely while the interactive API continues" style="shape=note;whiteSpace=wrap;html=1;size=14;fillColor=#FBF3D9;strokeColor=#B08900;fontColor=#5A4700;fontSize=30;strokeWidth=4;" parent="1" vertex="1">
+                    <mxGeometry x="536.3599999999999" y="1429.0775486494333" width="632.6431372549017" height="110.92245135056633" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
 </mxfile>

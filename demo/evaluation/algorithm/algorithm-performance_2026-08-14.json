@@ -1,0 +1,173 @@
+{
+  "experiment": "algorithm-performance",
+  "meta": {
+    "timestamp": "2026-08-14T02:26:29.175Z",
+    "commit": "c18e160",
+    "working_tree_dirty": true,
+    "node": "v24.16.0",
+    "ai_provider": "local",
+    "gemini_model": null,
+    "tz": "Asia/Ho_Chi_Minh",
+    "execution_mode": "offline_deterministic",
+    "code_sha256": "09e29246f9fda2c0498e206adf59914dbbca64527a0fef6cde83e52f90179f07",
+    "code_files": [
+      "tests/experiments/algorithm-performance.js",
+      "services/analytics/algorithms.js",
+      "services/analytics/timeSeries.js"
+    ]
+  },
+  "environment": {
+    "platform": "linux",
+    "arch": "x64",
+    "os_release": "6.6.87.2-microsoft-standard-WSL2",
+    "cpu_model": "AMD Ryzen 5 5500U with Radeon Graphics",
+    "cpu_count": 12
+  },
+  "configuration": {
+    "seed": 20260814,
+    "sizes": [
+      100,
+      1000,
+      5000,
+      10000
+    ],
+    "warmup_runs": 5,
+    "measured_runs": 30,
+    "dataset_sha256": "1031f58763c424429f7db49b3a41ba2f4b13013ff39b8030585c656157e3d6ee"
+  },
+  "measurements": [
+    {
+      "algorithm": "linearTrend",
+      "size": 100,
+      "expected_complexity": "O(n)",
+      "warmup_runs": 5,
+      "measured_runs": 30,
+      "median_ms": 0.084,
+      "p95_ms": 0.296,
+      "min_ms": 0.008,
+      "max_ms": 0.691
+    },
+    {
+      "algorithm": "linearTrend",
+      "size": 1000,
+      "expected_complexity": "O(n)",
+      "warmup_runs": 5,
+      "measured_runs": 30,
+      "median_ms": 0.055,
+      "p95_ms": 0.387,
+      "min_ms": 0.052,
+      "max_ms": 0.408
+    },
+    {
+      "algorithm": "linearTrend",
+      "size": 5000,
+      "expected_complexity": "O(n)",
+      "warmup_runs": 5,
+      "measured_runs": 30,
+      "median_ms": 0.174,
+      "p95_ms": 1.827,
+      "min_ms": 0.135,
+      "max_ms": 3.025
+    },
+    {
+      "algorithm": "linearTrend",
+      "size": 10000,
+      "expected_complexity": "O(n)",
+      "warmup_runs": 5,
+      "measured_runs": 30,
+      "median_ms": 0.265,
+      "p95_ms": 0.515,
+      "min_ms": 0.259,
+      "max_ms": 0.518
+    },
+    {
+      "algorithm": "detectAnomalies",
+      "size": 100,
+      "expected_complexity": "O(n log n)",
+      "warmup_runs": 5,
+      "measured_runs": 30,
+      "median_ms": 0.028,
+      "p95_ms": 0.075,
+      "min_ms": 0.026,
+      "max_ms": 0.091
+    },
+    {
+      "algorithm": "detectAnomalies",
+      "size": 1000,
+      "expected_complexity": "O(n log n)",
+      "warmup_runs": 5,
+      "measured_runs": 30,
+      "median_ms": 0.312,
+      "p95_ms": 1.459,
+      "min_ms": 0.295,
+      "max_ms": 3.679
+    },
+    {
+      "algorithm": "detectAnomalies",
+      "size": 5000,
+      "expected_complexity": "O(n log n)",
+      "warmup_runs": 5,
+      "measured_runs": 30,
+      "median_ms": 1.654,
+      "p95_ms": 2.417,
+      "min_ms": 1.59,
+      "max_ms": 2.58
+    },
+    {
+      "algorithm": "detectAnomalies",
+      "size": 10000,
+      "expected_complexity": "O(n log n)",
+      "warmup_runs": 5,
+      "measured_runs": 30,
+      "median_ms": 3.6,
+      "p95_ms": 4.197,
+      "min_ms": 3.504,
+      "max_ms": 4.276
+    },
+    {
+      "algorithm": "completeMonthlyCashflow",
+      "size": 100,
+      "expected_complexity": "O(n + w)",
+      "warmup_runs": 5,
+      "measured_runs": 30,
+      "median_ms": 0.063,
+      "p95_ms": 0.155,
+      "min_ms": 0.039,
+      "max_ms": 0.732
+    },
+    {
+      "algorithm": "completeMonthlyCashflow",
+      "size": 1000,
+      "expected_complexity": "O(n + w)",
+      "warmup_runs": 5,
+      "measured_runs": 30,
+      "median_ms": 0.113,
+      "p95_ms": 0.197,
+      "min_ms": 0.103,
+      "max_ms": 1.28
+    },
+    {
+      "algorithm": "completeMonthlyCashflow",
+      "size": 5000,
+      "expected_complexity": "O(n + w)",
+      "warmup_runs": 5,
+      "measured_runs": 30,
+      "median_ms": 0.25,
+      "p95_ms": 1.423,
+      "min_ms": 0.221,
+      "max_ms": 1.52
+    },
+    {
+      "algorithm": "completeMonthlyCashflow",
+      "size": 10000,
+      "expected_complexity": "O(n + w)",
+      "warmup_runs": 5,
+      "measured_runs": 30,
+      "median_ms": 0.512,
+      "p95_ms": 0.956,
+      "min_ms": 0.415,
+      "max_ms": 2.177
+    }
+  ],
+  "sink": 938448736.9250001
+}

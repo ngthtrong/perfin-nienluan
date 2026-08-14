@@ -404,20 +404,23 @@ The numeric boundary is: SQL/Model reads source data, Analytics Engine computes 
 
 \chapter{Reproduction Commands}
 
-Run the two automated test commands from the backend directory with Redis/jobs disabled and the local parser selected. Record the commit, Node version and run time without storing secrets in artifacts.
+Run the evaluation commands from the backend directory with Redis/jobs disabled and the local parser selected. Record the commit, Node version, environment and run time without storing secrets in artifacts.
 
 \begin{verbatim}
 cd demo/backend
 export REDIS_ENABLED=false JOBS_ENABLED=false AI_PROVIDER=local
 npm test
 npm run test:ai
+npm run test:algorithm
+npm run benchmark:algorithms
+npm run benchmark:classification
 \end{verbatim}
 
-Current results are summarized in Section~\ref{sec:testing}. These commands do not invoke live PostgreSQL/Redis, Gemini, OCR or STT and therefore provide no evidence for those services.
+Current results are summarized in Section~\ref{sec:testing} and stored in \path{demo/evaluation/algorithm/}. These runners do not invoke live PostgreSQL/Redis, Gemini, OCR or STT and therefore provide no evidence for those services.
 
 \chapter{Diagram Sources}
 
-The report keeps 14 editable Draw.io sources and one overall use case. Every diagram label is English so the Vietnamese and English reports share the same set. Editable sources and manually exported PNG files are stored together in \path{latex/figures/drawio/}.
+The report keeps editable Draw.io sources and exported PNG files together in \path{latex/figures/drawio/}. Every diagram label is English so the Vietnamese and English reports can share the same visual vocabulary; the English data-design section uses the Domain Class Diagram, while the Vietnamese index retains its separate Logical ERD reference.
 
 \begin{longtable}{@{}C{1.0cm}L{5.2cm}L{6.8cm}@{}}
   \toprule
@@ -432,15 +435,14 @@ The report keeps 14 editable Draw.io sources and one overall use case. Every dia
   2 & Runtime architecture & \path{02-runtime-architecture} \\
   3 & Prototype deployment & \path{03-deployment} \\
   4 & Domain class diagram & \path{04-domain-class} \\
-  5 & Physical ERD & \path{05-physical-erd} \\
-  6 & LLM boundary & \path{06-llm-boundary} \\
-  7 & Conversation state & \path{07-conversation-state} \\
-  8 & Text transaction sequence & \path{08-text-sequence} \\
-  9 & Multimodal input & \path{09-multimodal-flow} \\
-  10 & Feedback and classification & \path{10-feedback-flow} \\
-  11 & Grounded insight & \path{11-insight-sequence} \\
-  12 & Goal planner and what-if & \path{12-goal-flow} \\
-  13 & Background job & \path{13-worker-sequence} \\
-  14 & Overall use case & \path{14-usecase-overview} \\
+  5 & LLM boundary & \path{06-llm-boundary} \\
+  6 & Conversation state & \path{07-conversation-state} \\
+  7 & Text transaction sequence & \path{08-text-sequence} \\
+  8 & Multimodal input & \path{09-multimodal-flow} \\
+  9 & Feedback and classification & \path{10-feedback-flow} \\
+  10 & Grounded insight & \path{11-insight-sequence} \\
+  11 & Goal planner and what-if & \path{12-goal-flow} \\
+  12 & Background job & \path{13-worker-sequence} \\
+  13 & Overall use case & \path{14-usecase-overview} \\
   \bottomrule
 \end{longtable}

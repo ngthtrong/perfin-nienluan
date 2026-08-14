@@ -55,6 +55,6 @@ Trang bìa tái sử dụng logo CTU tại `../archive/latex/images/ctu_logo.png
 
 ## Quy ước bằng chứng
 
-Các nhãn “đã hiện thực”, “đã đo”, “mục tiêu”, “thiết kế đích” và “chưa đo” không được dùng thay thế cho nhau. Các số liệu kiểm thử phải được sinh lại từ snapshot cuối trước khi đưa vào báo cáo; artifact lịch sử trên dataset cũ chỉ giữ để đối chiếu và đánh dấu superseded. Báo cáo không tuyên bố accuracy OCR/STT, numeric faithfulness, p95, Redis worker live hoặc UAT nếu chưa có artifact tương ứng.
+Các nhãn “đã hiện thực”, “đã đo”, “mục tiêu”, “thiết kế đích” và “chưa đo” không được dùng thay thế cho nhau. Các số liệu kiểm thử phải được sinh lại từ snapshot cuối trước khi đưa vào báo cáo; artifact lịch sử trên dataset cũ chỉ giữ để đối chiếu và đánh dấu superseded. Báo cáo không tuyên bố accuracy OCR/STT, numeric faithfulness, p95 production hoặc Redis worker live nếu chưa có artifact tương ứng.
 
 Các PDF Draw.io được chèn trực tiếp bằng `graphicx` và đã được xuất lại ở chế độ crop/one-page để giữ trọn sơ đồ dưới dạng vector. Khi chỉnh sửa, cần tiếp tục xuất PDF với tùy chọn crop; không thay nguồn `.drawio` bằng ảnh raster.

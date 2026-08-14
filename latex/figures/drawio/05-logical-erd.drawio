@@ -1,0 +1,177 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="drawio" version="30.3.1">
+  <diagram id="05-logical-erd" name="Logical ERD">
+    <mxGraphModel dx="2480" dy="1430" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="2480" pageHeight="1430" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+
+        <mxCell id="title" value="&lt;b&gt;PERFIN — Logical Entity–Relationship Diagram&lt;/b&gt;" style="text;html=1;align=left;verticalAlign=middle;fontSize=30;fontColor=#172B4D;" vertex="1" parent="1">
+          <mxGeometry x="55" y="25" width="2300" height="48" as="geometry"/>
+        </mxCell>
+        <mxCell id="subtitle" value="16 business entities · logical identifiers and business attributes · Crow’s Foot cardinalities · SQL types, indexes and constraints are intentionally omitted." style="text;html=1;align=left;verticalAlign=middle;fontSize=16;fontColor=#5E6C84;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="55" y="76" width="2300" height="42" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="identity_zone" value="IDENTITY, AI &amp; PERSONALIZATION" style="swimlane;startSize=36;container=1;pointerEvents=0;rounded=1;arcSize=8;html=1;fontStyle=1;fontSize=15;fontColor=#403294;fillColor=#F2EEFA;swimlaneFillColor=#FCFBFE;strokeColor=#A995D6;strokeWidth=1.3;collapsible=0;" vertex="1" parent="1">
+          <mxGeometry x="55" y="140" width="650" height="650" as="geometry"/>
+        </mxCell>
+        <mxCell id="core_zone" value="CORE LEDGER" style="swimlane;startSize=36;container=1;pointerEvents=0;rounded=1;arcSize=8;html=1;fontStyle=1;fontSize=15;fontColor=#185C37;fillColor=#EAF7EF;swimlaneFillColor=#FBFEFC;strokeColor=#69B889;strokeWidth=1.3;collapsible=0;" vertex="1" parent="1">
+          <mxGeometry x="735" y="140" width="990" height="650" as="geometry"/>
+        </mxCell>
+        <mxCell id="planning_zone" value="BUDGET &amp; GOAL PLANNING" style="swimlane;startSize=36;container=1;pointerEvents=0;rounded=1;arcSize=8;html=1;fontStyle=1;fontSize=15;fontColor=#785400;fillColor=#FFF7DF;swimlaneFillColor=#FFFEFA;strokeColor=#D9A91A;strokeWidth=1.3;collapsible=0;" vertex="1" parent="1">
+          <mxGeometry x="1755" y="140" width="670" height="650" as="geometry"/>
+        </mxCell>
+        <mxCell id="investment_zone" value="INVESTMENT &amp; CASHFLOW" style="swimlane;startSize=36;container=1;pointerEvents=0;rounded=1;arcSize=8;html=1;fontStyle=1;fontSize=15;fontColor=#0F5B66;fillColor=#E8F7F8;swimlaneFillColor=#FBFEFE;strokeColor=#55AEB6;strokeWidth=1.3;collapsible=0;" vertex="1" parent="1">
+          <mxGeometry x="735" y="820" width="650" height="500" as="geometry"/>
+        </mxCell>
+        <mxCell id="recurring_zone" value="RECURRING BILLING" style="swimlane;startSize=36;container=1;pointerEvents=0;rounded=1;arcSize=8;html=1;fontStyle=1;fontSize=15;fontColor=#7A3E00;fillColor=#FFF0DF;swimlaneFillColor=#FFFCFA;strokeColor=#D58A3A;strokeWidth=1.3;collapsible=0;" vertex="1" parent="1">
+          <mxGeometry x="1415" y="820" width="1010" height="500" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="users" value="&lt;b&gt;USER&lt;/b&gt;&#xa;────────────────&#xa;&lt;b&gt;Identifier&lt;/b&gt;: User key&#xa;Username · Email · Language&#xa;Payday · Personalization consent" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingTop=9;spacingLeft=11;spacingRight=7;fillColor=#E9F2FF;strokeColor=#4C78C2;fontColor=#17365D;fontSize=14;strokeWidth=1.7;shadow=0;" vertex="1" parent="1">
+          <mxGeometry x="195" y="200" width="370" height="135" as="geometry"/>
+        </mxCell>
+        <mxCell id="personalities" value="&lt;b&gt;AI PERSONALITY&lt;/b&gt;&#xa;────────────────&#xa;&lt;b&gt;Identifier&lt;/b&gt;: Personality ID&#xa;Name · Description · Style prompt&#xa;System flag · Default flag" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingTop=9;spacingLeft=11;fillColor=#F0EAF9;strokeColor=#7C5CBF;fontColor=#30204F;fontSize=14;strokeWidth=1.4;shadow=0;" vertex="1" parent="1">
+          <mxGeometry x="90" y="410" width="280" height="125" as="geometry"/>
+        </mxCell>
+        <mxCell id="traits" value="&lt;b&gt;USER TRAIT&lt;/b&gt;&#xa;────────────────&#xa;&lt;b&gt;Identifier&lt;/b&gt;: User + trait type&#xa;Trait type · Trait value" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingTop=9;spacingLeft=11;fillColor=#F0EAF9;strokeColor=#7C5CBF;fontColor=#30204F;fontSize=14;strokeWidth=1.4;shadow=0;" vertex="1" parent="1">
+          <mxGeometry x="395" y="410" width="275" height="110" as="geometry"/>
+        </mxCell>
+        <mxCell id="chat" value="&lt;b&gt;CHAT MESSAGE&lt;/b&gt;&#xa;────────────────&#xa;&lt;b&gt;Identifier&lt;/b&gt;: Message ID&#xa;Role · Content · Metadata&#xa;Created time" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingTop=9;spacingLeft=11;fillColor=#F0EAF9;strokeColor=#7C5CBF;fontColor=#30204F;fontSize=14;strokeWidth=1.4;shadow=0;" vertex="1" parent="1">
+          <mxGeometry x="90" y="615" width="280" height="115" as="geometry"/>
+        </mxCell>
+        <mxCell id="feedback" value="&lt;b&gt;AI FEEDBACK&lt;/b&gt;&#xa;────────────────&#xa;&lt;b&gt;Identifier&lt;/b&gt;: Feedback ID&#xa;Feedback type · Original result&#xa;Corrected result · Anonymized flag" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingTop=9;spacingLeft=11;fillColor=#F0EAF9;strokeColor=#7C5CBF;fontColor=#30204F;fontSize=14;strokeWidth=1.4;shadow=0;" vertex="1" parent="1">
+          <mxGeometry x="395" y="600" width="275" height="125" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="categories" value="&lt;b&gt;CATEGORY&lt;/b&gt;&#xa;────────────────&#xa;&lt;b&gt;Identifier&lt;/b&gt;: Category ID&#xa;Name · Income/expense type&#xa;Icon · Sort order · Default/system flag" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingTop=9;spacingLeft=11;fillColor=#E8F6ED;strokeColor=#2E8B57;fontColor=#17472B;fontSize=14;strokeWidth=1.4;shadow=0;" vertex="1" parent="1">
+          <mxGeometry x="790" y="255" width="280" height="130" as="geometry"/>
+        </mxCell>
+        <mxCell id="wallets" value="&lt;b&gt;WALLET&lt;/b&gt;&#xa;────────────────&#xa;&lt;b&gt;Identifier&lt;/b&gt;: Wallet ID&#xa;Name · Wallet type · Currency&#xa;Initial balance · Current balance" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingTop=9;spacingLeft=11;fillColor=#E8F6ED;strokeColor=#2E8B57;fontColor=#17472B;fontSize=14;strokeWidth=1.4;shadow=0;" vertex="1" parent="1">
+          <mxGeometry x="1390" y="255" width="280" height="130" as="geometry"/>
+        </mxCell>
+        <mxCell id="transactions" value="&lt;b&gt;TRANSACTION&lt;/b&gt;&#xa;────────────────&#xa;&lt;b&gt;Identifier&lt;/b&gt;: Transaction ID&#xa;Description · Amount · Transaction type&#xa;Date · Source · Note" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingTop=9;spacingLeft=11;fillColor=#DDF3E5;strokeColor=#1F7A48;fontColor=#123F27;fontSize=14;strokeWidth=1.8;shadow=0;" vertex="1" parent="1">
+          <mxGeometry x="1085" y="525" width="300" height="140" as="geometry"/>
+        </mxCell>
+        <mxCell id="core_note" value="A transaction is classified by one category and funded by one wallet. Categories may form a parent–child hierarchy." style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fontSize=12;fontColor=#185C37;fillColor=#F2FAF5;strokeColor=#69B889;dashed=1;" vertex="1" parent="1">
+          <mxGeometry x="900" y="705" width="660" height="42" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="budgets" value="&lt;b&gt;BUDGET&lt;/b&gt;&#xa;────────────────&#xa;&lt;b&gt;Identifier&lt;/b&gt;: Budget ID&#xa;Limit amount · Month · Year" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingTop=9;spacingLeft=11;fillColor=#FFF3CD;strokeColor=#C58A00;fontColor=#624600;fontSize=14;strokeWidth=1.4;shadow=0;" vertex="1" parent="1">
+          <mxGeometry x="1800" y="245" width="275" height="115" as="geometry"/>
+        </mxCell>
+        <mxCell id="budget_history" value="&lt;b&gt;BUDGET CHANGE&lt;/b&gt;&#xa;────────────────&#xa;&lt;b&gt;Identifier&lt;/b&gt;: Change ID&#xa;Change type · Previous value&#xa;New value · Changed time" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingTop=9;spacingLeft=11;fillColor=#FFF3CD;strokeColor=#C58A00;fontColor=#624600;fontSize=14;strokeWidth=1.4;shadow=0;" vertex="1" parent="1">
+          <mxGeometry x="2100" y="245" width="275" height="115" as="geometry"/>
+        </mxCell>
+        <mxCell id="goals" value="&lt;b&gt;FINANCIAL GOAL&lt;/b&gt;&#xa;────────────────&#xa;&lt;b&gt;Identifier&lt;/b&gt;: Goal ID&#xa;Name · Goal type · Target/current amount&#xa;Target date · Contribution · Status" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingTop=9;spacingLeft=11;fillColor=#FFF3CD;strokeColor=#C58A00;fontColor=#624600;fontSize=14;strokeWidth=1.4;shadow=0;" vertex="1" parent="1">
+          <mxGeometry x="1945" y="520" width="285" height="130" as="geometry"/>
+        </mxCell>
+        <mxCell id="planning_note" value="A budget applies to one category and retains its change history. A financial goal may be associated with one wallet." style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fontSize=12;fontColor=#785400;fillColor=#FFFAE9;strokeColor=#D9A91A;dashed=1;" vertex="1" parent="1">
+          <mxGeometry x="1810" y="705" width="555" height="42" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="transfers" value="&lt;b&gt;WALLET TRANSFER&lt;/b&gt;&#xa;────────────────&#xa;&lt;b&gt;Identifier&lt;/b&gt;: Transfer ID&#xa;Amount · Transfer type&#xa;Transfer date · Note" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingTop=9;spacingLeft=11;fillColor=#E4F5F6;strokeColor=#328B94;fontColor=#134A50;fontSize=14;strokeWidth=1.4;shadow=0;" vertex="1" parent="1">
+          <mxGeometry x="790" y="945" width="270" height="130" as="geometry"/>
+        </mxCell>
+        <mxCell id="pnl" value="&lt;b&gt;INVESTMENT RESULT&lt;/b&gt;&#xa;────────────────&#xa;&lt;b&gt;Identifier&lt;/b&gt;: Result ID&#xa;Profit/loss amount · Recorded date&#xa;Note" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingTop=9;spacingLeft=11;fillColor=#E4F5F6;strokeColor=#328B94;fontColor=#134A50;fontSize=14;strokeWidth=1.4;shadow=0;" vertex="1" parent="1">
+          <mxGeometry x="1080" y="1140" width="260" height="110" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="bills" value="&lt;b&gt;RECURRING BILL&lt;/b&gt;&#xa;────────────────&#xa;&lt;b&gt;Identifier&lt;/b&gt;: Bill ID&#xa;Name · Amount · Frequency&#xa;Next due date · Reminder · Status" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingTop=9;spacingLeft=11;fillColor=#FFEBD7;strokeColor=#C87324;fontColor=#6C3708;fontSize=14;strokeWidth=1.4;shadow=0;" vertex="1" parent="1">
+          <mxGeometry x="1465" y="940" width="285" height="135" as="geometry"/>
+        </mxCell>
+        <mxCell id="payments" value="&lt;b&gt;BILL PAYMENT&lt;/b&gt;&#xa;────────────────&#xa;&lt;b&gt;Identifier&lt;/b&gt;: Payment ID&#xa;Bill snapshot · Due/paid date&#xa;Amount · Payment status" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingTop=9;spacingLeft=11;fillColor=#FFEBD7;strokeColor=#C87324;fontColor=#6C3708;fontSize=14;strokeWidth=1.4;shadow=0;" vertex="1" parent="1">
+          <mxGeometry x="1780" y="940" width="300" height="135" as="geometry"/>
+        </mxCell>
+        <mxCell id="dismissed" value="&lt;b&gt;DISMISSED SUGGESTION&lt;/b&gt;&#xa;────────────────&#xa;&lt;b&gt;Identifier&lt;/b&gt;: User + signature&#xa;Suggestion signature · Dismissed time" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingTop=9;spacingLeft=11;fillColor=#FFEBD7;strokeColor=#C87324;fontColor=#6C3708;fontSize=14;strokeWidth=1.4;shadow=0;" vertex="1" parent="1">
+          <mxGeometry x="2110" y="940" width="275" height="120" as="geometry"/>
+        </mxCell>
+        <mxCell id="recurring_note" value="A payment records one bill occurrence and may be associated with a ledger transaction and the wallet used for payment." style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fontSize=12;fontColor=#7A3E00;fillColor=#FFF7EF;strokeColor=#D58A3A;dashed=1;" vertex="1" parent="1">
+          <mxGeometry x="1640" y="1205" width="560" height="42" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="e_persona_user" value="selected as active" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;startArrow=ERzeroToOne;startFill=0;endArrow=ERzeroToMany;endFill=0;strokeColor=#7C5CBF;fontColor=#403294;fontSize=12;labelBackgroundColor=#FFFFFF;strokeWidth=1.3;exitX=0.5;exitY=0;entryX=0.2;entryY=1;" edge="1" parent="1" source="personalities" target="users">
+          <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="230" y="370"/><mxPoint x="269" y="370"/></Array></mxGeometry>
+        </mxCell>
+        <mxCell id="e_user_personalities" value="defines" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;startArrow=ERzeroToOne;startFill=0;endArrow=ERzeroToMany;endFill=0;strokeColor=#7C5CBF;fontColor=#403294;fontSize=12;labelBackgroundColor=#FFFFFF;strokeWidth=1.2;exitX=0.35;exitY=1;entryX=0.8;entryY=0;" edge="1" parent="1" source="users" target="personalities">
+          <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="325" y="380"/><mxPoint x="314" y="380"/></Array></mxGeometry>
+        </mxCell>
+        <mxCell id="e_user_traits" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;startArrow=ERone;startFill=0;endArrow=ERzeroToMany;endFill=0;strokeColor=#7C5CBF;fontColor=#403294;fontSize=12;labelBackgroundColor=#FFFFFF;strokeWidth=1.2;exitX=0.75;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="users" target="traits">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_user_chat" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;startArrow=ERone;startFill=0;endArrow=ERzeroToMany;endFill=0;strokeColor=#7C5CBF;fontColor=#403294;fontSize=12;labelBackgroundColor=#FFFFFF;strokeWidth=1.2;exitX=0.15;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="users" target="chat">
+          <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="251" y="565"/><mxPoint x="230" y="565"/></Array></mxGeometry>
+        </mxCell>
+        <mxCell id="e_persona_chat" value="styles" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;startArrow=ERzeroToOne;startFill=0;endArrow=ERzeroToMany;endFill=0;strokeColor=#7C5CBF;fontColor=#403294;fontSize=12;labelBackgroundColor=#FFFFFF;strokeWidth=1.2;exitX=0.5;exitY=1;entryX=0.25;entryY=0;" edge="1" parent="1" source="personalities" target="chat">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_user_feedback" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;startArrow=ERone;startFill=0;endArrow=ERzeroToMany;endFill=0;strokeColor=#7C5CBF;fontColor=#403294;fontSize=12;labelBackgroundColor=#FFFFFF;strokeWidth=1.2;exitX=0.9;exitY=1;entryX=0.65;entryY=0;" edge="1" parent="1" source="users" target="feedback">
+          <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="528" y="565"/><mxPoint x="574" y="565"/></Array></mxGeometry>
+        </mxCell>
+        <mxCell id="e_feedback_tx" value="corrects" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;startArrow=ERzeroToMany;startFill=0;endArrow=ERzeroToOne;endFill=0;strokeColor=#7C5CBF;fontColor=#403294;fontSize=12;labelBackgroundColor=#FFFFFF;strokeWidth=1.2;exitX=1;exitY=0.55;entryX=0;entryY=0.6;" edge="1" parent="1" source="feedback" target="transactions">
+          <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="710" y="670"/><mxPoint x="710" y="609"/></Array></mxGeometry>
+        </mxCell>
+
+        <mxCell id="e_user_categories" value="defines" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;startArrow=ERone;startFill=0;endArrow=ERzeroToMany;endFill=0;strokeColor=#4C78C2;fontColor=#17365D;fontSize=12;labelBackgroundColor=#FFFFFF;strokeWidth=1.3;exitX=1;exitY=0.35;entryX=0;entryY=0.25;" edge="1" parent="1" source="users" target="categories">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_user_wallets" value="owns" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;startArrow=ERone;startFill=0;endArrow=ERzeroToMany;endFill=0;strokeColor=#4C78C2;fontColor=#17365D;fontSize=12;labelBackgroundColor=#FFFFFF;strokeWidth=1.3;exitX=0.7;exitY=0;entryX=0.5;entryY=0;" edge="1" parent="1" source="users" target="wallets">
+          <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="454" y="165"/><mxPoint x="1530" y="165"/></Array></mxGeometry>
+        </mxCell>
+        <mxCell id="e_user_dismissed" value="dismisses suggestion" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;startArrow=ERone;startFill=0;endArrow=ERzeroToMany;endFill=0;strokeColor=#4C78C2;fontColor=#17365D;fontSize=12;labelBackgroundColor=#FFFFFF;strokeWidth=1.2;exitX=0.85;exitY=0;entryX=1;entryY=0.5;" edge="1" parent="1" source="users" target="dismissed">
+          <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="510" y="125"/><mxPoint x="2410" y="125"/><mxPoint x="2410" y="1000"/></Array></mxGeometry>
+        </mxCell>
+
+        <mxCell id="e_cat_tx" value="classifies" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;startArrow=ERone;startFill=0;endArrow=ERzeroToMany;endFill=0;strokeColor=#2E8B57;fontColor=#17472B;fontSize=12;labelBackgroundColor=#FFFFFF;strokeWidth=1.4;exitX=0.7;exitY=1;entryX=0.2;entryY=0;" edge="1" parent="1" source="categories" target="transactions">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_category_hierarchy" value="parent of" style="edgeStyle=orthogonalEdgeStyle;loopStyle=orthogonalLoopStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;startArrow=ERzeroToOne;startFill=0;endArrow=ERzeroToMany;endFill=0;strokeColor=#2E8B57;fontColor=#17472B;fontSize=12;labelBackgroundColor=#FFFFFF;strokeWidth=1.2;exitX=0;exitY=0.65;entryX=0;entryY=0.25;" edge="1" parent="1" source="categories" target="categories">
+          <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="750" y="340"/><mxPoint x="750" y="285"/></Array></mxGeometry>
+        </mxCell>
+        <mxCell id="e_wallet_tx" value="funds" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;startArrow=ERone;startFill=0;endArrow=ERzeroToMany;endFill=0;strokeColor=#2E8B57;fontColor=#17472B;fontSize=12;labelBackgroundColor=#FFFFFF;strokeWidth=1.4;exitX=0.3;exitY=1;entryX=0.8;entryY=0;" edge="1" parent="1" source="wallets" target="transactions">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_cat_budget" value="limits" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;startArrow=ERone;startFill=0;endArrow=ERzeroToMany;endFill=0;strokeColor=#C58A00;fontColor=#624600;fontSize=12;labelBackgroundColor=#FFFFFF;strokeWidth=1.3;exitX=0.5;exitY=0;entryX=0.2;entryY=0;" edge="1" parent="1" source="categories" target="budgets">
+          <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="930" y="200"/><mxPoint x="1855" y="200"/></Array></mxGeometry>
+        </mxCell>
+        <mxCell id="e_budget_history" value="audits" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;startArrow=ERone;startFill=0;endArrow=ERzeroToMany;endFill=0;strokeColor=#C58A00;fontColor=#624600;fontSize=12;labelBackgroundColor=#FFFFFF;strokeWidth=1.3;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="1" source="budgets" target="budget_history">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_wallet_goal" value="tracks" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;startArrow=ERzeroToOne;startFill=0;endArrow=ERzeroToMany;endFill=0;strokeColor=#C58A00;fontColor=#624600;fontSize=12;labelBackgroundColor=#FFFFFF;strokeWidth=1.3;exitX=1;exitY=0.7;entryX=0;entryY=0.45;" edge="1" parent="1" source="wallets" target="goals">
+          <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="1738" y="346"/><mxPoint x="1738" y="578"/></Array></mxGeometry>
+        </mxCell>
+
+        <mxCell id="e_wallet_transfers" value="source wallet" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;startArrow=ERzeroToOne;startFill=0;endArrow=ERzeroToMany;endFill=0;strokeColor=#328B94;fontColor=#134A50;fontSize=12;labelBackgroundColor=#FFFFFF;strokeWidth=1.3;exitX=0.25;exitY=1;entryX=0.7;entryY=0;" edge="1" parent="1" source="wallets" target="transfers">
+          <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="1460" y="805"/><mxPoint x="979" y="805"/></Array></mxGeometry>
+        </mxCell>
+        <mxCell id="e_wallet_transfers_destination" value="destination wallet" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;startArrow=ERzeroToOne;startFill=0;endArrow=ERzeroToMany;endFill=0;strokeColor=#328B94;fontColor=#134A50;fontSize=12;labelBackgroundColor=#FFFFFF;strokeWidth=1.3;exitX=0.35;exitY=1;entryX=0.3;entryY=0;" edge="1" parent="1" source="wallets" target="transfers">
+          <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="1488" y="835"/><mxPoint x="871" y="835"/></Array></mxGeometry>
+        </mxCell>
+        <mxCell id="e_wallet_pnl" value="values" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;startArrow=ERone;startFill=0;endArrow=ERzeroToMany;endFill=0;strokeColor=#328B94;fontColor=#134A50;fontSize=12;labelBackgroundColor=#FFFFFF;strokeWidth=1.3;exitX=0.45;exitY=1;entryX=0.7;entryY=0;" edge="1" parent="1" source="wallets" target="pnl">
+          <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="1516" y="790"/><mxPoint x="1516" y="1105"/><mxPoint x="1262" y="1105"/></Array></mxGeometry>
+        </mxCell>
+
+        <mxCell id="e_cat_bills" value="categorizes" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;startArrow=ERzeroToOne;startFill=0;endArrow=ERzeroToMany;endFill=0;strokeColor=#C87324;fontColor=#6C3708;fontSize=12;labelBackgroundColor=#FFFFFF;strokeWidth=1.2;exitX=0.9;exitY=1;entryX=0.2;entryY=0;" edge="1" parent="1" source="categories" target="bills">
+          <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="1042" y="805"/><mxPoint x="1522" y="805"/></Array></mxGeometry>
+        </mxCell>
+        <mxCell id="e_wallet_bills" value="pays from" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;startArrow=ERzeroToOne;startFill=0;endArrow=ERzeroToMany;endFill=0;strokeColor=#C87324;fontColor=#6C3708;fontSize=12;labelBackgroundColor=#FFFFFF;strokeWidth=1.2;exitX=0.75;exitY=1;entryX=0.8;entryY=0;" edge="1" parent="1" source="wallets" target="bills">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_bill_payments" value="has payments" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;startArrow=ERzeroToOne;startFill=0;endArrow=ERzeroToMany;endFill=0;strokeColor=#C87324;fontColor=#6C3708;fontSize=12;labelBackgroundColor=#FFFFFF;strokeWidth=1.3;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="1" source="bills" target="payments">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_wallet_payments" value="paid from" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;startArrow=ERzeroToOne;startFill=0;endArrow=ERzeroToMany;endFill=0;strokeColor=#C87324;fontColor=#6C3708;fontSize=12;labelBackgroundColor=#FFFFFF;strokeWidth=1.2;exitX=1;exitY=0.9;entryX=0.5;entryY=0;" edge="1" parent="1" source="wallets" target="payments">
+          <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="1705" y="372"/><mxPoint x="1705" y="790"/><mxPoint x="1930" y="790"/></Array></mxGeometry>
+        </mxCell>
+        <mxCell id="e_tx_payments" value="settles as" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;startArrow=ERzeroToOne;startFill=0;endArrow=ERzeroToOne;endFill=0;strokeColor=#C87324;fontColor=#6C3708;fontSize=12;labelBackgroundColor=#FFFFFF;strokeWidth=1.2;exitX=1;exitY=0.8;entryX=0.15;entryY=0;" edge="1" parent="1" source="transactions" target="payments">
+          <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="1398" y="637"/><mxPoint x="1398" y="800"/><mxPoint x="1825" y="800"/></Array></mxGeometry>
+        </mxCell>
+
+        <mxCell id="notation_note" value="&lt;b&gt;Notation&lt;/b&gt;: | = exactly one · ○ = optional · crow’s foot = many. Relationship labels are read as verb phrases. Tenant-scoping identifiers and implementation-only constraints remain in perfin_schema.dbml / perfin_schema.sql." style="text;html=1;align=center;verticalAlign=middle;fontSize=13;fontColor=#44546A;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="120" y="1345" width="2240" height="35" as="geometry"/>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

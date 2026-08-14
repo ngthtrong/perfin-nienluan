@@ -3,7 +3,7 @@
 These files illustrate the current Expo web interface with synthetic demo data.
 They were regenerated on 13 August 2026 with Chromium at a `390x844` CSS-pixel
 viewport, device scale factor 2 and the light theme. They are not native-device
-captures, manual-test results or UAT evidence.
+captures or manual-test results.
 
 Chapter 3 uses five images:
 

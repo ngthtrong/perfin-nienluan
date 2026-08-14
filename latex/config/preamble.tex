@@ -167,18 +167,67 @@
     \label{#4}
   \end{figure}
   \clearpage}
-
-\newcommand{\widereportfigure}[3]{%
-  \clearpage
+% The first optional argument is a heading block (for example
+% \subsubsection{...}\label{...}) that belongs on the landscape page.  The
+% second optional argument is the short paragraph that explains the figure.
+% It is measured in the landscape text width: short explanations stay below
+% the caption, while a paragraph that would not fit is emitted after the
+% landscape page in the normal portrait flow.  With no optional arguments,
+% existing call sites keep their original layout.  pdflscape's landscape
+% environment already flushes the preceding page, so additional clearpages
+% would only make the page-break policy harder to reason about.
+\newsavebox{\widecaptionbox}
+\newdimen\widecaptionheight
+\newdimen\widecaptionlimit
+\newif\ifwideheading
+\newif\ifwidehascaption
+\newif\ifwideinlinecaption
+\NewDocumentCommand{\widereportfigure}{O{} O{} m m m}{%
   \begin{landscape}
-    \begin{figure}[p]
+    \wideheadingfalse
+    \if\relax\detokenize{#1}\relax\else\wideheadingtrue\fi
+    \ifwideheading #1\fi
+    \global\widehascaptionfalse
+    \global\wideinlinecaptionfalse
+    \if\relax\detokenize{#2}\relax\else
+      \global\widehascaptiontrue
+      \setbox\widecaptionbox=\vbox{%
+        \hsize=\linewidth
+        \parindent=1cm
+        \normalsize
+        #2\par}%
+      \widecaptionheight=\ht\widecaptionbox
+      \advance\widecaptionheight by \dp\widecaptionbox
+      \widecaptionlimit=.18\textheight
+      \ifdim\widecaptionheight<\widecaptionlimit
+        \global\wideinlinecaptiontrue
+      \fi
+    \fi
+    \ifwideheading
+      \def\widefigureheight{0.78\textheight}%
+    \else
+      \def\widefigureheight{0.86\textheight}%
+    \fi
+    \ifwideinlinecaption
+      \ifwideheading
+        \def\widefigureheight{0.62\textheight}%
+      \else
+        \def\widefigureheight{0.68\textheight}%
+      \fi
+    \fi
+    \begin{figure}[H]
       \centering
-      \includegraphics[width=0.99\linewidth,height=0.86\textheight,keepaspectratio]{#1}
-      \caption{#2}
-      \label{#3}
+      \includegraphics[width=0.99\linewidth,height=\widefigureheight,keepaspectratio]{#3}
+      \caption{#4}
+      \label{#5}
     \end{figure}
+    \ifwideinlinecaption
+      \noindent\usebox{\widecaptionbox}\par
+    \fi
   \end{landscape}
-  \clearpage}
+  \ifwidehascaption\ifwideinlinecaption\else
+    #2\par
+  \fi\fi}
 
 % Nguồn Draw.io và các bản PNG do người dùng xuất nằm cùng trong
 % latex/figures/drawio/; ảnh rời (logo trường trên trang bìa) nằm trong

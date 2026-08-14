@@ -260,8 +260,9 @@ make all    # cả hai bản
 ## 🧪 7. Kiểm thử & Thí nghiệm
 
 * **Test tự động:** `npm test` (backend) chạy toàn bộ bộ test `node --test tests/*.test.js` — bao phủ giao dịch, ngân sách, danh mục, mục tiêu, dòng tiền, chi phí định kỳ, persona, export, jobs, ngữ cảnh chat...
-* **Benchmark AI:** `npm run test:ai` đo độ chính xác phân loại của bộ định tuyến ý định.
-* **Kết quả thí nghiệm** (lưu trong `log/`): so sánh **local parser vs LLM (Gemini)** trên tập `dataFinance.csv`, cùng benchmark phân loại và đánh giá tác động của feedback — dùng làm dữ liệu cho báo cáo.
+* **Benchmark parser:** `npm run test:ai` chạy 31 ca fixture; `npm run benchmark:classification` đánh giá parser cục bộ trên snapshot `dataFinance.csv` và ghi checksum.
+* **Đánh giá giải thuật:** từ `demo/backend`, `npm run evaluate:algorithm` chạy ca đúng, benchmark `linearTrend`/`detectAnomalies`/`completeMonthlyCashflow` và sinh artifact JSON/CSV/Markdown tại `demo/evaluation/algorithm/`.
+* **Phạm vi bằng chứng:** các benchmark offline dùng Redis/jobs tắt; không suy rộng kết quả thành accuracy media, live-service behavior, usability hoặc tải production.
 
 ---
 

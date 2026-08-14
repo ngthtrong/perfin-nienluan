@@ -1,0 +1,413 @@
+Project PERFIN {
+  database_type: 'PostgreSQL'
+
+  Note: '''
+    PERFIN logical ERD model containing 16 business entities.
+    Derived from perfin_schema.sql (migrations 001 through 009) on 2026-08-14.
+    Migration metadata, export/backup tables and compatibility views are omitted
+    to keep the model focused on business concepts and relationships.
+    perfin_schema.sql remains the complete runtime schema.
+  '''
+}
+
+Enum category_type {
+  income
+  expense
+}
+
+Enum wallet_type {
+  cash
+  bank
+  e_wallet
+  credit_card
+  investment
+  savings
+}
+
+Enum currency_code {
+  VND
+  USD
+}
+
+Enum transaction_type {
+  income
+  expense
+  transfer
+  investment_inflow
+  investment_outflow
+  investment_pnl
+}
+
+Enum transaction_source {
+  manual
+  ai_chat
+  ocr
+  voice
+}
+
+Enum recurring_frequency {
+  weekly
+  monthly
+  quarterly
+  yearly
+}
+
+Enum recurring_status {
+  active
+  paused
+}
+
+Enum goal_type {
+  saving
+  debt_payoff
+  purchase
+}
+
+Enum goal_status {
+  active
+  achieved
+  paused
+  cancelled
+}
+
+Enum feedback_type {
+  extraction
+  classification
+}
+
+Table ai_personalities {
+  id integer [pk, increment]
+  key varchar(50) [unique]
+  name varchar(100) [not null]
+  description text
+  style_prompt text [not null]
+  is_system boolean [default: true]
+  is_default boolean [default: false]
+  user_key varchar(64)
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+  name_original varchar(100)
+  sample_responses text
+}
+
+Table users {
+  id integer [pk, increment]
+  user_key varchar(64) [not null, unique]
+  username varchar(100)
+  email varchar(255)
+  password_hash varchar(255)
+  language_preference varchar(20) [default: 'vi']
+  payday integer
+  active_personality_id integer
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+  personalization_consent boolean [default: false]
+
+  checks {
+    `payday BETWEEN 1 AND 31` [name: 'users_payday_check']
+  }
+}
+
+Table categories {
+  id integer [pk, increment]
+  user_id varchar(64) [default: 'default_user']
+  name varchar(100) [not null]
+  type category_type [not null]
+  icon varchar(16) [default: '📁']
+  parent_id integer
+  is_default boolean [default: false]
+  sort_order integer [default: 0]
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+  is_system boolean [default: false]
+
+  indexes {
+    (user_id, type, name) [unique, name: 'categories_user_id_type_name_key']
+  }
+}
+
+Table wallets {
+  id integer [pk, increment]
+  user_id varchar(64) [default: 'default_user']
+  name varchar(100) [not null]
+  type wallet_type [not null, default: 'cash']
+  balance decimal(15,2) [default: 0]
+  currency currency_code [not null, default: 'VND']
+  is_default boolean [default: false]
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+  initial_balance decimal(15,2) [default: 0]
+
+  indexes {
+    (user_id, name) [unique, name: 'wallets_user_id_name_key']
+  }
+}
+
+Table transactions {
+  id integer [pk, increment]
+  user_id varchar(64) [default: 'default_user']
+  description varchar(200) [not null]
+  amount decimal(15,2) [not null]
+  type transaction_type [not null]
+  category_id integer [not null]
+  wallet_id integer [not null]
+  transaction_date date [not null, default: `CURRENT_DATE`]
+  source transaction_source [default: 'manual']
+  note text
+  original_text text
+  ai_parsed jsonb [default: `'{}'::jsonb`]
+  deleted_at timestamp
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+
+  checks {
+    `amount > 0` [name: 'transactions_amount_check']
+  }
+
+  indexes {
+    category_id [name: 'idx_transactions_category']
+    wallet_id [name: 'idx_transactions_wallet']
+    transaction_date [name: 'idx_transactions_date', note: 'DESC']
+    type [name: 'idx_transactions_type']
+    (user_id, transaction_date) [name: 'idx_transactions_active_user_date', note: 'transaction_date DESC; WHERE deleted_at IS NULL']
+  }
+}
+
+Table budgets {
+  id integer [pk, increment]
+  user_id varchar(64) [default: 'default_user']
+  category_id integer [not null]
+  amount_limit decimal(15,2) [not null]
+  month integer [not null]
+  year integer [not null]
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+
+  checks {
+    `amount_limit > 0` [name: 'budgets_amount_limit_check']
+    `month BETWEEN 1 AND 12` [name: 'budgets_month_check']
+    `year BETWEEN 2020 AND 2100` [name: 'budgets_year_check']
+  }
+
+  indexes {
+    (user_id, category_id, month, year) [unique, name: 'budgets_user_id_category_id_month_year_key']
+    category_id [name: 'idx_budgets_category']
+    (user_id, month, year) [name: 'idx_budgets_period']
+  }
+}
+
+Table budget_history {
+  id integer [pk, increment]
+  budget_id integer
+  change_type varchar(50) [not null]
+  old_value varchar(255)
+  new_value varchar(255)
+  changed_at timestamp [default: `now()`]
+}
+
+Table chat_messages {
+  id integer [pk, increment]
+  user_id varchar(64) [default: 'default_user']
+  role varchar(20) [not null, note: 'Allowed: user, assistant, system']
+  content text [not null]
+  metadata jsonb [default: `'{}'::jsonb`]
+  created_at timestamp [default: `now()`]
+  personality_id integer
+
+  checks {
+    `role IN ('user', 'assistant', 'system')` [name: 'chat_messages_role_check']
+  }
+
+  indexes {
+    (user_id, created_at) [name: 'idx_chat_messages_user_time', note: 'created_at DESC']
+    (user_id, `metadata->>'event_key'`) [unique, name: 'uq_chat_messages_proactive_event', note: 'Partial index for proactive-worker messages containing an event_key']
+  }
+}
+
+Table investment_pnl {
+  id integer [pk, increment]
+  user_id varchar(64) [default: 'default_user']
+  wallet_id integer [not null]
+  amount decimal(15,2) [not null, note: 'Positive = profit; negative = loss']
+  note text
+  recorded_at date [not null, default: `CURRENT_DATE`]
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+
+  indexes {
+    wallet_id [name: 'idx_pnl_wallet']
+    (user_id, recorded_at) [name: 'idx_pnl_user_date', note: 'recorded_at DESC']
+  }
+}
+
+Table wallet_transfers {
+  id integer [pk, increment]
+  user_id varchar(64) [default: 'default_user']
+  from_wallet_id integer
+  to_wallet_id integer
+  amount decimal(15,2) [not null]
+  transfer_type varchar(32) [not null, default: 'transfer']
+  note text
+  transaction_date date [not null, default: `CURRENT_DATE`]
+  created_at timestamp [default: `now()`]
+
+  checks {
+    `amount > 0` [name: 'wallet_transfers_amount_check']
+  }
+
+  indexes {
+    (user_id, transaction_date) [name: 'idx_transfers_user', note: 'transaction_date DESC']
+    from_wallet_id [name: 'idx_transfers_from']
+    to_wallet_id [name: 'idx_transfers_to']
+  }
+}
+
+Table recurring_bills {
+  id integer [pk, increment]
+  user_id varchar(64) [default: 'default_user']
+  name varchar(100) [not null]
+  amount decimal(15,2) [not null]
+  category_id integer
+  wallet_id integer
+  frequency recurring_frequency [not null, default: 'monthly']
+  due_day integer [not null, default: 1, note: 'Day of month, or ISO weekday for weekly bills']
+  next_due_date date [not null]
+  remind_days_before integer [not null, default: 0]
+  is_variable_amount boolean [default: false]
+  status recurring_status [not null, default: 'active']
+  last_suggested_at timestamp
+  note text
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+
+  checks {
+    `amount > 0` [name: 'recurring_bills_amount_check']
+  }
+
+  indexes {
+    (user_id, status) [name: 'idx_recurring_user']
+    (user_id, next_due_date) [name: 'idx_recurring_due', note: 'Partial index for active recurring bills']
+  }
+}
+
+Table recurring_bill_payments {
+  id integer [pk, increment]
+  user_id varchar(64) [default: 'default_user']
+  bill_id integer
+  bill_name varchar(100)
+  transaction_id integer
+  period_due_date date [not null]
+  paid_date date
+  amount decimal(15,2)
+  wallet_id integer
+  status varchar(20) [not null, default: 'paid', note: 'Allowed: paid, unpaid, overdue']
+  created_at timestamp [default: `now()`]
+
+  checks {
+    `status IN ('paid', 'unpaid', 'overdue')` [name: 'recurring_bill_payments_status_check']
+  }
+
+  indexes {
+    (bill_id, period_due_date) [name: 'idx_bill_payments_bill', note: 'period_due_date DESC']
+    (user_id, period_due_date) [name: 'idx_bill_payments_user', note: 'period_due_date DESC']
+  }
+}
+
+Table recurring_suggestions_dismissed {
+  id integer [pk, increment]
+  user_id varchar(64) [default: 'default_user']
+  signature varchar(150) [not null]
+  dismissed_at timestamp [default: `now()`]
+
+  indexes {
+    (user_id, signature) [unique, name: 'recurring_suggestions_dismissed_user_id_signature_key']
+    (user_id, dismissed_at) [name: 'idx_suggestions_dismissed_user', note: 'dismissed_at DESC']
+  }
+}
+
+Table financial_goals {
+  id integer [pk, increment]
+  user_id varchar(64) [default: 'default_user']
+  name varchar(150) [not null]
+  goal_type goal_type [not null, default: 'saving']
+  target_amount decimal(15,2) [not null]
+  current_amount decimal(15,2) [not null, default: 0]
+  target_date date
+  monthly_contribution decimal(15,2)
+  annual_interest_rate decimal(6,3) [default: 0, note: 'Percent per year']
+  linked_wallet_id integer
+  status goal_status [not null, default: 'active']
+  note text
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+
+  checks {
+    `target_amount > 0` [name: 'financial_goals_target_amount_check']
+  }
+
+  indexes {
+    (user_id, status) [name: 'idx_goals_user']
+  }
+}
+
+Table ai_feedback_logs {
+  id integer [pk, increment]
+  user_id varchar(64) [default: 'default_user']
+  transaction_id integer
+  feedback_type feedback_type [not null]
+  original_text text
+  ai_result jsonb
+  corrected_result jsonb
+  created_at timestamp [default: `now()`]
+  is_anonymized boolean [default: false]
+
+  indexes {
+    (user_id, feedback_type, created_at) [name: 'idx_feedback_user', note: 'created_at DESC']
+  }
+}
+
+Table user_traits {
+  id integer [pk, increment]
+  user_id varchar(64) [not null]
+  trait_type varchar(100) [not null]
+  trait_value text [not null]
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+
+  indexes {
+    (user_id, trait_type) [unique, name: 'user_traits_user_id_trait_type_key']
+    (user_id, trait_type) [name: 'idx_user_traits_user']
+  }
+}
+
+Ref fk_users_active_personality: users.active_personality_id > ai_personalities.id [delete: set null]
+Ref fk_ai_personalities_user_key: ai_personalities.user_key > users.user_key [delete: cascade]
+Ref fk_categories_user_key: categories.user_id > users.user_key [delete: cascade]
+Ref categories_parent_id_fkey: categories.parent_id > categories.id [delete: set null]
+Ref fk_wallets_user_key: wallets.user_id > users.user_key [delete: cascade]
+Ref fk_transactions_user_key: transactions.user_id > users.user_key [delete: cascade]
+Ref transactions_category_id_fkey: transactions.category_id > categories.id [delete: restrict]
+Ref transactions_wallet_id_fkey: transactions.wallet_id > wallets.id [delete: restrict]
+Ref fk_budgets_user_key: budgets.user_id > users.user_key [delete: cascade]
+Ref budgets_category_id_fkey: budgets.category_id > categories.id [delete: cascade]
+Ref budget_history_budget_id_fkey: budget_history.budget_id > budgets.id [delete: cascade]
+Ref fk_chat_messages_user_key: chat_messages.user_id > users.user_key [delete: cascade]
+Ref chat_messages_personality_id_fkey: chat_messages.personality_id > ai_personalities.id [delete: set null]
+Ref fk_investment_pnl_user_key: investment_pnl.user_id > users.user_key [delete: cascade]
+Ref investment_pnl_wallet_id_fkey: investment_pnl.wallet_id > wallets.id [delete: cascade]
+Ref fk_wallet_transfers_user_key: wallet_transfers.user_id > users.user_key [delete: cascade]
+Ref wallet_transfers_from_wallet_id_fkey: wallet_transfers.from_wallet_id > wallets.id [delete: set null]
+Ref wallet_transfers_to_wallet_id_fkey: wallet_transfers.to_wallet_id > wallets.id [delete: set null]
+Ref fk_recurring_bills_user_key: recurring_bills.user_id > users.user_key [delete: cascade]
+Ref recurring_bills_category_id_fkey: recurring_bills.category_id > categories.id [delete: set null]
+Ref recurring_bills_wallet_id_fkey: recurring_bills.wallet_id > wallets.id [delete: set null]
+Ref fk_bill_payments_user_key: recurring_bill_payments.user_id > users.user_key [delete: cascade]
+Ref recurring_bill_payments_bill_id_fkey: recurring_bill_payments.bill_id > recurring_bills.id [delete: set null]
+Ref recurring_bill_payments_transaction_id_fkey: recurring_bill_payments.transaction_id > transactions.id [delete: set null]
+Ref recurring_bill_payments_wallet_id_fkey: recurring_bill_payments.wallet_id > wallets.id [delete: set null]
+Ref fk_recurring_suggestions_user_key: recurring_suggestions_dismissed.user_id > users.user_key [delete: cascade]
+Ref fk_financial_goals_user_key: financial_goals.user_id > users.user_key [delete: cascade]
+Ref financial_goals_linked_wallet_id_fkey: financial_goals.linked_wallet_id > wallets.id [delete: set null]
+Ref fk_ai_feedback_user_key: ai_feedback_logs.user_id > users.user_key [delete: cascade]
+Ref ai_feedback_logs_transaction_id_fkey: ai_feedback_logs.transaction_id > transactions.id [delete: set null]
+Ref user_traits_user_id_fkey: user_traits.user_id > users.user_key [delete: cascade]

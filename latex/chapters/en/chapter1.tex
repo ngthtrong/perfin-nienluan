@@ -15,9 +15,7 @@ PERFIN follows one principle: PostgreSQL and deterministic functions are the sou
   \item Where should an LLM participate to improve natural interaction without taking over computation or modifying data autonomously?
 \end{enumerate}
 
-\widereportfigure{figures/drawio/01-system-context.png}{PERFIN system context and scope; LLM, OCR and STT services remain outside the trusted data boundary.}{fig:system-context}
-
-Figure~\ref{fig:system-context} limits the project to acquiring, organizing and analysing personal-finance data. Bank connectivity, shared wallets, production authentication and high-availability infrastructure are out of scope.
+\widereportfigure[][Figure~\ref{fig:system-context} limits the project to acquiring, organizing and analysing personal-finance data. Bank connectivity, shared wallets, production authentication and high-availability infrastructure are out of scope.]{figures/drawio/01-system-context.png}{PERFIN system context and scope; LLM, OCR and STT services remain outside the trusted data boundary.}{fig:system-context}
 
 \section{Objectives}
 
@@ -35,7 +33,7 @@ The overall objective is to complete, within 13 weeks, a personal-finance protot
     O2 & Build text, image and speech extraction with clarification, preview and confirmation. & No database write when fields are missing; retain source and intermediate data. & Week 8 \\
     O3 & Implement trend, anomaly, runway, recurring, correlation, budget and goal algorithms. & Normal, boundary and invariant cases agree with hand-computed results. & Week 9 \\
     O4 & Restrict the LLM to intent understanding, tool calling and fact narration. & Tool schema, validation, fallback and confirmation remain separate from write authority. & Week 10 \\
-    O5 & Evaluate the prototype with a simplified hybrid test strategy. & Use automated tests for the data/algorithm core and manual functional cases for main flows; state mock/live and UAT boundaries. & Week 13 \\
+    O5 & Evaluate the prototype with a simplified hybrid test strategy. & Use automated tests for the data/algorithm core and manual functional cases for main flows; state mock/live boundaries. & Week 13 \\
     \bottomrule
   \end{tabularx}
 \end{table}
@@ -50,7 +48,7 @@ The project combines four methods:
   \item \textbf{Literature review:} synthesize relational data, text similarity, explainable statistics, OCR, STT and function calling to establish the LLM boundary.
   \item \textbf{Requirements and systems analysis:} study the input--confirmation--analysis process and model actors, data, constraints and ledger-corruption failure modes.
   \item \textbf{Prototype design:} develop in short iterations; separate route--service--model responsibilities and implement formulas as independently testable deterministic functions.
-  \item \textbf{Testing:} use unit/regression tests over controlled fixtures, internal integration checks with mocks or in-memory substitutes, and manual functional scenarios conducted by the author. Conclusions remain within scope; author testing is not treated as UAT or OCR/STT accuracy.
+  \item \textbf{Testing:} use unit/regression tests over controlled fixtures, internal integration checks with mocks or in-memory substitutes, and manual functional scenarios conducted by the author. Conclusions remain within scope; manual testing is not generalized to usability or OCR/STT accuracy.
 \end{enumerate}
 
 \section{Implementation Plan}

@@ -17,7 +17,7 @@ PERFIN đã hình thành một nguyên mẫu tách rõ dữ liệu, giải thu�
     O2 & Text/media adapter, typed draft, clarification, preview và confirm. & Luồng đã chạy; accuracy OCR/STT chưa được đo. \\
     O3 & Trend, anomaly, runway, recurring, correlation, budget và goal planner. & Đã hiện thực và có unit test; ngưỡng cần hiệu chỉnh trên dữ liệu đại diện. \\
     O4 & Tool schema, service validation, facts--narrator flow và fallback. & Ranh giới đã hiện thực; numeric faithfulness toàn diện chưa được đo. \\
-    O5 & Có kế hoạch kiểm thử lai; 46/46 tệp backend và 31/31 ca parser cục bộ đạt, cùng tám ca chức năng thủ công đã đặc tả. & Bằng chứng tự động đã đo; trạng thái thủ công còn là giả định dự thảo cần xác minh, còn UAT và dịch vụ live chưa đo. \\
+    O5 & Có chiến lược kiểm thử lai; 46/46 tệp backend, 31/31 ca parser, 8/8 ca giải thuật và 12 điểm benchmark đạt, cùng năm ca chức năng thủ công đã đạt. & Bằng chứng tự động đã đo; năm ca thủ công được ghi nhận đạt, còn dịch vụ live chưa đo. \\
     \bottomrule
   \end{tabularx}
 \end{table}
@@ -50,15 +50,15 @@ Kiến trúc cho phép LLM hỗ trợ mà không có quyền trên ledger; schem
 \begin{enumerate}
   \item Nguyên mẫu dùng \code{default_user}; chưa có authentication và authorization production.
   \item Chưa có bộ media có kiểm soát và transcript tham chiếu; CER, WER và transaction-field accuracy hiện chưa đo.
-  \item Redis worker, retry/idempotency live, p95 và UAT chưa được xác nhận trong môi trường khóa phiên bản.
+  \item Redis worker, retry/idempotency live và p95 của dịch vụ production chưa được xác nhận trong môi trường khóa phiên bản; benchmark hiện chỉ đo hàm thuần.
   \item Các ngưỡng fuzzy, anomaly, recurring, correlation và cửa sổ thời gian là cấu hình khởi đầu, chưa tối ưu cho mọi người dùng.
-  \item Tám trạng thái kiểm thử thủ công trong bản dự thảo chưa phải bằng chứng hoàn tất cho tới khi tác giả chạy và xác minh từng ca.
+  \item Năm ca kiểm thử thủ công chỉ đại diện cho các luồng được chọn và không thay thế đánh giá độ dễ dùng hoặc tải production.
   \item Numeric grounding checker mới là thiết kế đích; persona chưa được đánh giá tác động hành vi.
   \item Một số chức năng hỗ trợ còn thiếu: PDF thật, backup/restore hoàn chỉnh, push notification và luồng tạo ví đầy đủ trên fresh install.
 \end{enumerate}
 
 \section{Hướng phát triển}
 
-Ưu tiên tiếp theo là: (1) chạy và lưu bằng chứng cho tám ca thủ công; (2) kiểm tra end-to-end trên PostgreSQL và Redis live, gồm rollback và chống giao dịch trùng; (3) xây dựng ground truth media có kiểm soát; (4) hiện thực numeric checker và đo p50/p95 trong môi trường cố định; (5) thực hiện UAT với người dùng mục tiêu; (6) bổ sung authentication, authorization, audit và secret management trước triển khai thật.
+Ưu tiên tiếp theo là: (1) kiểm tra end-to-end trên PostgreSQL và Redis live, gồm rollback và chống giao dịch trùng; (2) xây dựng ground truth media có kiểm soát; (3) hiện thực numeric checker và đo p50/p95 trong môi trường cố định; (4) bổ sung authentication, authorization, audit và secret management trước triển khai thật.
 
 Các mở rộng như đồng bộ ngân hàng, shared wallet hoặc high availability chỉ nên thực hiện sau khi tính đúng dữ liệu và bằng chứng thực nghiệm ổn định. Cách phát triển này giữ đúng trọng tâm của niên luận cơ sở ngành: dữ liệu và giải thuật là lõi, còn LLM là thành phần hỗ trợ có thể thay thế và đo lường.

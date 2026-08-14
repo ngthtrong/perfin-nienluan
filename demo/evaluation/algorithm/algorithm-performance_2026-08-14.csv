@@ -1,0 +1,13 @@
+algorithm,size,expected_complexity,warmup_runs,measured_runs,median_ms,p95_ms,min_ms,max_ms
+linearTrend,100,O(n),5,30,0.084,0.296,0.008,0.691
+linearTrend,1000,O(n),5,30,0.055,0.387,0.052,0.408
+linearTrend,5000,O(n),5,30,0.174,1.827,0.135,3.025
+linearTrend,10000,O(n),5,30,0.265,0.515,0.259,0.518
+detectAnomalies,100,O(n log n),5,30,0.028,0.075,0.026,0.091
+detectAnomalies,1000,O(n log n),5,30,0.312,1.459,0.295,3.679
+detectAnomalies,5000,O(n log n),5,30,1.654,2.417,1.59,2.58
+detectAnomalies,10000,O(n log n),5,30,3.6,4.197,3.504,4.276
+completeMonthlyCashflow,100,O(n + w),5,30,0.063,0.155,0.039,0.732
+completeMonthlyCashflow,1000,O(n + w),5,30,0.113,0.197,0.103,1.28
+completeMonthlyCashflow,5000,O(n + w),5,30,0.25,1.423,0.221,1.52
+completeMonthlyCashflow,10000,O(n + w),5,30,0.512,0.956,0.415,2.177

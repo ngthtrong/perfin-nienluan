@@ -1,0 +1,293 @@
+{
+  "experiment": "algorithm-correctness",
+  "meta": {
+    "timestamp": "2026-08-14T02:29:28.858Z",
+    "commit": "c18e160",
+    "working_tree_dirty": true,
+    "node": "v24.16.0",
+    "ai_provider": "local",
+    "gemini_model": null,
+    "tz": "Asia/Ho_Chi_Minh",
+    "execution_mode": "offline_deterministic",
+    "code_sha256": "40b95ef312af66caf303a2c31d93c5e84c23fdc3d30d1873912b1bfc11422f74",
+    "code_files": [
+      "tests/experiments/algorithm-correctness.js",
+      "services/analytics/algorithms.js",
+      "services/analytics/timeSeries.js",
+      "services/budgets/recommender.js",
+      "services/goals/planner.js"
+    ]
+  },
+  "summary": {
+    "total": 8,
+    "passed": 8,
+    "failed": 0
+  },
+  "configuration": {
+    "fixture_sha256": "034da9f98fe92df36bc91bbcbd3df1c46069c285e18fc77eed5bfa7ca516ff55",
+    "property_case_count": 1000,
+    "property_seeds": [
+      20260814,
+      20260815
+    ]
+  },
+  "cases": [
+    {
+      "id": "ALG-01",
+      "group": "trend",
+      "objective": "OLS trend trả slope, R² và dự báo kế tiếp đúng với chuỗi tuyến tính.",
+      "input": {
+        "series": [
+          100,
+          200,
+          300,
+          400
+        ]
+      },
+      "expected": {
+        "slope": 100,
+        "intercept": 100,
+        "r2": 1,
+        "forecastNext": 500,
+        "avgPctChange": 61.1
+      },
+      "actual": {
+        "slope": 100,
+        "intercept": 100,
+        "r2": 1,
+        "forecastNext": 500,
+        "avgPctChange": 61.1
+      },
+      "status": "Pass"
+    },
+    {
+      "id": "ALG-02",
+      "group": "anomaly",
+      "objective": "Phát hiện điểm chi tiêu bất thường ở phía trên và giữ thứ tự theo giá trị.",
+      "input": {
+        "points": [
+          {
+            "label": "d1",
+            "value": 10
+          },
+          {
+            "label": "d2",
+            "value": 11
+          },
+          {
+            "label": "d3",
+            "value": 9
+          },
+          {
+            "label": "d4",
+            "value": 10
+          },
+          {
+            "label": "d5",
+            "value": 100
+          }
+        ]
+      },
+      "expected": "Chỉ d5 được đánh dấu là bất thường.",
+      "actual": [
+        {
+          "label": "d5",
+          "value": 100,
+          "z": 1.79,
+          "timesAverage": 3.6,
+          "method": "iqr"
+        }
+      ],
+      "status": "Pass"
+    },
+    {
+      "id": "ALG-03",
+      "group": "boundary",
+      "objective": "Ca biên không đủ mẫu trả về kết quả trung tính, không phát sinh lỗi.",
+      "input": {
+        "trend_series": [
+          42
+        ],
+        "anomaly_points": [
+          {
+            "value": 1
+          },
+          {
+            "value": 2
+          },
+          {
+            "value": 3
+          }
+        ]
+      },
+      "expected": {
+        "trend": {
+          "slope": 0,
+          "intercept": 42,
+          "r2": 0,
+          "forecastNext": 42,
+          "avgPctChange": 0
+        },
+        "anomalies": []
+      },
+      "actual": {
+        "trend": {
+          "slope": 0,
+          "intercept": 42,
+          "r2": 0,
+          "forecastNext": 42,
+          "avgPctChange": 0
+        },
+        "anomalies": []
+      },
+      "status": "Pass"
+    },
+    {
+      "id": "ALG-04",
+      "group": "runway",
+      "objective": "Runway giữ ngày không chi tiêu trong mẫu số và tính ngày cạn tiền đúng.",
+      "input": {
+        "balance": 700000,
+        "daily_spends": [
+          700000,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "today": "2026-07-19"
+      },
+      "expected": {
+        "avgBurn": 100000,
+        "daysLeft": 7,
+        "depletionDate": "2026-07-26"
+      },
+      "actual": {
+        "avgBurn": 100000,
+        "daysLeft": 7,
+        "depletionDate": "2026-07-26",
+        "beforePayday": false,
+        "daysBeforePayday": null,
+        "alreadyDepleted": false
+      },
+      "status": "Pass"
+    },
+    {
+      "id": "ALG-05",
+      "group": "correlation",
+      "objective": "Pearson loại cặp cùng bằng 0 và báo đúng số quan sát hữu hiệu.",
+      "input": {
+        "left": [
+          0,
+          0,
+          10,
+          20,
+          30,
+          40
+        ],
+        "right": [
+          0,
+          0,
+          40,
+          30,
+          20,
+          10
+        ]
+      },
+      "expected": {
+        "r": -1,
+        "effective_pair_count": 4,
+        "excluded_joint_zero_count": 2
+      },
+      "actual": {
+        "r": -1,
+        "effective_pair_count": 4,
+        "excluded_joint_zero_count": 2
+      },
+      "status": "Pass"
+    },
+    {
+      "id": "ALG-06",
+      "group": "aggregation",
+      "objective": "Tổng hợp chuỗi tháng giữ kỳ rỗng và bất biến theo thứ tự giao dịch.",
+      "input": {
+        "rows": [
+          {
+            "ym": "2026-01",
+            "income": 600,
+            "expense": 0
+          },
+          {
+            "ym": "2026-03",
+            "income": 0,
+            "expense": 300
+          },
+          {
+            "ym": "2026-02",
+            "income": 100,
+            "expense": 50
+          }
+        ],
+        "window": 3,
+        "anchor_month": "2026-03"
+      },
+      "expected": "Hai thứ tự đầu vào cho cùng một chuỗi tổng hợp.",
+      "actual": [
+        {
+          "ym": "2026-01",
+          "income": 600,
+          "expense": 0
+        },
+        {
+          "ym": "2026-02",
+          "income": 100,
+          "expense": 50
+        },
+        {
+          "ym": "2026-03",
+          "income": 0,
+          "expense": 300
+        }
+      ],
+      "status": "Pass"
+    },
+    {
+      "id": "ALG-07",
+      "group": "invariant",
+      "objective": "1000 ca sinh ngẫu nhiên xác nhận ngân sách sau làm tròn không vượt trần.",
+      "input": {
+        "cases": 1000,
+        "seed": 20260814
+      },
+      "expected": {
+        "violations": 0,
+        "max_over_cap": 0
+      },
+      "actual": {
+        "cases": 1000,
+        "violations": 0,
+        "max_over_cap": 0
+      },
+      "status": "Pass"
+    },
+    {
+      "id": "ALG-08",
+      "group": "invariant",
+      "objective": "1000 ca sinh ngẫu nhiên xác nhận tăng đóng góp không kéo dài kế hoạch.",
+      "input": {
+        "cases": 1000,
+        "seed": 20260815
+      },
+      "expected": {
+        "violations": 0
+      },
+      "actual": {
+        "cases": 1000,
+        "violations": 0
+      },
+      "status": "Pass"
+    }
+  ]
+}

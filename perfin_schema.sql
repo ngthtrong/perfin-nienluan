@@ -1,249 +1,384 @@
 -- -----------------------------------------------------------------------------
--- PERFIN - Personal Finance Management Mobile Application
--- Database Schema Design
+-- PERFIN - Current PostgreSQL schema snapshot
 -- -----------------------------------------------------------------------------
+-- Generated from demo/backend/migrations/001..009 on 2026-08-14.
+-- This file describes the final runtime structure after all migrations. It does
+-- not contain demo seed data. Migrations remain the source of truth for upgrades.
 
--- RUNTIME NOTE (2026-07-10)
--- File này giữ mô hình đích dùng trong tài liệu niên luận. Schema runtime chính
--- thức được quản lý bởi demo/backend/migrations/*.sql. Vì Luồng 11 (JWT/Auth)
--- chưa được chọn, runtime dùng users.user_key VARCHAR để tương thích default_user,
--- nhưng đã có đầy đủ FK, user_traits và compatibility views cho các tên bảng
--- investment_pl_records/export_histories/backup_configs.
--- Xem resource/IMPLEMENTATION_STATUS_v2.md.
+-- 1. ENUM TYPES
 
--- 1. ENUMS
-CREATE TYPE transaction_type AS ENUM ('Expense', 'Income', 'Transfer', 'Investment', 'Special');
-CREATE TYPE special_transaction_type AS ENUM ('Quản lý món nợ', 'Cho vay', 'Vay mượn', 'Tiết kiệm', 'Ngân sách', 'Đầu tư', 'Chuyển tiền đi đầu tư');
-CREATE TYPE category_type AS ENUM ('Expense', 'Income');
-CREATE TYPE wallet_type AS ENUM ('Cash', 'Bank', 'EWallet', 'Investment');
-CREATE TYPE budget_period AS ENUM ('weekly', 'monthly');
-CREATE TYPE budget_status AS ENUM ('active', 'deleted');
-CREATE TYPE budget_type AS ENUM ('category', 'overall');
+CREATE TYPE category_type AS ENUM ('income', 'expense');
+CREATE TYPE wallet_type AS ENUM (
+  'cash', 'bank', 'e_wallet', 'credit_card', 'investment', 'savings'
+);
+CREATE TYPE currency_code AS ENUM ('VND', 'USD');
+CREATE TYPE transaction_type AS ENUM (
+  'income', 'expense', 'transfer', 'investment_inflow',
+  'investment_outflow', 'investment_pnl'
+);
+CREATE TYPE transaction_source AS ENUM ('manual', 'ai_chat', 'ocr', 'voice');
 CREATE TYPE recurring_frequency AS ENUM ('weekly', 'monthly', 'quarterly', 'yearly');
 CREATE TYPE recurring_status AS ENUM ('active', 'paused');
-CREATE TYPE payment_status AS ENUM ('paid', 'unpaid', 'overdue');
-CREATE TYPE transaction_status AS ENUM ('active', 'soft_deleted');
-CREATE TYPE input_source AS ENUM ('text', 'voice', 'image');
-CREATE TYPE chat_role AS ENUM ('user', 'ai', 'system');
-CREATE TYPE message_type AS ENUM ('text', 'voice', 'image', 'system_notification');
-CREATE TYPE export_type AS ENUM ('csv', 'pdf', 'backup');
-CREATE TYPE backup_frequency AS ENUM ('daily', 'weekly', 'monthly');
-CREATE TYPE export_status AS ENUM ('success', 'failed');
-CREATE TYPE investment_pl_type AS ENUM ('profit', 'loss');
+CREATE TYPE goal_type AS ENUM ('saving', 'debt_payoff', 'purchase');
+CREATE TYPE goal_status AS ENUM ('active', 'achieved', 'paused', 'cancelled');
 CREATE TYPE feedback_type AS ENUM ('extraction', 'classification');
 
--- 2. TABLES
+-- 2. CORE TABLES
 
--- User Table
-CREATE TABLE users (
-    id SERIAL PRIMARY KEY,
-    username VARCHAR(100) UNIQUE NOT NULL,
-    email VARCHAR(255) UNIQUE NOT NULL,
-    password_hash VARCHAR(255) NOT NULL,
-    language_preference VARCHAR(20) DEFAULT 'vi',
-    personalization_consent BOOLEAN DEFAULT false,
-    active_personality_id INTEGER, -- FK added later
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- AI Personality Table
 CREATE TABLE ai_personalities (
-    id SERIAL PRIMARY KEY,
-    name VARCHAR(100) NOT NULL,
-    name_original VARCHAR(100),
-    description TEXT,
-    style_prompt TEXT,
-    sample_responses TEXT,
-    is_system BOOLEAN DEFAULT true,
-    is_default BOOLEAN DEFAULT false,
-    user_id INTEGER REFERENCES users(id) ON DELETE SET NULL, -- Null for system
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  id               SERIAL PRIMARY KEY,
+  key              VARCHAR(50) UNIQUE,
+  name             VARCHAR(100) NOT NULL,
+  description      TEXT,
+  style_prompt     TEXT NOT NULL,
+  is_system        BOOLEAN DEFAULT true,
+  is_default       BOOLEAN DEFAULT false,
+  user_key         VARCHAR(64),
+  created_at       TIMESTAMP DEFAULT NOW(),
+  updated_at       TIMESTAMP DEFAULT NOW(),
+  name_original    VARCHAR(100),
+  sample_responses TEXT
 );
 
-ALTER TABLE users ADD CONSTRAINT fk_user_active_personality FOREIGN KEY (active_personality_id) REFERENCES ai_personalities(id);
+CREATE TABLE users (
+  id                      SERIAL PRIMARY KEY,
+  user_key                VARCHAR(64) UNIQUE NOT NULL,
+  username                VARCHAR(100),
+  email                   VARCHAR(255),
+  password_hash           VARCHAR(255),
+  language_preference     VARCHAR(20) DEFAULT 'vi',
+  payday                  INTEGER CHECK (payday BETWEEN 1 AND 31),
+  active_personality_id   INTEGER CONSTRAINT fk_users_active_personality
+                          REFERENCES ai_personalities(id) ON DELETE SET NULL,
+  created_at              TIMESTAMP DEFAULT NOW(),
+  updated_at              TIMESTAMP DEFAULT NOW(),
+  personalization_consent BOOLEAN DEFAULT false
+);
 
--- Category Table
+ALTER TABLE ai_personalities
+  ADD CONSTRAINT fk_ai_personalities_user_key
+  FOREIGN KEY (user_key) REFERENCES users(user_key) ON DELETE CASCADE;
+
 CREATE TABLE categories (
-    id SERIAL PRIMARY KEY,
-    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
-    name VARCHAR(100) NOT NULL,
-    type category_type NOT NULL,
-    parent_id INTEGER REFERENCES categories(id) ON DELETE CASCADE, -- Max 1 level deep
-    is_system BOOLEAN DEFAULT false,
-    is_default BOOLEAN DEFAULT false,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE(user_id, type, name) -- Unique category name per type per user
+  id          SERIAL PRIMARY KEY,
+  user_id     VARCHAR(64) DEFAULT 'default_user'
+              CONSTRAINT fk_categories_user_key
+              REFERENCES users(user_key) ON DELETE CASCADE,
+  name        VARCHAR(100) NOT NULL,
+  type        category_type NOT NULL,
+  icon        VARCHAR(16) DEFAULT '📁',
+  parent_id   INTEGER REFERENCES categories(id) ON DELETE SET NULL,
+  is_default  BOOLEAN DEFAULT false,
+  sort_order  INTEGER DEFAULT 0,
+  created_at  TIMESTAMP DEFAULT NOW(),
+  updated_at  TIMESTAMP DEFAULT NOW(),
+  is_system   BOOLEAN DEFAULT false,
+  UNIQUE (user_id, type, name)
 );
 
--- Wallet Table
 CREATE TABLE wallets (
-    id SERIAL PRIMARY KEY,
-    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
-    name VARCHAR(100) NOT NULL,
-    type wallet_type NOT NULL,
-    balance DECIMAL(15, 2) DEFAULT 0,
-    is_default BOOLEAN DEFAULT false,
-    initial_balance DECIMAL(15, 2) DEFAULT 0,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE(user_id, name)
+  id              SERIAL PRIMARY KEY,
+  user_id         VARCHAR(64) DEFAULT 'default_user'
+                  CONSTRAINT fk_wallets_user_key
+                  REFERENCES users(user_key) ON DELETE CASCADE,
+  name            VARCHAR(100) NOT NULL,
+  type            wallet_type NOT NULL DEFAULT 'cash',
+  balance         DECIMAL(15, 2) DEFAULT 0,
+  currency        currency_code NOT NULL DEFAULT 'VND',
+  is_default      BOOLEAN DEFAULT false,
+  created_at      TIMESTAMP DEFAULT NOW(),
+  updated_at      TIMESTAMP DEFAULT NOW(),
+  initial_balance DECIMAL(15, 2) DEFAULT 0,
+  UNIQUE (user_id, name)
 );
 
--- Budget Table
-CREATE TABLE budgets (
-    id SERIAL PRIMARY KEY,
-    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
-    category_id INTEGER REFERENCES categories(id) ON DELETE CASCADE, -- NULL for overall
-    budget_type budget_type NOT NULL,
-    period budget_period NOT NULL,
-    amount_limit DECIMAL(15, 2) NOT NULL CHECK (amount_limit > 0),
-    amount_spent DECIMAL(15, 2) DEFAULT 0,
-    rollover_enabled BOOLEAN DEFAULT false,
-    rollover_amount DECIMAL(15, 2) DEFAULT 0,
-    status budget_status DEFAULT 'active',
-    period_start DATE NOT NULL,
-    period_end DATE NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- Budget History
-CREATE TABLE budget_history (
-    id SERIAL PRIMARY KEY,
-    budget_id INTEGER REFERENCES budgets(id) ON DELETE CASCADE,
-    change_type VARCHAR(50) NOT NULL,
-    old_value VARCHAR(255),
-    new_value VARCHAR(255),
-    changed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- Recurring Bill Table
-CREATE TABLE recurring_bills (
-    id SERIAL PRIMARY KEY,
-    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
-    name VARCHAR(255) NOT NULL,
-    amount DECIMAL(15, 2) NOT NULL CHECK (amount > 0),
-    category_id INTEGER REFERENCES categories(id) ON DELETE RESTRICT,
-    wallet_id INTEGER REFERENCES wallets(id) ON DELETE RESTRICT,
-    frequency recurring_frequency NOT NULL,
-    payment_day INTEGER CHECK (payment_day >= 1 AND payment_day <= 31),
-    status recurring_status DEFAULT 'active',
-    reminder_days_before INTEGER DEFAULT 0,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- Transaction Table
 CREATE TABLE transactions (
-    id SERIAL PRIMARY KEY,
-    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE NOT NULL,
-    name VARCHAR(255) NOT NULL,
-    amount DECIMAL(15, 2) NOT NULL CHECK (amount > 0),
-    transaction_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    type transaction_type NOT NULL,
-    special_type special_transaction_type,
-    category_id INTEGER REFERENCES categories(id) ON DELETE RESTRICT,
-    subcategory_id INTEGER REFERENCES categories(id) ON DELETE RESTRICT,
-    wallet_id INTEGER REFERENCES wallets(id) ON DELETE RESTRICT NOT NULL,
-    destination_wallet_id INTEGER REFERENCES wallets(id) ON DELETE RESTRICT,
-    input_source input_source DEFAULT 'text',
-    status transaction_status DEFAULT 'active',
-    deleted_at TIMESTAMP,
-    ai_original_category_id INTEGER REFERENCES categories(id) ON DELETE SET NULL,
-    recurring_bill_id INTEGER REFERENCES recurring_bills(id) ON DELETE SET NULL,
-    investment_pl_type investment_pl_type,
-    attachment_url TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  id               SERIAL PRIMARY KEY,
+  user_id          VARCHAR(64) DEFAULT 'default_user'
+                   CONSTRAINT fk_transactions_user_key
+                   REFERENCES users(user_key) ON DELETE CASCADE,
+  description      VARCHAR(200) NOT NULL,
+  amount           DECIMAL(15, 2) NOT NULL CHECK (amount > 0),
+  type             transaction_type NOT NULL,
+  category_id      INTEGER NOT NULL REFERENCES categories(id) ON DELETE RESTRICT,
+  wallet_id        INTEGER NOT NULL REFERENCES wallets(id) ON DELETE RESTRICT,
+  transaction_date DATE NOT NULL DEFAULT CURRENT_DATE,
+  source           transaction_source DEFAULT 'manual',
+  note             TEXT,
+  original_text    TEXT,
+  ai_parsed        JSONB DEFAULT '{}',
+  deleted_at       TIMESTAMP,
+  created_at       TIMESTAMP DEFAULT NOW(),
+  updated_at       TIMESTAMP DEFAULT NOW()
 );
 
--- Recurring Bill Payment History
-CREATE TABLE recurring_bill_payments (
-    id SERIAL PRIMARY KEY,
-    recurring_bill_id INTEGER REFERENCES recurring_bills(id) ON DELETE CASCADE,
-    expected_date DATE NOT NULL,
-    actual_date DATE,
-    amount DECIMAL(15, 2),
-    wallet_id INTEGER REFERENCES wallets(id) ON DELETE SET NULL,
-    transaction_id INTEGER REFERENCES transactions(id) ON DELETE SET NULL,
-    status payment_status DEFAULT 'unpaid'
+CREATE TABLE budgets (
+  id           SERIAL PRIMARY KEY,
+  user_id      VARCHAR(64) DEFAULT 'default_user'
+               CONSTRAINT fk_budgets_user_key
+               REFERENCES users(user_key) ON DELETE CASCADE,
+  category_id  INTEGER NOT NULL REFERENCES categories(id) ON DELETE CASCADE,
+  amount_limit DECIMAL(15, 2) NOT NULL CHECK (amount_limit > 0),
+  month        INTEGER NOT NULL CHECK (month BETWEEN 1 AND 12),
+  year         INTEGER NOT NULL CHECK (year BETWEEN 2020 AND 2100),
+  created_at   TIMESTAMP DEFAULT NOW(),
+  updated_at   TIMESTAMP DEFAULT NOW(),
+  UNIQUE (user_id, category_id, month, year)
 );
 
--- Chat Message Table
+CREATE TABLE budget_history (
+  id          SERIAL PRIMARY KEY,
+  budget_id   INTEGER REFERENCES budgets(id) ON DELETE CASCADE,
+  change_type VARCHAR(50) NOT NULL,
+  old_value   VARCHAR(255),
+  new_value   VARCHAR(255),
+  changed_at  TIMESTAMP DEFAULT NOW()
+);
+
 CREATE TABLE chat_messages (
-    id SERIAL PRIMARY KEY,
-    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
-    role chat_role NOT NULL,
-    content TEXT NOT NULL,
-    msg_type message_type DEFAULT 'text',
-    personality_id INTEGER REFERENCES ai_personalities(id) ON DELETE SET NULL,
-    attachment_url TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  id             SERIAL PRIMARY KEY,
+  user_id        VARCHAR(64) DEFAULT 'default_user'
+                 CONSTRAINT fk_chat_messages_user_key
+                 REFERENCES users(user_key) ON DELETE CASCADE,
+  role           VARCHAR(20) NOT NULL CHECK (role IN ('user', 'assistant', 'system')),
+  content        TEXT NOT NULL,
+  metadata       JSONB DEFAULT '{}',
+  created_at     TIMESTAMP DEFAULT NOW(),
+  personality_id INTEGER REFERENCES ai_personalities(id) ON DELETE SET NULL
 );
 
--- AI Feedback Log
+-- 3. CASHFLOW, EXPORT, AND BACKUP
+
+CREATE TABLE investment_pnl (
+  id          SERIAL PRIMARY KEY,
+  user_id     VARCHAR(64) DEFAULT 'default_user'
+              CONSTRAINT fk_investment_pnl_user_key
+              REFERENCES users(user_key) ON DELETE CASCADE,
+  wallet_id   INTEGER NOT NULL REFERENCES wallets(id) ON DELETE CASCADE,
+  amount      DECIMAL(15, 2) NOT NULL,
+  note        TEXT,
+  recorded_at DATE NOT NULL DEFAULT CURRENT_DATE,
+  created_at  TIMESTAMP DEFAULT NOW(),
+  updated_at  TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE wallet_transfers (
+  id               SERIAL PRIMARY KEY,
+  user_id          VARCHAR(64) DEFAULT 'default_user'
+                   CONSTRAINT fk_wallet_transfers_user_key
+                   REFERENCES users(user_key) ON DELETE CASCADE,
+  from_wallet_id   INTEGER REFERENCES wallets(id) ON DELETE SET NULL,
+  to_wallet_id     INTEGER REFERENCES wallets(id) ON DELETE SET NULL,
+  amount           DECIMAL(15, 2) NOT NULL CHECK (amount > 0),
+  transfer_type    VARCHAR(32) NOT NULL DEFAULT 'transfer',
+  note             TEXT,
+  transaction_date DATE NOT NULL DEFAULT CURRENT_DATE,
+  created_at       TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE export_history (
+  id            SERIAL PRIMARY KEY,
+  user_id       VARCHAR(64) DEFAULT 'default_user'
+                CONSTRAINT fk_export_history_user_key
+                REFERENCES users(user_key) ON DELETE CASCADE,
+  export_type   VARCHAR(20) NOT NULL CHECK (export_type IN ('csv', 'pdf', 'backup')),
+  label         VARCHAR(100),
+  file_name     VARCHAR(255),
+  file_size     INTEGER,
+  file_path     TEXT,
+  filters       JSONB DEFAULT '{}',
+  is_auto       BOOLEAN DEFAULT false,
+  status        VARCHAR(20) DEFAULT 'success' CHECK (status IN ('success', 'failed')),
+  error_message TEXT,
+  created_at    TIMESTAMP DEFAULT NOW(),
+  expires_at    TIMESTAMP
+);
+
+CREATE TABLE backup_config (
+  id             SERIAL PRIMARY KEY,
+  user_id        VARCHAR(64) NOT NULL UNIQUE DEFAULT 'default_user'
+                 CONSTRAINT fk_backup_config_user_key
+                 REFERENCES users(user_key) ON DELETE CASCADE,
+  auto_enabled   BOOLEAN DEFAULT false,
+  frequency      VARCHAR(20) DEFAULT 'weekly'
+                 CHECK (frequency IN ('daily', 'weekly', 'monthly')),
+  keep_count     INTEGER DEFAULT 5,
+  last_backup_at TIMESTAMP,
+  created_at     TIMESTAMP DEFAULT NOW(),
+  updated_at     TIMESTAMP DEFAULT NOW()
+);
+
+-- 4. RECURRING BILLS
+
+CREATE TABLE recurring_bills (
+  id                 SERIAL PRIMARY KEY,
+  user_id            VARCHAR(64) DEFAULT 'default_user'
+                     CONSTRAINT fk_recurring_bills_user_key
+                     REFERENCES users(user_key) ON DELETE CASCADE,
+  name               VARCHAR(100) NOT NULL,
+  amount             DECIMAL(15, 2) NOT NULL CHECK (amount > 0),
+  category_id        INTEGER REFERENCES categories(id) ON DELETE SET NULL,
+  wallet_id          INTEGER REFERENCES wallets(id) ON DELETE SET NULL,
+  frequency          recurring_frequency NOT NULL DEFAULT 'monthly',
+  due_day            INTEGER NOT NULL DEFAULT 1,
+  next_due_date      DATE NOT NULL,
+  remind_days_before INTEGER NOT NULL DEFAULT 0,
+  is_variable_amount BOOLEAN DEFAULT false,
+  status             recurring_status NOT NULL DEFAULT 'active',
+  last_suggested_at  TIMESTAMP,
+  note               TEXT,
+  created_at         TIMESTAMP DEFAULT NOW(),
+  updated_at         TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE recurring_bill_payments (
+  id              SERIAL PRIMARY KEY,
+  user_id         VARCHAR(64) DEFAULT 'default_user'
+                  CONSTRAINT fk_bill_payments_user_key
+                  REFERENCES users(user_key) ON DELETE CASCADE,
+  bill_id         INTEGER REFERENCES recurring_bills(id) ON DELETE SET NULL,
+  bill_name       VARCHAR(100),
+  transaction_id  INTEGER REFERENCES transactions(id) ON DELETE SET NULL,
+  period_due_date DATE NOT NULL,
+  paid_date       DATE,
+  amount          DECIMAL(15, 2),
+  wallet_id       INTEGER REFERENCES wallets(id) ON DELETE SET NULL,
+  status          VARCHAR(20) NOT NULL DEFAULT 'paid'
+                  CHECK (status IN ('paid', 'unpaid', 'overdue')),
+  created_at      TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE recurring_suggestions_dismissed (
+  id           SERIAL PRIMARY KEY,
+  user_id      VARCHAR(64) DEFAULT 'default_user'
+               CONSTRAINT fk_recurring_suggestions_user_key
+               REFERENCES users(user_key) ON DELETE CASCADE,
+  signature    VARCHAR(150) NOT NULL,
+  dismissed_at TIMESTAMP DEFAULT NOW(),
+  UNIQUE (user_id, signature)
+);
+
+-- 5. GOALS, FEEDBACK, AND PERSONALIZATION
+
+CREATE TABLE financial_goals (
+  id                   SERIAL PRIMARY KEY,
+  user_id              VARCHAR(64) DEFAULT 'default_user'
+                       CONSTRAINT fk_financial_goals_user_key
+                       REFERENCES users(user_key) ON DELETE CASCADE,
+  name                 VARCHAR(150) NOT NULL,
+  goal_type            goal_type NOT NULL DEFAULT 'saving',
+  target_amount        DECIMAL(15, 2) NOT NULL CHECK (target_amount > 0),
+  current_amount       DECIMAL(15, 2) NOT NULL DEFAULT 0,
+  target_date          DATE,
+  monthly_contribution DECIMAL(15, 2),
+  annual_interest_rate DECIMAL(6, 3) DEFAULT 0,
+  linked_wallet_id     INTEGER REFERENCES wallets(id) ON DELETE SET NULL,
+  status               goal_status NOT NULL DEFAULT 'active',
+  note                 TEXT,
+  created_at           TIMESTAMP DEFAULT NOW(),
+  updated_at           TIMESTAMP DEFAULT NOW()
+);
+
 CREATE TABLE ai_feedback_logs (
-    id SERIAL PRIMARY KEY,
-    transaction_id INTEGER REFERENCES transactions(id) ON DELETE SET NULL,
-    user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
-    ai_original_result TEXT,
-    user_corrected_result TEXT,
-    feedback_type feedback_type NOT NULL,
-    is_anonymized BOOLEAN DEFAULT false,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  id               SERIAL PRIMARY KEY,
+  user_id          VARCHAR(64) DEFAULT 'default_user'
+                   CONSTRAINT fk_ai_feedback_user_key
+                   REFERENCES users(user_key) ON DELETE CASCADE,
+  transaction_id   INTEGER REFERENCES transactions(id) ON DELETE SET NULL,
+  feedback_type    feedback_type NOT NULL,
+  original_text    TEXT,
+  ai_result        JSONB,
+  corrected_result JSONB,
+  created_at       TIMESTAMP DEFAULT NOW(),
+  is_anonymized    BOOLEAN DEFAULT false
 );
 
--- User Trait Table
 CREATE TABLE user_traits (
-    id SERIAL PRIMARY KEY,
-    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
-    trait_type VARCHAR(100) NOT NULL,
-    trait_value TEXT NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  id          SERIAL PRIMARY KEY,
+  user_id     VARCHAR(64) NOT NULL REFERENCES users(user_key) ON DELETE CASCADE,
+  trait_type  VARCHAR(100) NOT NULL,
+  trait_value TEXT NOT NULL,
+  created_at  TIMESTAMP DEFAULT NOW(),
+  updated_at  TIMESTAMP DEFAULT NOW(),
+  UNIQUE (user_id, trait_type)
 );
 
--- Investment PL Record
-CREATE TABLE investment_pl_records (
-    id SERIAL PRIMARY KEY,
-    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
-    wallet_id INTEGER REFERENCES wallets(id) ON DELETE CASCADE,
-    amount DECIMAL(15, 2) NOT NULL,
-    pl_type investment_pl_type NOT NULL,
-    note TEXT,
-    recorded_date DATE NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+-- 6. MIGRATION METADATA
+
+CREATE TABLE _migrations (
+  id          SERIAL PRIMARY KEY,
+  filename    VARCHAR(255) UNIQUE NOT NULL,
+  executed_at TIMESTAMP DEFAULT NOW()
 );
 
--- Export History
-CREATE TABLE export_histories (
-    id SERIAL PRIMARY KEY,
-    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
-    export_type export_type NOT NULL,
-    file_url VARCHAR(500),
-    file_size BIGINT,
-    status export_status DEFAULT 'success',
-    is_auto BOOLEAN DEFAULT false,
-    filters_applied TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
+-- 7. INDEXES
 
--- Backup Config
-CREATE TABLE backup_configs (
-    id SERIAL PRIMARY KEY,
-    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE UNIQUE,
-    enabled BOOLEAN DEFAULT false,
-    frequency backup_frequency DEFAULT 'monthly',
-    max_backups INTEGER DEFAULT 5,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- Indexes for performance
-CREATE INDEX idx_transactions_user_id ON transactions(user_id);
-CREATE INDEX idx_transactions_date ON transactions(transaction_date);
+CREATE INDEX idx_transactions_category ON transactions(category_id);
 CREATE INDEX idx_transactions_wallet ON transactions(wallet_id);
-CREATE INDEX idx_chat_messages_user_id ON chat_messages(user_id);
+CREATE INDEX idx_transactions_date ON transactions(transaction_date DESC);
+CREATE INDEX idx_transactions_type ON transactions(type);
+CREATE INDEX idx_transactions_active_user_date
+  ON transactions(user_id, transaction_date DESC) WHERE deleted_at IS NULL;
+CREATE INDEX idx_budgets_category ON budgets(category_id);
+CREATE INDEX idx_budgets_period ON budgets(user_id, month, year);
+CREATE INDEX idx_chat_messages_user_time ON chat_messages(user_id, created_at DESC);
+CREATE UNIQUE INDEX uq_chat_messages_proactive_event
+  ON chat_messages(user_id, (metadata->>'event_key'))
+  WHERE metadata->>'source' = 'proactive_worker' AND metadata ? 'event_key';
+CREATE INDEX idx_pnl_wallet ON investment_pnl(wallet_id);
+CREATE INDEX idx_pnl_user_date ON investment_pnl(user_id, recorded_at DESC);
+CREATE INDEX idx_transfers_user ON wallet_transfers(user_id, transaction_date DESC);
+CREATE INDEX idx_transfers_from ON wallet_transfers(from_wallet_id);
+CREATE INDEX idx_transfers_to ON wallet_transfers(to_wallet_id);
+CREATE INDEX idx_export_user ON export_history(user_id, created_at DESC);
+CREATE INDEX idx_export_auto ON export_history(user_id, is_auto, created_at DESC);
+CREATE INDEX idx_recurring_user ON recurring_bills(user_id, status);
+CREATE INDEX idx_recurring_due
+  ON recurring_bills(user_id, next_due_date) WHERE status = 'active';
+CREATE INDEX idx_bill_payments_bill
+  ON recurring_bill_payments(bill_id, period_due_date DESC);
+CREATE INDEX idx_bill_payments_user
+  ON recurring_bill_payments(user_id, period_due_date DESC);
+CREATE INDEX idx_suggestions_dismissed_user
+  ON recurring_suggestions_dismissed(user_id, dismissed_at DESC);
+CREATE INDEX idx_goals_user ON financial_goals(user_id, status);
+CREATE INDEX idx_feedback_user
+  ON ai_feedback_logs(user_id, feedback_type, created_at DESC);
+CREATE INDEX idx_user_traits_user ON user_traits(user_id, trait_type);
+
+-- 8. DOCUMENTATION-COMPATIBILITY VIEWS
+
+CREATE VIEW investment_pl_records AS
+SELECT id,
+       user_id,
+       wallet_id,
+       ABS(amount) AS amount,
+       CASE WHEN amount >= 0 THEN 'profit' ELSE 'loss' END AS pl_type,
+       note,
+       recorded_at AS recorded_date,
+       created_at,
+       updated_at
+FROM investment_pnl;
+
+CREATE VIEW export_histories AS
+SELECT id,
+       user_id,
+       export_type,
+       file_path AS file_url,
+       file_size,
+       status,
+       is_auto,
+       filters::text AS filters_applied,
+       created_at
+FROM export_history;
+
+CREATE VIEW backup_configs AS
+SELECT id,
+       user_id,
+       auto_enabled,
+       frequency,
+       keep_count,
+       last_backup_at,
+       created_at,
+       updated_at
+FROM backup_config;
