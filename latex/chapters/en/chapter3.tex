@@ -332,6 +332,8 @@ The matcher uses
   s=\max(s_{edit},\;0.92s_{dice},\;s_{contain}).
 \end{equation}
 
+Here $s$ is the final unitless similarity score for a candidate category. The components $s_{edit}$ and $s_{dice}$ are the Levenshtein and Dice scores defined in Chapter~\ref{chap:theory}, while $s_{contain}$ is the token-containment score below. The factor $0.92$ is the Dice weighting used by the prototype, and the maximum selects the strongest available matching signal rather than adding the scores.
+
 Let $U,V$ be normalized token sets and choose $|U|\leq|V|$. The implementation defines containment as
 
 \begin{equation}
@@ -342,7 +344,9 @@ Let $U,V$ be normalized token sets and choose $|U|\leq|V|$. The implementation d
   \end{cases}
 \end{equation}
 
-Selection proceeds through exact name, exact alias and fuzzy matching. Input length is measured after normalization: input longer than four characters uses $\tau=0.82$, shorter input uses $\tau=0.90$, and the best candidate must exceed the second by $m=0.08$. These are prototype starting values, not universal optima. Retrieval loads at most 200 recent corrections and overrides only with a record of the same income/expense type; legacy records without type are ineligible. A fuzzy correction needs at least 0.88 similarity, and competing labels require at least 0.8 agreement for the winner. Multiple labels for one exact text return fallback/clarification instead of majority voting.
+Here $U$ is the smaller normalized token set and $V$ is the larger one; $|U|/|V|$ measures how much of the larger phrase is covered. The score is considered only when every token in $U$ occurs in $V$ and at least two tokens are present. It starts at the base value $0.82$, increases with the coverage ratio by coefficient $0.12$, and is capped at $0.94$; all other cases receive zero.
+
+Selection proceeds through exact name, exact alias and fuzzy matching. Input length is measured after normalization: input longer than four characters uses $\tau=0.82$, shorter input uses $\tau=0.90$, and the best candidate must exceed the second by $m=0.08$. Here $\tau$ is the minimum accepted fuzzy-similarity threshold selected from the normalized input length, and $m$ is the required unitless margin over the runner-up. These are prototype starting values, not universal optima. Retrieval loads at most 200 recent corrections and overrides only with a record of the same income/expense type; legacy records without type are ineligible. A fuzzy correction needs at least 0.88 similarity, and competing labels require at least 0.8 agreement for the winner. Multiple labels for one exact text return fallback/clarification instead of majority voting.
 
 \subsubsection{Analytics and Planning Algorithms}
 \label{subsec:analytics-design}
@@ -356,12 +360,16 @@ Runway uses only liquid VND balance:
   w.type\in\{\mathrm{cash},\mathrm{bank},\mathrm{e\_wallet}\}}} balance_w.
 \end{equation}
 
+Here $w$ ranges over the user's wallets, $balance_w$ is the current balance of wallet $w$ in VND, and the summation includes only liquid wallet types: cash, bank and electronic wallet. Thus $B$ is the total liquid balance available to support spending; investments and wallets in other currencies are excluded.
+
 For daily expense $e_j$ and $W=14$,
 
 \begin{equation}
   \bar e_W=\frac{1}{W}\sum_{j=1}^{W}e_j,\qquad
   d=\left\lfloor\frac{B}{\bar e_W}\right\rfloor.
 \end{equation}
+
+Here $e_j$ is total expense on calendar day $j$ in VND, $W$ is the runway look-back window in days (14 by default), and $\bar e_W$ is the average daily burn rate over that fixed window, including zero-spend days. The floor operator returns a whole number of supportable days, so $d$ is the estimated number of days until the liquid balance is depleted under the observed spending pace.
 
 If $B\leq0$, then $d=0$; if $\bar e_W=0$, the depletion date is undefined. For monthly spending $y_j$, the trend detector keeps the zero-filled six-month axis but requires at least three positive observed months, then uses OLS and emits a signal only when slope $b>0$, $R^2\geq0.5$, and mean stepwise percentage change (over steps with a positive preceding value) is at least 10\%.
 
@@ -373,9 +381,11 @@ Anomaly detection uses the sample standard deviation over all 30 days. It is eva
   e_i>Q_3+1.5\,IQR.
 \end{equation}
 
+Here $e_i$ is the spending on calendar day $i$, $\bar e$ is the mean daily spending over the 30-day window, and $s$ is the sample standard deviation over that same zero-filled series. The z-score expresses the observation's distance from the mean in standard-deviation units. $Q_3$ is the third quartile, and $IQR=Q_3-Q_1$ is the interquartile range; the constants 2.5 and 1.5 are the upper-tail z-score and Tukey-IQR thresholds used for review signals.
+
 When $s=0$, the implementation sets $z_i=0$; when $IQR=0$, the IQR branch is disabled. Thus a constant series cannot become anomalous merely because the denominator is undefined.
 
-Recurring grouping normalizes descriptions and simultaneously requires at least three occurrences, every $\delta_i=|a_i-\bar a|/\bar a\leq0.15$, and gap coefficient of variation $CV_g=\sigma_g/\bar g\leq0.12$ (population $\sigma_g$ over positive gaps). Every gap must fit one cadence: weekly 5--9 days, monthly 26--35 days or quarterly 80--100 days. A candidate is active only when its latest occurrence is no older than that cadence's maximum gap; the output also records \code{lastSeen} and the calendar-clamped \code{nextExpected}. There is no default amount ceiling. The monthly estimate is
+Recurring grouping normalizes descriptions and simultaneously requires at least three occurrences, every $\delta_i=|a_i-\bar a|/\bar a\leq0.15$, and gap coefficient of variation $CV_g=\sigma_g/\bar g\leq0.12$ (population $\sigma_g$ over positive gaps). Here $a_i$ is the amount of occurrence $i$, $\bar a$ is the mean amount for the candidate group, and $\delta_i$ is the relative amount deviation. For the timing test, $\sigma_g$ is the population standard deviation of positive gaps in days, $\bar g$ is their mean gap in days, and $CV_g$ is the resulting unitless measure of cadence regularity. Every gap must fit one cadence: weekly 5--9 days, monthly 26--35 days or quarterly 80--100 days. A candidate is active only when its latest occurrence is no older than that cadence's maximum gap; the output also records \code{lastSeen} and the calendar-clamped \code{nextExpected}. There is no default amount ceiling. The monthly estimate is
 
 \begin{equation}
   \widehat a_{month}=\begin{cases}
@@ -385,6 +395,8 @@ Recurring grouping normalizes descriptions and simultaneously requires at least 
   \end{cases}
 \end{equation}
 
+Here $\widehat a_{month}$ is the estimated monthly amount in VND. A weekly amount is annualized to 52 occurrences and divided by 12 months, a monthly amount is used directly, and a quarterly amount is divided across three months.
+
 Correlation zero-fills a shared 12-week axis, keeps categories observed in at least four weeks and skips undefined Pearson pairs (fewer than three paired observations or zero variance). It returns only the strongest positive pair when $r\geq0.6$; association does not imply causation. Day-of-week analysis uses the 60-day window, requires at least four observed weekdays and emits a signal only when the peak-to-mean ratio reaches 1.8.
 
 For category spending $s_{c,j}$ across $m$ months, a five-percent-buffer baseline is
@@ -393,15 +405,17 @@ For category spending $s_{c,j}$ across $m$ months, a five-percent-buffer baselin
   b_c=1.05\left(\frac{1}{m}\sum_{j=1}^{m}s_{c,j}\right).
 \end{equation}
 
-Month-end forecast is $\widehat S_D=(S/d_e)D$, where $S$ is spending so far, $d_e$ elapsed calendar days including today and $D$ month length. The 50/30/20 and hybrid strategies shrink raw allocations when they exceed a cap; post-rounding reconciliation keeps each group at or below its cap. Needs, wants and savings rates may not sum to more than 1; recommendations require confirmation.
+Here $s_{c,j}$ is spending for category $c$ in month $j$, $m$ is the number of historical months included, and $b_c$ is the recommended baseline limit for category $c$ in VND. The factor $1.05$ adds the fixed five-percent buffer to the historical mean.
 
-For a saving or purchase goal with remaining amount $R$ and monthly contribution $M>0$, $n_s=\lceil R/M\rceil$. For current debt principal $L$ and nominal annual percentage rate $i$, the implementation uses monthly rate $r=i/(12\times100)$. With a debt deadline of $n_d$ months, the required end-of-month level payment is
+Month-end forecast is $\widehat S_D=(S/d_e)D$, where $S$ is spending so far in VND, $d_e$ is the number of elapsed calendar days including today, $D$ is the total number of days in the month, and $\widehat S_D$ is the projected month-end spending in VND. The 50/30/20 and hybrid strategies shrink raw allocations when they exceed a cap; post-rounding reconciliation keeps each group at or below its cap. Needs, wants and savings rates may not sum to more than 1; recommendations require confirmation.
+
+For a saving or purchase goal with remaining amount $R$ in VND and monthly contribution $M>0$ in VND per month, $n_s=\lceil R/M\rceil$ is the smallest whole number of contribution months that reaches the target. The ceiling operator accounts for a final partial contribution month. For current debt principal $L$ in VND and nominal annual percentage rate $i$ expressed as a percentage, the implementation uses monthly rate $r=i/(12\times100)$; dividing by 12 converts years to months and dividing by 100 converts percentage points to a decimal rate. With a debt deadline of $n_d$ months and $r>0$, the required end-of-month level payment is
 
 \begin{equation}
   P=\frac{Lr}{1-(1+r)^{-n_d}}
 \end{equation}
 
-for $r>0$, and $P=L/n_d$ for $r=0$. A payment less than or equal to first-month interest triggers a negative-amortization warning; a zero payment is reported separately. Without a deadline, the implementation simulates month by month up to a 600-month default horizon. What-if currently reruns the saving/purchase function with an additional contribution; debt plans are not changed by that scenario, and no what-if result is persisted.
+Here $P$ is the required fixed monthly payment in VND, $L$ is the starting principal, $r$ is the decimal monthly interest rate, and $n_d$ is the number of monthly payments in the requested horizon. The formula applies compound interest for $r>0$. For $r=0$, the implementation uses $P=L/n_d$ to distribute the principal evenly across the horizon. A payment less than or equal to first-month interest triggers a negative-amortization warning; a zero payment is reported separately. Without a deadline, the implementation simulates month by month up to a 600-month default horizon. What-if currently reruns the saving/purchase function with an additional contribution; debt plans are not changed by that scenario, and no what-if result is persisted.
 
 \widereportfigure{figures/drawio/12-goal-flow.png}{Goal planning and what-if flow; only final confirmation persists a goal.}{fig:goal-flow}
 

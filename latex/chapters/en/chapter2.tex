@@ -21,11 +21,15 @@ Input is normalized for case, punctuation, whitespace, currency units and relati
   s_{edit}=1-\frac{D_{lev}(a,b)}{\max(|a|,|b|)}.
 \end{equation}
 
+Here $a$ and $b$ are the two normalized input strings, $D_{lev}(a,b)$ is the minimum number of single-character insertions, deletions or substitutions needed to transform $a$ into $b$, and $|a|$ and $|b|$ are their character lengths. The resulting score is unitless and lies between 0 and 1 for non-empty strings, with larger values indicating greater similarity.
+
 For token sets $T_a,T_b$, the Dice coefficient \cite{dice1945} is
 
 \begin{equation}
   s_{dice}=\frac{2|T_a\cap T_b|}{|T_a|+|T_b|}.
 \end{equation}
+
+Here $T_a$ and $T_b$ are the sets of normalized tokens from the two inputs, $|T_a|$ and $|T_b|$ are their cardinalities, and $|T_a\cap T_b|$ counts tokens shared by both sets. When the denominator is non-zero, the coefficient is unitless and ranges from 0 (no shared tokens) to 1 (identical token sets).
 
 Levenshtein distance captures nearby typing errors, whereas Dice is useful when phrase order or components differ. PERFIN combines exact matches, aliases, both scores and a safety margin between the two best candidates. The chosen thresholds are detailed in Section~\ref{subsec:classification-design}.
 
@@ -41,6 +45,8 @@ Ordinary least squares (OLS) \cite{montgomery2012} models a time series as $\hat
           {\sum_i(x_i-\bar{x})^2}.
 \end{equation}
 
+Here $i$ indexes the observations in the selected time window, $x_i$ is the time position of observation $i$, $y_i$ is its measured value, and $\bar{x}$ and $\bar{y}$ are the corresponding sample means. In $\hat y_i=a+bx_i$, $a$ is the intercept, $b$ is the fitted change per unit of $x$, and $\hat y_i$ is the fitted value. The slope has the unit of $y$ per unit of time, whereas $R^2$ is a unitless goodness-of-fit value between 0 and 1.
+
 The sign of $b$ gives direction and $R^2$ gives linear fit. OLS is explainable and testable but does not model seasonality or future events. A z-score compares an observation with the mean in standard-deviation units, while the interquartile range is more robust to extremes \cite{tukey1977}. PERFIN uses both as review signals, not as fraud conclusions.
 
 Pearson's coefficient \cite{pearson1895} measures linear co-movement:
@@ -49,6 +55,8 @@ Pearson's coefficient \cite{pearson1895} measures linear co-movement:
   r=\frac{\sum_i(x_i-\bar{x})(y_i-\bar{y})}
   {\sqrt{\sum_i(x_i-\bar{x})^2\sum_i(y_i-\bar{y})^2}}.
 \end{equation}
+
+Here $x_i$ and $y_i$ are paired measurements from the same observation window, $i$ indexes the $n$ retained pairs, and $\bar{x}$ and $\bar{y}$ are their respective means. The denominator scales the joint variation by the two series' standard deviations, so $r$ is unitless and ranges from $-1$ (perfect inverse linear association) to $1$ (perfect positive linear association), with values near 0 indicating little linear association.
 
 Correlation is interpreted only within the observed window and does not imply causation.
 The coefficient is undefined with fewer than three paired observations or when either

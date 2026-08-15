@@ -1,6 +1,6 @@
 <mxfile host="65bd71144e">
     <diagram id="10-feedback-flow" name="Feedback flow">
-        <mxGraphModel dx="3320" dy="2783" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="2800" pageHeight="1300" math="0" shadow="0">
+        <mxGraphModel dx="2920" dy="1627" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="2800" pageHeight="1300" math="0" shadow="0">
             <root>
                 <mxCell id="0"/>
                 <mxCell id="1" parent="0"/>
@@ -28,6 +28,15 @@
                 <mxCell id="strong" value="Correction&#xa;strong enough?" style="rhombus;whiteSpace=wrap;html=1;spacing=5;align=center;verticalAlign=middle;fillColor=#FBF3D9;strokeColor=#B08900;fontColor=#5A4700;fontSize=32;strokeWidth=4;fontStyle=1" parent="retrieval" vertex="1">
                     <mxGeometry x="2270" y="49.95" width="305.25" height="194.25" as="geometry"/>
                 </mxCell>
+                <mxCell id="5" value="" style="ellipse;html=1;fillColor=#2C3440;strokeColor=#2C3440;strokeWidth=1.4;fontSize=28;" vertex="1" parent="retrieval">
+                    <mxGeometry x="249.5" y="4.650000000000006" width="55.5" height="55.5" as="geometry"/>
+                </mxCell>
+                <mxCell id="14" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;curved=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#5B7290;fontColor=#22303F;fontSize=32;labelBackgroundColor=#FFFFFF;strokeWidth=4;endArrow=blockThin;endFill=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;fontStyle=1" edge="1" parent="retrieval" source="5" target="start">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="444" y="156.65" as="sourcePoint"/>
+                        <mxPoint x="510" y="156.65" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
                 <mxCell id="confirmation" value="2 · Confirm and&amp;nbsp;&lt;div&gt;Store Feedback&lt;/div&gt;" style="swimlane;startSize=110;horizontal=0;container=1;pointerEvents=0;collapsible=0;html=1;rounded=0;fillColor=#EEF2F7;swimlaneFillColor=#FFFFFF;strokeColor=#5B7290;fontColor=#22303F;fontSize=32;fontStyle=1;strokeWidth=4;" parent="1" vertex="1">
                     <mxGeometry x="10" y="499.5" width="2750" height="294.15" as="geometry"/>
                 </mxCell>
@@ -47,7 +56,7 @@
                     <mxGeometry x="140" y="83.25" width="388.5" height="133.2" as="geometry"/>
                 </mxCell>
                 <mxCell id="retagging" value="3 · Propose Categories and&amp;nbsp;&lt;div&gt;Controlled Re-tagging&lt;/div&gt;" style="swimlane;startSize=110;horizontal=0;container=1;pointerEvents=0;collapsible=0;html=1;rounded=0;fillColor=#FBF3D9;swimlaneFillColor=#FFFFFF;strokeColor=#B08900;fontColor=#5A4700;fontSize=32;fontStyle=1;strokeWidth=4;" parent="1" vertex="1">
-                    <mxGeometry x="10" y="793.65" width="2750" height="446.35" as="geometry"/>
+                    <mxGeometry x="10" y="793.65" width="2757.56" height="446.35" as="geometry"/>
                 </mxCell>
                 <mxCell id="other_tx" value="Filter transactions in&#xa;the Other category" style="rounded=1;arcSize=10;whiteSpace=wrap;html=1;spacing=6;align=center;verticalAlign=middle;fillColor=#EEF2F7;strokeColor=#5B7290;fontColor=#22303F;fontSize=32;strokeWidth=4;fontStyle=1" parent="retagging" vertex="1">
                     <mxGeometry x="170" y="46.35" width="255.5" height="218.25" as="geometry"/>
@@ -68,7 +77,16 @@
                     <mxGeometry x="2320" y="88.88" width="370.96" height="133.2" as="geometry"/>
                 </mxCell>
                 <mxCell id="end" value="Finish or wait for more data" style="ellipse;whiteSpace=wrap;html=1;spacing=5;fillColor=#E6F4EA;strokeColor=#2E7D46;fontColor=#1B4429;fontSize=32;strokeWidth=4;fontStyle=1" parent="retagging" vertex="1">
-                    <mxGeometry x="2335.48" y="296.35" width="340" height="114.7" as="geometry"/>
+                    <mxGeometry x="2130" y="296.35" width="340" height="114.7" as="geometry"/>
+                </mxCell>
+                <mxCell id="3" value="" style="ellipse;shape=endState;html=1;fillColor=#2C3440;strokeColor=#2C3440;strokeWidth=1.6;fontSize=28;" vertex="1" parent="retagging">
+                    <mxGeometry x="2590" y="320.40000000000003" width="66.6" height="66.6" as="geometry"/>
+                </mxCell>
+                <mxCell id="4" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;curved=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#2E7D46;fontColor=#1B4429;fontSize=32;labelBackgroundColor=#FFFFFF;strokeWidth=4;endArrow=blockThin;endFill=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;fontStyle=1" edge="1" parent="retagging" source="end" target="3">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="2490" y="353.30000000000007" as="sourcePoint"/>
+                        <mxPoint x="2551" y="353.30000000000007" as="targetPoint"/>
+                    </mxGeometry>
                 </mxCell>
                 <mxCell id="e1" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;curved=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#5B7290;fontColor=#22303F;fontSize=32;labelBackgroundColor=#FFFFFF;strokeWidth=4;endArrow=blockThin;endFill=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;fontStyle=1" parent="1" source="start" target="load" edge="1">
                     <mxGeometry relative="1" as="geometry"/>
@@ -161,7 +179,6 @@
                     <mxGeometry x="-0.433" y="37" relative="1" as="geometry">
                         <Array as="points">
                             <mxPoint x="1596" y="1147"/>
-                            <mxPoint x="2346" y="1147"/>
                         </Array>
                         <mxPoint as="offset"/>
                     </mxGeometry>

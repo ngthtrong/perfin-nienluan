@@ -1,6 +1,6 @@
 <mxfile host="65bd71144e">
     <diagram id="07-conversation-state" name="Conversation state">
-        <mxGraphModel dx="3543" dy="2783" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="3000" pageHeight="1040" math="0" shadow="0">
+        <mxGraphModel dx="5780" dy="2440" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="3000" pageHeight="1040" math="0" shadow="0">
             <root>
                 <mxCell id="0"/>
                 <mxCell id="1" parent="0"/>
@@ -162,7 +162,7 @@
                 <mxCell id="syntax" value="Transition syntax: trigger [guard] / effect. after(TTL) is a Redis expiration trigger. The filled dot is the initial pseudostate and the ring ends the session; a new request starts another idle session." style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingTop=6;spacingLeft=8;spacingRight=6;fillColor=#EAEEF2;strokeColor=#6B7A89;fontColor=#2C3440;fontSize=28;strokeWidth=1;dashed=1;" parent="1" vertex="1">
                     <mxGeometry x="660" y="491.25" width="430" height="240.5" as="geometry"/>
                 </mxCell>
-                <mxCell id="4" value="" style="group" vertex="1" connectable="0" parent="1">
+                <mxCell id="4" value="" style="group" parent="1" vertex="1" connectable="0">
                     <mxGeometry x="30" y="440" width="580" height="343" as="geometry"/>
                 </mxCell>
                 <mxCell id="lg" value="Color Legend" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingTop=6;spacingLeft=9;fillColor=#FFFFFF;strokeColor=#9AA7B4;fontColor=#3D4B5A;fontSize=28;fontStyle=1;strokeWidth=1;dashed=0;" parent="4" vertex="1">
